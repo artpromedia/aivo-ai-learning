@@ -1,0 +1,628 @@
+name: Deploy Production
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to deploy (e.g. v1.2.3)"
+        required: true
+        type: string
+      skip_approval:
+        description: "Skip manual approval gate"
+        required: false
+        default: false
+        type: boolean
+      skip_canary:
+        description: "Skip canary deployment"
+        required: false
+        default: false
+        type: boolean
+      use_flagger:
+        description: "Use Flagger progressive delivery (blue-green)"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  IMAGE_PREFIX: ghcr.io/artpromedia
+  ALL_SERVICES: >-
+    identity-svc,billing-svc,family-svc,integrations-svc,admin-svc,
+    learning-svc,engagement-svc,comms-svc,i18n-svc,tutor-svc,
+    status-page-svc,research-svc,assessment-svc,ai-svc,brain-svc,web,marketing
+
+jobs:
+  # ═════════════════════════════════════════════
+  # Stage 1: Validate Version & Verify Images
+  # ═════════════════════════════════════════════
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+
+          # Ensure version starts with v
+          if [[ ! "$VERSION" =~ ^v ]]; then
+            VERSION="v${VERSION}"
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Deploying version: $VERSION"
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.AIVO_GHCR_PUSH }}
+
+      - name: Verify all service images exist
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "Verifying images with tag: $VERSION"
+          echo ""
+
+          SERVICES="identity-svc billing-svc family-svc integrations-svc admin-svc \
+            learning-svc engagement-svc comms-svc i18n-svc tutor-svc \
+            status-page-svc research-svc assessment-svc ai-svc brain-svc web marketing"
+
+          MISSING=0
+          for svc in $SERVICES; do
+            IMAGE="${{ env.IMAGE_PREFIX }}/$svc:$VERSION"
+            if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+              echo "OK: $svc"
+            else
+              echo "MISSING: $svc ($IMAGE)"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+
+          echo ""
+          if [ "$MISSING" -gt 0 ]; then
+            echo "::error::$MISSING image(s) not found for tag $VERSION"
+            echo "Ensure all images are tagged via create-release.yml before deploying"
+            exit 1
+          fi
+          echo "All service images verified for tag $VERSION"
+
+  # ═════════════════════════════════════════════
+  # Stage 2: Manual Approval Gate
+  # ═════════════════════════════════════════════
+  approval:
+    name: Production Approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: validate
+    if: ${{ !(inputs.skip_approval == true) }}
+    environment: production-approval
+
+    steps:
+      - name: Approval confirmed
+        run: |
+          echo "Production deployment approved for ${{ needs.validate.outputs.version }}"
+          echo "Approved by: ${{ github.actor }}"
+          echo "Timestamp:   $(date -u +"%Y-%m-%d %H:%M UTC")"
+
+  # ═════════════════════════════════════════════
+  # Stage 3: Database Migration
+  # ═════════════════════════════════════════════
+  migrate:
+    name: Database Migration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [validate, approval]
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      (needs.approval.result == 'success' || needs.approval.result == 'skipped')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Run database migrations
+        run: |
+          # Clean up any leftover migration pod from a previous run
+          kubectl delete pod db-migrate -n aivo --ignore-not-found 2>/dev/null || true
+          sleep 5
+
+          # Create a temporary pod inside the cluster with DATABASE_URL from secrets
+          cat <<'EOF' | kubectl apply -f -
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: db-migrate
+            namespace: aivo
+          spec:
+            restartPolicy: Never
+            containers:
+              - name: db-migrate
+                image: node:22-slim
+                command: ["sleep", "600"]
+                env:
+                  - name: DATABASE_URL
+                    valueFrom:
+                      secretKeyRef:
+                        name: db-secrets
+                        key: database-url
+          EOF
+
+          echo "Waiting for migration pod to be ready..."
+          kubectl wait --for=condition=Ready pod/db-migrate -n aivo --timeout=120s
+
+          # Create target directory and copy migration files into the pod
+          kubectl exec db-migrate -n aivo -- mkdir -p /app
+          kubectl cp packages/db/drizzle db-migrate:/app/drizzle -n aivo
+          kubectl cp packages/db/drizzle.config.ts db-migrate:/app/drizzle.config.ts -n aivo
+
+          # Install drizzle-kit and run migrations
+          kubectl exec db-migrate -n aivo -- sh -c '
+            cd /app
+            npm init -y >/dev/null 2>&1
+            npm install drizzle-kit@0.30.5 drizzle-orm@0.44.2 postgres@3.4.5 >/dev/null 2>&1
+            npx drizzle-kit migrate 2>&1
+          '
+
+          echo "Database migrations completed successfully"
+
+      - name: Cleanup migration pod
+        if: always()
+        run: kubectl delete pod db-migrate -n aivo --ignore-not-found
+
+  # ═════════════════════════════════════════════
+  # Stage 4: Canary Deployment
+  # ═════════════════════════════════════════════
+  canary:
+    name: Canary Deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate, approval, migrate]
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      (needs.approval.result == 'success' || needs.approval.result == 'skipped') &&
+      needs.migrate.result == 'success' &&
+      !(inputs.skip_canary == true)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.16.3"
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Generate image tag overrides
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          IMAGE_PREFIX="${{ env.IMAGE_PREFIX }}"
+
+          # Generate overrides for ALL services (Helm needs full set)
+          cat > /tmp/image-tags.yaml << EOYAML
+          identity-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/identity-svc
+              tag: "${VERSION}"
+          billing-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/billing-svc
+              tag: "${VERSION}"
+          family-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/family-svc
+              tag: "${VERSION}"
+          integrations-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/integrations-svc
+              tag: "${VERSION}"
+          admin-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/admin-svc
+              tag: "${VERSION}"
+          learning-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/learning-svc
+              tag: "${VERSION}"
+          engagement-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/engagement-svc
+              tag: "${VERSION}"
+          comms-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/comms-svc
+              tag: "${VERSION}"
+          i18n-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/i18n-svc
+              tag: "${VERSION}"
+          tutor-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/tutor-svc
+              tag: "${VERSION}"
+          status-page-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/status-page-svc
+              tag: "${VERSION}"
+          research-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/research-svc
+              tag: "${VERSION}"
+          research-worker:
+            image:
+              repository: ${IMAGE_PREFIX}/research-svc
+              tag: "${VERSION}"
+          ai-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/ai-svc
+              tag: "${VERSION}"
+          brain-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/brain-svc
+              tag: "${VERSION}"
+          assessment-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/assessment-svc
+              tag: "${VERSION}"
+          web:
+            image:
+              repository: ${IMAGE_PREFIX}/web
+              tag: "${VERSION}"
+          marketing:
+            image:
+              repository: ${IMAGE_PREFIX}/marketing
+              tag: "${VERSION}"
+          EOYAML
+
+      - name: Clear stuck Helm releases
+        run: |
+          STATUS=$(helm status aivo-learning-saas -n aivo -o json 2>/dev/null | jq -r '.info.status' 2>/dev/null || echo "not-found")
+          echo "Current Helm release status: $STATUS"
+          if [ "$STATUS" = "pending-install" ] || [ "$STATUS" = "pending-upgrade" ] || [ "$STATUS" = "pending-rollback" ]; then
+            echo "::warning::Found stuck Helm release in '$STATUS' state — rolling back"
+            helm rollback aivo-learning-saas 0 -n aivo --timeout 5m || \
+              helm uninstall aivo-learning-saas -n aivo --no-hooks 2>/dev/null || true
+          fi
+
+      - name: Helm deploy (canary)
+        run: |
+          helm dependency build infra/helm
+          helm upgrade --install aivo-learning-saas infra/helm \
+            -f infra/helm/values/hetzner-production.yaml \
+            -f /tmp/image-tags.yaml \
+            -n aivo \
+            --atomic \
+            --timeout 15m \
+            --wait
+
+      - name: Health-check canary services (identity-svc + web)
+        run: |
+          echo "Checking canary services: identity-svc, web"
+
+          for svc in identity-svc web; do
+            echo "Verifying $svc rollout..."
+            kubectl rollout status deployment/"$svc" -n aivo --timeout=180s
+          done
+
+          echo "Canary services deployed, starting 5-minute soak period..."
+
+      - name: Soak period (5 minutes)
+        run: |
+          echo "Soak period: monitoring for 5 minutes..."
+          for i in $(seq 1 5); do
+            echo "Minute $i/5..."
+            sleep 60
+
+            # Check identity-svc
+            ID_RESTARTS=$(kubectl get pods -n aivo -l app.kubernetes.io/name=identity-svc \
+              -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}' 2>/dev/null | tr ' ' '\n' | awk '{s+=$1}END{print s+0}')
+            echo "  identity-svc restarts: $ID_RESTARTS"
+
+            # Check web
+            WEB_RESTARTS=$(kubectl get pods -n aivo -l app.kubernetes.io/name=web \
+              -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}' 2>/dev/null | tr ' ' '\n' | awk '{s+=$1}END{print s+0}')
+            echo "  web restarts: $WEB_RESTARTS"
+          done
+
+      - name: Verify canary health
+        run: |
+          FAIL=0
+          for svc in identity-svc web; do
+            RESTARTS=$(kubectl get pods -n aivo -l app.kubernetes.io/name=$svc \
+              -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}' 2>/dev/null | tr ' ' '\n' | awk '{s+=$1}END{print s+0}')
+
+            READY=$(kubectl get pods -n aivo -l app.kubernetes.io/name=$svc \
+              -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}' 2>/dev/null)
+
+            echo "$svc: restarts=$RESTARTS ready=$READY"
+
+            if [ "${RESTARTS:-0}" -ge 2 ]; then
+              echo "::error::Canary FAILED — $svc has $RESTARTS restarts (threshold: <2)"
+              FAIL=1
+            fi
+
+            if echo "$READY" | grep -q "False"; then
+              echo "::error::Canary FAILED — $svc has unready pods"
+              FAIL=1
+            fi
+          done
+
+          if [ "$FAIL" -eq 1 ]; then
+            echo "::error::Canary deployment failed health checks"
+            echo "Consider rolling back: helm rollback aivo-learning-saas -n aivo"
+            exit 1
+          fi
+
+          echo "Canary health check passed"
+
+  # ═════════════════════════════════════════════
+  # Stage 5: Full Production Rollout
+  # ═════════════════════════════════════════════
+  deploy:
+    name: Full Production Rollout
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [validate, approval, canary, migrate]
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      (needs.approval.result == 'success' || needs.approval.result == 'skipped') &&
+      needs.migrate.result == 'success' &&
+      (needs.canary.result == 'success' || needs.canary.result == 'skipped')
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.16.3"
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Generate image tag overrides
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          IMAGE_PREFIX="${{ env.IMAGE_PREFIX }}"
+
+          cat > /tmp/image-tags.yaml << EOYAML
+          identity-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/identity-svc
+              tag: "${VERSION}"
+          billing-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/billing-svc
+              tag: "${VERSION}"
+          family-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/family-svc
+              tag: "${VERSION}"
+          integrations-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/integrations-svc
+              tag: "${VERSION}"
+          admin-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/admin-svc
+              tag: "${VERSION}"
+          learning-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/learning-svc
+              tag: "${VERSION}"
+          engagement-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/engagement-svc
+              tag: "${VERSION}"
+          comms-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/comms-svc
+              tag: "${VERSION}"
+          i18n-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/i18n-svc
+              tag: "${VERSION}"
+          tutor-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/tutor-svc
+              tag: "${VERSION}"
+          status-page-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/status-page-svc
+              tag: "${VERSION}"
+          research-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/research-svc
+              tag: "${VERSION}"
+          research-worker:
+            image:
+              repository: ${IMAGE_PREFIX}/research-svc
+              tag: "${VERSION}"
+          ai-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/ai-svc
+              tag: "${VERSION}"
+          brain-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/brain-svc
+              tag: "${VERSION}"
+          assessment-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/assessment-svc
+              tag: "${VERSION}"
+          web:
+            image:
+              repository: ${IMAGE_PREFIX}/web
+              tag: "${VERSION}"
+          marketing:
+            image:
+              repository: ${IMAGE_PREFIX}/marketing
+              tag: "${VERSION}"
+          EOYAML
+
+      - name: Helm upgrade (production — atomic)
+        run: |
+          FLAGGER_FLAG=""
+          if [ "${{ inputs.use_flagger }}" = "true" ]; then
+            echo "Flagger progressive delivery enabled"
+            FLAGGER_FLAG="--set flagger.enabled=true"
+          fi
+
+          helm dependency build infra/helm
+          helm upgrade --install aivo-learning-saas infra/helm \
+            -f infra/helm/values/hetzner-production.yaml \
+            -f /tmp/image-tags.yaml \
+            -n aivo \
+            --atomic \
+            --timeout 15m \
+            --wait \
+            $FLAGGER_FLAG
+
+      - name: Verify rollout status
+        run: |
+          SERVICES=(
+            identity-svc billing-svc family-svc integrations-svc admin-svc
+            learning-svc engagement-svc comms-svc i18n-svc tutor-svc
+            status-page-svc research-svc research-worker assessment-svc
+            ai-svc brain-svc web marketing
+          )
+
+          FAILED=0
+          for svc in "${SERVICES[@]}"; do
+            echo "Checking rollout: $svc..."
+            if kubectl rollout status deployment/"$svc" -n aivo --timeout=180s 2>/dev/null; then
+              echo "  OK: $svc"
+            else
+              echo "  FAILED: $svc"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::error::$FAILED deployment(s) failed rollout"
+            exit 1
+          fi
+          echo "All deployments rolled out successfully"
+
+  # ═════════════════════════════════════════════
+  # Stage 6: Production Smoke Tests
+  # ═════════════════════════════════════════════
+  smoke-tests:
+    name: Production Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate, deploy]
+    if: always() && needs.deploy.result == 'success'
+
+    steps:
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Wait for stabilization (60s)
+        run: |
+          echo "Waiting 60 seconds for production to stabilize..."
+          sleep 60
+          echo "Stabilization period complete"
+
+      - name: Smoke test all services
+        run: |
+          echo "=== Production Smoke Tests ==="
+          echo "Version: ${{ needs.validate.outputs.version }}"
+          echo ""
+
+          SERVICES=(
+            identity-svc billing-svc family-svc integrations-svc admin-svc
+            learning-svc engagement-svc comms-svc i18n-svc tutor-svc
+            status-page-svc research-svc research-worker assessment-svc
+            ai-svc brain-svc web marketing
+          )
+
+          FAIL=0
+          for svc in "${SERVICES[@]}"; do
+            # Check pods are Ready
+            READY_COUNT=$(kubectl get pods -n aivo -l app.kubernetes.io/name=$svc \
+              -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' 2>/dev/null \
+              | grep -c "True" 2>/dev/null || true)
+            READY_COUNT=${READY_COUNT:-0}
+
+            TOTAL_COUNT=$(kubectl get pods -n aivo -l app.kubernetes.io/name=$svc \
+              --no-headers 2>/dev/null | wc -l)
+
+            # Check restart count
+            RESTARTS=$(kubectl get pods -n aivo -l app.kubernetes.io/name=$svc \
+              -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}' 2>/dev/null \
+              | tr ' ' '\n' | awk '{s+=$1}END{print s+0}')
+
+            STATUS="HEALTHY"
+            if [ "${READY_COUNT:-0}" -lt "${TOTAL_COUNT:-1}" ] && [ "${TOTAL_COUNT:-0}" -gt 0 ]; then
+              STATUS="UNHEALTHY"
+              FAIL=1
+            fi
+            if [ "${RESTARTS:-0}" -ge 3 ]; then
+              STATUS="UNSTABLE"
+              FAIL=1
+            fi
+
+            printf "%-25s ready=%s/%s restarts=%s [%s]\n" \
+              "$svc" "$READY_COUNT" "$TOTAL_COUNT" "$RESTARTS" "$STATUS"
+          done
+
+          echo ""
+          if [ "$FAIL" -eq 1 ]; then
+            echo "::error::Production smoke tests FAILED — one or more services unhealthy"
+            echo ""
+            echo "Unhealthy pods:"
+            kubectl get pods -n aivo --no-headers | grep -v Running | grep -v Completed || echo "(none)"
+            exit 1
+          fi
+
+          echo "=== All production smoke tests passed ==="
+
+          # Step summary
+          echo "## Production Deploy Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ needs.validate.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** All services healthy" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +"%Y-%m-%d %H:%M UTC")" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,138 @@
+name: Mobile Build (Flutter)
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "apps/mobile/**"
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Analyze & Test
+  # ─────────────────────────────────────────────
+  analyze:
+    name: Flutter Analyze & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/mobile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.0"
+          channel: stable
+          cache: true
+
+      - name: Setup Java (for Android)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test --coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-coverage
+          path: apps/mobile/coverage/lcov.info
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ─────────────────────────────────────────────
+  # Build Android APK
+  # ─────────────────────────────────────────────
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: analyze
+    defaults:
+      run:
+        working-directory: apps/mobile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.0"
+          channel: stable
+          cache: true
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK (release)
+        run: flutter build apk --release --no-tree-shake-icons
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: aivo-android-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+
+  # ─────────────────────────────────────────────
+  # Build iOS (macOS runner)
+  # ─────────────────────────────────────────────
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+    timeout-minutes: 45
+    needs: analyze
+    defaults:
+      run:
+        working-directory: apps/mobile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.0"
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Upload iOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: aivo-ios-build
+          path: apps/mobile/build/ios/iphoneos/Runner.app
+          retention-days: 14
+          if-no-files-found: ignore

@@ -1,0 +1,2 @@
+﻿#!/bin/sh
+wget -S -O /dev/stdout --post-data='{"learnerId":"6287dc46-2809-42f6-a529-ff7aed32fbd6","answers":{"test":"value"}}' --header='Content-Type: application/json' http://assessment-svc:3012/assessment/parent 2>&1 || true

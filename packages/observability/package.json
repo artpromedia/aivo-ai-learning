@@ -1,0 +1,10 @@
+{
+  "name": "@aivo/observability",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": { "build": "tsc" },
+  "dependencies": { "pino": "^9.6.0" },
+  "devDependencies": { "typescript": "^5.7.3" }
+}

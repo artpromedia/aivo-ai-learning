@@ -1,0 +1,1029 @@
+name: Deploy Hetzner Staging
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+    inputs:
+      services:
+        description: "Comma-separated service names to deploy, or 'all'"
+        required: false
+        default: "all"
+        type: string
+
+concurrency:
+  group: deploy-staging-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+  attestations: write
+  id-token: write
+  security-events: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/artpromedia
+  ALL_SERVICES: >-
+    identity-svc,billing-svc,family-svc,integrations-svc,admin-svc,
+    learning-svc,engagement-svc,comms-svc,i18n-svc,tutor-svc,
+    status-page-svc,research-svc,assessment-svc,ai-svc,brain-svc,web,marketing
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.6.5"
+
+jobs:
+  # ═════════════════════════════════════════════
+  # Stage 1: CI Validation (references ci.yml jobs)
+  # ═════════════════════════════════════════════
+  # The CI pipeline (ci.yml) runs as a separate workflow on PR/push.
+  # This workflow assumes CI has passed (triggered on push to main/develop).
+
+  # ═════════════════════════════════════════════
+  # Stage 2: Resolve Build Matrix
+  # ═════════════════════════════════════════════
+  resolve:
+    name: Resolve Build Matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix-python: ${{ steps.split.outputs.matrix-python }}
+      matrix-web: ${{ steps.split.outputs.matrix-web }}
+      matrix-backend: ${{ steps.split.outputs.matrix-backend }}
+      version: ${{ steps.version.outputs.version }}
+      sha-short: ${{ steps.version.outputs.sha-short }}
+
+    steps:
+      - name: Compute version tag
+        id: version
+        run: |
+          SHA_SHORT="${GITHUB_SHA::7}"
+          echo "sha-short=$SHA_SHORT" >> "$GITHUB_OUTPUT"
+          echo "version=main-$SHA_SHORT" >> "$GITHUB_OUTPUT"
+          echo "Version: main-$SHA_SHORT"
+
+      - name: Split services into matrix groups
+        id: split
+        run: |
+          # Determine which services to build
+          INPUT_SERVICES="${{ inputs.services || 'all' }}"
+          if [ "$INPUT_SERVICES" = "all" ] || [ -z "$INPUT_SERVICES" ]; then
+            SERVICES="${ALL_SERVICES}"
+          else
+            SERVICES="$INPUT_SERVICES"
+          fi
+
+          # Normalize: remove whitespace, newlines
+          SERVICES=$(echo "$SERVICES" | tr -d '[:space:]' | tr '\n' ',')
+
+          echo "Services to build: $SERVICES"
+
+          # Split into 3 groups
+          PYTHON_SVCS=()
+          WEB_SVCS=()
+          BACKEND_SVCS=()
+
+          IFS=',' read -ra SVC_ARRAY <<< "$SERVICES"
+          for svc in "${SVC_ARRAY[@]}"; do
+            svc=$(echo "$svc" | xargs)  # trim whitespace
+            [ -z "$svc" ] && continue
+            case "$svc" in
+              ai-svc|brain-svc)
+                PYTHON_SVCS+=("\"$svc\"")
+                ;;
+              web|marketing)
+                WEB_SVCS+=("\"$svc\"")
+                ;;
+              *)
+                BACKEND_SVCS+=("\"$svc\"")
+                ;;
+            esac
+          done
+
+          # Build JSON arrays
+          python_json="[$(IFS=','; echo "${PYTHON_SVCS[*]:-}")]"
+          web_json="[$(IFS=','; echo "${WEB_SVCS[*]:-}")]"
+          backend_json="[$(IFS=','; echo "${BACKEND_SVCS[*]:-}")]"
+
+          echo "matrix-python=$python_json" >> "$GITHUB_OUTPUT"
+          echo "matrix-web=$web_json" >> "$GITHUB_OUTPUT"
+          echo "matrix-backend=$backend_json" >> "$GITHUB_OUTPUT"
+
+          echo "Python group:  $python_json"
+          echo "Web group:     $web_json"
+          echo "Backend group: $backend_json"
+
+  # ═════════════════════════════════════════════
+  # Stage 2a: Build & Push — Python Services
+  # ═════════════════════════════════════════════
+  build-push-python:
+    name: "Build Python: ${{ matrix.service }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: resolve
+    if: needs.resolve.outputs.matrix-python != '[]'
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.resolve.outputs.matrix-python) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.AIVO_GHCR_PUSH }}
+
+      - name: Login to Docker Hub (optional)
+        uses: docker/login-action@v3
+        continue-on-error: true
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
+          tags: |
+            type=raw,value=${{ needs.resolve.outputs.version }}
+            type=raw,value=latest
+            type=sha,prefix=sha-,format=short
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: services/${{ matrix.service }}
+          file: services/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+          provenance: true
+          sbom: true
+
+      - name: Trivy vulnerability scan
+        id: trivy
+        if: steps.build.outcome == 'success'
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ needs.resolve.outputs.version }}
+          format: sarif
+          output: trivy-${{ matrix.service }}.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && steps.trivy.outcome == 'success'
+        with:
+          sarif_file: trivy-${{ matrix.service }}.sarif
+          category: trivy-${{ matrix.service }}
+        continue-on-error: true
+
+  # ═════════════════════════════════════════════
+  # Stage 2b: Build & Push — Web Apps (Next.js)
+  # ═════════════════════════════════════════════
+  build-push-web:
+    name: "Build Web: ${{ matrix.service }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: resolve
+    if: needs.resolve.outputs.matrix-web != '[]'
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.resolve.outputs.matrix-web) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.AIVO_GHCR_PUSH }}
+
+      - name: Login to Docker Hub (optional)
+        uses: docker/login-action@v3
+        continue-on-error: true
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
+          tags: |
+            type=raw,value=${{ needs.resolve.outputs.version }}
+            type=raw,value=latest
+            type=sha,prefix=sha-,format=short
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+          provenance: true
+          sbom: true
+
+      - name: Trivy vulnerability scan
+        id: trivy
+        if: steps.build.outcome == 'success'
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ needs.resolve.outputs.version }}
+          format: sarif
+          output: trivy-${{ matrix.service }}.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && steps.trivy.outcome == 'success'
+        with:
+          sarif_file: trivy-${{ matrix.service }}.sarif
+          category: trivy-${{ matrix.service }}
+        continue-on-error: true
+
+  # ═════════════════════════════════════════════
+  # Stage 2c: Build & Push — Backend Services
+  # ═════════════════════════════════════════════
+  build-push:
+    name: "Build Backend: ${{ matrix.service }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: resolve
+    if: needs.resolve.outputs.matrix-backend != '[]'
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.resolve.outputs.matrix-backend) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.AIVO_GHCR_PUSH }}
+
+      - name: Login to Docker Hub (optional)
+        uses: docker/login-action@v3
+        continue-on-error: true
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
+          tags: |
+            type=raw,value=${{ needs.resolve.outputs.version }}
+            type=raw,value=latest
+            type=sha,prefix=sha-,format=short
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+          provenance: true
+          sbom: true
+
+      - name: Trivy vulnerability scan
+        id: trivy
+        if: steps.build.outcome == 'success'
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ needs.resolve.outputs.version }}
+          format: sarif
+          output: trivy-${{ matrix.service }}.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && steps.trivy.outcome == 'success'
+        with:
+          sarif_file: trivy-${{ matrix.service }}.sarif
+          category: trivy-${{ matrix.service }}
+        continue-on-error: true
+
+      - name: Verify GHCR package link
+        continue-on-error: true
+        run: |
+          PKG_NAME="${{ matrix.service }}"
+          echo "Verifying GHCR package link for $PKG_NAME..."
+
+          # Check if the package exists and is linked to the repository
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/orgs/artpromedia/packages/container/$PKG_NAME")
+
+          if [ "$RESPONSE" = "200" ]; then
+            echo "OK: Package $PKG_NAME exists on GHCR"
+
+            # Check repository link
+            REPO_LINK=$(curl -s \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/orgs/artpromedia/packages/container/$PKG_NAME" \
+              | python3 -c "import sys,json; d=json.load(sys.stdin); r=d.get('repository',{}); print(r.get('full_name',''))" 2>/dev/null || echo "")
+
+            if [ "$REPO_LINK" = "artpromedia/aivo-learning-saas" ]; then
+              echo "OK: Package linked to artpromedia/aivo-learning-saas"
+            elif [ -n "$REPO_LINK" ]; then
+              echo "::warning::Package $PKG_NAME is linked to $REPO_LINK instead of artpromedia/aivo-learning-saas"
+            else
+              echo "::warning::Package $PKG_NAME is NOT linked to any repository. Link it at: https://github.com/orgs/artpromedia/packages/container/$PKG_NAME/settings"
+            fi
+          elif [ "$RESPONSE" = "404" ]; then
+            echo "::notice::Package $PKG_NAME does not exist yet on GHCR (first push will create it)"
+          else
+            echo "::warning::Could not verify GHCR package link (HTTP $RESPONSE)"
+          fi
+
+  # ═════════════════════════════════════════════
+  # Stage 2d: Build & Push — Backup Agent
+  # ═════════════════════════════════════════════
+  build-backup-agent:
+    name: Build Backup Agent
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: resolve
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.AIVO_GHCR_PUSH }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/backup-agent
+          tags: |
+            type=raw,value=${{ needs.resolve.outputs.version }}
+            type=raw,value=latest
+            type=sha,prefix=sha-,format=short
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: infra/backup-agent
+          file: infra/backup-agent/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=backup-agent
+          cache-to: type=gha,scope=backup-agent,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Trivy vulnerability scan
+        if: steps.build.outcome == 'success'
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}/backup-agent:${{ needs.resolve.outputs.version }}
+          format: sarif
+          output: trivy-backup-agent.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && steps.build.outcome == 'success'
+        with:
+          sarif_file: trivy-backup-agent.sarif
+          category: trivy-backup-agent
+        continue-on-error: true
+
+  # ═════════════════════════════════════════════
+  # Stage 2e: Verify All Images
+  # ═════════════════════════════════════════════
+  verify-images:
+    name: Verify All Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - resolve
+      - build-push-python
+      - build-push-web
+      - build-push
+      - build-backup-agent
+    if: always()
+
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.AIVO_GHCR_PUSH }}
+
+      - name: Verify pushed images
+        run: |
+          VERSION="${{ needs.resolve.outputs.version }}"
+          echo "Verifying images tagged with: $VERSION"
+          echo ""
+
+          TOTAL=0
+          FOUND=0
+          MISSING=0
+
+          # Combine all service groups
+          ALL_PYTHON='${{ needs.resolve.outputs.matrix-python }}'
+          ALL_WEB='${{ needs.resolve.outputs.matrix-web }}'
+          ALL_BACKEND='${{ needs.resolve.outputs.matrix-backend }}'
+
+          # Parse JSON arrays into service list
+          SERVICES=$(echo "$ALL_PYTHON $ALL_WEB $ALL_BACKEND" | \
+            python3 -c "
+          import sys, json
+          svcs = []
+          for chunk in sys.stdin.read().split():
+            try:
+              svcs.extend(json.loads(chunk))
+            except:
+              pass
+          svcs.append('backup-agent')
+          print(' '.join(svcs))
+          ")
+
+          for svc in $SERVICES; do
+            TOTAL=$((TOTAL + 1))
+            IMAGE="${{ env.IMAGE_PREFIX }}/$svc:$VERSION"
+            if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+              echo "OK: $IMAGE"
+              FOUND=$((FOUND + 1))
+            else
+              echo "MISSING: $IMAGE"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+
+          echo ""
+          echo "══════════════════════════════════"
+          echo "Total:   $TOTAL"
+          echo "Found:   $FOUND"
+          echo "Missing: $MISSING"
+          echo "══════════════════════════════════"
+
+          # Summary
+          echo "## Docker Image Verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Total | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| Found | $FOUND |" >> $GITHUB_STEP_SUMMARY
+          echo "| Missing | $MISSING |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$MISSING" -gt 0 ]; then
+            echo "::warning::$MISSING image(s) could not be verified"
+          fi
+
+  # ═════════════════════════════════════════════
+  # Stage 3: Deploy to Hetzner Staging (Helm)
+  # ═════════════════════════════════════════════
+  deploy-staging:
+    name: Deploy to Hetzner Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs:
+      - resolve
+      - build-push-python
+      - build-push-web
+      - build-push
+      - build-backup-agent
+      - verify-images
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.16.3"
+
+      - name: Configure kubectl
+        run: |
+          if [ -z "${{ secrets.KUBE_CONFIG }}" ]; then
+            echo "::error::KUBE_CONFIG secret is not set"
+            exit 1
+          fi
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Verify cluster connectivity
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+          kubectl get ns aivo 2>/dev/null || kubectl create ns aivo
+
+      - name: Generate image tag overrides
+        run: |
+          VERSION="${{ needs.resolve.outputs.version }}"
+          IMAGE_PREFIX="${{ env.IMAGE_PREFIX }}"
+
+          cat > /tmp/image-tags.yaml << EOYAML
+          # Auto-generated image tag overrides for staging deploy
+          # Version: ${VERSION}
+          # Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          identity-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/identity-svc
+              tag: "${VERSION}"
+
+          billing-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/billing-svc
+              tag: "${VERSION}"
+
+          family-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/family-svc
+              tag: "${VERSION}"
+
+          integrations-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/integrations-svc
+              tag: "${VERSION}"
+
+          admin-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/admin-svc
+              tag: "${VERSION}"
+
+          learning-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/learning-svc
+              tag: "${VERSION}"
+
+          engagement-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/engagement-svc
+              tag: "${VERSION}"
+
+          comms-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/comms-svc
+              tag: "${VERSION}"
+
+          i18n-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/i18n-svc
+              tag: "${VERSION}"
+
+          tutor-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/tutor-svc
+              tag: "${VERSION}"
+
+          status-page-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/status-page-svc
+              tag: "${VERSION}"
+
+          research-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/research-svc
+              tag: "${VERSION}"
+
+          research-worker:
+            image:
+              repository: ${IMAGE_PREFIX}/research-svc
+              tag: "${VERSION}"
+
+          ai-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/ai-svc
+              tag: "${VERSION}"
+
+          brain-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/brain-svc
+              tag: "${VERSION}"
+
+          assessment-svc:
+            image:
+              repository: ${IMAGE_PREFIX}/assessment-svc
+              tag: "${VERSION}"
+
+          web:
+            image:
+              repository: ${IMAGE_PREFIX}/web
+              tag: "${VERSION}"
+
+          marketing:
+            image:
+              repository: ${IMAGE_PREFIX}/marketing
+              tag: "${VERSION}"
+          EOYAML
+
+          echo "Generated image tag overrides:"
+          cat /tmp/image-tags.yaml
+
+      - name: Build Helm dependencies
+        run: helm dependency build infra/helm
+
+      - name: Clear stuck Helm releases
+        run: |
+          # Check if there's a pending/stuck release and roll back if needed
+          STATUS=$(helm status aivo-learning-saas -n aivo -o json 2>/dev/null | jq -r '.info.status' 2>/dev/null || echo "not-found")
+          echo "Current Helm release status: $STATUS"
+          if [ "$STATUS" = "pending-install" ] || [ "$STATUS" = "pending-upgrade" ] || [ "$STATUS" = "pending-rollback" ]; then
+            echo "::warning::Found stuck Helm release in '$STATUS' state — rolling back"
+            helm rollback aivo-learning-saas 0 -n aivo --timeout 5m || \
+              helm uninstall aivo-learning-saas -n aivo --no-hooks 2>/dev/null || true
+          fi
+
+      - name: Pre-flight checks
+        run: |
+          echo "Checking required Kubernetes secrets..."
+          MISSING=0
+          for secret in db-secrets jwt-secrets identity-secrets ghcr-pull-secret; do
+            if kubectl get secret "$secret" -n aivo >/dev/null 2>&1; then
+              echo "  OK: $secret"
+            else
+              echo "  MISSING: $secret"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+          if [ "$MISSING" -gt 0 ]; then
+            echo "::error::$MISSING required Kubernetes secret(s) missing in namespace 'aivo'"
+            echo "Create them before deploying. See infra/helm/templates/deployment.yaml for required keys."
+            exit 1
+          fi
+
+      - name: Run database migrations
+        run: |
+          # Clean up any leftover migration pod from a previous run
+          kubectl delete pod db-migrate -n aivo --ignore-not-found 2>/dev/null || true
+          sleep 5
+
+          # Create a temporary pod inside the cluster with DATABASE_URL from secrets
+          cat <<'EOF' | kubectl apply -f -
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: db-migrate
+            namespace: aivo
+          spec:
+            restartPolicy: Never
+            containers:
+              - name: db-migrate
+                image: node:22-slim
+                command: ["sleep", "600"]
+                env:
+                  - name: DATABASE_URL
+                    valueFrom:
+                      secretKeyRef:
+                        name: db-secrets
+                        key: database-url
+          EOF
+
+          echo "Waiting for migration pod to be ready..."
+          kubectl wait --for=condition=Ready pod/db-migrate -n aivo --timeout=120s
+
+          # Create target directory and copy migration files into the pod
+          kubectl exec db-migrate -n aivo -- mkdir -p /app
+          kubectl cp packages/db/drizzle db-migrate:/app/drizzle -n aivo
+          kubectl cp packages/db/drizzle.config.ts db-migrate:/app/drizzle.config.ts -n aivo
+
+          # Install drizzle-kit and run migrations
+          kubectl exec db-migrate -n aivo -- sh -c '
+            cd /app
+            npm init -y >/dev/null 2>&1
+            npm install drizzle-kit@0.30.5 drizzle-orm@0.44.2 postgres@3.4.5 >/dev/null 2>&1
+            npx drizzle-kit migrate 2>&1
+          '
+
+          echo "Database migrations completed successfully"
+
+      - name: Cleanup migration pod
+        if: always()
+        run: kubectl delete pod db-migrate -n aivo --ignore-not-found
+
+      - name: Helm upgrade (staging)
+        id: helm-upgrade
+        run: |
+          helm upgrade --install aivo-learning-saas infra/helm \
+            -f infra/helm/values/hetzner.yaml \
+            -f /tmp/image-tags.yaml \
+            -n aivo --create-namespace \
+            --timeout 10m \
+            --wait
+
+      - name: Diagnose failed rollout
+        if: failure() && steps.helm-upgrade.outcome == 'failure'
+        run: |
+          echo "=== Helm upgrade failed — collecting diagnostics ==="
+          echo ""
+          echo "--- Pod statuses ---"
+          kubectl get pods -n aivo -o wide --no-headers | sort
+          echo ""
+          echo "--- Non-running pods ---"
+          NOT_RUNNING=$(kubectl get pods -n aivo --no-headers | grep -v Running | grep -v Completed || true)
+          if [ -n "$NOT_RUNNING" ]; then
+            echo "$NOT_RUNNING"
+            echo ""
+            echo "--- Describe non-running pods ---"
+            for pod in $(echo "$NOT_RUNNING" | awk '{print $1}'); do
+              echo ""
+              echo "=== kubectl describe pod $pod ==="
+              kubectl describe pod "$pod" -n aivo | tail -30
+              echo ""
+              echo "=== kubectl logs $pod (last 30 lines) ==="
+              kubectl logs "$pod" -n aivo --tail=30 2>/dev/null || echo "(no logs)"
+            done
+          else
+            echo "(all pods running)"
+          fi
+          echo ""
+          echo "--- Recent events (last 5 min) ---"
+          kubectl get events -n aivo --sort-by=.metadata.creationTimestamp | tail -40
+
+      - name: Verify rollout status
+        if: success()
+        run: |
+          SERVICES=(
+            identity-svc billing-svc family-svc integrations-svc admin-svc
+            learning-svc engagement-svc comms-svc i18n-svc tutor-svc
+            status-page-svc research-svc research-worker assessment-svc
+            ai-svc brain-svc web marketing
+          )
+
+          FAILED=0
+          for svc in "${SERVICES[@]}"; do
+            echo "Checking rollout: $svc..."
+            if kubectl rollout status deployment/"$svc" -n aivo --timeout=180s 2>/dev/null; then
+              echo "  OK: $svc rolled out successfully"
+            else
+              echo "  FAILED: $svc rollout did not complete"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::error::$FAILED deployment(s) failed rollout verification"
+            kubectl get pods -n aivo --no-headers | grep -v Running || true
+            exit 1
+          fi
+          echo "All deployments rolled out successfully"
+
+      - name: Staging smoke tests
+        run: |
+          echo "=== Staging Smoke Tests ==="
+          echo ""
+
+          # Check pod readiness
+          TOTAL_PODS=$(kubectl get pods -n aivo --no-headers | wc -l)
+          READY_PODS=$(kubectl get pods -n aivo --no-headers | grep -c "Running" || true)
+          NOT_READY=$(kubectl get pods -n aivo --no-headers | grep -v "Running" | grep -v "Completed" || true)
+
+          echo "Total pods: $TOTAL_PODS"
+          echo "Running:    $READY_PODS"
+
+          if [ -n "$NOT_READY" ]; then
+            echo ""
+            echo "Non-running pods:"
+            echo "$NOT_READY"
+          fi
+
+          # Check restart counts
+          HIGH_RESTARTS=$(kubectl get pods -n aivo -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .status.containerStatuses[*]}{.restartCount}{end}{"\n"}{end}' \
+            | awk -F'\t' '$2 > 3 {print $1 " (restarts: " $2 ")"}')
+
+          if [ -n "$HIGH_RESTARTS" ]; then
+            echo ""
+            echo "::warning::Pods with high restart counts (>3):"
+            echo "$HIGH_RESTARTS"
+          fi
+
+          # Check Ready condition on all deployments
+          FAIL=0
+          DEPLOYMENTS=$(kubectl get deployments -n aivo -o jsonpath='{.items[*].metadata.name}')
+          for dep in $DEPLOYMENTS; do
+            READY=$(kubectl get deployment "$dep" -n aivo -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+            DESIRED=$(kubectl get deployment "$dep" -n aivo -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
+            if [ "${READY:-0}" -lt "${DESIRED:-1}" ]; then
+              echo "UNHEALTHY: $dep — ready=$READY desired=$DESIRED"
+              FAIL=1
+            else
+              echo "HEALTHY:   $dep — ready=$READY/$DESIRED"
+            fi
+          done
+
+          if [ "$FAIL" -eq 1 ]; then
+            echo ""
+            echo "::error::One or more deployments are not fully ready"
+            exit 1
+          fi
+
+          echo ""
+          echo "=== Staging smoke tests passed ==="
+
+          # Step summary
+          echo "## Staging Deploy Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ needs.resolve.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Namespace:** \`aivo\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Pods:** $READY_PODS/$TOTAL_PODS running" >> $GITHUB_STEP_SUMMARY
+
+  # ═════════════════════════════════════════════
+  # Stage 4a: Tag Images for Release
+  # ═════════════════════════════════════════════
+  tag-images:
+    name: "Tag: ${{ matrix.service }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [resolve, deploy-staging]
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        service:
+          - identity-svc
+          - billing-svc
+          - family-svc
+          - integrations-svc
+          - admin-svc
+          - learning-svc
+          - engagement-svc
+          - comms-svc
+          - i18n-svc
+          - tutor-svc
+          - status-page-svc
+          - research-svc
+          - assessment-svc
+          - ai-svc
+          - brain-svc
+          - web
+          - marketing
+
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.AIVO_GHCR_PUSH }}
+
+      - name: Re-tag image for release
+        run: |
+          SOURCE="${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ needs.resolve.outputs.version }}"
+          TARGET="${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:staging-verified"
+
+          echo "Pulling:  $SOURCE"
+          docker pull "$SOURCE"
+
+          echo "Tagging:  $TARGET"
+          docker tag "$SOURCE" "$TARGET"
+
+          echo "Pushing:  $TARGET"
+          docker push "$TARGET"
+
+          echo "Tagged ${{ matrix.service }}: ${{ needs.resolve.outputs.version }} → staging-verified"
+
+  # ═════════════════════════════════════════════
+  # Stage 4b: Create GitHub Release
+  # ═════════════════════════════════════════════
+  smoke-tests:
+    name: Post-Deploy Smoke Tests
+    needs: [resolve, deploy-staging]
+    uses: ./.github/workflows/smoke-tests.yml
+    with:
+      environment: staging
+      version: ${{ needs.resolve.outputs.version }}
+    secrets: inherit
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [resolve, deploy-staging, tag-images, smoke-tests]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          VERSION="${{ needs.resolve.outputs.version }}"
+
+          if [ -n "$PREV_TAG" ]; then
+            echo "Generating changelog since $PREV_TAG..."
+            CHANGELOG=$(git log "$PREV_TAG"..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          else
+            echo "No previous tag found, generating changelog from last 20 commits..."
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges -20)
+          fi
+
+          # Write to file for the release body
+          cat > /tmp/changelog.md << EOMD
+          ## Staging Deploy: ${VERSION}
+
+          **Commit:** \`${GITHUB_SHA}\`
+          **Branch:** \`${GITHUB_REF_NAME}\`
+          **Deployed:** $(date -u +"%Y-%m-%d %H:%M UTC")
+
+          ### Changes
+
+          ${CHANGELOG}
+
+          ### Images
+
+          All 15 service images tagged as \`${VERSION}\` and \`staging-verified\` on GHCR.
+          EOMD
+
+          echo "Changelog generated"
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.resolve.outputs.version }}"
+          TAG_NAME="staging-${VERSION}"
+
+          # Create tag
+          git tag -a "$TAG_NAME" -m "Staging deploy: $VERSION" || true
+
+          # Push tag
+          git push origin "$TAG_NAME" 2>/dev/null || true
+
+          # Create release
+          gh release create "$TAG_NAME" \
+            --title "Staging: ${VERSION}" \
+            --notes-file /tmp/changelog.md \
+            --prerelease \
+            --target "$GITHUB_SHA" || echo "::warning::Release creation skipped (may already exist)"

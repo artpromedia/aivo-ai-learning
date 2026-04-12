@@ -1,0 +1,175 @@
+name: Manual Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_version:
+        description: "Version to rollback to (e.g. v1.2.3) — leave empty to rollback to previous Helm revision"
+        required: false
+        type: string
+      helm_revision:
+        description: "Specific Helm revision number to rollback to (e.g. 5) — overrides target_version"
+        required: false
+        type: string
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: staging
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  RELEASE_NAME: aivo-learning-saas
+  NAMESPACE: aivo
+  IMAGE_PREFIX: ghcr.io/artpromedia
+
+jobs:
+  approval:
+    name: Rollback Approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: inputs.environment == 'production'
+    environment: production-approval
+
+    steps:
+      - name: Approval confirmed
+        run: |
+          echo "Production rollback approved"
+          echo "Initiated by: ${{ github.actor }}"
+          echo "Target version: ${{ inputs.target_version || 'previous revision' }}"
+          echo "Helm revision: ${{ inputs.helm_revision || 'auto' }}"
+
+  rollback:
+    name: "Rollback ${{ inputs.environment }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [approval]
+    if: |
+      always() &&
+      (needs.approval.result == 'success' || needs.approval.result == 'skipped')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.16.3"
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Show current state
+        run: |
+          echo "=== Current Helm Release ==="
+          helm history ${{ env.RELEASE_NAME }} -n ${{ env.NAMESPACE }} --max 5 2>/dev/null || echo "No release found"
+          echo ""
+          echo "=== Current Pod Status ==="
+          kubectl get pods -n ${{ env.NAMESPACE }} --no-headers 2>/dev/null | head -20
+
+      - name: Rollback via Helm revision
+        if: inputs.helm_revision != ''
+        run: |
+          echo "Rolling back to Helm revision ${{ inputs.helm_revision }}..."
+          helm rollback ${{ env.RELEASE_NAME }} ${{ inputs.helm_revision }} \
+            -n ${{ env.NAMESPACE }} \
+            --timeout 10m \
+            --wait
+          echo "Rollback to revision ${{ inputs.helm_revision }} complete"
+
+      - name: Rollback via version tag
+        if: inputs.helm_revision == '' && inputs.target_version != ''
+        run: |
+          VERSION="${{ inputs.target_version }}"
+          [[ ! "$VERSION" =~ ^v ]] && VERSION="v${VERSION}"
+
+          echo "Rolling back to version $VERSION..."
+
+          VALUES_FILE="infra/helm/values/hetzner.yaml"
+          if [ "${{ inputs.environment }}" = "production" ]; then
+            VALUES_FILE="infra/helm/values/hetzner-production.yaml"
+          fi
+
+          SERVICES=(
+            identity-svc billing-svc family-svc integrations-svc admin-svc
+            learning-svc engagement-svc comms-svc i18n-svc tutor-svc
+            status-page-svc research-svc assessment-svc ai-svc brain-svc
+            web marketing
+          )
+
+          IMAGE_TAGS=""
+          for svc in "${SERVICES[@]}"; do
+            IMAGE_TAGS="$IMAGE_TAGS --set ${svc}.image.repository=${{ env.IMAGE_PREFIX }}/${svc} --set ${svc}.image.tag=${VERSION}"
+          done
+
+          helm dependency build infra/helm
+          eval helm upgrade --install ${{ env.RELEASE_NAME }} infra/helm \
+            -f "$VALUES_FILE" \
+            $IMAGE_TAGS \
+            -n ${{ env.NAMESPACE }} \
+            --atomic \
+            --timeout 15m \
+            --wait
+
+          echo "Rollback to version $VERSION complete"
+
+      - name: Rollback to previous revision
+        if: inputs.helm_revision == '' && inputs.target_version == ''
+        run: |
+          echo "Rolling back to previous Helm revision..."
+          helm rollback ${{ env.RELEASE_NAME }} 0 \
+            -n ${{ env.NAMESPACE }} \
+            --timeout 10m \
+            --wait
+          echo "Rollback to previous revision complete"
+
+      - name: Verify rollback
+        run: |
+          echo "=== Post-Rollback Status ==="
+          helm status ${{ env.RELEASE_NAME }} -n ${{ env.NAMESPACE }}
+          echo ""
+
+          SERVICES=(
+            identity-svc billing-svc family-svc integrations-svc admin-svc
+            learning-svc engagement-svc comms-svc i18n-svc tutor-svc
+            status-page-svc research-svc assessment-svc
+            ai-svc brain-svc web marketing
+          )
+
+          FAIL=0
+          for svc in "${SERVICES[@]}"; do
+            if kubectl rollout status deployment/"$svc" -n ${{ env.NAMESPACE }} --timeout=120s 2>/dev/null; then
+              echo "OK: $svc"
+            else
+              echo "WARN: $svc rollout not complete"
+              FAIL=$((FAIL + 1))
+            fi
+          done
+
+          if [ "$FAIL" -gt 0 ]; then
+            echo "::warning::$FAIL service(s) may not have fully rolled out"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Manual Rollback — ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Initiated by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Target version:** \`${{ inputs.target_version || 'previous revision' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Helm revision:** \`${{ inputs.helm_revision || 'auto' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY

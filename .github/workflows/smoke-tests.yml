@@ -1,0 +1,122 @@
+name: Post-Deploy Smoke Tests
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Target environment (staging or production)"
+        required: true
+        type: string
+      version:
+        description: "Deployed version"
+        required: false
+        type: string
+        default: "unknown"
+
+jobs:
+  smoke:
+    name: "Smoke Tests (${{ inputs.environment }})"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Wait for stabilization (30s)
+        run: sleep 30
+
+      - name: Run health checks
+        run: |
+          echo "=== Post-Deploy Smoke Tests ==="
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Version: ${{ inputs.version }}"
+          echo ""
+
+          SERVICES=(
+            identity-svc billing-svc family-svc integrations-svc admin-svc
+            learning-svc engagement-svc comms-svc i18n-svc tutor-svc
+            status-page-svc research-svc assessment-svc
+            ai-svc brain-svc web marketing
+          )
+
+          FAIL=0
+          for svc in "${SERVICES[@]}"; do
+            READY_COUNT=$(kubectl get pods -n aivo -l app.kubernetes.io/name=$svc \
+              -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' 2>/dev/null \
+              | grep -c "True" 2>/dev/null || true)
+            READY_COUNT=${READY_COUNT:-0}
+
+            TOTAL_COUNT=$(kubectl get pods -n aivo -l app.kubernetes.io/name=$svc \
+              --no-headers 2>/dev/null | wc -l)
+
+            RESTARTS=$(kubectl get pods -n aivo -l app.kubernetes.io/name=$svc \
+              -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}' 2>/dev/null \
+              | tr ' ' '\n' | awk '{s+=$1}END{print s+0}')
+
+            STATUS="OK"
+            if [ "${READY_COUNT:-0}" -lt "${TOTAL_COUNT:-1}" ] && [ "${TOTAL_COUNT:-0}" -gt 0 ]; then
+              STATUS="NOT_READY"
+              FAIL=1
+            fi
+            if [ "${RESTARTS:-0}" -ge 3 ]; then
+              STATUS="CRASH_LOOP"
+              FAIL=1
+            fi
+
+            printf "%-25s ready=%s/%s restarts=%s [%s]\n" \
+              "$svc" "$READY_COUNT" "$TOTAL_COUNT" "$RESTARTS" "$STATUS"
+          done
+
+          echo ""
+          if [ "$FAIL" -eq 1 ]; then
+            echo "::error::Smoke tests FAILED — one or more services unhealthy"
+            exit 1
+          fi
+          echo "All services healthy"
+
+      - name: Verify critical endpoints via port-forward
+        run: |
+          kubectl port-forward -n aivo svc/identity-svc 13001:3001 &
+          PF_PID=$!
+          sleep 5
+
+          FAIL=0
+
+          check() {
+            local name="$1" url="$2" expected="$3"
+            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null || echo "000")
+            if [ "$STATUS" = "$expected" ]; then
+              echo "OK: $name → HTTP $STATUS"
+            else
+              echo "FAIL: $name → HTTP $STATUS (expected $expected)"
+              FAIL=1
+            fi
+          }
+
+          check "health" "http://localhost:13001/health" "200"
+          check "docs"   "http://localhost:13001/docs"   "200"
+          check "csrf"   "http://localhost:13001/csrf-token" "200"
+
+          kill $PF_PID 2>/dev/null || true
+
+          if [ "$FAIL" -eq 1 ]; then
+            echo "::error::Endpoint smoke tests failed"
+            exit 1
+          fi
+          echo "All endpoint checks passed"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Smoke Tests — ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,9 @@
+﻿ALTER TABLE parent_assessments ALTER COLUMN district_id DROP NOT NULL;
+ALTER TABLE parent_assessments ALTER COLUMN child_id DROP NOT NULL;
+ALTER TABLE parent_assessments ALTER COLUMN status DROP NOT NULL;
+ALTER TABLE parent_assessments ALTER COLUMN assessment_mode DROP NOT NULL;
+ALTER TABLE parent_assessments ALTER COLUMN has_iep DROP NOT NULL;
+ALTER TABLE parent_assessments ALTER COLUMN has_504 DROP NOT NULL;
+ALTER TABLE parent_assessments ALTER COLUMN has_other_disability DROP NOT NULL;
+ALTER TABLE parent_assessments ALTER COLUMN disability_categories DROP NOT NULL;
+ALTER TABLE parent_assessments ALTER COLUMN preferred_language DROP NOT NULL;

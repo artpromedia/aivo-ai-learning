@@ -1,0 +1,40 @@
+name: Marketing Deploy (Production)
+
+on:
+  release:
+    types: [published]
+    tags:
+      - "marketing-v*"
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: |
+          pnpm --filter @aivo/brand build
+          pnpm --filter @aivo/ui build
+          pnpm --filter @aivo/marketing build
+
+      - name: Build Docker image
+        run: |
+          docker build -f apps/marketing/Dockerfile -t aivo-marketing:${{ github.ref_name }} .
+          docker tag aivo-marketing:${{ github.ref_name }} aivo-marketing:latest
+
+      - name: Deploy to production
+        run: echo "Deploy to production (configure with your container registry and hosting provider)"
+
+      - name: Post-deploy verification
+        run: echo "Run smoke tests against production URL"

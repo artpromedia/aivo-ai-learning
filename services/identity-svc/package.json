@@ -1,0 +1,30 @@
+{
+  "name": "@aivo/identity-svc",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@aivo/brand": "workspace:*",
+    "@aivo/db": "workspace:*",
+    "@aivo/events": "workspace:*",
+    "@aivo/observability": "workspace:*",
+    "@aivo/security": "workspace:*",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.0.0",
+    "@fastify/rate-limit": "^10.2.2",
+    "@fastify/swagger": "^9.6.0",
+    "@fastify/swagger-ui": "^5.2.2",
+    "argon2": "^0.44.0",
+    "drizzle-orm": "^0.44.2",
+    "fastify": "^5.3.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.4",
+    "typescript": "^5.7.3"
+  }
+}
