@@ -1,0 +1,173 @@
+"use client";
+import { useAuth } from "@/providers/auth-provider";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
+
+interface AvatarItem {
+  id: string;
+  name: string;
+  category: string;
+  rarity: string;
+  coinPrice: number;
+  gemPrice: number;
+  levelRequired: number;
+  imageUrl: string;
+  isFree: boolean;
+}
+
+interface CurrencyBalance {
+  coins: number;
+  gems: number;
+}
+
+const CATEGORY_ICONS: Record<string, string> = {
+  hair: "💇",
+  outfits: "👕",
+  accessories: "🎀",
+  backgrounds: "🖼️",
+  emotes: "😎",
+  skin_tones: "🎨",
+};
+
+const RARITY_COLORS: Record<string, string> = {
+  common: "#94a3b8",
+  rare: "#3b82f6",
+  epic: "#8b5cf6",
+  legendary: "#f59e0b",
+};
+
+export default function ShopPage() {
+  const { user, accessToken, logout, loading } = useAuth();
+  const router = useRouter();
+  const [items, setItems] = useState<AvatarItem[]>([]);
+  const [owned, setOwned] = useState<string[]>([]);
+  const [balance, setBalance] = useState<CurrencyBalance>({ coins: 0, gems: 0 });
+  const [category, setCategory] = useState("all");
+
+  useEffect(() => {
+    if (!loading && !user) router.push("/login");
+  }, [user, loading, router]);
+
+  const fetchData = useCallback(() => {
+    if (!accessToken || !user) return;
+    fetch("/api/engagement/shop/items", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setItems)
+      .catch(() => {});
+
+    fetch(`/api/engagement/shop/inventory/${user.id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((inv: { itemId: string }[]) => setOwned(inv.map((i) => i.itemId)))
+      .catch(() => {});
+
+    fetch(`/api/engagement/currency/${user.id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : { balance: { coins: 0, gems: 0 } }))
+      .then((d: { balance: CurrencyBalance }) => setBalance(d.balance))
+      .catch(() => {});
+  }, [accessToken, user]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const purchase = async (itemId: string, currencyType: "coins" | "gems") => {
+    if (!accessToken || !user) return;
+    const res = await fetch("/api/engagement/shop/purchase", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ learnerId: user.id, itemId, currencyType }),
+    });
+    if (res.ok) fetchData();
+  };
+
+  if (loading || !user) return null;
+
+  const categories = ["all", ...new Set(items.map((i) => i.category))];
+  const filtered = category === "all" ? items : items.filter((i) => i.category === category);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-yellow-50">
+      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
+        <div className="flex items-center gap-4">
+          <span className="font-bold text-amber-600">{balance.coins} coins</span>
+          <span className="font-bold text-purple-600">{balance.gems} gems</span>
+          <button onClick={() => router.push("/dashboard/learner")}
+            className="text-sm text-primary font-semibold hover:underline">Back</button>
+          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">Exit</button>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-8 py-12 space-y-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-heading font-bold text-slate-900">🛒 Avatar Shop</h1>
+          <p className="text-slate-500 font-semibold mt-2">Customize your avatar with coins and gems!</p>
+        </div>
+
+        <div className="flex gap-2 justify-center flex-wrap">
+          {categories.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              className={`px-4 py-2 rounded-full text-sm font-bold transition ${
+                category === c ? "bg-primary text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {c === "all" ? "All" : `${CATEGORY_ICONS[c] || "📦"} ${c}`}
+            </button>
+          ))}
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
+            <div className="text-4xl mb-4">🏪</div>
+            <p className="text-slate-500 font-semibold">No items available yet. Check back soon!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filtered.map((item) => {
+              const isOwned = owned.includes(item.id);
+              return (
+                <div key={item.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm text-center space-y-2">
+                  <div className="text-4xl">{CATEGORY_ICONS[item.category] || "📦"}</div>
+                  <div className="font-heading font-bold text-sm text-slate-900">{item.name}</div>
+                  <div className="text-xs font-semibold capitalize" style={{ color: RARITY_COLORS[item.rarity] || "#94a3b8" }}>
+                    {item.rarity}
+                  </div>
+                  {isOwned ? (
+                    <div className="text-xs font-bold text-green-600 bg-green-50 rounded-full px-3 py-1 inline-block">Owned</div>
+                  ) : item.isFree ? (
+                    <button onClick={() => purchase(item.id, "coins")}
+                      className="px-4 py-1.5 rounded-full bg-green-500 text-white text-xs font-bold hover:bg-green-600 transition">
+                      Free!
+                    </button>
+                  ) : (
+                    <div className="flex gap-2 justify-center">
+                      {item.coinPrice > 0 && (
+                        <button onClick={() => purchase(item.id, "coins")}
+                          className="px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold hover:bg-amber-200 transition">
+                          {item.coinPrice} coins
+                        </button>
+                      )}
+                      {item.gemPrice > 0 && (
+                        <button onClick={() => purchase(item.id, "gems")}
+                          className="px-3 py-1.5 rounded-full bg-purple-100 text-purple-700 text-xs font-bold hover:bg-purple-200 transition">
+                          {item.gemPrice} gems
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

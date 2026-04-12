@@ -1,0 +1,83 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10"
+
+jobs:
+  build-node:
+    name: Build All Node Services
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages and services
+        run: pnpm build
+
+  build-python-brain:
+    name: Validate Brain Service
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r services/brain-svc/requirements.txt
+
+      - name: Validate Python compilation
+        run: |
+          cd services/brain-svc
+          python -m py_compile src/brain_svc/main.py
+          python -m py_compile src/brain_svc/routes/brain.py
+
+  build-python-ai:
+    name: Validate AI Service
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          if [ -f services/ai-svc/requirements.txt ]; then
+            pip install -r services/ai-svc/requirements.txt
+          fi
+
+      - name: Validate Python compilation
+        run: |
+          if [ -f services/ai-svc/src/main.py ]; then
+            cd services/ai-svc && python -m py_compile src/main.py
+          fi

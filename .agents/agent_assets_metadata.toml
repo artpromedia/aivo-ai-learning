@@ -1,0 +1,134 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "Hsn2y3sDFMbxWxdpX8f7c"
+uri = "file://apps/web/public/assets/shop/astronaut-helmet.png"
+type = "image"
+title = "astronaut helmet shop item"
+
+[[generated]]
+id = "ebOvh9gKM8qtQHn-eGvVt"
+uri = "file://apps/web/public/assets/shop/rainbow-cape.png"
+type = "image"
+title = "rainbow cape shop item"
+
+[[generated]]
+id = "hOTE4egBeDJ6iycqU1mrb"
+uri = "file://apps/web/public/assets/shop/dragon-wings.png"
+type = "image"
+title = "dragon wings shop item"
+
+[[generated]]
+id = "jBNy3ZiP8lr0w0nYaSkDG"
+uri = "file://apps/web/public/assets/shop/neon-sneakers.png"
+type = "image"
+title = "neon sneakers shop item"
+
+[[generated]]
+id = "pQRsmI_tXEL2cPcOeooeD"
+uri = "file://apps/web/public/assets/shop/star-trail.png"
+type = "image"
+title = "star trail effect item"
+
+[[generated]]
+id = "q7DLiCrVosUXCuvPqz5Iq"
+uri = "file://apps/web/public/assets/shop/spiky-purple-hair.png"
+type = "image"
+title = "spiky purple hair item"
+
+[[generated]]
+id = "cW5isKerSjp2jRGWm_nOv"
+uri = "file://apps/web/public/assets/shop/galaxy-outfit.png"
+type = "image"
+title = "galaxy outfit shop item"
+
+[[generated]]
+id = "WhDiuVgOmTrR4gNq4aOlG"
+uri = "file://apps/web/public/assets/shop/sparkle-effect.png"
+type = "image"
+title = "sparkle effect item"
+
+[[generated]]
+id = "12z5ffPs6-myDUvjgSlEg"
+uri = "file://apps/web/public/images/tutors/nova.png"
+type = "image"
+title = "Nova math tutor avatar"
+
+[[generated]]
+id = "xxy8LUNEpT5nC3l-h3Min"
+uri = "file://apps/web/public/images/tutors/sage.png"
+type = "image"
+title = "Sage ELA tutor avatar"
+
+[[generated]]
+id = "pT7qFvGwnXoIqidSnY7E5"
+uri = "file://apps/web/public/images/tutors/spark.png"
+type = "image"
+title = "Spark science tutor avatar"
+
+[[generated]]
+id = "nv6Q7Esh0CZ-3xGFmSAwU"
+uri = "file://apps/web/public/images/tutors/chrono.png"
+type = "image"
+title = "Chrono history tutor avatar"
+
+[[generated]]
+id = "oqJ3vJgExOXuTlk7hsDVK"
+uri = "file://apps/web/public/images/tutors/pixel.png"
+type = "image"
+title = "Pixel coding tutor avatar"
+
+[[generated]]
+id = "sBZIbkaTjQBZ5C4I9rEWq"
+uri = "file://apps/web/public/images/tutors/echo.png"
+type = "image"
+title = "Echo speech tutor avatar"
+
+[[generated]]
+id = "wgJe_ASknijxDVOYMVHwb"
+uri = "file://apps/web/public/images/tutors/harmony.png"
+type = "image"
+title = "Harmony SEL tutor avatar"
+
+[[generated]]
+id = "NvNli9AbE257daP5OAG_5"
+uri = "file://apps/web/public/images/tutors/atlas.png"
+type = "image"
+title = "Atlas geography tutor avatar"
+
+[[generated]]
+id = "8-aUAo8v_bz4OLS0z4wb9"
+uri = "file://apps/web/public/images/tutors/cadence.png"
+type = "image"
+title = "Cadence music tutor avatar"
+
+[[generated]]
+id = "78z-Qs5QXBd_Aa1xxSjW7"
+uri = "file://apps/web/public/images/tutors/vigor.png"
+type = "image"
+title = "Vigor PE tutor avatar"
+
+[[generated]]
+id = "_6Dtds_drYoDcy-d2Q9I0"
+uri = "file://apps/web/public/images/tutors/lingua.png"
+type = "image"
+title = "Lingua language tutor avatar"
+
+[[generated]]
+id = "P7dZWXY-06Rc5_oJPksyj"
+uri = "file://apps/web/public/images/tutors/forge.png"
+type = "image"
+title = "Forge vocational tutor avatar"
+
+[[generated]]
+id = "WBeL2tvDJaUS5myCCX2hZ"
+uri = "file://apps/web/public/images/tutors/compass.png"
+type = "image"
+title = "Compass life skills tutor avatar"
+
+[[generated]]
+id = "80ypvbJlrnjI9Z7htDgzE"
+uri = "file://apps/web/public/images/tutors/muse.png"
+type = "image"
+title = "Muse art tutor avatar"

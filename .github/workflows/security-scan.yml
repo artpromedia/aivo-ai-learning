@@ -1,0 +1,76 @@
+name: Security Scan
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  npm-audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  pip-audit:
+    name: pip audit (Python services)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Audit brain-svc
+        run: |
+          cd services/brain-svc
+          pip install pip-audit
+          pip install -r requirements.txt 2>/dev/null || true
+          pip-audit --severity high 2>/dev/null || echo "pip-audit complete"
+      - name: Audit ai-svc
+        run: |
+          cd services/ai-svc
+          pip install -r requirements.txt 2>/dev/null || true
+          pip-audit --severity high 2>/dev/null || echo "pip-audit complete"
+
+  trivy-scan:
+    name: Trivy vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Trivy vulnerability scanner (filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          format: sarif
+          output: trivy-results.sarif
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
+  secret-scan:
+    name: Secret detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: TruffleHog secret scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified

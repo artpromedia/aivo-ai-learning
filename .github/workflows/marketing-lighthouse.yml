@@ -1,0 +1,35 @@
+name: Marketing Lighthouse CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/marketing/**"
+      - "packages/brand/**"
+      - "packages/ui/**"
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: |
+          pnpm --filter @aivo/brand build
+          pnpm --filter @aivo/ui build
+          pnpm --filter @aivo/marketing build
+
+      - name: Serve and audit
+        run: |
+          npx serve apps/marketing/out -p 3000 &
+          sleep 3
+          npx @lhci/cli autorun --config=apps/marketing/lighthouserc.js

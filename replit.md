@@ -1,0 +1,200 @@
+# AIVO AI Learning Platform v3
+
+## Overview
+AI-powered adaptive learning platform for neurodiverse children. Features Brain-Clone architecture, 14 AI tutors, 5 functioning levels, and sensory profiles engine.
+
+## Architecture
+
+### Monorepo Structure (Turborepo + pnpm)
+```
+apps/web           — Next.js 15 frontend (port 5000)
+packages/db        — Drizzle ORM schema (PostgreSQL 16)
+packages/brand     — Design tokens, tutor catalog, roles
+packages/events    — Typed NATS event definitions
+packages/observability — Pino structured logging
+packages/security  — JWT RS256 sign/verify (jose)
+services/identity-svc  — Fastify auth service (port 3001)
+services/assessment-svc — Fastify assessment API (port 3003)
+services/brain-svc     — Python FastAPI brain clone (port 3002)
+services/ai-svc        — Python FastAPI LLM gateway (port 3004)
+services/learning-svc  — Fastify lesson sessions (port 3005)
+services/tutor-svc     — Fastify tutor management (port 3006)
+services/family-svc    — Fastify family collaboration + IEP (port 3007)
+services/engagement-svc — Fastify gamification engine (port 3008)
+services/billing-svc   — Fastify billing/subscriptions (port 3009)
+services/comms-svc     — Fastify notifications/email/push (port 3010)
+services/i18n-svc      — Fastify internationalization (port 3011)
+services/integrations-svc — Fastify 3rd-party integrations (port 3012)
+services/admin-svc     — Fastify platform admin (port 3013)
+services/status-page-svc — Fastify system health/status (port 3014)
+services/research-svc  — Fastify analytics/research (port 3015)
+```
+
+### Tech Stack
+- **Frontend**: Next.js 15 + Tailwind CSS v4 + TypeScript
+- **Backend (TS)**: Fastify 5 + Drizzle ORM + PostgreSQL 16
+- **Backend (Python)**: FastAPI + LiteLLM + Uvicorn
+- **Auth**: JWT RS256 (jose library), refresh tokens, PIN login
+- **Database**: PostgreSQL 16 with JSONB brain states
+- **Styling**: AIVO brand system (purple primary #7C3AED), game-themed Fredoka + Nunito fonts
+
+### Key Concepts
+- **14 Tutors**: 7 core (Nova/Math, Sage/ELA, Spark/Science, Chrono/History, Pixel/Coding, Echo/Speech, Harmony/SEL) + 7 expansion (Atlas/Geography, Cadence/Music, Vigor/PE, Lingua/Languages, Forge/STEM Design, Compass/Life Skills, Muse/Creative Writing). All have full system prompts with functioning-level adaptations. Compass includes transition planning module (ages 14-22). Lingua includes bilingual scaffolding with code-switching awareness.
+- **Tutor Avatars**: AI-generated photorealistic portraits in `apps/web/public/images/tutors/` (14 PNG files, 3:4 aspect ratio)
+- **Parallax Tutor Carousel**: Landing page features auto-rotating parallax carousel with depth-stacked cards, center detail panel, and pause/play control
+- **5 Functioning Levels**: STANDARD → SUPPORTED → LOW_VERBAL → NON_VERBAL → PRE_SYMBOLIC
+- **7 Roles**: PARENT, LEARNER, TEACHER, CAREGIVER, THERAPIST, DISTRICT_ADMIN, PLATFORM_ADMIN
+- **Brain Clone**: Assessment → Level routing → Brain state creation → Versioned snapshots → Rollback
+
+### Running Services
+1. **Start application** (port 5000): Next.js frontend
+2. **Identity Service** (ports 3001, 3003, 3005, 3006, 3007, 3008): Identity + Assessment + Learning + Tutor + Family + Engagement services
+3. **Brain Service** (port 3002): Python FastAPI brain-svc
+4. **ai-svc** (port 3004): Python FastAPI LLM gateway (start separately)
+
+### Database
+- Schema managed by Drizzle ORM in `packages/db/src/schema/`
+- Migrations in `packages/db/drizzle/`
+- Seed: `pnpm --filter @aivo/db exec tsx src/seed.ts`
+
+### API Routes (proxied via Next.js rewrites)
+- `POST /api/auth/register` — Register new user
+- `POST /api/auth/login` — Email login
+- `POST /api/auth/pin-login` — Learner PIN login
+- `POST /api/auth/refresh` — Refresh access token
+- `GET /api/users/me` — Current user profile
+- `GET /api/users/learners` — List learners
+- `POST /api/users/learners` — Create learner (with COPPA consent + curriculum auto-detection)
+- `GET /api/curriculum/lookup?zipCode=&country=` — Lookup curriculum by zip/country
+- `POST /api/assessments/parent` — Parent assessment → functioning level (49 questions, 11 categories)
+- `POST /api/brain/clone` — Clone brain state
+- `GET /api/brain/:learnerId` — Get brain state
+- `POST /api/brain/:learnerId/rollback` — Rollback to snapshot
+- `POST /api/ai/generate` — Generate lesson/practice content via LLM
+- `POST /api/ai/tutor/chat` — Tutor chat completion
+- `POST /api/ai/generate-baseline` — Generate personalized baseline questions from parent assessment
+- `GET /api/assessments/learner/baseline/:learnerId` — Fetch AI-generated baseline questions for learner
+- `POST /api/learning/sessions` — Start lesson session
+- `POST /api/learning/sessions/:id/complete` — Complete session + mastery write-back
+- `GET /api/learning/gradebook/:learnerId` — Gradebook entries
+- `GET /api/learning/path/:learnerId/:subject` — Learning path
+- `GET /api/tutors/catalog` — Tutor catalog with bundles
+- `POST /api/tutors/subscribe` — Subscribe to individual tutor
+- `POST /api/tutors/subscribe-bundle` — Subscribe to tutor bundle
+- `POST /api/tutor/session/start` — Start tutor chat session
+- `POST /api/tutor/session/:id/message` — Send message in tutor chat
+- `POST /api/tutor/session/:id/complete` — Complete tutor session
+- `POST /api/tutors/homework/upload` — Upload homework (image OCR or text)
+- `GET /api/tutors/homework/learner/:learnerId` — List assignments
+- `GET /api/tutors/homework/:assignmentId` — Get assignment detail
+- `POST /api/tutors/homework/session/start` — Start homework help session
+- `POST /api/tutors/homework/session/:id/message` — Chat in homework session
+- `POST /api/tutors/homework/session/:id/complete` — Complete homework session
+- `POST /api/ai/homework/ocr` — OCR processing (ai-svc)
+- `POST /api/ai/homework/adapt` — Adapt problems to functioning level (ai-svc)
+- `POST /api/ai/homework/chat` — Homework chat completion (ai-svc)
+- `POST /api/engagement/xp/award` — Award XP with coin/gem rewards
+- `GET /api/engagement/profile/:learnerId` — Full engagement profile (XP, level, streak, badges, currency)
+- `POST /api/engagement/streak/update` — Update daily streak
+- `POST /api/engagement/streak/freeze` — Freeze streak (max 2/month)
+- `POST /api/engagement/badge/award` — Award badge with rarity
+- `GET /api/engagement/leaderboard/:scope` — Leaderboard (global/class/school)
+- `GET /api/engagement/currency/:learnerId` — Currency balance + transactions
+- `GET /api/engagement/shop/items` — Avatar shop catalog (50 items, 6 categories)
+- `GET /api/engagement/shop/inventory/:learnerId` — Learner's inventory
+- `POST /api/engagement/shop/purchase` — Purchase item with coins/gems
+- `POST /api/engagement/shop/equip` — Equip/unequip avatar item
+- `GET /api/engagement/quests/worlds` — Quest worlds (5 worlds)
+- `GET /api/engagement/quests/:worldKey` — Quest chapters for a world
+- `GET /api/engagement/quests/progress/:learnerId` — Quest progress
+- `POST /api/engagement/quests/start` — Start a quest
+- `POST /api/engagement/quests/complete` — Complete a quest
+- `POST /api/engagement/challenges/create` — Create multiplayer challenge
+- `POST /api/engagement/challenges/join` — Join with invite code
+- `POST /api/engagement/challenges/:challengeId/answer` — Submit answer in challenge
+- `GET /api/engagement/challenges/:challengeId` — Challenge detail + participants
+- `GET /api/engagement/challenges/learner/:learnerId` — Learner's challenges
+- `POST /api/engagement/sel/checkin` — SEL emotion check-in
+- `GET /api/engagement/sel/checkins/:learnerId` — Check-in history
+- `POST /api/engagement/break/log` — Log break activity
+- `GET /api/engagement/breaks/:learnerId` — Break activity history
+- `POST /api/engagement/lesson-plans/create` — Create lesson plan
+- `GET /api/engagement/lesson-plans/teacher` — Teacher's lesson plans
+- `GET /api/engagement/lesson-plans/learner/:learnerId` — Plans for a learner
+- `GET /api/engagement/lesson-plans/:planId` — Lesson plan detail
+- `PUT /api/engagement/lesson-plans/:planId` — Update lesson plan
+- `GET /api/admin/stats` — Admin dashboard stats (users, learners, tenants, role counts)
+- `GET /api/admin/users` — Admin user listing
+- `GET /api/admin/tenants` — Admin tenant listing
+- `GET /api/admin/learners` — Admin learner listing
+- `POST /api/family/collaboration/accept-invite` — Accept pending collaboration invites by email
+- `GET /api/family/collaboration/pending-invites` — List pending invites for current user
+- `POST /api/iep/parse` — AI-powered IEP document text parsing via ai-svc
+- `POST /api/ai/parse-iep` — AI IEP document parser (ai-svc direct)
+- `POST /api/learning/path/:learnerId/:subject/init` — Auto-initialize learning path
+- `POST /api/brain/:learnerId/engagement` — Sync engagement data to brain episodic memory
+- `GET /api/brain/:learnerId/context` — Full enriched Brain context (brain state + sensory + IEP + language profile)
+- `POST /api/brain/:learnerId/regression-check` — Detect ≥15% mastery regression with causal analysis
+- `POST /api/assessments/sensory-profile` — Create/update learner sensory profile (5 modalities)
+- `GET /api/assessments/sensory-profile/:learnerId` — Get learner sensory profile
+- `POST /api/family/transition/:learnerId` — Create/update IDEA transition plan (ages 14-22)
+- `GET /api/family/transition/:learnerId` — Get transition plan
+- `POST /api/family/language-profile/:learnerId` — Create/update language profile (multilingual brain)
+- `GET /api/family/language-profile/:learnerId` — Get language profile
+- `GET /api/family/data-export/:learnerId` — GDPR-compliant full learner data export (JSON)
+- `POST /api/tutor/session/:id/co-learn` — Activate parent co-learning mode in tutor session
+
+### Frontend Pages
+- `/` — Landing page (parallax tutor carousel)
+- `/login` — Email login + Learner PIN login
+- `/signup` — Parent registration
+- `/dashboard/parent` — Parent dashboard (learner cards with compact Brain Visualization, store link)
+- `/dashboard/parent/store` — Tutor Store (bundles + individual subscribe)
+- `/dashboard/parent/learner/[id]/assessment` — Parent Baseline Assessment (49 questions, 11 categories)
+- `/dashboard/parent/learner/[id]/sensory` — Sensory Profile Questionnaire (5 modalities: visual, auditory, tactile, vestibular, proprioceptive)
+- `/dashboard/parent/learner/[id]/gradebook` — Gradebook (mastery bars, sessions, XP)
+- `/dashboard/teacher` — Teacher dashboard (connected learners grid with Brain Visualization)
+- `/dashboard/caregiver` — Caregiver dashboard (connected learners grid with Brain Visualization)
+- `/dashboard/therapist` — Therapist dashboard (connected clients grid with Brain Visualization)
+- `/dashboard/learner` — Learner dashboard (gamification panel: XP/level/streak/badges/currency + tutor grid + navigation to quests/challenges/shop/leaderboard)
+- `/dashboard/learner/assessment` — Learner Baseline Assessment (dynamically generated from parent assessment via AI, fallback to 42 hardcoded questions across 7 subjects)
+- `/dashboard/learner/lesson/[tutorKey]` — Lesson Chat UI
+- `/dashboard/learner/homework` — Homework Helper (upload photo/paste text, assignment list)
+- `/dashboard/learner/homework/[sessionId]` — Homework Help Session (Socratic chat + problem sidebar)
+- `/dashboard/parent/[learnerId]/homework` — Parent Homework History (view child's homework activity)
+- `/dashboard/parent/learner/[id]/collaboration` — Learning Team (invite teacher/caregiver/therapist)
+- `/dashboard/parent/learner/[id]/recommendations` — Recommendation Inbox (approve/decline/adjust Brain recommendations)
+- `/dashboard/parent/learner/[id]/iep` — IEP Goal Tracking (progress bars, trends, report generation)
+- `/dashboard/learner/quests` — Quest Worlds (5 worlds: Nova, Sage, Spark, Chrono, Pixel)
+- `/dashboard/learner/challenges` — Multiplayer Challenges (create/join with invite codes)
+- `/dashboard/learner/shop` — Avatar Shop (50 items, 6 categories, coin/gem purchase)
+- `/dashboard/learner/leaderboard` — Leaderboard (global/class/school)
+- `/dashboard/admin` — Admin dashboard (live stats, service health, user/learner/tenant management)
+
+### Engagement System
+- **engagement-svc** (port 3008): XP engine (14 event types), level system (N²×100), streak engine with freeze support, badge engine with 4 rarity tiers, virtual currency (coins + gems), avatar shop, quests, multiplayer challenges, leaderboards, SEL check-ins, break activities, teacher lesson plans
+- **DB Schema**: 15 engagement tables in `packages/db/src/schema/engagement.ts`
+- **Seed Data**: 50 avatar items (6 categories), 25 quest chapters (5 worlds × 5 chapters)
+
+### Brain Visualization
+- **Component**: `apps/web/src/components/BrainVisualization.tsx`
+- **3 Views**: Brain (animated SVG neural net), RAI (safety checks), XAI (domain mastery breakdown)
+- **Integration**: Parent dashboard (compact, per learner card), Teacher/Caregiver/Therapist dashboards (compact, per connected learner)
+- **API**: `GET /api/brain/:learnerId` (JWT-protected via brain-svc auth)
+- **Connected Learners API**: `GET /api/family/collaboration/connected-learners` (returns learners linked to authenticated teacher/caregiver/therapist)
+
+### GitHub Repository
+- **New repo**: `artpromedia/aivo-ai-learning` (pushed Phase 0+1 — 125 files, 17,627 lines)
+- **Branch**: `main`
+
+### Security
+- Argon2id password hashing (via `argon2` npm package)
+- Refresh tokens stored as SHA-256 hashes in DB
+- PIN login scoped to parent's own learners only
+- Consent revocation requires ownership verification
+- Unique email constraint on users table
+
+### Environment
+- `DATABASE_URL` — PostgreSQL connection string
+- `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` — RS256 key pair (in .replit userenv)
+- `NEWBUILD` — GitHub PAT for artpromedia/aivo-ai-learning repo

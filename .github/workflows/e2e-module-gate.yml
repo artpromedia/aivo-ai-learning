@@ -1,0 +1,167 @@
+name: E2E Module Gate
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'services/**'
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'e2e/**'
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_ENV: test
+  BASE_URL: http://localhost:3000
+  API_BASE_URL: http://localhost:3101
+  BRAIN_API_URL: http://localhost:3102
+  DATABASE_URL: postgresql://aivo:aivo_test@localhost:5433/aivo_test
+  REDIS_URL: redis://localhost:6380
+  NATS_URL: nats://localhost:4223
+  CI: true
+
+jobs:
+  e2e-module-gate:
+    name: E2E Module Gate Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: aivo
+          POSTGRES_PASSWORD: aivo_test
+          POSTGRES_DB: aivo_test
+        options: >-
+          --health-cmd "pg_isready -U aivo"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6380:6379
+
+      nats:
+        image: nats:2
+        ports:
+          - 4223:4222
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @aivo/e2e exec playwright install --with-deps chromium
+
+      - name: Build services
+        run: pnpm --filter "./services/*" build
+
+      - name: Build web app
+        run: pnpm --filter web build
+
+      - name: Start services
+        run: |
+          pnpm --filter identity-svc start &
+          pnpm --filter brain-svc start &
+          pnpm --filter billing-svc start &
+          pnpm --filter tutor-svc start &
+          pnpm --filter learning-svc start &
+          pnpm --filter engagement-svc start &
+          pnpm --filter comms-svc start &
+          pnpm --filter web start &
+
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for services..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3101/health > /dev/null 2>&1; then
+              echo "identity-svc healthy"
+              break
+            fi
+            echo "Attempt $i/30..."
+            sleep 2
+          done
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3102/health > /dev/null 2>&1; then
+              echo "brain-svc healthy"
+              break
+            fi
+            echo "Attempt $i/30..."
+            sleep 2
+          done
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "web app healthy"
+              break
+            fi
+            echo "Attempt $i/30..."
+            sleep 2
+          done
+
+      - name: Run E2E tests
+        run: pnpm --filter @aivo/e2e test
+        env:
+          PROJECT_ROOT: ${{ github.workspace }}
+
+      - name: Run stub audit
+        if: always()
+        run: pnpm --filter @aivo/e2e exec tsx scripts/stub-audit.ts
+        env:
+          PROJECT_ROOT: ${{ github.workspace }}
+
+      - name: Run route verification
+        if: always()
+        run: pnpm --filter @aivo/e2e exec tsx scripts/route-verifier.ts
+        env:
+          PROJECT_ROOT: ${{ github.workspace }}
+
+      - name: Run dependency check
+        if: always()
+        run: pnpm --filter @aivo/e2e exec tsx scripts/dependency-check.ts
+
+      - name: Run module gate check
+        if: always()
+        run: pnpm --filter @aivo/e2e exec tsx scripts/module-gate.ts
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-reports
+          path: |
+            e2e/reports/
+            e2e/test-results/
+          retention-days: 14
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: e2e/reports/html/
+          retention-days: 14
