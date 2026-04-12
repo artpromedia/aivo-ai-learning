@@ -19,6 +19,14 @@ interface ServiceHealth {
   status: "healthy" | "unhealthy" | "checking";
 }
 
+interface Tenant {
+  id: string;
+  name: string;
+  type: string;
+  createdAt: string;
+  settings?: any;
+}
+
 const SERVICES = [
   { name: "identity-svc", port: 3001, healthPath: "/api/auth/health" },
   { name: "brain-svc", port: 3002, healthPath: "/api/brain/health" },
@@ -48,6 +56,12 @@ const LEVEL_COLORS: Record<string, string> = {
   PRE_SYMBOLIC: "bg-red-100 text-red-700",
 };
 
+const TENANT_TYPE_LABELS: Record<string, { label: string; color: string }> = {
+  B2C_FAMILY: { label: "Family", color: "bg-purple-100 text-purple-700" },
+  B2B_SCHOOL: { label: "School", color: "bg-blue-100 text-blue-700" },
+  B2B_DISTRICT: { label: "District", color: "bg-orange-100 text-orange-700" },
+};
+
 export default function AdminDashboard() {
   const { user, accessToken, logout, loading } = useAuth();
   const router = useRouter();
@@ -58,6 +72,16 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"overview" | "users" | "learners" | "tenants">("overview");
   const [allUsers, setAllUsers] = useState<AdminStats["recentUsers"]>([]);
   const [allLearners, setAllLearners] = useState<AdminStats["recentLearners"]>([]);
+  const [allTenants, setAllTenants] = useState<Tenant[]>([]);
+
+  const [districtName, setDistrictName] = useState("");
+  const [adminName, setAdminName] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const [createResult, setCreateResult] = useState<{ admin: { email: string; name: string }; temporaryPassword: string; district: { name: string } } | null>(null);
+
+  const isPlatformAdmin = user?.role === "PLATFORM_ADMIN";
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -100,8 +124,47 @@ export default function AdminDashboard() {
         .then((r) => r.json())
         .then(setAllLearners)
         .catch(() => {});
+    } else if (activeTab === "tenants") {
+      fetch("/api/admin/tenants", { headers: { Authorization: `Bearer ${accessToken}` } })
+        .then((r) => r.json())
+        .then(setAllTenants)
+        .catch(() => {});
     }
   }, [activeTab, accessToken]);
+
+  const handleCreateDistrict = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateError("");
+    setCreateResult(null);
+    setCreateLoading(true);
+    try {
+      const res = await fetch("/api/admin/create-district", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ districtName, adminName, adminEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCreateError(data.error || "Failed to create district");
+      } else {
+        setCreateResult(data);
+        setDistrictName("");
+        setAdminName("");
+        setAdminEmail("");
+        fetch("/api/admin/tenants", { headers: { Authorization: `Bearer ${accessToken}` } })
+          .then((r) => r.json())
+          .then(setAllTenants)
+          .catch(() => {});
+        fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
+          .then((r) => r.json())
+          .then(setStats)
+          .catch(() => {});
+      }
+    } catch {
+      setCreateError("Network error. Please try again.");
+    }
+    setCreateLoading(false);
+  };
 
   if (loading || !user) return null;
 
@@ -287,9 +350,108 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === "tenants" && (
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <h3 className="font-heading font-bold text-lg mb-4">Tenants</h3>
-            <p className="text-sm text-slate-400">Tenant management coming soon. Currently {stats?.totalTenants || 0} tenants registered.</p>
+          <div className="space-y-6">
+            {isPlatformAdmin && (
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+                <h3 className="font-heading font-bold text-lg mb-1">Create District Account</h3>
+                <p className="text-sm text-slate-500 mb-5">Set up an enterprise district subscription. A district admin account will be created with a temporary password to share with the district administrator.</p>
+
+                {createResult && (
+                  <div className="mb-5 p-4 rounded-lg bg-green-50 border border-green-200">
+                    <h4 className="font-semibold text-green-800 mb-2">District account created successfully</h4>
+                    <div className="text-sm text-green-700 space-y-1">
+                      <p><span className="font-medium">District:</span> {createResult.district.name}</p>
+                      <p><span className="font-medium">Admin:</span> {createResult.admin.name} ({createResult.admin.email})</p>
+                      <div className="mt-3 p-3 bg-white rounded-lg border border-green-300">
+                        <p className="text-xs text-slate-500 mb-1">Send these login credentials to the district administrator:</p>
+                        <p className="font-mono text-sm"><span className="font-medium">Email:</span> {createResult.admin.email}</p>
+                        <p className="font-mono text-sm"><span className="font-medium">Temporary Password:</span> {createResult.temporaryPassword}</p>
+                      </div>
+                      <p className="text-xs text-green-600 mt-2">The district admin should change their password after first login.</p>
+                    </div>
+                  </div>
+                )}
+
+                {createError && (
+                  <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm">{createError}</div>
+                )}
+
+                <form onSubmit={handleCreateDistrict} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">District / School System Name</label>
+                    <input
+                      type="text"
+                      value={districtName}
+                      onChange={(e) => setDistrictName(e.target.value)}
+                      required
+                      placeholder="e.g. Fairfax County Public Schools"
+                      className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">District Admin Name</label>
+                    <input
+                      type="text"
+                      value={adminName}
+                      onChange={(e) => setAdminName(e.target.value)}
+                      required
+                      placeholder="e.g. Dr. Jane Smith"
+                      className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">District Admin Email</label>
+                    <input
+                      type="email"
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                      required
+                      placeholder="e.g. admin@fcps.edu"
+                      className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-3">
+                    <button
+                      type="submit"
+                      disabled={createLoading}
+                      className="px-6 py-2.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition disabled:opacity-50 text-sm"
+                    >
+                      {createLoading ? "Creating..." : "Create District Account"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+              <h3 className="font-heading font-bold text-lg mb-4">All Tenants</h3>
+              {allTenants.length > 0 ? (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-slate-400 border-b">
+                      <th className="pb-2">Name</th>
+                      <th className="pb-2">Type</th>
+                      <th className="pb-2">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allTenants.map((t) => (
+                      <tr key={t.id} className="border-b border-slate-50">
+                        <td className="py-2 font-medium">{t.name}</td>
+                        <td className="py-2">
+                          <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${TENANT_TYPE_LABELS[t.type]?.color || "bg-slate-100 text-slate-500"}`}>
+                            {TENANT_TYPE_LABELS[t.type]?.label || t.type}
+                          </span>
+                        </td>
+                        <td className="py-2 text-slate-400">{new Date(t.createdAt).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-sm text-slate-400">No tenants found.</p>
+              )}
+            </div>
           </div>
         )}
       </main>

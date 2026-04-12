@@ -2,6 +2,8 @@ import { FastifyInstance } from "fastify";
 import { users, learners, tenants } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { eq, sql, desc } from "drizzle-orm";
+import argon2 from "argon2";
+import crypto from "crypto";
 
 async function requireAdmin(req: any, reply: any) {
   const auth = req.headers.authorization;
@@ -12,6 +14,22 @@ async function requireAdmin(req: any, reply: any) {
     const payload = await verifyJWT(auth.slice(7));
     if (!["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(payload.role as string)) {
       return reply.status(403).send({ error: "Admin access required" });
+    }
+    req.user = payload;
+  } catch {
+    return reply.status(401).send({ error: "Invalid token" });
+  }
+}
+
+async function requirePlatformAdmin(req: any, reply: any) {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith("Bearer ")) {
+    return reply.status(401).send({ error: "Missing authorization header" });
+  }
+  try {
+    const payload = await verifyJWT(auth.slice(7));
+    if (payload.role !== "PLATFORM_ADMIN") {
+      return reply.status(403).send({ error: "Platform admin access required" });
     }
     req.user = payload;
   } catch {
@@ -111,5 +129,60 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       curriculumFramework: learners.curriculumFramework,
       createdAt: learners.createdAt,
     }).from(learners).orderBy(desc(learners.createdAt)).limit(maxResults);
+  });
+
+  app.post("/api/admin/create-district", {
+    preHandler: requirePlatformAdmin,
+    schema: {
+      tags: ["Admin"],
+      body: {
+        type: "object",
+        required: ["districtName", "adminName", "adminEmail"],
+        properties: {
+          districtName: { type: "string", minLength: 1 },
+          adminName: { type: "string", minLength: 1 },
+          adminEmail: { type: "string", format: "email" },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { districtName, adminName, adminEmail } = req.body as any;
+
+    const existing = await db.select().from(users).where(eq(users.email, adminEmail)).limit(1);
+    if (existing.length > 0) {
+      return reply.status(409).send({ error: "A user with this email already exists" });
+    }
+
+    const tempPassword = crypto.randomBytes(6).toString("base64url");
+
+    const [tenant] = await db.insert(tenants).values({
+      name: districtName,
+      type: "B2B_DISTRICT",
+      settings: { plan: "enterprise", setupComplete: false },
+    }).returning();
+
+    const [districtAdmin] = await db.insert(users).values({
+      tenantId: tenant.id,
+      email: adminEmail,
+      passwordHash: await argon2.hash(tempPassword),
+      name: adminName,
+      role: "DISTRICT_ADMIN",
+    }).returning();
+
+    return {
+      district: {
+        id: tenant.id,
+        name: tenant.name,
+        type: tenant.type,
+        createdAt: tenant.createdAt,
+      },
+      admin: {
+        id: districtAdmin.id,
+        name: districtAdmin.name,
+        email: districtAdmin.email,
+        role: districtAdmin.role,
+      },
+      temporaryPassword: tempPassword,
+    };
   });
 }
