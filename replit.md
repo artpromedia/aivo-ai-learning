@@ -194,7 +194,9 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Engine**: `useDiscoveryEngine.ts` — Adaptive difficulty (easy→medium→hard based on chapter performance ≥80%/≤40%), functioning-level-aware chapter counts (STANDARD=6, SUPPORTED=5, LOW_VERBAL=4, NON_VERBAL=3, PRE_SYMBOLIC=0)
 - **AI Integration**: Activities generated per chapter via `POST /api/assessments/learner/discovery/:learnerId/chapter` → ai-svc `build_discovery_adventure_prompt()`
 - **Fallback**: Rich local fallback activities for all 6 chapters when AI service unavailable
-- **Backend**: assessment-svc route + ai-svc `generate-discovery-chapter` endpoint
+- **Completion Flow**: `POST /api/assessments/learner/discovery/:learnerId/complete` → saves assessment_attempt with domain_scores → calls brain-svc `/api/brain/clone` with discovery results + parent assessment data
+- **Brain Creation**: clone_pipeline seeds initial mastery levels from discovery scores (raw_score × difficulty_multiplier), disability_signals from parent assessment, and episodic_memory with both assessment events
+- **Backend**: assessment-svc route + ai-svc `generate-discovery-chapter` endpoint + brain-svc enhanced clone pipeline
 
 ### The Stage (Learner Experience Engine)
 - **Architecture**: Full-screen immersive learning environment replacing the chat-based lesson UI

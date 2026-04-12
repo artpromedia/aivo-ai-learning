@@ -295,6 +295,34 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     setState(s => ({ ...s, phase: "results" }));
   }, []);
 
+  const submitResults = useCallback(async (): Promise<{ success: boolean; brain?: any; error?: string }> => {
+    if (!accessToken) return { success: false, error: "No auth token" };
+
+    try {
+      const res = await fetch(`/api/assessments/learner/discovery/${learnerId}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          chapterResults: state.chapterResults,
+          totalCorrect: state.totalCorrect,
+          totalAttempts: state.totalAttempts,
+          xpEarned: state.xpEarned,
+          responseLatencies: state.responseLatencies,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        return { success: true, brain: data.brain };
+      } else {
+        const err = await res.text();
+        return { success: false, error: err };
+      }
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  }, [accessToken, learnerId, state.chapterResults, state.totalCorrect, state.totalAttempts, state.xpEarned, state.responseLatencies]);
+
   return {
     state,
     chapters,
@@ -307,5 +335,6 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     handleAnswer,
     advanceToNextChapter,
     finishAdventure,
+    submitResults,
   };
 }

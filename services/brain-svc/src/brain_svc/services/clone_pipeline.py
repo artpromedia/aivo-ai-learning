@@ -38,6 +38,91 @@ SEED_TEMPLATES = {
     },
 }
 
+DOMAIN_TO_MASTERY = {
+    "ela": "ela",
+    "math": "math",
+    "science": "science",
+    "sel": "social",
+    "speech": "communication",
+    "executive_function": "coding",
+}
+
+DIFFICULTY_MULTIPLIER = {
+    "easy": 0.8,
+    "medium": 1.0,
+    "hard": 1.2,
+}
+
+def _compute_mastery_from_discovery(discovery_results, template_mastery: dict) -> dict:
+    mastery = dict(template_mastery)
+    for ch in discovery_results.chapterResults:
+        if ch.total <= 0:
+            continue
+        raw_score = ch.correct / ch.total
+        multiplier = DIFFICULTY_MULTIPLIER.get(ch.difficulty, 1.0)
+        adjusted = min(1.0, raw_score * multiplier)
+
+        mastery_key = DOMAIN_TO_MASTERY.get(ch.domain, ch.domain)
+        if mastery_key in mastery:
+            mastery[mastery_key] = round(adjusted, 3)
+        else:
+            for key in mastery:
+                if ch.domain in key or key in ch.domain:
+                    mastery[key] = round(adjusted, 3)
+                    break
+    return mastery
+
+def _build_disability_signals(parent_data) -> dict:
+    signals = {}
+    if parent_data:
+        if parent_data.communicationMode and parent_data.communicationMode != "verbal":
+            signals["communication_needs"] = parent_data.communicationMode
+        if parent_data.deviceInteraction and parent_data.deviceInteraction != "independent":
+            signals["device_access"] = parent_data.deviceInteraction
+        if parent_data.attentionSpan and parent_data.attentionSpan not in ("typical", "age_appropriate"):
+            signals["attention"] = parent_data.attentionSpan
+        if parent_data.diagnoses:
+            signals["diagnoses"] = parent_data.diagnoses
+        if parent_data.responseMethod and parent_data.responseMethod != "typing":
+            signals["preferred_response"] = parent_data.responseMethod
+    return signals
+
+def _build_initial_episodic(discovery_results, parent_data) -> list:
+    events = []
+    now = datetime.utcnow().isoformat()
+    if parent_data:
+        events.append({
+            "type": "parent_assessment_completed",
+            "timestamp": now,
+            "communicationMode": parent_data.communicationMode,
+            "attentionSpan": parent_data.attentionSpan,
+            "diagnoses": parent_data.diagnoses or [],
+        })
+    if discovery_results:
+        avg_latency = 0
+        if discovery_results.responseLatencies:
+            avg_latency = round(sum(discovery_results.responseLatencies) / len(discovery_results.responseLatencies))
+        events.append({
+            "type": "discovery_adventure_completed",
+            "timestamp": now,
+            "totalCorrect": discovery_results.totalCorrect,
+            "totalAttempts": discovery_results.totalAttempts,
+            "xpEarned": discovery_results.xpEarned,
+            "avgLatencyMs": avg_latency,
+            "chapters": [
+                {
+                    "domain": ch.domain,
+                    "correct": ch.correct,
+                    "total": ch.total,
+                    "difficulty": ch.difficulty,
+                    "avgLatencyMs": round(ch.avgLatencyMs),
+                }
+                for ch in discovery_results.chapterResults
+            ],
+        })
+    return events
+
+
 def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
     existing = db.execute(
         text("SELECT id FROM brain_states WHERE learner_id = :lid"),
@@ -64,9 +149,19 @@ def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
         except (json.JSONDecodeError, TypeError):
             curriculum_alignment = {}
 
+    mastery_levels = dict(template["mastery_levels"])
+    if request.discovery_results:
+        mastery_levels = _compute_mastery_from_discovery(request.discovery_results, mastery_levels)
+
+    disability_signals = {}
+    if request.parent_assessment_data:
+        disability_signals = _build_disability_signals(request.parent_assessment_data)
+
+    episodic_memory = _build_initial_episodic(request.discovery_results, request.parent_assessment_data)
+
     brain_data = {
-        "mastery_levels": template["mastery_levels"],
-        "disability_signals": {},
+        "mastery_levels": mastery_levels,
+        "disability_signals": disability_signals,
         "functioning_level_profile": {"level": request.functioning_level, "determined_at": now.isoformat()},
         "iep_profile": {},
         "sensory_profile": {},
@@ -74,7 +169,7 @@ def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
         "curriculum_alignment": curriculum_alignment,
         "active_tutors": template["active_tutors"],
         "functional_curriculum": template.get("functional_curriculum", {}),
-        "episodic_memory": [],
+        "episodic_memory": episodic_memory,
     }
 
     db.execute(

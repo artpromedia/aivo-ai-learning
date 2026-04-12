@@ -86,6 +86,7 @@ function DiscoveryAdventureInner({
     handleAnswer,
     advanceToNextChapter,
     finishAdventure,
+    submitResults,
   } = useDiscoveryEngine({ learnerId, learnerName, functioningLevel, accessToken });
 
   useEffect(() => {
@@ -180,6 +181,7 @@ function DiscoveryAdventureInner({
         totalAttempts={state.totalAttempts}
         xpEarned={state.xpEarned}
         onFinish={() => router.push("/dashboard/learner")}
+        onSubmitResults={submitResults}
       />
     );
   }

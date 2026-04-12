@@ -2,6 +2,29 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
+class DiscoveryChapterResult(BaseModel):
+    chapterId: str
+    domain: str
+    correct: int
+    total: int
+    avgLatencyMs: float = 0
+    difficulty: str = "easy"
+
+class DiscoveryResults(BaseModel):
+    chapterResults: list[DiscoveryChapterResult] = []
+    totalCorrect: int = 0
+    totalAttempts: int = 0
+    xpEarned: int = 0
+    responseLatencies: list[float] = []
+
+class ParentAssessmentData(BaseModel):
+    communicationMode: Optional[str] = None
+    deviceInteraction: Optional[str] = None
+    responseMethod: Optional[str] = None
+    attentionSpan: Optional[str] = None
+    diagnoses: list = []
+    responses: dict = {}
+
 class BrainCloneRequest(BaseModel):
     learner_id: str
     tenant_id: str
@@ -9,6 +32,8 @@ class BrainCloneRequest(BaseModel):
     functioning_level: str = "STANDARD"
     parent_assessment_id: Optional[str] = None
     iep_profile_id: Optional[str] = None
+    discovery_results: Optional[DiscoveryResults] = None
+    parent_assessment_data: Optional[ParentAssessmentData] = None
 
 class BrainStateResponse(BaseModel):
     id: str
