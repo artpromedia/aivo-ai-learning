@@ -187,6 +187,17 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **DB Schema**: 15 engagement tables in `packages/db/src/schema/engagement.ts`
 - **Seed Data**: 50 avatar items (6 categories), 25 quest chapters (5 worlds × 5 chapters)
 
+### The Stage (Learner Experience Engine)
+- **Architecture**: Full-screen immersive learning environment replacing the chat-based lesson UI
+- **Components**: `apps/web/src/components/stage/` — StageLayout, TutorCharacter, ResponseZone, StageContent, CelebrationOverlay, ProgressPath
+- **Hooks**: useSensoryAdapter (loads sensory profile, computes rendering adaptations), useSessionFlow (beat-based state machine), useTTS (Web Speech API per-tutor voices)
+- **Beat System**: Lessons structured as theatrical "beats" — narration, demonstration, interaction, celebration. Each beat specifies visuals, tutor state, interaction type, and transitions.
+- **Response Types**: Multiple choice (adaptive count per functioning level), drag-and-drop, voice input, tap-to-continue
+- **Sensory Adaptations**: Color saturation, animation speed, volume, subtitle mode, motion reduction, contrast boost — all computed from learner's sensory profile
+- **Tutor Themes**: Each of 14 tutors has unique environment (gradient, particles, accent color, env name)
+- **Session Flow**: Opening greeting → Warm-up review → Core lesson beats → Mastery check → Celebration (XP/coins/badges)
+- **CSS Animations**: 17 custom keyframe animations in globals.css (breathe, speak, celebrate, think, float, confetti, etc.)
+
 ### Brain Visualization
 - **Component**: `apps/web/src/components/BrainVisualization.tsx`
 - **3 Views**: Brain (animated SVG neural net), RAI (safety checks), XAI (domain mastery breakdown)

@@ -314,24 +314,91 @@ export default function LearnerDashboard() {
           </div>
         )}
 
+        {!isLow && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">🎯</span>
+                <h3 className="font-heading font-bold text-amber-800">Daily Missions</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 bg-white/70 rounded-xl px-4 py-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl" style={{ backgroundColor: `${TUTORS.nova.color}15` }}>🔢</div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-slate-700">Complete 1 session with Nova</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <div className="w-24 bg-amber-100 rounded-full h-2"><div className="h-2 rounded-full bg-amber-400 transition-all" style={{ width: "0%" }} /></div>
+                      <span className="text-xs text-amber-500 font-bold">0/1</span>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-amber-600">+25 XP</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/70 rounded-xl px-4 py-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl" style={{ backgroundColor: `${TUTORS.sage.color}15` }}>📚</div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-slate-700">Practice reading with Sage</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <div className="w-24 bg-amber-100 rounded-full h-2"><div className="h-2 rounded-full bg-amber-400 transition-all" style={{ width: "0%" }} /></div>
+                      <span className="text-xs text-amber-500 font-bold">0/1</span>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-amber-600">+25 XP</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-5 border border-purple-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">🗺️</span>
+                <h3 className="font-heading font-bold text-purple-800">Quest Worlds</h3>
+              </div>
+              <div className="space-y-2">
+                {[
+                  { name: "Mathlands", emoji: "🔢", tutor: "nova", color: TUTORS.nova.color },
+                  { name: "Word World", emoji: "📚", tutor: "sage", color: TUTORS.sage.color },
+                  { name: "Science Frontier", emoji: "🔬", tutor: "spark", color: TUTORS.spark.color },
+                ].map((world) => (
+                  <button key={world.name} onClick={() => router.push(`/dashboard/learner/quests/${world.tutor}`)}
+                    className="w-full flex items-center gap-3 bg-white/70 rounded-xl px-4 py-3 hover:bg-white transition text-left group">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ backgroundColor: `${world.color}15` }}>{world.emoji}</div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-slate-700 group-hover:text-primary transition">{world.name}</p>
+                      <p className="text-xs text-slate-400">Explore & complete quests</p>
+                    </div>
+                    <span className="text-slate-300 group-hover:text-primary transition">→</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div>
           <h2 className={`font-heading font-bold text-slate-900 text-center mb-6 ${isLow ? "text-3xl" : "text-2xl"}`}>
-            {isLow ? "Pick a Friend!" : "Choose Your Tutor"}
+            {isLow ? "Pick a Friend!" : "Start Learning"}
           </h2>
-          <div className={`grid ${isLow ? "grid-cols-2 md:grid-cols-3 gap-8" : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"}`}>
+          <div className={`grid ${isLow ? "grid-cols-2 md:grid-cols-3 gap-8" : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"}`}>
             {(isLow ? allTutors.slice(0, 6) : allTutors).map(([key, tutor]) => (
               <button key={key}
                 onClick={() => router.push(`/dashboard/learner/lesson/${key}`)}
-                className={`bg-white rounded-2xl shadow-sm border-2 border-transparent hover:shadow-xl transition text-center space-y-3 group ${isLow ? "p-8" : "p-6"}`}
+                className={`relative bg-white rounded-2xl shadow-sm border-2 border-transparent hover:shadow-xl transition text-center group overflow-hidden ${isLow ? "p-8" : "p-5"}`}
                 style={{ borderColor: "transparent" }}
                 onMouseEnter={(e) => (e.currentTarget.style.borderColor = tutor.color)}
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = "transparent")}
               >
-                <div className={`relative mx-auto rounded-full overflow-hidden group-hover:scale-110 transition-transform shadow-lg ${isLow ? "w-24 h-24" : "w-20 h-20"}`} style={{ borderColor: tutor.color, borderWidth: isLow ? "4px" : "3px" }}>
-                  <Image src={tutor.avatar} alt={`${tutor.name} - ${tutor.domain}`} fill className="object-cover object-top" sizes={isLow ? "96px" : "80px"} />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `linear-gradient(135deg, ${tutor.color}08, ${tutor.color}15)` }} />
+                <div className="relative">
+                  <div className={`relative mx-auto rounded-full overflow-hidden group-hover:scale-110 transition-transform shadow-lg ${isLow ? "w-24 h-24" : "w-20 h-20"}`} style={{ borderColor: tutor.color, borderWidth: isLow ? "4px" : "3px" }}>
+                    <Image src={tutor.avatar} alt={`${tutor.name} - ${tutor.domain}`} fill className="object-cover object-top" sizes={isLow ? "96px" : "80px"} />
+                  </div>
+                  <div className={`font-heading font-bold mt-3 ${isLow ? "text-xl" : "text-base"}`} style={{ color: tutor.color }}>{tutor.name}</div>
+                  {!isLow && <div className="text-xs text-slate-400 font-semibold mt-0.5">{tutor.domain}</div>}
+                  {!isLow && (
+                    <div className="mt-2 text-xs font-bold text-white px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity inline-block" style={{ backgroundColor: tutor.color }}>
+                      Start Learning →
+                    </div>
+                  )}
                 </div>
-                <div className={`font-heading font-bold ${isLow ? "text-xl" : "text-lg"}`} style={{ color: tutor.color }}>{tutor.name}</div>
-                {!isLow && <div className="text-sm text-slate-500 font-semibold">{tutor.domain}</div>}
               </button>
             ))}
           </div>

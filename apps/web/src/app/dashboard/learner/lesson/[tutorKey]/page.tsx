@@ -1,207 +1,448 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
-
-interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string;
-}
+import { StageLayout } from "@/components/stage/StageLayout";
+import { CelebrationOverlay } from "@/components/stage/CelebrationOverlay";
+import { useSensoryAdapter } from "@/components/stage/useSensoryAdapter";
+import { useSessionFlow } from "@/components/stage/useSessionFlow";
+import { useTTS } from "@/components/stage/useTTS";
+import { TUTOR_THEMES } from "@/components/stage/types";
+import type { Beat, TutorState, FunctioningLevel } from "@/components/stage/types";
 
 const SKU_MAP: Record<string, string> = {
-  nova: "ADDON_TUTOR_MATH",
-  sage: "ADDON_TUTOR_ELA",
-  spark: "ADDON_TUTOR_SCIENCE",
-  chrono: "ADDON_TUTOR_HISTORY",
-  pixel: "ADDON_TUTOR_CODING",
-  echo: "ADDON_TUTOR_SPEECH",
-  harmony: "ADDON_TUTOR_SEL",
-  atlas: "ADDON_TUTOR_SOCIAL_STUDIES",
-  cadence: "ADDON_TUTOR_ARTS",
-  vigor: "ADDON_TUTOR_PE_HEALTH",
-  lingua: "ADDON_TUTOR_LANGUAGES",
-  forge: "ADDON_TUTOR_STEM_DESIGN",
-  compass: "ADDON_TUTOR_LIFE_SKILLS",
-  muse: "ADDON_TUTOR_CREATIVE_WRITING",
+  nova: "ADDON_TUTOR_MATH", sage: "ADDON_TUTOR_ELA", spark: "ADDON_TUTOR_SCIENCE",
+  chrono: "ADDON_TUTOR_HISTORY", pixel: "ADDON_TUTOR_CODING", echo: "ADDON_TUTOR_SPEECH",
+  harmony: "ADDON_TUTOR_SEL", atlas: "ADDON_TUTOR_SOCIAL_STUDIES", cadence: "ADDON_TUTOR_ARTS",
+  vigor: "ADDON_TUTOR_PE_HEALTH", lingua: "ADDON_TUTOR_LANGUAGES", forge: "ADDON_TUTOR_STEM_DESIGN",
+  compass: "ADDON_TUTOR_LIFE_SKILLS", muse: "ADDON_TUTOR_CREATIVE_WRITING",
 };
 
+function generateDemoBeats(tutorKey: string, learnerName: string, level: FunctioningLevel): Beat[] {
+  const tutor = TUTORS[tutorKey as TutorKey];
+  if (!tutor) return [];
+  const name = tutor.name;
+
+  const beatSets: Record<string, Beat[]> = {
+    nova: [
+      { id: "open", type: "narration", tutorState: "speaking", narration: `Welcome back, ${learnerName}! Ready to explore the cosmos of numbers with me?`, visuals: [
+        { id: "v1", type: "card", content: "Today's Mission", emoji: "🚀", animation: "bounce", position: { x: 50, y: 30 } },
+      ] },
+      { id: "warmup", type: "interaction", tutorState: "encouraging", narration: "Let's warm up! Which planet has the most moons?", visuals: [
+        { id: "v2", type: "card", content: "Quick Space Quiz", emoji: "🪐", animation: "fade_in", position: { x: 50, y: 20 } },
+      ], interaction: { type: "multiple_choice", prompt: "Which planet has the most moons?", choices: [
+        { id: "a", label: "Jupiter", emoji: "🟤", isCorrect: false },
+        { id: "b", label: "Saturn", emoji: "🪐", isCorrect: true },
+        { id: "c", label: "Earth", emoji: "🌍", isCorrect: false },
+        { id: "d", label: "Mars", emoji: "🔴", isCorrect: false },
+      ] } },
+      { id: "core1", type: "demonstration", tutorState: "pointing", narration: "Fractions are like splitting a planet into equal parts. Watch!", visuals: [
+        { id: "v3", type: "card", content: "Fraction Explorer", emoji: "🌕", animation: "slide_in", position: { x: 50, y: 25 } },
+        { id: "v4", type: "manipulative", content: "🌕,🌗,🌑", animation: "bounce", position: { x: 50, y: 55 } },
+      ] },
+      { id: "core2", type: "interaction", tutorState: "encouraging", narration: "If we split a pizza into 4 equal slices and eat 1, what fraction is left?", visuals: [
+        { id: "v5", type: "card", content: "Pizza Fractions", emoji: "🍕", animation: "fade_in", position: { x: 50, y: 20 } },
+      ], interaction: { type: "multiple_choice", prompt: "1 slice eaten from 4 total. What fraction remains?", choices: [
+        { id: "a", label: "3/4", emoji: "🍕", isCorrect: true },
+        { id: "b", label: "1/4", emoji: "🍕", isCorrect: false },
+        { id: "c", label: "2/4", emoji: "🍕", isCorrect: false },
+        { id: "d", label: "4/4", emoji: "🍕", isCorrect: false },
+      ] } },
+      { id: "core3", type: "interaction", tutorState: "thinking", narration: "Now arrange these fractions from smallest to largest!", visuals: [
+        { id: "v6", type: "card", content: "Sort the Fractions", emoji: "📊", animation: "slide_in", position: { x: 50, y: 20 } },
+      ], interaction: { type: "drag_drop", prompt: "Drag fractions in order: smallest → largest", dragItems: [
+        { id: "d1", label: "3/4", emoji: "🔵", targetZone: "z3" },
+        { id: "d2", label: "1/4", emoji: "🟢", targetZone: "z1" },
+        { id: "d3", label: "1/2", emoji: "🟡", targetZone: "z2" },
+      ], dragZones: [
+        { id: "z1", label: "Smallest" },
+        { id: "z2", label: "Middle" },
+        { id: "z3", label: "Largest" },
+      ] } },
+      { id: "check", type: "interaction", tutorState: "encouraging", narration: "Final challenge! What is 1/2 + 1/4?", visuals: [
+        { id: "v7", type: "card", content: "Star Challenge", emoji: "⭐", animation: "glow", position: { x: 50, y: 20 } },
+      ], interaction: { type: "multiple_choice", prompt: "What is 1/2 + 1/4?", choices: [
+        { id: "a", label: "3/4", emoji: "✨", isCorrect: true },
+        { id: "b", label: "2/4", emoji: "💫", isCorrect: false },
+        { id: "c", label: "1/6", emoji: "🌟", isCorrect: false },
+      ] } },
+      { id: "close", type: "celebration", tutorState: "celebrating", narration: `Amazing work, ${learnerName}! You're becoming a fraction master! Next time we'll explore mixed numbers!`, visuals: [
+        { id: "v8", type: "card", content: "Mission Complete!", emoji: "🏆", animation: "bounce", position: { x: 50, y: 30 } },
+      ] },
+    ],
+    sage: [
+      { id: "open", type: "narration", tutorState: "speaking", narration: `Welcome to the Story Garden, ${learnerName}! Let's discover a wonderful tale together.`, visuals: [
+        { id: "v1", type: "card", content: "Story Time", emoji: "📖", animation: "fade_in", position: { x: 50, y: 30 } },
+      ] },
+      { id: "warmup", type: "interaction", tutorState: "encouraging", narration: "Which word means the same as 'happy'?", visuals: [
+        { id: "v2", type: "card", content: "Word Power Warm-Up", emoji: "✏️", animation: "slide_in", position: { x: 50, y: 20 } },
+      ], interaction: { type: "multiple_choice", prompt: "Which word is a synonym for 'happy'?", choices: [
+        { id: "a", label: "Joyful", emoji: "😊", isCorrect: true },
+        { id: "b", label: "Angry", emoji: "😠", isCorrect: false },
+        { id: "c", label: "Tired", emoji: "😴", isCorrect: false },
+      ] } },
+      { id: "core1", type: "demonstration", tutorState: "pointing", narration: "Every story has characters, a setting, and a plot. Let me show you!", visuals: [
+        { id: "v3", type: "card", content: "Story Elements", emoji: "🎭", animation: "bounce", position: { x: 50, y: 20 } },
+        { id: "v4", type: "shape", content: "👤", emoji: "👤", animation: "slide_in", position: { x: 20, y: 50 }, color: "#10B981" },
+        { id: "v5", type: "shape", content: "🏰", emoji: "🏰", animation: "slide_in", position: { x: 50, y: 50 }, color: "#3B82F6" },
+        { id: "v6", type: "shape", content: "⚡", emoji: "⚡", animation: "slide_in", position: { x: 80, y: 50 }, color: "#F59E0B" },
+      ] },
+      { id: "core2", type: "interaction", tutorState: "thinking", narration: "In the story 'The Three Bears,' what is the setting?", visuals: [
+        { id: "v7", type: "card", content: "Reading Detective", emoji: "🔍", animation: "fade_in", position: { x: 50, y: 20 } },
+      ], interaction: { type: "multiple_choice", prompt: "Where does the story take place?", choices: [
+        { id: "a", label: "A forest cottage", emoji: "🏠", isCorrect: true },
+        { id: "b", label: "A spaceship", emoji: "🚀", isCorrect: false },
+        { id: "c", label: "A school", emoji: "🏫", isCorrect: false },
+      ] } },
+      { id: "check", type: "interaction", tutorState: "encouraging", narration: "Match each story element to its description!", visuals: [
+        { id: "v8", type: "card", content: "Match Game", emoji: "🧩", animation: "glow", position: { x: 50, y: 20 } },
+      ], interaction: { type: "drag_drop", prompt: "Match each element to its meaning", dragItems: [
+        { id: "d1", label: "Character", emoji: "👤", targetZone: "z1" },
+        { id: "d2", label: "Setting", emoji: "🏰", targetZone: "z2" },
+        { id: "d3", label: "Plot", emoji: "⚡", targetZone: "z3" },
+      ], dragZones: [
+        { id: "z1", label: "Who" },
+        { id: "z2", label: "Where" },
+        { id: "z3", label: "What happens" },
+      ] } },
+      { id: "close", type: "celebration", tutorState: "celebrating", narration: `Wonderful reading, ${learnerName}! You're becoming a true story detective!`, visuals: [
+        { id: "v9", type: "card", content: "Chapter Complete!", emoji: "📚", animation: "bounce", position: { x: 50, y: 30 } },
+      ] },
+    ],
+  };
+
+  const defaultBeats: Beat[] = [
+    { id: "open", type: "narration", tutorState: "speaking", narration: `Hello ${learnerName}! I'm ${name}, and I'm so excited to learn with you today!`, visuals: [
+      { id: "v1", type: "card", content: `Welcome to ${name}'s World`, emoji: tutor.icon, animation: "bounce", position: { x: 50, y: 30 } },
+    ] },
+    { id: "warmup", type: "interaction", tutorState: "encouraging", narration: "Let's start with a quick warm-up question!", visuals: [
+      { id: "v2", type: "card", content: "Warm-Up Challenge", emoji: "⚡", animation: "slide_in", position: { x: 50, y: 20 } },
+    ], interaction: { type: "multiple_choice", prompt: `What does ${name} teach?`, choices: [
+      { id: "a", label: tutor.domain, emoji: tutor.icon, isCorrect: true },
+      { id: "b", label: "Swimming", emoji: "🏊", isCorrect: false },
+      { id: "c", label: "Cooking", emoji: "🍳", isCorrect: false },
+    ] } },
+    { id: "core1", type: "demonstration", tutorState: "pointing", narration: `Today we're exploring something amazing in ${tutor.domain}. Watch carefully!`, visuals: [
+      { id: "v3", type: "card", content: `Exploring ${tutor.domain}`, emoji: tutor.icon, animation: "fade_in", position: { x: 50, y: 25 } },
+      { id: "v4", type: "text", content: "Every great journey begins with curiosity!", animation: "slide_in", position: { x: 50, y: 55 } },
+    ] },
+    { id: "core2", type: "interaction", tutorState: "thinking", narration: "Now it's your turn! Can you solve this?", visuals: [
+      { id: "v5", type: "card", content: "Your Turn!", emoji: "🎯", animation: "bounce", position: { x: 50, y: 20 } },
+    ], interaction: { type: "tap", prompt: "Tap to show me you're ready!" } },
+    { id: "check", type: "interaction", tutorState: "encouraging", narration: "One last challenge! I know you can do this!", visuals: [
+      { id: "v6", type: "card", content: "Final Challenge", emoji: "⭐", animation: "glow", position: { x: 50, y: 20 } },
+    ], interaction: { type: "multiple_choice", prompt: "Did you enjoy learning today?", choices: [
+      { id: "a", label: "Yes!", emoji: "🎉", isCorrect: true },
+      { id: "b", label: "It was great!", emoji: "⭐", isCorrect: true },
+    ] } },
+    { id: "close", type: "celebration", tutorState: "celebrating", narration: `You did amazing, ${learnerName}! I can't wait for our next session!`, visuals: [
+      { id: "v7", type: "card", content: "Session Complete!", emoji: "🏆", animation: "bounce", position: { x: 50, y: 30 } },
+    ] },
+  ];
+
+  let beats = beatSets[tutorKey] || defaultBeats;
+
+  if (level === "LOW_VERBAL" || level === "NON_VERBAL" || level === "PRE_SYMBOLIC") {
+    beats = beats.map((b) => ({
+      ...b,
+      visuals: b.visuals.slice(0, 2),
+      interaction: b.interaction ? {
+        ...b.interaction,
+        choices: b.interaction.choices?.slice(0, 2),
+      } : undefined,
+    }));
+  }
+
+  return beats;
+}
+
 export default function LessonPage() {
-  const { user, loading } = useAuth();
+  const { user, accessToken, loading } = useAuth();
   const router = useRouter();
   const params = useParams();
-  const tutorKey = params.tutorKey as string;
-  const tutor = TUTORS[tutorKey as TutorKey];
+  const tutorKey = params.tutorKey as TutorKey;
+  const tutor = TUTORS[tutorKey];
 
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [sessionStarting, setSessionStarting] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [functioningLevel, setFunctioningLevel] = useState<FunctioningLevel>("STANDARD");
+  const [learnerName, setLearnerName] = useState("");
+  const [tutorState, setTutorState] = useState<TutorState>("idle");
+  const [speechText, setSpeechText] = useState<string | undefined>();
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showPause, setShowPause] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [sessionApiId, setSessionApiId] = useState<string | null>(null);
+
+  const { adaptations } = useSensoryAdapter(
+    user?.id || null,
+    accessToken,
+    functioningLevel
+  );
+
+  const { state, currentBeat, progress, setPhase, loadBeats, nextBeat, recordAnswer, cleanup } = useSessionFlow(tutorKey, user?.id || "", functioningLevel);
+
+  const { speak, stop: stopTTS, isSpeaking } = useTTS(tutorKey, adaptations);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
   }, [user, loading, router]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!accessToken || !user) return;
+    fetch(`/api/brain/${user.id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.functioning_level_profile?.level) {
+          setFunctioningLevel(data.functioning_level_profile.level);
+        }
+      })
+      .catch(() => {});
 
-  const startSession = async () => {
-    if (!user) return;
-    setSessionStarting(true);
+    fetch("/api/users/me", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.name) setLearnerName(data.name);
+      })
+      .catch(() => {});
+  }, [accessToken, user]);
+
+  const handleNarration = useCallback(async (beat: Beat | null) => {
+    if (!beat?.narration) {
+      if (beat && !beat.interaction) {
+        setTimeout(() => nextBeat(), 1500);
+      }
+      return;
+    }
+    setSpeechText(beat.narration);
+    setTutorState(beat.tutorState || "speaking");
+    await speak(beat.narration);
+    setTutorState("idle");
+    if (!beat.interaction) {
+      const delay = beat.type === "celebration" ? 2000 : 1500;
+      setTimeout(() => nextBeat(), delay);
+    }
+  }, [speak, nextBeat]);
+
+  useEffect(() => {
+    if (started && currentBeat) {
+      handleNarration(currentBeat);
+    }
+  }, [currentBeat?.id, started]);
+
+  useEffect(() => {
+    if (state.phase === "celebration" && !showCelebration) {
+      setShowCelebration(true);
+      setTutorState("celebrating");
+      completeSessionAPI();
+    }
+  }, [state.phase]);
+
+  const startStage = async () => {
+    if (!user || !tutor) return;
+    setStarted(true);
+
+    const sku = SKU_MAP[tutorKey] || `ADDON_TUTOR_${tutorKey.toUpperCase()}`;
     try {
-      const sku = SKU_MAP[tutorKey] || `ADDON_TUTOR_${tutorKey.toUpperCase()}`;
       const res = await fetch("/api/tutor/session/start", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ learnerId: user.id, tutorSku: sku }),
       });
       if (res.ok) {
         const data = await res.json();
-        setSessionId(data.sessionId);
-        setMessages([{
-          role: "assistant",
-          content: `Hi there! I'm ${tutor?.name || "your tutor"}. Ready to learn? What would you like to explore today?`,
-          timestamp: new Date().toISOString(),
-        }]);
+        setSessionApiId(data.sessionId);
       }
     } catch {}
-    setSessionStarting(false);
+
+    const name = learnerName || user.name || "Explorer";
+    const beats = generateDemoBeats(tutorKey, name, functioningLevel);
+    loadBeats(beats, undefined, name);
   };
 
-  const sendMessage = async () => {
-    if (!input.trim() || !sessionId || sending) return;
-    const userMessage = input.trim();
-    setInput("");
-    setSending(true);
+  const completeSessionAPI = async () => {
+    if (sessionApiId && accessToken) {
+      try {
+        await fetch(`/api/tutor/session/${sessionApiId}/complete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({}),
+        });
+      } catch {}
 
-    setMessages(prev => [...prev, { role: "user", content: userMessage, timestamp: new Date().toISOString() }]);
+      try {
+        await fetch("/api/engagement/xp/award", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({
+            learnerId: user?.id,
+            eventType: "lesson_completed",
+            xpAmount: state.xpEarned || 50,
+            coinReward: state.coinsEarned || 10,
+            metadata: { tutorKey, correctCount: state.correctCount, totalAttempts: state.totalAttempts },
+          }),
+        });
+      } catch {}
 
-    try {
-      const res = await fetch(`/api/tutor/session/${sessionId}/message`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage }),
+      try {
+        await fetch("/api/engagement/streak/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ learnerId: user?.id }),
+        });
+      } catch {}
+    }
+  };
+
+  const handleAnswer = useCallback((correct: boolean) => {
+    if (correct) {
+      setTutorState("celebrating");
+      setSpeechText(["Great job!", "Amazing!", "You got it!", "Wonderful!"][Math.floor(Math.random() * 4)]);
+      recordAnswer(true, 15, 3);
+      speak(["Great job!", "Amazing!", "You got it!", "Wonderful!"][Math.floor(Math.random() * 4)]).then(() => {
+        setTutorState("idle");
+        setTimeout(() => nextBeat(), 800);
       });
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(prev => [...prev, { role: "assistant", content: data.response, timestamp: new Date().toISOString() }]);
-      } else {
-        setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I had trouble thinking about that. Can you try again?", timestamp: new Date().toISOString() }]);
-      }
-    } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "Oops, something went wrong. Let's try again!", timestamp: new Date().toISOString() }]);
+    } else {
+      setTutorState("encouraging");
+      setSpeechText("That's okay! Let's try again!");
+      recordAnswer(false, 5, 1);
+      speak("That's okay! Let's try again!").then(() => {
+        setTutorState("idle");
+      });
     }
-    setSending(false);
-  };
+  }, [recordAnswer, nextBeat, speak]);
 
-  const endSession = async () => {
-    if (sessionId) {
-      await fetch(`/api/tutor/session/${sessionId}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      }).catch(() => {});
-    }
+  const handlePause = useCallback(() => {
+    stopTTS();
+    setShowPause(true);
+  }, [stopTTS]);
+
+  const handleCelebrationComplete = useCallback(() => {
+    setShowCelebration(false);
+    cleanup();
     router.push("/dashboard/learner");
-  };
+  }, [cleanup, router]);
 
   if (loading || !user) return null;
-  if (!tutor) return <div className="min-h-screen flex items-center justify-center text-slate-500">Tutor not found</div>;
+  if (!tutor) return <div className="min-h-screen flex items-center justify-center text-slate-500 font-heading">Tutor not found</div>;
+
+  const theme = TUTOR_THEMES[tutorKey];
+
+  if (!started) {
+    return (
+      <div className={`min-h-screen flex flex-col items-center justify-center bg-gradient-to-br ${theme?.bgGradient || "from-slate-900 to-purple-900"} relative overflow-hidden`}>
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="absolute animate-stage-particle text-3xl opacity-20"
+              style={{ left: `${(i * 13 + 7) % 100}%`, top: `${(i * 17 + 11) % 100}%`, animationDelay: `${i * 0.6}s`, animationDuration: `${8 + (i % 4) * 2}s` }}>
+              {tutor.icon}
+            </div>
+          ))}
+        </div>
+
+        <div className="relative z-10 flex flex-col items-center gap-8 animate-fade-in">
+          <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-4 shadow-2xl animate-breathe"
+            style={{ borderColor: tutor.color, boxShadow: `0 0 60px ${tutor.color}40` }}>
+            <Image src={tutor.avatar} alt={tutor.name} fill className="object-cover" priority />
+          </div>
+
+          <div className="text-center space-y-3">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-white drop-shadow-lg">
+              Learn with {tutor.name}
+            </h1>
+            <p className="text-white/60 font-body text-lg">{theme?.envName || tutor.domain}</p>
+            {learnerName && (
+              <p className="text-white/80 font-body">
+                Ready for an adventure, {learnerName}!
+              </p>
+            )}
+          </div>
+
+          <button
+            onClick={startStage}
+            className="px-12 py-4 rounded-full text-white font-heading font-bold text-xl shadow-2xl transition-all hover:scale-110 active:scale-95 animate-pulse-gentle"
+            style={{ backgroundColor: tutor.color, boxShadow: `0 0 40px ${tutor.color}60` }}
+          >
+            Start Learning
+          </button>
+
+          <button
+            onClick={() => router.push("/dashboard/learner")}
+            className="text-white/40 text-sm font-body hover:text-white/60 transition"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: `linear-gradient(135deg, ${tutor.color}08, white, ${tutor.color}05)` }}>
-      <header className="bg-white/90 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 shadow" style={{ borderColor: tutor.color }}>
-            <Image src={tutor.avatar} alt={tutor.name} fill className="object-cover object-top" sizes="40px" />
-          </div>
-          <div>
-            <h1 className="font-heading font-bold" style={{ color: tutor.color }}>{tutor.name}</h1>
-            <p className="text-xs text-slate-500">{tutor.domain}</p>
-          </div>
-        </div>
-        <button onClick={endSession}
-          className="px-4 py-2 text-sm rounded-full bg-slate-100 text-slate-600 font-bold hover:bg-red-50 hover:text-red-600 transition">
-          End Session
-        </button>
-      </header>
+    <>
+      <StageLayout
+        tutorKey={tutorKey}
+        phase={state.phase}
+        tutorState={tutorState}
+        currentBeat={currentBeat}
+        progress={progress}
+        totalBeats={state.totalBeats}
+        currentBeatIndex={state.currentBeatIndex}
+        speechText={speechText}
+        functioningLevel={functioningLevel}
+        adaptations={adaptations}
+        onAnswer={handleAnswer}
+        onPause={handlePause}
+      />
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-3xl mx-auto w-full">
-        {!sessionId ? (
-          <div className="flex flex-col items-center justify-center h-full space-y-6 py-20">
-            <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 shadow-xl" style={{ borderColor: tutor.color }}>
-              <Image src={tutor.avatar} alt={tutor.name} fill className="object-cover object-top" sizes="128px" />
+      {showPause && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white/95 backdrop-blur rounded-3xl p-8 max-w-sm w-full mx-4 text-center space-y-6 animate-scale-in">
+            <div className="text-5xl">☁️</div>
+            <h2 className="text-2xl font-heading font-bold text-slate-900">Taking a Break</h2>
+            <p className="text-slate-500 font-body">It's okay to rest. Take a deep breath.</p>
+
+            <div className="flex items-center justify-center gap-4 py-4">
+              <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-3xl animate-breathe">
+                🌬️
+              </div>
             </div>
-            <h2 className="text-2xl font-heading font-bold text-slate-900">Learn with {tutor.name}</h2>
-            <p className="text-slate-500 text-center max-w-md">{tutor.domain}</p>
-            <button onClick={startSession} disabled={sessionStarting}
-              className="px-8 py-3 rounded-full text-white font-bold text-lg shadow-lg transition hover:scale-105 disabled:opacity-50"
-              style={{ backgroundColor: tutor.color }}>
-              {sessionStarting ? "Starting..." : "Start Session"}
-            </button>
-          </div>
-        ) : (
-          <>
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                {msg.role === "assistant" && (
-                  <div className="relative w-8 h-8 rounded-full overflow-hidden border mr-2 flex-shrink-0 mt-1" style={{ borderColor: tutor.color }}>
-                    <Image src={tutor.avatar} alt={tutor.name} fill className="object-cover object-top" sizes="32px" />
-                  </div>
-                )}
-                <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                  msg.role === "user"
-                    ? "bg-primary text-white rounded-br-md"
-                    : "bg-white border border-slate-200 text-slate-800 rounded-bl-md shadow-sm"
-                }`}>
-                  {msg.content}
-                </div>
-              </div>
-            ))}
-            {sending && (
-              <div className="flex justify-start">
-                <div className="relative w-8 h-8 rounded-full overflow-hidden border mr-2 flex-shrink-0 mt-1" style={{ borderColor: tutor.color }}>
-                  <Image src={tutor.avatar} alt={tutor.name} fill className="object-cover object-top" sizes="32px" />
-                </div>
-                <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
-                  <div className="flex gap-1">
-                    <span className="w-2 h-2 rounded-full bg-slate-300 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-slate-300 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-slate-300 animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </>
-        )}
-      </div>
 
-      {sessionId && (
-        <div className="border-t border-slate-200 bg-white/90 backdrop-blur px-4 py-3">
-          <div className="max-w-3xl mx-auto flex gap-3">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder={`Ask ${tutor.name} anything...`}
-              className="flex-1 px-4 py-3 rounded-full border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body text-sm"
-              disabled={sending}
-            />
-            <button onClick={sendMessage} disabled={sending || !input.trim()}
-              className="px-6 py-3 rounded-full text-white font-bold text-sm transition disabled:opacity-50"
-              style={{ backgroundColor: tutor.color }}>
-              Send
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPause(false)}
+                className="flex-1 py-3 rounded-xl font-heading font-bold text-white transition hover:scale-105"
+                style={{ backgroundColor: tutor.color }}
+              >
+                Resume
+              </button>
+              <button
+                onClick={() => { cleanup(); router.push("/dashboard/learner"); }}
+                className="flex-1 py-3 rounded-xl font-heading font-bold text-slate-600 bg-slate-100 transition hover:bg-slate-200"
+              >
+                Exit
+              </button>
+            </div>
           </div>
         </div>
       )}
-    </div>
+
+      {showCelebration && (
+        <CelebrationOverlay
+          xpEarned={state.xpEarned || 50}
+          coinsEarned={state.coinsEarned || 10}
+          correctCount={state.correctCount}
+          totalAttempts={state.totalAttempts}
+          adaptations={adaptations}
+          accentColor={tutor.color}
+          tutorName={tutor.name}
+          onComplete={handleCelebrationComplete}
+        />
+      )}
+    </>
   );
 }
