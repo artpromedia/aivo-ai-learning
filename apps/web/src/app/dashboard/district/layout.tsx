@@ -29,6 +29,12 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    label: "Connect",
+    items: [
+      { href: "/dashboard/district/integrations", label: "Integrations", icon: "🔗" },
+    ],
+  },
+  {
     label: "Admin",
     items: [
       { href: "/dashboard/district/settings", label: "District Settings", icon: "⚙️" },
