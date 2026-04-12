@@ -1,6 +1,6 @@
 import type { TutorKey } from "@aivo/brand";
 
-export type AdventurePhase = "loading" | "pre-adventure" | "map" | "chapter-intro" | "activity" | "chapter-complete" | "finale" | "results";
+export type AdventurePhase = "loading" | "pre-adventure" | "map" | "chapter-intro" | "activity" | "chapter-complete" | "break" | "finale" | "results";
 
 export type ActivityInteraction = "tap_image" | "tap_word" | "drag_sort" | "drag_place" | "sequence" | "emotion_pick" | "pattern_fill" | "memory" | "observation";
 
@@ -156,11 +156,27 @@ export const TUTOR_INTROS: TutorIntro[] = [
 ];
 
 export const FUNCTIONING_LEVEL_CONFIG = {
-  STANDARD: { chaptersCount: 6, activitiesPerChapter: 4, choiceCount: 4, narrationAuto: false },
-  SUPPORTED: { chaptersCount: 5, activitiesPerChapter: 3, choiceCount: 3, narrationAuto: true },
-  LOW_VERBAL: { chaptersCount: 4, activitiesPerChapter: 2, choiceCount: 2, narrationAuto: true },
-  NON_VERBAL: { chaptersCount: 3, activitiesPerChapter: 2, choiceCount: 2, narrationAuto: true },
+  STANDARD: { chaptersCount: 6, activitiesPerChapter: 5, choiceCount: 4, narrationAuto: false },
+  SUPPORTED: { chaptersCount: 6, activitiesPerChapter: 4, choiceCount: 3, narrationAuto: true },
+  LOW_VERBAL: { chaptersCount: 6, activitiesPerChapter: 3, choiceCount: 2, narrationAuto: true },
+  NON_VERBAL: { chaptersCount: 4, activitiesPerChapter: 3, choiceCount: 2, narrationAuto: true },
   PRE_SYMBOLIC: { chaptersCount: 0, activitiesPerChapter: 0, choiceCount: 0, narrationAuto: true },
 } as const;
+
+export type BreakType = "music" | "word_game" | "exercise";
+
+export interface BreakOption {
+  type: BreakType;
+  label: string;
+  emoji: string;
+  description: string;
+  durationSec: number;
+}
+
+export const BREAK_OPTIONS: BreakOption[] = [
+  { type: "music", label: "Listen to Music", emoji: "🎵", description: "Relax with some calming tunes", durationSec: 35 },
+  { type: "word_game", label: "Word Game", emoji: "🔤", description: "Play a quick word scramble", durationSec: 40 },
+  { type: "exercise", label: "Move & Stretch", emoji: "🤸", description: "Do some fun stretches", durationSec: 30 },
+];
 
 export type FunctioningLevel = keyof typeof FUNCTIONING_LEVEL_CONFIG;

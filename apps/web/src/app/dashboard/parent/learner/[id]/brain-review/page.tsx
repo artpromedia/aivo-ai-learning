@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
 import BrainSphere from "@/components/brain/BrainSphere";
+import BrainBuildingSequence from "@/components/brain/BrainBuildingSequence";
 
 interface MasteryDecision {
   domain: string;
@@ -83,6 +84,9 @@ const MASTERY_COLORS: Record<string, string> = {
   history: "from-rose-500 to-rose-600",
   coding: "from-violet-500 to-violet-600",
   social: "from-pink-500 to-pink-600",
+  sel: "from-pink-500 to-pink-600",
+  speech: "from-violet-500 to-violet-600",
+  executive_function: "from-cyan-500 to-cyan-600",
   communication: "from-cyan-500 to-cyan-600",
   daily_living: "from-orange-500 to-orange-600",
   cause_effect: "from-teal-500 to-teal-600",
@@ -92,7 +96,8 @@ const MASTERY_COLORS: Record<string, string> = {
 
 const MASTERY_EMOJIS: Record<string, string> = {
   math: "🔢", ela: "📖", science: "🔬", history: "🏛️", coding: "💻",
-  social: "🤝", communication: "💬", daily_living: "🏠",
+  social: "🤝", sel: "💜", speech: "💬", executive_function: "🧩",
+  communication: "💬", daily_living: "🏠",
   cause_effect: "🎯", sensory_engagement: "🎨", social_awareness: "👥",
 };
 
@@ -101,7 +106,10 @@ const SOURCE_BADGES: Record<string, { label: string; color: string }> = {
   template_default: { label: "Template Default", color: "bg-slate-100 text-slate-600" },
   functioning_level_template: { label: "Evidence-Based", color: "bg-green-100 text-green-700" },
   parent_assessment: { label: "Parent Reported", color: "bg-purple-100 text-purple-700" },
+  iep: { label: "From IEP", color: "bg-amber-100 text-amber-700" },
 };
+
+type PageView = "building" | "review";
 
 export default function BrainReviewPage() {
   const { user, accessToken, loading } = useAuth();
@@ -111,13 +119,19 @@ export default function BrainReviewPage() {
 
   const [review, setReview] = useState<BrainReview | null>(null);
   const [loadingReview, setLoadingReview] = useState(true);
+  const [pageView, setPageView] = useState<PageView>("building");
   const [activeTab, setActiveTab] = useState<"overview" | "mastery" | "accommodations" | "tutors" | "signals" | "rai">("overview");
-  const [parentNotes, setParentNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [showAmendForm, setShowAmendForm] = useState(false);
-  const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
-  const [declineReason, setDeclineReason] = useState("");
   const [actionResult, setActionResult] = useState<{ type: string; message: string } | null>(null);
+
+  const [showContextForm, setShowContextForm] = useState(false);
+  const [learningContext, setLearningContext] = useState("");
+  const [clinicalContext, setClinicalContext] = useState("");
+  const [assessmentConcerns, setAssessmentConcerns] = useState("");
+  const [missingInfo, setMissingInfo] = useState("");
+
+  const [showStartOverConfirm, setShowStartOverConfirm] = useState(false);
+  const [startOverReason, setStartOverReason] = useState("");
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -130,7 +144,12 @@ export default function BrainReviewPage() {
     })
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
-        if (data) setReview(data);
+        if (data) {
+          setReview(data);
+          if (data.approval_status !== "pending_parent_review") {
+            setPageView("review");
+          }
+        }
       })
       .catch(() => {})
       .finally(() => setLoadingReview(false));
@@ -143,45 +162,61 @@ export default function BrainReviewPage() {
       const res = await fetch(`/api/brain/${learnerId}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ parent_notes: parentNotes || null }),
+        body: JSON.stringify({ parent_notes: null }),
       });
       if (res.ok) {
-        setActionResult({ type: "approved", message: "Brain clone approved! Your child's personalized learning journey is now active." });
+        setActionResult({
+          type: "approved",
+          message: `${review?.learner_name || "Your child"}'s Brain is active. Their first learning session is ready.`,
+        });
         setReview((prev) => prev ? { ...prev, approval_status: "approved" } : prev);
       }
     } catch {}
     setSubmitting(false);
   };
 
-  const handleAmend = async () => {
-    if (!accessToken || !parentNotes.trim()) return;
+  const handleAddContext = async () => {
+    if (!accessToken) return;
+    const contextParts = [];
+    if (learningContext.trim()) contextParts.push(`Learning Context: ${learningContext.trim()}`);
+    if (clinicalContext.trim()) contextParts.push(`Clinical Context: ${clinicalContext.trim()}`);
+    if (assessmentConcerns.trim()) contextParts.push(`Assessment Concerns: ${assessmentConcerns.trim()}`);
+    if (missingInfo.trim()) contextParts.push(`Missing Information: ${missingInfo.trim()}`);
+    if (contextParts.length === 0) return;
+
     setSubmitting(true);
     try {
       const res = await fetch(`/api/brain/${learnerId}/amend`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ parent_notes: parentNotes }),
+        body: JSON.stringify({ parent_notes: contextParts.join("\n\n") }),
       });
       if (res.ok) {
-        setActionResult({ type: "amended", message: "Brain clone approved with your additional context. Your notes have been incorporated into your child's learning profile." });
+        setActionResult({
+          type: "rebuilt",
+          message: `${review?.learner_name || "Your child"}'s Brain has been rebuilt with your additional context. The updated profile is now active.`,
+        });
         setReview((prev) => prev ? { ...prev, approval_status: "amended" } : prev);
-        setShowAmendForm(false);
+        setShowContextForm(false);
       }
     } catch {}
     setSubmitting(false);
   };
 
-  const handleDecline = async () => {
+  const handleStartOver = async () => {
     if (!accessToken) return;
     setSubmitting(true);
     try {
       const res = await fetch(`/api/brain/${learnerId}/decline`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ reason: declineReason || null }),
+        body: JSON.stringify({ reason: startOverReason || "Parent requested reassessment" }),
       });
       if (res.ok) {
-        setActionResult({ type: "declined", message: "Brain clone declined. Your child will be able to retake the baseline assessment." });
+        setActionResult({
+          type: "start_over",
+          message: `${review?.learner_name || "Your child"} can now retake the Baseline Assessment. The previous results have been archived for reference.`,
+        });
       }
     } catch {}
     setSubmitting(false);
@@ -217,20 +252,37 @@ export default function BrainReviewPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg text-center border border-slate-100">
           <div className="text-6xl mb-4">
-            {actionResult.type === "approved" ? "✅" : actionResult.type === "amended" ? "📝" : "🔄"}
+            {actionResult.type === "approved" ? "✅" : actionResult.type === "rebuilt" ? "🔄" : "🔃"}
           </div>
           <h2 className="text-2xl font-heading font-bold text-slate-900 mb-3">
-            {actionResult.type === "approved" ? "Clone Approved!" : actionResult.type === "amended" ? "Clone Approved with Notes" : "Clone Declined"}
+            {actionResult.type === "approved" ? "Brain Approved!" : actionResult.type === "rebuilt" ? "Brain Rebuilt with Context" : "Starting Over"}
           </h2>
           <p className="text-slate-600 font-body mb-6">{actionResult.message}</p>
           <Link
-            href={actionResult.type === "declined" ? `/dashboard/parent/learner/${learnerId}` : `/dashboard/parent/learner/${learnerId}`}
+            href={actionResult.type === "start_over"
+              ? `/dashboard/learner/assessment?learnerId=${learnerId}`
+              : `/dashboard/parent/learner/${learnerId}`}
             className="inline-block px-6 py-3 bg-gradient-to-r from-primary to-purple-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition"
           >
-            {actionResult.type === "declined" ? "Back to Profile" : "View Learner Dashboard"}
+            {actionResult.type === "start_over" ? "Start Baseline Assessment" : "View Learner Dashboard"}
           </Link>
         </div>
       </div>
+    );
+  }
+
+  if (pageView === "building" && review.approval_status === "pending_parent_review") {
+    return (
+      <BrainBuildingSequence
+        learnerName={review.learner_name}
+        gradeLevel={review.grade_level || "6"}
+        functioningLevel={review.functioning_level || "STANDARD"}
+        masteryLevels={review.mastery_levels}
+        xaiExplanation={review.xai_explanation}
+        activeTutors={review.active_tutors}
+        activeAccommodations={review.active_accommodations}
+        onSequenceComplete={() => setPageView("review")}
+      />
     );
   }
 
@@ -464,7 +516,7 @@ export default function BrainReviewPage() {
               <h2 className="font-heading font-bold text-lg text-slate-900 mb-2 flex items-center gap-2">
                 <span className="text-2xl">🛡️</span> Learning Supports & Accommodations
               </h2>
-              <p className="text-sm text-slate-500 mb-6">These supports help personalize the learning experience. Each was selected based on evidence-based practices.</p>
+              <p className="text-sm text-slate-500 mb-6">These supports help personalize the learning experience. Each was selected based on evidence.</p>
               {xai?.accommodation_decisions?.length > 0 ? (
                 <div className="space-y-3">
                   {xai.accommodation_decisions.map((a) => (
@@ -595,64 +647,117 @@ export default function BrainReviewPage() {
 
         {!isAlreadyResolved && (
           <div className="bg-white rounded-2xl shadow-xl border border-purple-100 p-6 sticky bottom-4">
-            <h3 className="font-heading font-bold text-lg text-slate-900 mb-4">Your Decision</h3>
+            <h3 className="font-heading font-bold text-lg text-slate-900 mb-2">Your Decision</h3>
+            <p className="text-sm text-slate-500 font-body mb-4">
+              You are the final authority on {review.learner_name}&apos;s Brain. Choose what happens next.
+            </p>
 
-            {showAmendForm ? (
+            {showContextForm ? (
               <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-2">
+                  <p className="text-sm font-semibold text-blue-700 mb-1">Add Context & Rebuild</p>
+                  <p className="text-xs text-blue-600">Share information the assessment couldn&apos;t capture. The Brain will be rebuilt with your insights incorporated.</p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    Additional Context or Amendments
+                    Learning Context
                   </label>
                   <textarea
-                    value={parentNotes}
-                    onChange={(e) => setParentNotes(e.target.value)}
-                    placeholder="Share anything the AI should know about your child that wasn't captured in the assessments..."
-                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-purple-500 font-body"
+                    value={learningContext}
+                    onChange={(e) => setLearningContext(e.target.value)}
+                    placeholder="e.g., 'He is really interested in dinosaurs.' 'She does better in the morning.'"
+                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[70px] focus:outline-none focus:ring-2 focus:ring-blue-400 font-body"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    Clinical Context
+                  </label>
+                  <textarea
+                    value={clinicalContext}
+                    onChange={(e) => setClinicalContext(e.target.value)}
+                    placeholder="e.g., 'He has been making progress with his speech therapist on the /r/ sound.'"
+                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[70px] focus:outline-none focus:ring-2 focus:ring-blue-400 font-body"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    Assessment Concerns
+                  </label>
+                  <textarea
+                    value={assessmentConcerns}
+                    onChange={(e) => setAssessmentConcerns(e.target.value)}
+                    placeholder="e.g., 'I think the reading score is too low, she was tired during that part.'"
+                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[70px] focus:outline-none focus:ring-2 focus:ring-blue-400 font-body"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    Missing Information
+                  </label>
+                  <textarea
+                    value={missingInfo}
+                    onChange={(e) => setMissingInfo(e.target.value)}
+                    placeholder="e.g., 'She also speaks Spanish at home.' 'He uses a communication device.'"
+                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[70px] focus:outline-none focus:ring-2 focus:ring-blue-400 font-body"
+                  />
+                </div>
+
                 <div className="flex gap-3">
                   <button
-                    onClick={handleAmend}
-                    disabled={submitting || !parentNotes.trim()}
+                    onClick={handleAddContext}
+                    disabled={submitting || (!learningContext.trim() && !clinicalContext.trim() && !assessmentConcerns.trim() && !missingInfo.trim())}
                     className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
                   >
-                    {submitting ? "Submitting..." : "Approve with Notes"}
+                    {submitting ? "Rebuilding Brain..." : "Submit Context & Rebuild"}
                   </button>
                   <button
-                    onClick={() => { setShowAmendForm(false); setParentNotes(""); }}
+                    onClick={() => {
+                      setShowContextForm(false);
+                      setLearningContext("");
+                      setClinicalContext("");
+                      setAssessmentConcerns("");
+                      setMissingInfo("");
+                    }}
                     className="px-6 py-3 border border-slate-200 text-slate-600 font-heading font-bold rounded-xl hover:bg-slate-50 transition"
                   >
                     Cancel
                   </button>
                 </div>
               </div>
-            ) : showDeclineConfirm ? (
+            ) : showStartOverConfirm ? (
               <div className="space-y-4">
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                  <p className="text-sm font-semibold text-red-700 mb-1">Are you sure?</p>
-                  <p className="text-sm text-red-600">Declining will remove this brain clone. Your child will need to retake the baseline assessment.</p>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <p className="text-sm font-semibold text-slate-700 mb-1">Start Over</p>
+                  <p className="text-sm text-slate-500">
+                    This will ask {review.learner_name} to complete the Baseline Assessment again. The previous results will be saved but not used. Are you sure?
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">
                     Reason (optional)
                   </label>
                   <textarea
-                    value={declineReason}
-                    onChange={(e) => setDeclineReason(e.target.value)}
-                    placeholder="Let us know why you'd like your child to retake..."
-                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-red-400 font-body"
+                    value={startOverReason}
+                    onChange={(e) => setStartOverReason(e.target.value)}
+                    placeholder="e.g., 'She was having a bad day.' 'The environment was too distracting.'"
+                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-slate-400 font-body"
                   />
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={handleDecline}
+                    onClick={handleStartOver}
                     disabled={submitting}
-                    className="flex-1 px-6 py-3 bg-red-500 text-white font-heading font-bold rounded-xl hover:bg-red-600 transition disabled:opacity-50"
+                    className="flex-1 px-6 py-3 bg-slate-500 text-white font-heading font-bold rounded-xl hover:bg-slate-600 transition disabled:opacity-50"
                   >
-                    {submitting ? "Processing..." : "Confirm Decline & Reset"}
+                    {submitting ? "Processing..." : "Confirm Start Over"}
                   </button>
                   <button
-                    onClick={() => { setShowDeclineConfirm(false); setDeclineReason(""); }}
+                    onClick={() => { setShowStartOverConfirm(false); setStartOverReason(""); }}
                     className="px-6 py-3 border border-slate-200 text-slate-600 font-heading font-bold rounded-xl hover:bg-slate-50 transition"
                   >
                     Cancel
@@ -660,41 +765,28 @@ export default function BrainReviewPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    Notes for approval (optional)
-                  </label>
-                  <textarea
-                    value={parentNotes}
-                    onChange={(e) => setParentNotes(e.target.value)}
-                    placeholder="Any quick notes you'd like to add..."
-                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-purple-500 font-body"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleApprove}
-                    disabled={submitting}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
-                  >
-                    {submitting ? "Approving..." : "✅ This looks right"}
-                  </button>
-                  <button
-                    onClick={() => setShowAmendForm(true)}
-                    disabled={submitting}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
-                  >
-                    ✏️ I want to add something
-                  </button>
-                  <button
-                    onClick={() => setShowDeclineConfirm(true)}
-                    disabled={submitting}
-                    className="px-6 py-3 border-2 border-slate-200 text-slate-500 font-heading font-bold rounded-xl hover:bg-slate-50 transition disabled:opacity-50"
-                  >
-                    I&apos;m not sure about this
-                  </button>
-                </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleApprove}
+                  disabled={submitting}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
+                >
+                  {submitting ? "Approving..." : "Approve Brain"}
+                </button>
+                <button
+                  onClick={() => setShowContextForm(true)}
+                  disabled={submitting}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
+                >
+                  Add Context & Rebuild
+                </button>
+                <button
+                  onClick={() => setShowStartOverConfirm(true)}
+                  disabled={submitting}
+                  className="px-6 py-3 bg-slate-100 text-slate-600 font-heading font-bold rounded-xl hover:bg-slate-200 transition disabled:opacity-50 border border-slate-200"
+                >
+                  Start Over
+                </button>
               </div>
             )}
           </div>

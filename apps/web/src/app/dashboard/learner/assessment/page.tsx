@@ -8,6 +8,7 @@ import AdventureMap from "@/components/discovery/AdventureMap";
 import ChapterIntro from "@/components/discovery/ChapterIntro";
 import ActivityRenderer from "@/components/discovery/ActivityRenderer";
 import ChapterComplete from "@/components/discovery/ChapterComplete";
+import BreakActivity from "@/components/discovery/BreakActivity";
 import Finale from "@/components/discovery/Finale";
 import type { FunctioningLevel } from "@/components/discovery/types";
 
@@ -138,6 +139,7 @@ function DiscoveryAdventureInner({
     startChapterActivities,
     handleAnswer,
     advanceToNextChapter,
+    resumeAfterBreak,
     finishAdventure,
     submitResults,
   } = useDiscoveryEngine({ learnerId, learnerName, functioningLevel, accessToken });
@@ -221,6 +223,15 @@ function DiscoveryAdventureInner({
         result={lastResult}
         isLastChapter={state.currentChapterIdx >= chapters.length - 1}
         onContinue={advanceToNextChapter}
+      />
+    );
+  }
+
+  if (state.phase === "break") {
+    return (
+      <BreakActivity
+        chapterNumber={state.currentChapterIdx + 1}
+        onBreakComplete={resumeAfterBreak}
       />
     );
   }
