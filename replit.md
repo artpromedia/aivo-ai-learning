@@ -169,7 +169,18 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `/dashboard/learner/challenges` — Multiplayer Challenges (create/join with invite codes)
 - `/dashboard/learner/shop` — Avatar Shop (50 items, 6 categories, coin/gem purchase)
 - `/dashboard/learner/leaderboard` — Leaderboard (global/class/school)
-- `/dashboard/admin` — Admin dashboard (live stats, service health, user/learner/tenant management)
+- `/dashboard/learner/badges` — Badges collection page
+- `/dashboard/learner/profile` — Learner profile page
+- `/dashboard/learner/settings` — Learner settings page
+- `/dashboard/learner/tutors` — Tutors browse page
+- `/dashboard/learner/tutors/[tutorKey]` — Tutor detail page
+- `/dashboard/learner/quests/[worldSlug]` — Quest world detail page
+- `/dashboard/parent/learner/[id]/overview` — Parent learner overview
+- `/dashboard/parent/learner/[id]/brain` — Parent brain profile viewer
+- `/dashboard/parent/learner/[id]/tutors` — Parent manage learner tutors
+- `/dashboard/parent/learner/[id]/settings` — Parent per-learner settings
+- `/dashboard/admin` — Admin dashboard (live stats, service health, user/learner/tenant management, analytics)
+- `/dashboard/notifications` — Cross-role notification inbox (filtering, read/unread)
 
 ### Engagement System
 - **engagement-svc** (port 3008): XP engine (14 event types), level system (N²×100), streak engine with freeze support, badge engine with 4 rarity tiers, virtual currency (coins + gems), avatar shop, quests, multiplayer challenges, leaderboards, SEL check-ins, break activities, teacher lesson plans

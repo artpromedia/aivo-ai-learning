@@ -69,7 +69,7 @@ export default function AdminDashboard() {
   const [services, setServices] = useState<ServiceHealth[]>(
     SERVICES.map((s) => ({ ...s, status: "checking" as const }))
   );
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "learners" | "tenants">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "learners" | "tenants" | "analytics">("overview");
   const [allUsers, setAllUsers] = useState<AdminStats["recentUsers"]>([]);
   const [allLearners, setAllLearners] = useState<AdminStats["recentLearners"]>([]);
   const [allTenants, setAllTenants] = useState<Tenant[]>([]);
@@ -114,21 +114,20 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!accessToken || activeTab === "overview") return;
-    if (activeTab === "users") {
-      fetch("/api/admin/users?limit=100", { headers: { Authorization: `Bearer ${accessToken}` } })
-        .then((r) => r.json())
-        .then(setAllUsers)
-        .catch(() => {});
+    const safeFetch = (url: string, setter: (d: any[]) => void) =>
+      fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } })
+        .then((r) => r.ok ? r.json() : [])
+        .then((d) => setter(Array.isArray(d) ? d : []))
+        .catch(() => setter([]));
+    if (activeTab === "analytics") {
+      safeFetch("/api/admin/learners?limit=100", setAllLearners);
+      safeFetch("/api/admin/tenants", setAllTenants);
+    } else if (activeTab === "users") {
+      safeFetch("/api/admin/users?limit=100", setAllUsers);
     } else if (activeTab === "learners") {
-      fetch("/api/admin/learners?limit=100", { headers: { Authorization: `Bearer ${accessToken}` } })
-        .then((r) => r.json())
-        .then(setAllLearners)
-        .catch(() => {});
+      safeFetch("/api/admin/learners?limit=100", setAllLearners);
     } else if (activeTab === "tenants") {
-      fetch("/api/admin/tenants", { headers: { Authorization: `Bearer ${accessToken}` } })
-        .then((r) => r.json())
-        .then(setAllTenants)
-        .catch(() => {});
+      safeFetch("/api/admin/tenants", setAllTenants);
     }
   }, [activeTab, accessToken]);
 
@@ -190,7 +189,7 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-heading font-bold text-slate-900">Admin Dashboard</h1>
           <div className="flex gap-2">
-            {(["overview", "users", "learners", "tenants"] as const).map((tab) => (
+            {(["overview", "users", "learners", "tenants", "analytics"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -451,6 +450,155 @@ export default function AdminDashboard() {
               ) : (
                 <p className="text-sm text-slate-400">No tenants found.</p>
               )}
+            </div>
+          </div>
+        )}
+        {activeTab === "analytics" && (
+          <div className="space-y-6">
+            {isPlatformAdmin && (
+              <div className="bg-gradient-to-r from-primary to-purple-600 rounded-2xl p-8 text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                <div className="relative">
+                  <h2 className="text-xl font-heading font-bold mb-4">Platform Overview</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div>
+                      <p className="text-3xl font-bold">{stats?.totalUsers ?? 0}</p>
+                      <p className="text-white/70 text-sm">Total Users</p>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold">{stats?.totalLearners ?? 0}</p>
+                      <p className="text-white/70 text-sm">Total Learners</p>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold">{stats?.totalTenants ?? 0}</p>
+                      <p className="text-white/70 text-sm">Organizations</p>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold">{services.filter(s => s.status === "healthy").length}/{SERVICES.length}</p>
+                      <p className="text-white/70 text-sm">Services Online</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+                <h3 className="font-heading font-bold text-lg mb-4">Functioning Level Distribution</h3>
+                {allLearners.length === 0 ? (
+                  <p className="text-sm text-slate-400">No learner data available. Switch to the Learners tab to load data first.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(
+                      allLearners.reduce((acc: Record<string, number>, l) => {
+                        const level = l.functioningLevel || "N/A";
+                        acc[level] = (acc[level] || 0) + 1;
+                        return acc;
+                      }, {})
+                    ).sort((a, b) => b[1] - a[1]).map(([level, count]) => {
+                      const pct = Math.round((count / allLearners.length) * 100);
+                      return (
+                        <div key={level}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${LEVEL_COLORS[level] || "bg-slate-100 text-slate-500"}`}>{level}</span>
+                            <span className="text-sm font-bold text-slate-700">{count} ({pct}%)</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-2">
+                            <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+                <h3 className="font-heading font-bold text-lg mb-4">Grade Distribution</h3>
+                {allLearners.length === 0 ? (
+                  <p className="text-sm text-slate-400">No learner data available.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(
+                      allLearners.reduce((acc: Record<string, number>, l) => {
+                        const grade = l.gradeLevel || "N/A";
+                        acc[grade] = (acc[grade] || 0) + 1;
+                        return acc;
+                      }, {})
+                    ).sort((a, b) => {
+                      const na = parseInt(a[0]) || 99;
+                      const nb = parseInt(b[0]) || 99;
+                      return na - nb;
+                    }).map(([grade, count]) => {
+                      const pct = Math.round((count / allLearners.length) * 100);
+                      return (
+                        <div key={grade} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
+                          <span className="text-sm font-medium text-slate-700">Grade {grade}</span>
+                          <div className="flex items-center gap-3">
+                            <div className="w-24 bg-slate-100 rounded-full h-1.5">
+                              <div className="h-1.5 rounded-full bg-cyan-500" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="text-sm font-bold text-slate-700 w-16 text-right">{count} ({pct}%)</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+                <h3 className="font-heading font-bold text-lg mb-4">Tenant Breakdown</h3>
+                {allTenants.length === 0 ? (
+                  <p className="text-sm text-slate-400">No tenant data available. Switch to the Tenants tab to load data first.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(
+                      allTenants.reduce((acc: Record<string, number>, t) => {
+                        const type = TENANT_TYPE_LABELS[t.type]?.label || t.type;
+                        acc[type] = (acc[type] || 0) + 1;
+                        return acc;
+                      }, {})
+                    ).map(([type, count]) => (
+                      <div key={type} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                        <span className="text-sm font-medium text-slate-700">{type}</span>
+                        <span className="text-lg font-bold text-primary">{count}</span>
+                      </div>
+                    ))}
+                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                      <span className="text-sm font-bold text-slate-900">Total</span>
+                      <span className="text-lg font-bold text-slate-900">{allTenants.length}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+                <h3 className="font-heading font-bold text-lg mb-4">System Status</h3>
+                <div className="space-y-2">
+                  {services.map(svc => (
+                    <div key={svc.name} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${svc.status === "healthy" ? "bg-green-500" : svc.status === "unhealthy" ? "bg-red-500" : "bg-amber-400 animate-pulse"}`} />
+                        <span className="text-sm font-medium text-slate-700">{svc.name}</span>
+                      </div>
+                      <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${svc.status === "healthy" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                        {svc.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-slate-700">Overall Health</span>
+                    <span className={`px-3 py-1 text-xs rounded-full font-bold ${services.every(s => s.status === "healthy") ? "bg-green-100 text-green-700" : services.some(s => s.status === "healthy") ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+                      {services.every(s => s.status === "healthy") ? "All Systems Operational" : services.some(s => s.status === "healthy") ? "Partial Outage" : "System Down"}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
