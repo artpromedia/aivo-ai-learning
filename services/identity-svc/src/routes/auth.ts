@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { users, sessions, tenants, learners } from "@aivo/db";
 import { signJWT, verifyJWT } from "@aivo/security";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import crypto from "crypto";
 import argon2 from "argon2";
 
@@ -15,6 +15,55 @@ async function verifyPassword(hash: string, password: string): Promise<boolean> 
 
 function hashRefreshToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+async function deleteLearnerCascade(tx: any, learnerId: string) {
+  const dependentTables = [
+    "assessment_attempts",
+    "avatar_inventory",
+    "badges",
+    "brain_insights",
+    "brain_recommendations",
+    "brain_state_snapshots",
+    "brain_states",
+    "break_activities",
+    "causal_analyses",
+    "challenge_participants",
+    "collaboration_invites",
+    "currency_transactions",
+    "functional_milestones",
+    "gradebook_entries",
+    "homework_sessions",
+    "homework_assignments",
+    "iep_documents",
+    "iep_goals",
+    "iep_profiles",
+    "language_profiles",
+    "leaderboard_entries",
+    "learner_caregivers",
+    "learner_functioning_levels",
+    "learner_teachers",
+    "learner_therapists",
+    "learning_paths",
+    "lesson_plans",
+    "lesson_sessions",
+    "parent_assessments",
+    "parent_reported_events",
+    "quest_progress",
+    "sel_checkins",
+    "sensory_profiles",
+    "streaks",
+    "therapy_goals",
+    "therapy_sessions",
+    "transition_plans",
+    "tutor_sessions",
+    "virtual_currency",
+    "xp_events",
+  ];
+  for (const table of dependentTables) {
+    await tx.execute(sql`DELETE FROM ${sql.identifier(table)} WHERE learner_id = ${learnerId}`);
+  }
+  await tx.delete(learners).where(eq(learners.id, learnerId));
 }
 
 export async function registerAuthRoutes(app: FastifyInstance) {
@@ -334,7 +383,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     await db.transaction(async (tx: any) => {
       const userLearners = await tx.select().from(learners).where(eq(learners.parentId, payload.sub));
       for (const l of userLearners) {
-        await tx.delete(learners).where(eq(learners.id, l.id));
+        await deleteLearnerCascade(tx, l.id);
         if (l.userId) {
           await tx.delete(sessions).where(eq(sessions.userId, l.userId));
           await tx.delete(users).where(eq(users.id, l.userId));
@@ -365,7 +414,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (learner.parentId !== payload.sub) return reply.status(403).send({ error: "You can only delete your own learners" });
 
     await db.transaction(async (tx: any) => {
-      await tx.delete(learners).where(eq(learners.id, learnerId));
+      await deleteLearnerCascade(tx, learnerId);
       if (learner.userId) {
         await tx.delete(sessions).where(eq(sessions.userId, learner.userId));
         await tx.delete(users).where(eq(users.id, learner.userId));
