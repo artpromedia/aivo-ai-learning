@@ -11,6 +11,201 @@ SUBJECTS = [
     {"key": "executive_function", "label": "Executive Function", "emoji": "🧠", "color": "#6366F1"},
 ]
 
+ADVENTURE_CHAPTERS = [
+    {
+        "id": "sage_story_garden",
+        "title": "Sage's Story Garden",
+        "subtitle": "Reading & Language",
+        "domain": "ela",
+        "tutorKey": "sage",
+        "bgGradient": "from-emerald-900 via-teal-800 to-slate-900",
+        "sceneDescription": "An illustrated garden where words grow on trees, sentences bloom as flowers, and stories hide in magical books.",
+        "landmark": {"emoji": "🌳", "label": "Story Garden"},
+        "transitionLine": "Your story garden is growing beautifully! Let me introduce you to my friend.",
+    },
+    {
+        "id": "nova_number_galaxy",
+        "title": "Nova's Number Galaxy",
+        "subtitle": "Mathematics",
+        "domain": "math",
+        "tutorKey": "nova",
+        "bgGradient": "from-indigo-950 via-purple-900 to-slate-900",
+        "sceneDescription": "A cosmic scene with planets, stars, and gently floating asteroids. Warm and wonder-filled, not cold sci-fi.",
+        "landmark": {"emoji": "⭐", "label": "Number Galaxy"},
+        "transitionLine": "You are a star navigator! Someone else wants to show you their world.",
+    },
+    {
+        "id": "spark_discovery_lab",
+        "title": "Spark's Discovery Lab",
+        "subtitle": "Science",
+        "domain": "science",
+        "tutorKey": "spark",
+        "bgGradient": "from-amber-900 via-orange-800 to-slate-900",
+        "sceneDescription": "A colorful laboratory with bubbling beakers, a terrarium with plants, a window showing weather, and a microscope.",
+        "landmark": {"emoji": "🧪", "label": "Discovery Lab"},
+        "transitionLine": "Science is all around us! Let's visit someone very special next.",
+    },
+    {
+        "id": "harmony_feelings_treehouse",
+        "title": "Harmony's Feelings Treehouse",
+        "subtitle": "Social-Emotional Learning",
+        "domain": "sel",
+        "tutorKey": "harmony",
+        "bgGradient": "from-violet-900 via-purple-800 to-slate-900",
+        "sceneDescription": "A warm, cozy treehouse with soft lighting, cushions, and a window showing the outside world.",
+        "landmark": {"emoji": "🏡", "label": "Feelings Treehouse"},
+        "transitionLine": "You are so kind and thoughtful! One more friend wants to meet you.",
+    },
+    {
+        "id": "echo_sound_studio",
+        "title": "Echo's Sound Studio",
+        "subtitle": "Speech & Language",
+        "domain": "speech",
+        "tutorKey": "echo",
+        "bgGradient": "from-pink-900 via-rose-800 to-slate-900",
+        "sceneDescription": "A friendly recording studio with microphones, sound waves, and musical notes floating around.",
+        "landmark": {"emoji": "🎵", "label": "Sound Studio"},
+        "transitionLine": "Your voice is music to my ears! Time for one last adventure.",
+    },
+    {
+        "id": "pixel_puzzle_palace",
+        "title": "Pixel's Puzzle Palace",
+        "subtitle": "Executive Function & Problem Solving",
+        "domain": "executive_function",
+        "tutorKey": "pixel",
+        "bgGradient": "from-cyan-900 via-sky-800 to-slate-900",
+        "sceneDescription": "A colorful puzzle room where logic rules and patterns create the environment. Crystal formations and shifting tiles.",
+        "landmark": {"emoji": "🔮", "label": "Puzzle Palace"},
+        "transitionLine": "You solved every puzzle! What an amazing adventure.",
+    },
+]
+
+
+def build_discovery_adventure_prompt(parent_assessment: dict, chapter: dict) -> tuple[str, str]:
+    responses = parent_assessment.get("responses", {})
+    communication_mode = parent_assessment.get("communicationMode", "verbal")
+    device_interaction = parent_assessment.get("deviceInteraction", "independent")
+    functioning_level = parent_assessment.get("functioningLevel", "STANDARD")
+    attention_span = parent_assessment.get("attentionSpan", "typical")
+    diagnoses = parent_assessment.get("diagnoses", [])
+
+    learning_style = responses.get("ls-1", "")
+    strengths_raw = responses.get("str-1", [])
+    strengths = strengths_raw if isinstance(strengths_raw, list) else []
+    challenges_raw = responses.get("ch-1", [])
+    challenges = challenges_raw if isinstance(challenges_raw, list) else []
+    diagnosed = responses.get("ch-2", "")
+    reading_level = responses.get("fl-5", "")
+    dev_level = responses.get("fl-7", "")
+    interests_raw = responses.get("pref-1", [])
+    interests = interests_raw if isinstance(interests_raw, list) else []
+    frustrations = responses.get("ch-5", "")
+    focus_rating = responses.get("ls-3", 3)
+    confidence = responses.get("se-1", 3)
+
+    fl_config = {
+        "STANDARD": {"activities": 4, "choices": 4, "interaction_types": "tap_image, tap_word, drag_sort, sequence, pattern_fill, memory", "complexity": "age-appropriate"},
+        "SUPPORTED": {"activities": 3, "choices": 3, "interaction_types": "tap_image, tap_word, drag_sort, sequence", "complexity": "simplified language, clearer options"},
+        "LOW_VERBAL": {"activities": 2, "choices": 2, "interaction_types": "tap_image, emotion_pick", "complexity": "simple, visual-heavy, no text in choices"},
+        "NON_VERBAL": {"activities": 2, "choices": 2, "interaction_types": "tap_image", "complexity": "picture-only choices, very simple"},
+        "PRE_SYMBOLIC": {"activities": 0, "choices": 0, "interaction_types": "observational", "complexity": "parent/caregiver observational"},
+    }
+    fl = fl_config.get(functioning_level, fl_config["STANDARD"])
+
+    system_prompt = f"""You are AIVO's Discovery Adventure generator. You create immersive, narrative-driven baseline assessment activities for learners. Each activity is part of a themed adventure chapter, NOT a traditional test.
+
+## Learner Profile
+- Communication Mode: {communication_mode}
+- Device Interaction: {device_interaction}
+- Functioning Level: {functioning_level}
+- Attention Span: {attention_span}
+- Diagnoses: {', '.join(diagnoses) if diagnoses else 'None reported'}
+- Learning Style: {learning_style}
+- Reading Level: {reading_level}
+- Developmental Level: {dev_level}
+- Strengths: {', '.join(strengths) if strengths else 'Not specified'}
+- Challenges: {', '.join(challenges) if challenges else 'Not specified'}
+- Diagnosed Conditions: {diagnosed}
+- Interests: {', '.join(interests) if interests else 'Not specified'}
+- What Frustrates Them: {frustrations or 'Not specified'}
+- Focus Rating (1-5): {focus_rating}
+- Self-Confidence (1-5): {confidence}
+
+## Current Chapter
+- Chapter: {chapter['title']}
+- Domain: {chapter['domain']}
+- Scene: {chapter['sceneDescription']}
+- Tutor: {chapter['tutorKey']}
+
+## Functioning Level Adaptations
+- Number of activities: {fl['activities']}
+- Choices per activity: {fl['choices']}
+- Allowed interaction types: {fl['interaction_types']}
+- Complexity: {fl['complexity']}
+
+## Activity Design Rules
+1. Each activity must feel like part of an ADVENTURE, not a test
+2. The tutor character speaks in first person, warmly and encouragingly
+3. Activities should incorporate the learner's interests when possible
+4. Getting something wrong should feel like the adventure taking an interesting turn, never punishing
+5. Generate activities at 3 difficulty tiers: easy, medium, hard (the adaptive engine selects which to use)
+6. Each tier should have {fl['activities']} activities
+7. Visual elements use emoji as placeholders for rich illustrations
+8. For LOW_VERBAL/NON_VERBAL: no text in choice labels, use emoji only
+9. Activity narration should be the tutor telling a mini-story that leads naturally to the interaction
+10. Each activity title should be a fun, thematic name (e.g., "The Word Garden", "Star Counting")
+11. Content must be safe, age-appropriate, and culturally neutral
+12. Brain measures should specify what cognitive/academic skills each activity assesses"""
+
+    user_prompt = f"""Generate discovery adventure activities for "{chapter['title']}" ({chapter['domain']} domain).
+
+Generate {fl['activities']} activities at each of 3 difficulty tiers (easy, medium, hard).
+
+Return ONLY valid JSON in this exact format:
+{{
+  "activities": {{
+    "easy": [
+      {{
+        "id": "{chapter['domain']}_easy_1",
+        "title": "The Word Garden",
+        "narration": "Welcome to my garden! These trees grow words. Can you help me pick the right ones?",
+        "tutorLine": "Which word tells us what the dog is doing?",
+        "interaction": "tap_image",
+        "choices": [
+          {{"id": "a", "label": "Running", "emoji": "🏃", "isCorrect": true}},
+          {{"id": "b", "label": "Sleeping", "emoji": "😴", "isCorrect": false}},
+          {{"id": "c", "label": "Eating", "emoji": "🍽️", "isCorrect": false}}
+        ],
+        "sceneEmoji": "🌳",
+        "difficulty": "easy",
+        "brainMeasures": ["vocabulary level", "reading recognition speed"]
+      }}
+    ],
+    "medium": [...],
+    "hard": [...]
+  }}
+}}
+
+Interaction types to use (pick appropriate ones for this domain):
+- "tap_image": Child taps one of several picture/emoji cards (general purpose)
+- "tap_word": Child taps a word from options (reading-focused)
+- "drag_sort": Child drags items into categories (classification, sorting)
+- "sequence": Child puts items in correct order (sequencing, story order)
+- "pattern_fill": Child fills in missing pattern element (patterns, logic)
+- "memory": Child recalls items from a briefly shown sequence (working memory)
+- "emotion_pick": Child identifies emotions from scenes (SEL-specific)
+- "observation": Child observes a scene and answers about it (science, inference)
+
+IMPORTANT:
+- Each choice MUST have an emoji field
+- Exactly ONE choice per activity must have isCorrect: true
+- For LOW_VERBAL/NON_VERBAL: use emoji-only labels (no words)
+- Personalize themes using learner interests: {', '.join(interests) if interests else 'general themes'}
+- ID format: {chapter['domain']}_[easy/medium/hard]_[number]
+- Return ONLY the JSON object, no markdown or code blocks"""
+
+    return system_prompt, user_prompt
+
 
 def build_baseline_generation_prompt(parent_assessment: dict) -> tuple[str, str]:
     responses = parent_assessment.get("responses", {})

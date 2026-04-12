@@ -11,7 +11,95 @@ async function authenticate(req: any, reply: any) {
 
 const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
 
+function buildParentAssessmentPayload(parentAssessment: any, learner: any) {
+  return {
+    communicationMode: parentAssessment.communicationMode,
+    deviceInteraction: parentAssessment.deviceInteraction,
+    responseMethod: parentAssessment.responseMethod,
+    attentionSpan: parentAssessment.attentionSpan,
+    diagnoses: parentAssessment.diagnoses,
+    responses: parentAssessment.responses,
+    functioningLevel: learner.functioningLevel || "STANDARD",
+  };
+}
+
 export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
+
+  app.post("/api/assessments/learner/discovery/:learnerId/chapter", {
+    schema: {
+      tags: ["Discovery Adventure"],
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: "object",
+        required: ["learnerId"],
+        properties: { learnerId: { type: "string" } },
+      },
+      body: {
+        type: "object",
+        required: ["chapter"],
+        properties: {
+          chapter: { type: "object" },
+        },
+      },
+    },
+    preHandler: authenticate,
+  }, async (req, reply) => {
+    const db = (app as any).db;
+    const user = (req as any).user;
+    const { learnerId } = req.params as { learnerId: string };
+    const { chapter } = req.body as { chapter: any };
+
+    const [learner] = await db.select().from(learners).where(eq(learners.id, learnerId)).limit(1);
+    if (!learner) return reply.status(404).send({ error: "Learner not found" });
+
+    if (user.role === "LEARNER" && user.sub !== learnerId) {
+      return reply.status(403).send({ error: "Access denied" });
+    }
+    if (user.role === "PARENT" && learner.parentId !== user.sub) {
+      return reply.status(403).send({ error: "Access denied" });
+    }
+
+    const [parentAssessment] = await db
+      .select()
+      .from(parentAssessments)
+      .where(eq(parentAssessments.learnerId, learnerId))
+      .orderBy(desc(parentAssessments.createdAt))
+      .limit(1);
+
+    const parentPayload = parentAssessment
+      ? buildParentAssessmentPayload(parentAssessment, learner)
+      : { functioningLevel: learner.functioningLevel || "STANDARD" };
+
+    try {
+      const aiRes = await fetch(`${AI_SVC_URL}/api/ai/generate-discovery-chapter`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          parent_assessment: parentPayload,
+          chapter,
+          functioning_level: learner.functioningLevel || "STANDARD",
+        }),
+      });
+
+      if (!aiRes.ok) {
+        const err = await aiRes.text();
+        return reply.status(502).send({ error: "AI generation failed", detail: err });
+      }
+
+      const data = await aiRes.json() as any;
+      return reply.send({
+        generated: true,
+        learnerId,
+        functioningLevel: learner.functioningLevel,
+        chapterId: data.chapter_id,
+        activities: data.activities,
+        model: data.model,
+      });
+    } catch (e: any) {
+      return reply.status(502).send({ error: "Failed to reach AI service", detail: e.message });
+    }
+  });
+
   app.get("/api/assessments/learner/baseline/:learnerId", {
     schema: {
       tags: ["Learner Baseline"],

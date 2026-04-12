@@ -190,6 +190,77 @@ async def generate_baseline(req: BaselineRequest):
     )
 
 
+class DiscoveryChapterRequest(BaseModel):
+    parent_assessment: dict
+    chapter: dict
+    functioning_level: str = "STANDARD"
+
+
+class DiscoveryChapterResponse(BaseModel):
+    chapter_id: str
+    activities: dict
+    model: str
+    prompt_tokens: int
+    completion_tokens: int
+
+
+@router.post("/generate-discovery-chapter", response_model=DiscoveryChapterResponse)
+async def generate_discovery_chapter(req: DiscoveryChapterRequest):
+    from ..services.baseline_generator import build_discovery_adventure_prompt
+
+    system_prompt, user_prompt = build_discovery_adventure_prompt(req.parent_assessment, req.chapter)
+
+    try:
+        result = await generate_completion(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=4000,
+            temperature=0.7,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"LLM discovery generation failed: {str(e)}")
+
+    raw = result["content"].strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+        if raw.endswith("```"):
+            raw = raw[:-3]
+
+    try:
+        parsed = json.loads(raw)
+        activities = parsed.get("activities", {})
+    except json.JSONDecodeError:
+        logger.error(f"Failed to parse discovery chapter JSON: {raw[:300]}")
+        raise HTTPException(status_code=502, detail="AI returned invalid JSON for discovery chapter")
+
+    for tier in ("easy", "medium", "hard"):
+        tier_acts = activities.get(tier, [])
+        valid = []
+        for act in tier_acts:
+            if not isinstance(act, dict):
+                continue
+            if not all(k in act for k in ("id", "title", "narration", "interaction")):
+                continue
+            choices = act.get("choices", [])
+            if isinstance(choices, list) and len(choices) >= 2:
+                has_correct = any(c.get("isCorrect") for c in choices if isinstance(c, dict))
+                if has_correct:
+                    valid.append(act)
+        activities[tier] = valid
+
+    total_valid = sum(len(activities.get(t, [])) for t in ("easy", "medium", "hard"))
+    if total_valid < 2:
+        raise HTTPException(status_code=502, detail=f"AI generated too few valid activities ({total_valid})")
+
+    return DiscoveryChapterResponse(
+        chapter_id=req.chapter.get("id", "unknown"),
+        activities=activities,
+        model=result["model"],
+        prompt_tokens=result["prompt_tokens"],
+        completion_tokens=result["completion_tokens"],
+    )
+
+
 class IEPParseRequest(BaseModel):
     document_text: str
     learner_name: str = ""

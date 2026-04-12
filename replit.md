@@ -157,7 +157,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `/dashboard/caregiver` — Caregiver dashboard (connected learners grid with Brain Visualization)
 - `/dashboard/therapist` — Therapist dashboard (connected clients grid with Brain Visualization)
 - `/dashboard/learner` — Learner dashboard (gamification panel: XP/level/streak/badges/currency + tutor grid + navigation to quests/challenges/shop/leaderboard)
-- `/dashboard/learner/assessment` — Learner Baseline Assessment (dynamically generated from parent assessment via AI, fallback to 42 hardcoded questions across 7 subjects)
+- `/dashboard/learner/assessment` — Discovery Adventure (immersive baseline assessment with 6 themed chapters, tutor characters, adaptive difficulty, adventure map)
 - `/dashboard/learner/lesson/[tutorKey]` — Lesson Chat UI
 - `/dashboard/learner/homework` — Homework Helper (upload photo/paste text, assignment list)
 - `/dashboard/learner/homework/[sessionId]` — Homework Help Session (Socratic chat + problem sidebar)
@@ -186,6 +186,15 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **engagement-svc** (port 3008): XP engine (14 event types), level system (N²×100), streak engine with freeze support, badge engine with 4 rarity tiers, virtual currency (coins + gems), avatar shop, quests, multiplayer challenges, leaderboards, SEL check-ins, break activities, teacher lesson plans
 - **DB Schema**: 15 engagement tables in `packages/db/src/schema/engagement.ts`
 - **Seed Data**: 50 avatar items (6 categories), 25 quest chapters (5 worlds × 5 chapters)
+
+### Discovery Adventure (Baseline Assessment)
+- **Architecture**: Immersive 6-chapter adventure replacing traditional quiz-based baseline assessment
+- **Chapters**: Sage (ELA), Nova (Math), Spark (Science), Harmony (SEL), Echo (Speech), Pixel (Executive Function)
+- **Components**: `apps/web/src/components/discovery/` — PreAdventure, AdventureMap, ChapterIntro, ActivityRenderer, ChapterComplete, Finale
+- **Engine**: `useDiscoveryEngine.ts` — Adaptive difficulty (easy→medium→hard based on chapter performance ≥80%/≤40%), functioning-level-aware chapter counts (STANDARD=6, SUPPORTED=5, LOW_VERBAL=4, NON_VERBAL=3, PRE_SYMBOLIC=0)
+- **AI Integration**: Activities generated per chapter via `POST /api/assessments/learner/discovery/:learnerId/chapter` → ai-svc `build_discovery_adventure_prompt()`
+- **Fallback**: Rich local fallback activities for all 6 chapters when AI service unavailable
+- **Backend**: assessment-svc route + ai-svc `generate-discovery-chapter` endpoint
 
 ### The Stage (Learner Experience Engine)
 - **Architecture**: Full-screen immersive learning environment replacing the chat-based lesson UI
