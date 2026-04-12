@@ -218,16 +218,26 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const { parentId, pin } = req.body as any;
     const db = (app as any).db;
 
-    const [parent] = await db.select().from(users)
-      .where(and(eq(users.id, parentId), eq(users.role, "PARENT")))
-      .limit(1);
+    const isEmail = parentId.includes("@");
+    let parent;
+    if (isEmail) {
+      const [found] = await db.select().from(users)
+        .where(and(eq(users.email, parentId), eq(users.role, "PARENT")))
+        .limit(1);
+      parent = found;
+    } else {
+      const [found] = await db.select().from(users)
+        .where(and(eq(users.id, parentId), eq(users.role, "PARENT")))
+        .limit(1);
+      parent = found;
+    }
 
     if (!parent) {
-      return reply.status(401).send({ error: "Invalid parent ID" });
+      return reply.status(401).send({ error: "Invalid parent email or ID" });
     }
 
     const learnerList = await db.select().from(learners)
-      .where(eq(learners.parentId, parentId));
+      .where(eq(learners.parentId, parent.id));
     const learnerUserIds = learnerList.map((l: any) => l.userId);
 
     if (learnerUserIds.length === 0) {

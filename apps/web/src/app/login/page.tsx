@@ -89,8 +89,8 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={handlePinLogin} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Parent ID</label>
-                <input type="text" value={parentId} onChange={(e) => setParentId(e.target.value)} required placeholder="Ask your parent"
+                <label className="block text-sm font-medium text-slate-700 mb-1">Parent Email</label>
+                <input type="text" value={parentId} onChange={(e) => setParentId(e.target.value)} required placeholder="Your parent's email"
                   className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition" />
               </div>
               <div>
