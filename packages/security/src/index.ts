@@ -47,4 +47,11 @@ export function getPublicKey() {
   return publicKey;
 }
 
+export async function getPublicKeyPEM(): Promise<string | null> {
+  if (!publicKey) await initKeys();
+  if (!publicKey) return null;
+  const spki = await jose.exportSPKI(publicKey as CryptoKey);
+  return spki;
+}
+
 export { initKeys as initJWTKeys };

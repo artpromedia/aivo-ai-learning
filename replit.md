@@ -34,7 +34,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Frontend**: Next.js 15 + Tailwind CSS v4 + TypeScript
 - **Backend (TS)**: Fastify 5 + Drizzle ORM + PostgreSQL 16
 - **Backend (Python)**: FastAPI + LiteLLM + Uvicorn
-- **Auth**: JWT RS256 (jose library), refresh tokens, PIN login
+- **Auth**: JWT RS256 (jose library), refresh tokens, PIN login. Public key served at `/api/auth/public-key` for cross-service verification. Brain-svc (Python) fetches and caches the RSA public key from identity-svc.
 - **Database**: PostgreSQL 16 with JSONB brain states
 - **Styling**: AIVO brand system (purple primary #7C3AED), game-themed Fredoka + Nunito fonts
 
@@ -67,6 +67,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `POST /api/auth/login` — Email login
 - `POST /api/auth/pin-login` — Learner PIN login
 - `POST /api/auth/refresh` — Refresh access token
+- `GET /api/auth/public-key` — RSA public key for JWT verification (used by Python services)
 - `GET /api/users/me` — Current user profile
 - `GET /api/users/learners` — List learners
 - `POST /api/users/learners` — Create learner (with COPPA consent + curriculum auto-detection)

@@ -82,6 +82,15 @@ async function deleteUserCascade(db: any, userId: string) {
 }
 
 export async function registerAuthRoutes(app: FastifyInstance) {
+  app.get("/api/auth/public-key", async (_req, reply) => {
+    const { getPublicKeyPEM } = await import("@aivo/security");
+    const pem = await getPublicKeyPEM();
+    if (!pem) {
+      return reply.status(503).send({ error: "Keys not initialized" });
+    }
+    return { publicKey: pem, algorithm: "RS256" };
+  });
+
   app.post("/api/auth/register", {
     schema: {
       tags: ["Auth"],

@@ -13,6 +13,7 @@ export default function ParentBrainProfilePage() {
   const learnerId = params.id as string;
   const [learnerName, setLearnerName] = useState("Learner");
   const [loadingName, setLoadingName] = useState(true);
+  const [baselineCompleted, setBaselineCompleted] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -30,6 +31,15 @@ export default function ParentBrainProfilePage() {
       })
       .catch(() => {})
       .finally(() => setLoadingName(false));
+
+    fetch(`/api/assessments/learner/discovery/${learnerId}/status`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((status) => {
+        if (status?.baselineCompleted) setBaselineCompleted(true);
+      })
+      .catch(() => {});
   }, [accessToken, learnerId]);
 
   if (loading || !user) return null;
@@ -57,7 +67,7 @@ export default function ParentBrainProfilePage() {
           <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
             <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Brain Visualization</h2>
             {accessToken ? (
-              <BrainVisualization learnerId={learnerId} learnerName={learnerName} accessToken={accessToken} />
+              <BrainVisualization learnerId={learnerId} learnerName={learnerName} accessToken={accessToken} baselineCompleted={baselineCompleted} />
             ) : (
               <p className="text-sm text-slate-400">Loading brain data...</p>
             )}

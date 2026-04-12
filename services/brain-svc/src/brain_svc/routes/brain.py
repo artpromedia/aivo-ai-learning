@@ -1,5 +1,6 @@
 import uuid
 import json
+import re
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -10,6 +11,22 @@ from brain_svc.services.clone_pipeline import clone_brain
 from brain_svc.auth import AuthClaims, require_auth
 
 router = APIRouter()
+
+def _snake_to_camel(name: str) -> str:
+    components = name.split('_')
+    return components[0] + ''.join(x.title() for x in components[1:])
+
+def _to_camel_case(data: dict) -> dict:
+    result = {}
+    for key, value in data.items():
+        camel_key = _snake_to_camel(key)
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        result[camel_key] = value
+    return result
 
 @router.post("/clone")
 async def clone_brain_endpoint(request: BrainCloneRequest, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
@@ -26,7 +43,7 @@ async def get_brain_state(learner_id: str, db: Session = Depends(get_db), auth: 
     if not result:
         raise HTTPException(status_code=404, detail="Brain state not found")
 
-    return dict(result)
+    return _to_camel_case(dict(result))
 
 def _verify_parent_access(db: Session, auth: AuthClaims, learner_id: str):
     if auth.role in ("admin", "service", "PLATFORM_ADMIN"):
