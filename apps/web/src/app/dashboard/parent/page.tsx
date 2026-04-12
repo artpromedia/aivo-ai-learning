@@ -304,9 +304,10 @@ export default function ParentDashboard() {
                       View Brain
                     </button>
                   ) : l.functioningLevel ? (
-                    <span className="px-4 py-2 text-sm rounded-full bg-cyan-50 text-cyan-600 font-semibold border border-cyan-200">
+                    <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/assessment`)}
+                      className="px-4 py-2 text-sm rounded-full bg-cyan-50 text-cyan-600 font-bold hover:bg-cyan-100 transition border border-cyan-200">
                       Awaiting Baseline Assessment
-                    </span>
+                    </button>
                   ) : (
                     <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/assessment`)}
                       className="px-4 py-2 text-sm rounded-full bg-cyan-50 text-secondary font-bold hover:bg-cyan-100 transition">
