@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { TUTORS, type TutorKey } from "@aivo/brand";
 
 interface Plan {
   id: string;
@@ -14,14 +15,6 @@ interface Plan {
   learnerLimit?: number;
   learnerMinimum?: number;
   features: string[];
-}
-
-interface Addon {
-  id: string;
-  name: string;
-  price: number;
-  interval: string;
-  description: string;
 }
 
 interface Subscription {
@@ -40,15 +33,23 @@ interface Usage {
   storageBytes: number;
 }
 
+const PLAN_INCLUDED_TUTORS: Record<string, TutorKey[]> = {
+  free: ["sage"],
+  single: ["sage", "nova", "spark", "chrono"],
+  family: ["sage", "nova", "spark", "chrono"],
+};
+
 export default function ParentBillingPage() {
   const { user, accessToken, logout, loading } = useAuth();
   const router = useRouter();
 
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [addons, setAddons] = useState<Addon[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [activeTutorAddons, setActiveTutorAddons] = useState<string[]>([]);
+  const [addonLoading, setAddonLoading] = useState<string | null>(null);
+  const [addonMsg, setAddonMsg] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelMsg, setCancelMsg] = useState("");
@@ -64,8 +65,8 @@ export default function ParentBillingPage() {
     if (!accessToken || !user) return;
 
     fetch("/api/billing/plans")
-      .then(r => r.ok ? r.json() : { plans: [], addons: [] })
-      .then(d => { setPlans(d.plans || []); setAddons(d.addons || []); })
+      .then(r => r.ok ? r.json() : { plans: [] })
+      .then(d => setPlans(d.plans || []))
       .catch(() => {});
 
     fetch(`/api/billing/subscription/${user.tenantId}`, {
@@ -79,7 +80,58 @@ export default function ParentBillingPage() {
     fetch(`/api/billing/invoices/${user.tenantId}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     }).then(r => r.ok ? r.json() : { invoices: [] }).then(d => setInvoices(d.invoices || [])).catch(() => {});
+
+    fetch(`/api/billing/addons/${user.tenantId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }).then(r => r.ok ? r.json() : { addons: [] }).then(d => {
+      setActiveTutorAddons((d.addons || []).map((a: any) => a.tutorId));
+    }).catch(() => {});
   }, [accessToken, user]);
+
+  const handleAddTutor = async (tutorId: string) => {
+    setAddonLoading(tutorId);
+    setAddonMsg("");
+    try {
+      const res = await fetch("/api/billing/addons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ tenantId: user?.tenantId, tutorId }),
+      });
+      if (res.ok) {
+        setActiveTutorAddons(prev => [...prev, tutorId]);
+        const tutor = TUTORS[tutorId as TutorKey];
+        setAddonMsg(`${tutor?.name || tutorId} tutor added — $7.99/mo will be added to your next bill.`);
+      } else {
+        const data = await res.json();
+        setAddonMsg(data.error || "Failed to add tutor.");
+      }
+    } catch {
+      setAddonMsg("Network error.");
+    }
+    setAddonLoading(null);
+  };
+
+  const handleRemoveTutor = async (tutorId: string) => {
+    setAddonLoading(tutorId);
+    setAddonMsg("");
+    try {
+      const res = await fetch(`/api/billing/addons/${user?.tenantId}/${tutorId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) {
+        setActiveTutorAddons(prev => prev.filter(t => t !== tutorId));
+        const tutor = TUTORS[tutorId as TutorKey];
+        setAddonMsg(`${tutor?.name || tutorId} tutor removed. Access continues until end of billing period.`);
+      } else {
+        const data = await res.json();
+        setAddonMsg(data.error || "Failed to remove tutor.");
+      }
+    } catch {
+      setAddonMsg("Network error.");
+    }
+    setAddonLoading(null);
+  };
 
   const handleUpgrade = async (planId: string) => {
     if (planId === "district") return;
@@ -121,6 +173,7 @@ export default function ParentBillingPage() {
   const currentPlan = plans.find(p => p.id === subscription?.plan);
   const parentPlans = plans.filter(p => p.id !== "district");
   const districtPlan = plans.find(p => p.id === "district");
+  const includedTutors: TutorKey[] = PLAN_INCLUDED_TUTORS[subscription?.plan || "free"] || ["sage"];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
@@ -239,26 +292,60 @@ export default function ParentBillingPage() {
           )}
         </div>
 
-        {addons.length > 0 && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <h2 className="text-lg font-heading font-bold text-slate-900 mb-2">Add-On Tutors</h2>
-            <p className="text-sm text-slate-500 mb-4">Want access to more AI tutors beyond your plan? Add any tutor individually.</p>
-            {addons.map(addon => (
-              <div key={addon.id} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100">
-                <div>
-                  <p className="font-semibold text-sm text-slate-900">{addon.name}</p>
-                  <p className="text-xs text-slate-500">{addon.description}</p>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          <h2 className="text-lg font-heading font-bold text-slate-900 mb-2">Add-On Tutors — $7.99/mo each</h2>
+          <p className="text-sm text-slate-500 mb-4">
+            Your plan includes {includedTutors.length} tutor{includedTutors.length !== 1 ? "s" : ""}. Add any additional tutor below for $7.99/mo.
+          </p>
+          {addonMsg && (
+            <p className={`text-sm p-3 rounded-lg mb-4 ${addonMsg.includes("added") ? "text-green-600 bg-green-50" : addonMsg.includes("removed") ? "text-amber-600 bg-amber-50" : "text-red-600 bg-red-50"}`}>
+              {addonMsg}
+            </p>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {(Object.entries(TUTORS) as [TutorKey, typeof TUTORS[TutorKey]][]).map(([key, tutor]) => {
+              const isIncluded = includedTutors.includes(key);
+              const isAddon = activeTutorAddons.includes(key);
+              const isProcessing = addonLoading === key;
+
+              return (
+                <div key={key} className={`flex items-center gap-3 p-3 rounded-xl border transition ${isIncluded ? "bg-slate-50 border-slate-100" : isAddon ? "bg-green-50 border-green-200" : "bg-white border-slate-200 hover:border-slate-300"}`}>
+                  <span className="text-2xl flex-shrink-0">{tutor.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-slate-900">{tutor.name}</p>
+                    <p className="text-xs text-slate-500 truncate">{tutor.domain}</p>
+                  </div>
+                  {isIncluded ? (
+                    <span className="px-3 py-1 text-xs rounded-full bg-slate-200 text-slate-600 font-medium flex-shrink-0">Included</span>
+                  ) : isAddon ? (
+                    <button
+                      onClick={() => handleRemoveTutor(key)}
+                      disabled={isProcessing}
+                      className="px-3 py-1.5 text-xs rounded-lg bg-red-50 text-red-700 font-semibold hover:bg-red-100 transition flex-shrink-0 disabled:opacity-50"
+                    >
+                      {isProcessing ? "..." : "Remove"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleAddTutor(key)}
+                      disabled={isProcessing}
+                      className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition flex-shrink-0 disabled:opacity-50"
+                    >
+                      {isProcessing ? "..." : "+ $7.99/mo"}
+                    </button>
+                  )}
                 </div>
-                <div className="flex items-center gap-4">
-                  <p className="text-lg font-bold text-primary">${addon.price}<span className="text-xs text-slate-400 font-normal">/mo</span></p>
-                  <button className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition">
-                    Add Tutor
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        )}
+          {activeTutorAddons.length > 0 && (
+            <div className="mt-4 p-3 rounded-lg bg-purple-50 border border-purple-100">
+              <p className="text-sm text-slate-700">
+                <span className="font-semibold">{activeTutorAddons.length} add-on tutor{activeTutorAddons.length !== 1 ? "s" : ""}</span> &middot; <span className="text-primary font-bold">${(activeTutorAddons.length * 7.99).toFixed(2)}/mo</span> added to your subscription
+              </p>
+            </div>
+          )}
+        </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <h2 className="text-lg font-heading font-bold text-slate-900 mb-4">Invoice History</h2>

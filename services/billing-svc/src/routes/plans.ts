@@ -111,6 +111,37 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
     };
   });
 
+  app.get("/api/billing/addons/:tenantId", { preHandler: requireAuth }, async (request, reply) => {
+    const { tenantId } = request.params as any;
+    const user = (request as any).user;
+    if (user.tenantId !== tenantId && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
+      return reply.status(403).send({ error: "Access denied" });
+    }
+    return { tenantId, addons: [] };
+  });
+
+  app.post("/api/billing/addons", { preHandler: requireAuth }, async (request, reply) => {
+    const { tenantId, tutorId } = request.body as any;
+    const user = (request as any).user;
+    if (!tenantId || !tutorId) return reply.code(400).send({ error: "tenantId and tutorId required" });
+    if (user.tenantId !== tenantId && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
+      return reply.status(403).send({ error: "Access denied" });
+    }
+    return {
+      status: "created",
+      addon: { tenantId, tutorId, price: 7.99, interval: "month", status: "active", createdAt: new Date().toISOString() },
+    };
+  });
+
+  app.delete("/api/billing/addons/:tenantId/:tutorId", { preHandler: requireAuth }, async (request, reply) => {
+    const { tenantId, tutorId } = request.params as any;
+    const user = (request as any).user;
+    if (user.tenantId !== tenantId && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
+      return reply.status(403).send({ error: "Access denied" });
+    }
+    return { status: "removed", tenantId, tutorId };
+  });
+
   app.get("/api/billing/invoices/:tenantId", { preHandler: requireAuth }, async (request, reply) => {
     const { tenantId } = request.params as any;
     const user = (request as any).user;
