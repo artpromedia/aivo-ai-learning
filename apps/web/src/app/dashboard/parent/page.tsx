@@ -70,10 +70,11 @@ export default function ParentDashboard() {
   useEffect(() => {
     if (accessToken) {
       fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } })
-        .then((r) => r.json())
-        .then((data: Learner[]) => {
-          setLearners(data);
-          data.forEach((l) => {
+        .then((r) => r.ok ? r.json() : [])
+        .then((data) => {
+          const list: Learner[] = Array.isArray(data) ? data : [];
+          setLearners(list);
+          list.forEach((l) => {
             fetch(`/api/brain/${l.id}/review`, { headers: { Authorization: `Bearer ${accessToken}` } })
               .then((r) => r.ok ? r.json() : null)
               .then((brain) => {
