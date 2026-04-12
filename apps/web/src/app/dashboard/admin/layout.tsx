@@ -1,0 +1,116 @@
+"use client";
+import { useAuth } from "@/providers/auth-provider";
+import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+
+const NAV_SECTIONS = [
+  {
+    label: "Platform",
+    items: [
+      { href: "/dashboard/admin", label: "Overview", icon: "📊" },
+      { href: "/dashboard/admin/services", label: "Services & Health", icon: "⚡" },
+      { href: "/dashboard/admin/analytics", label: "Analytics & Research", icon: "📈" },
+    ],
+  },
+  {
+    label: "Management",
+    items: [
+      { href: "/dashboard/admin/users", label: "Users & Roles", icon: "👤" },
+      { href: "/dashboard/admin/learners", label: "Learners", icon: "🎓" },
+      { href: "/dashboard/admin/tenants", label: "Tenants & Districts", icon: "🏢" },
+    ],
+  },
+  {
+    label: "AI & Learning",
+    items: [
+      { href: "/dashboard/admin/ai", label: "AI & Brain Models", icon: "🧠" },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { href: "/dashboard/admin/billing", label: "Billing & Licensing", icon: "💳" },
+      { href: "/dashboard/admin/compliance", label: "Compliance & Audit", icon: "🛡️" },
+      { href: "/dashboard/admin/settings", label: "Platform Settings", icon: "⚙️" },
+    ],
+  },
+];
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const { user, accessToken, logout, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !user) router.push("/login");
+    if (!loading && user && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) router.push("/");
+  }, [user, loading, router]);
+
+  if (loading || !user) return null;
+
+  const isActive = (href: string) => {
+    if (href === "/dashboard/admin") return pathname === "/dashboard/admin";
+    return pathname.startsWith(href);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex">
+      <aside className={`${sidebarCollapsed ? "w-16" : "w-64"} bg-slate-900 text-white flex flex-col transition-all duration-200 flex-shrink-0`}>
+        <div className="p-4 border-b border-slate-700 flex items-center justify-between">
+          {!sidebarCollapsed && (
+            <div className="flex items-center gap-2">
+              <Image src="/images/aivo-logo-white.png" alt="AIVO" width={80} height={24} style={{ height: "auto" }} />
+              <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Admin</span>
+            </div>
+          )}
+          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-slate-400 hover:text-white p-1">
+            {sidebarCollapsed ? "→" : "←"}
+          </button>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto py-3">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.label} className="mb-4">
+              {!sidebarCollapsed && (
+                <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{section.label}</p>
+              )}
+              {section.items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all ${
+                    isActive(item.href)
+                      ? "bg-purple-600/20 text-purple-300 border-r-2 border-purple-400 font-semibold"
+                      : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                  }`}
+                >
+                  <span className="text-base flex-shrink-0">{item.icon}</span>
+                  {!sidebarCollapsed && <span>{item.label}</span>}
+                </Link>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-slate-700">
+          {!sidebarCollapsed && (
+            <div className="mb-3">
+              <p className="text-sm font-semibold truncate">{user.name}</p>
+              <p className="text-xs text-slate-400">{user.role.replace(/_/g, " ")}</p>
+            </div>
+          )}
+          <button onClick={logout} className={`text-xs text-slate-400 hover:text-red-400 transition ${sidebarCollapsed ? "w-full text-center" : ""}`}>
+            {sidebarCollapsed ? "🚪" : "Sign Out"}
+          </button>
+        </div>
+      </aside>
+
+      <main className="flex-1 overflow-auto">
+        {children}
+      </main>
+    </div>
+  );
+}

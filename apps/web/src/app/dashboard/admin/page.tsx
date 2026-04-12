@@ -1,8 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import Link from "next/link";
 
 interface AdminStats {
   totalUsers: number;
@@ -15,28 +14,15 @@ interface AdminStats {
 
 interface ServiceHealth {
   name: string;
-  port: number;
-  status: "healthy" | "unhealthy" | "checking";
+  status: "operational" | "degraded" | "down" | "checking";
+  latency?: number;
 }
 
-interface Tenant {
-  id: string;
-  name: string;
-  type: string;
-  createdAt: string;
-  settings?: any;
+interface StatusOverview {
+  status: string;
+  services: { name: string; status: string; latency: number }[];
+  timestamp: string;
 }
-
-const SERVICES = [
-  { name: "identity-svc", port: 3001, healthPath: "/api/auth/health" },
-  { name: "brain-svc", port: 3002, healthPath: "/api/brain/health" },
-  { name: "assessment-svc", port: 3003, healthPath: "/api/assessments/health" },
-  { name: "ai-svc", port: 3004, healthPath: "/api/ai/health" },
-  { name: "learning-svc", port: 3005, healthPath: "/api/learning/health" },
-  { name: "tutor-svc", port: 3006, healthPath: "/api/tutors/health" },
-  { name: "family-svc", port: 3007, healthPath: "/api/family/health" },
-  { name: "engagement-svc", port: 3008, healthPath: "/api/engagement/health" },
-];
 
 const ROLE_COLORS: Record<string, string> = {
   PARENT: "bg-purple-100 text-purple-700",
@@ -48,561 +34,217 @@ const ROLE_COLORS: Record<string, string> = {
   DISTRICT_ADMIN: "bg-orange-100 text-orange-700",
 };
 
-const LEVEL_COLORS: Record<string, string> = {
-  STANDARD: "bg-green-100 text-green-700",
-  SUPPORTED: "bg-blue-100 text-blue-700",
-  LOW_VERBAL: "bg-amber-100 text-amber-700",
-  NON_VERBAL: "bg-orange-100 text-orange-700",
-  PRE_SYMBOLIC: "bg-red-100 text-red-700",
-};
-
-const TENANT_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  B2C_FAMILY: { label: "Family", color: "bg-purple-100 text-purple-700" },
-  B2B_SCHOOL: { label: "School", color: "bg-blue-100 text-blue-700" },
-  B2B_DISTRICT: { label: "District", color: "bg-orange-100 text-orange-700" },
-};
-
-export default function AdminDashboard() {
-  const { user, accessToken, logout, loading } = useAuth();
-  const router = useRouter();
+export default function AdminOverview() {
+  const { user, accessToken } = useAuth();
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [services, setServices] = useState<ServiceHealth[]>(
-    SERVICES.map((s) => ({ ...s, status: "checking" as const }))
-  );
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "learners" | "tenants" | "analytics">("overview");
-  const [allUsers, setAllUsers] = useState<AdminStats["recentUsers"]>([]);
-  const [allLearners, setAllLearners] = useState<AdminStats["recentLearners"]>([]);
-  const [allTenants, setAllTenants] = useState<Tenant[]>([]);
-
-  const [districtName, setDistrictName] = useState("");
-  const [adminName, setAdminName] = useState("");
-  const [adminEmail, setAdminEmail] = useState("");
-  const [createLoading, setCreateLoading] = useState(false);
-  const [createError, setCreateError] = useState("");
-  const [createResult, setCreateResult] = useState<{ admin: { email: string; name: string }; temporaryPassword: string; district: { name: string } } | null>(null);
-
-  const isPlatformAdmin = user?.role === "PLATFORM_ADMIN";
-
-  useEffect(() => {
-    if (!loading && !user) router.push("/login");
-    if (!loading && user && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) router.push("/");
-  }, [user, loading, router]);
+  const [statusOverview, setStatusOverview] = useState<StatusOverview | null>(null);
+  const [uptime, setUptime] = useState<any>(null);
 
   useEffect(() => {
     if (!accessToken) return;
     fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then((r) => r.json())
+      .then((r) => r.ok ? r.json() : null)
       .then(setStats)
+      .catch(() => {});
+
+    fetch("/api/status/overview")
+      .then((r) => r.ok ? r.json() : null)
+      .then(setStatusOverview)
+      .catch(() => {});
+
+    fetch("/api/status/uptime")
+      .then((r) => r.ok ? r.json() : null)
+      .then(setUptime)
       .catch(() => {});
   }, [accessToken]);
 
-  useEffect(() => {
-    SERVICES.forEach((svc) => {
-      fetch(svc.healthPath)
-        .then((r) => {
-          setServices((prev) =>
-            prev.map((s) => (s.name === svc.name ? { ...s, status: r.ok ? "healthy" : "unhealthy" } : s))
-          );
-        })
-        .catch(() => {
-          setServices((prev) =>
-            prev.map((s) => (s.name === svc.name ? { ...s, status: "unhealthy" } : s))
-          );
-        });
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!accessToken || activeTab === "overview") return;
-    const safeFetch = (url: string, setter: (d: any[]) => void) =>
-      fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } })
-        .then((r) => r.ok ? r.json() : [])
-        .then((d) => setter(Array.isArray(d) ? d : []))
-        .catch(() => setter([]));
-    if (activeTab === "analytics") {
-      safeFetch("/api/admin/learners?limit=100", setAllLearners);
-      safeFetch("/api/admin/tenants", setAllTenants);
-    } else if (activeTab === "users") {
-      safeFetch("/api/admin/users?limit=100", setAllUsers);
-    } else if (activeTab === "learners") {
-      safeFetch("/api/admin/learners?limit=100", setAllLearners);
-    } else if (activeTab === "tenants") {
-      safeFetch("/api/admin/tenants", setAllTenants);
-    }
-  }, [activeTab, accessToken]);
-
-  const handleCreateDistrict = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreateError("");
-    setCreateResult(null);
-    setCreateLoading(true);
-    try {
-      const res = await fetch("/api/admin/create-district", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ districtName, adminName, adminEmail }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setCreateError(data.error || "Failed to create district");
-      } else {
-        setCreateResult(data);
-        setDistrictName("");
-        setAdminName("");
-        setAdminEmail("");
-        fetch("/api/admin/tenants", { headers: { Authorization: `Bearer ${accessToken}` } })
-          .then((r) => r.json())
-          .then(setAllTenants)
-          .catch(() => {});
-        fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
-          .then((r) => r.json())
-          .then(setStats)
-          .catch(() => {});
-      }
-    } catch {
-      setCreateError("Network error. Please try again.");
-    }
-    setCreateLoading(false);
-  };
-
-  if (loading || !user) return null;
+  const healthyCount = statusOverview?.services?.filter((s: any) => s.status === "healthy").length ?? 0;
+  const totalServices = statusOverview?.services?.length ?? 0;
+  const platformStatus = statusOverview?.overall ?? "checking";
 
   const statCards = [
-    { title: "Users", value: stats?.totalUsers ?? "--", desc: "Total registered", icon: "👤", bg: "bg-purple-50" },
-    { title: "Learners", value: stats?.totalLearners ?? "--", desc: "Active profiles", icon: "🎓", bg: "bg-cyan-50" },
-    { title: "Tenants", value: stats?.totalTenants ?? "--", desc: "Organizations", icon: "🏢", bg: "bg-amber-50" },
-    { title: "Services", value: services.filter((s) => s.status === "healthy").length + "/" + SERVICES.length, desc: "Running", icon: "⚡", bg: "bg-green-50" },
+    { title: "Total Users", value: stats?.totalUsers ?? "—", icon: "👤", bg: "from-purple-500 to-purple-600", link: "/dashboard/admin/users" },
+    { title: "Active Learners", value: stats?.totalLearners ?? "—", icon: "🎓", bg: "from-cyan-500 to-cyan-600", link: "/dashboard/admin/learners" },
+    { title: "Tenants", value: stats?.totalTenants ?? "—", icon: "🏢", bg: "from-amber-500 to-amber-600", link: "/dashboard/admin/tenants" },
+    { title: "Services", value: totalServices > 0 ? `${healthyCount}/${totalServices}` : "—", icon: "⚡", bg: "from-green-500 to-green-600", link: "/dashboard/admin/services" },
+  ];
+
+  const quickActions = [
+    { label: "Create District", href: "/dashboard/admin/tenants", icon: "🏫" },
+    { label: "View Brain Models", href: "/dashboard/admin/ai", icon: "🧠" },
+    { label: "Audit Logs", href: "/dashboard/admin/compliance", icon: "🛡️" },
+    { label: "Platform Settings", href: "/dashboard/admin/settings", icon: "⚙️" },
+    { label: "Billing", href: "/dashboard/admin/billing", icon: "💳" },
+    { label: "Research Data", href: "/dashboard/admin/analytics", icon: "📈" },
   ];
 
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between">
-        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-slate-500">{user.name}</span>
-          <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700 font-medium">{user.role}</span>
-          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500">Logout</button>
+    <div className="p-8 space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">Platform Overview</h1>
+          <p className="text-sm text-slate-500 mt-1">Welcome back, {user?.name}. Here&apos;s what&apos;s happening across the platform.</p>
         </div>
-      </header>
+        <div className="flex items-center gap-3">
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
+            platformStatus === "operational" ? "bg-green-100 text-green-700" :
+            platformStatus === "degraded" ? "bg-amber-100 text-amber-700" :
+            "bg-red-100 text-red-700"
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${
+              platformStatus === "operational" ? "bg-green-500" :
+              platformStatus === "degraded" ? "bg-amber-500 animate-pulse" :
+              "bg-red-500 animate-pulse"
+            }`} />
+            {platformStatus === "operational" ? "All Systems Operational" :
+             platformStatus === "degraded" ? "Degraded Performance" :
+             platformStatus === "checking" ? "Checking..." : "Service Issues"}
+          </div>
+        </div>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-8 py-8 space-y-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Admin Dashboard</h1>
-          <div className="flex gap-2">
-            {(["overview", "users", "learners", "tenants", "analytics"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${activeTab === tab ? "bg-primary text-white" : "bg-white text-slate-600 hover:bg-purple-50"}`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        {statCards.map((c) => (
+          <Link key={c.title} href={c.link} className="group">
+            <div className={`bg-gradient-to-br ${c.bg} rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all group-hover:scale-[1.02]`}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-3xl">{c.icon}</span>
+                <span className="text-xs opacity-75 group-hover:opacity-100">View →</span>
+              </div>
+              <div className="text-3xl font-bold">{c.value}</div>
+              <div className="text-sm opacity-80 mt-1">{c.title}</div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-heading font-bold text-lg text-slate-900">Users by Role</h2>
+            <Link href="/dashboard/admin/users" className="text-xs text-primary font-semibold hover:underline">View All →</Link>
+          </div>
+          {stats?.roleCounts && stats.roleCounts.length > 0 ? (
+            <div className="space-y-3">
+              {stats.roleCounts.map((rc) => {
+                const max = Math.max(...stats.roleCounts.map((r) => r.count));
+                const pct = max > 0 ? (rc.count / max) * 100 : 0;
+                return (
+                  <div key={rc.role} className="flex items-center gap-4">
+                    <span className={`px-3 py-1 text-xs rounded-full font-semibold w-36 text-center ${ROLE_COLORS[rc.role] || "bg-slate-100 text-slate-600"}`}>
+                      {rc.role.replace(/_/g, " ")}
+                    </span>
+                    <div className="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-sm font-bold text-slate-700 w-10 text-right">{rc.count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-400">Loading role data...</p>
+          )}
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <h2 className="font-heading font-bold text-lg text-slate-900 mb-5">Quick Actions</h2>
+          <div className="grid grid-cols-2 gap-2">
+            {quickActions.map((a) => (
+              <Link key={a.label} href={a.href}
+                className="flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-100 hover:border-purple-200 hover:bg-purple-50/50 transition text-center group">
+                <span className="text-2xl group-hover:scale-110 transition-transform">{a.icon}</span>
+                <span className="text-xs font-semibold text-slate-600 group-hover:text-primary">{a.label}</span>
+              </Link>
             ))}
           </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {statCards.map((c) => (
-            <div key={c.title} className={`${c.bg} rounded-xl p-6 border border-slate-100`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-slate-500 font-medium">{c.title}</span>
-                <span className="text-2xl">{c.icon}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-heading font-bold text-lg text-slate-900">Service Health</h2>
+            <Link href="/dashboard/admin/services" className="text-xs text-primary font-semibold hover:underline">Details →</Link>
+          </div>
+          <div className="space-y-2">
+            {(statusOverview?.services || []).map((svc: any) => (
+              <div key={svc.name} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                <div className="flex items-center gap-3">
+                  <span className={`w-2.5 h-2.5 rounded-full ${
+                    svc.status === "healthy" ? "bg-green-500" : svc.status === "degraded" ? "bg-amber-500 animate-pulse" : "bg-red-500"
+                  }`} />
+                  <span className="text-sm font-medium text-slate-700">{svc.name}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {svc.latencyMs > 0 && <span className="text-xs text-slate-400">{svc.latencyMs}ms</span>}
+                  <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+                    svc.status === "healthy" ? "bg-green-100 text-green-700" : svc.status === "degraded" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+                  }`}>
+                    {svc.status}
+                  </span>
+                </div>
               </div>
-              <div className="text-3xl font-bold text-slate-900">{c.value}</div>
-              <div className="text-xs text-slate-400 mt-1">{c.desc}</div>
-            </div>
-          ))}
+            ))}
+            {(!statusOverview?.services || statusOverview.services.length === 0) && (
+              <p className="text-sm text-slate-400 text-center py-4">Loading service status...</p>
+            )}
+          </div>
         </div>
 
-        {activeTab === "overview" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-              <h3 className="font-heading font-bold text-lg mb-4">Service Health</h3>
-              <div className="space-y-1">
-                {services.map((svc) => (
-                  <div key={svc.name} className="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <span className={`w-2.5 h-2.5 rounded-full ${svc.status === "healthy" ? "bg-green-500" : svc.status === "unhealthy" ? "bg-red-500" : "bg-amber-400 animate-pulse"}`} />
-                      <span className="text-sm font-medium">{svc.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-400">:{svc.port}</span>
-                      <span className={`px-2 py-0.5 text-xs rounded-full ${svc.status === "healthy" ? "bg-green-100 text-green-700" : svc.status === "unhealthy" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
-                        {svc.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-              <h3 className="font-heading font-bold text-lg mb-4">Users by Role</h3>
-              {stats?.roleCounts && stats.roleCounts.length > 0 ? (
-                <div className="space-y-3">
-                  {stats.roleCounts.map((rc) => (
-                    <div key={rc.role} className="flex items-center justify-between">
-                      <span className={`px-3 py-1 text-xs rounded-full font-semibold ${ROLE_COLORS[rc.role] || "bg-slate-100 text-slate-600"}`}>
-                        {rc.role}
-                      </span>
-                      <span className="text-lg font-bold text-slate-900">{rc.count}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-slate-400">Loading...</p>
-              )}
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 col-span-2">
-              <h3 className="font-heading font-bold text-lg mb-4">Recent Users</h3>
-              {stats?.recentUsers && stats.recentUsers.length > 0 ? (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-slate-400 border-b">
-                      <th className="pb-2">Name</th>
-                      <th className="pb-2">Email</th>
-                      <th className="pb-2">Role</th>
-                      <th className="pb-2">Joined</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.recentUsers.map((u) => (
-                      <tr key={u.id} className="border-b border-slate-50">
-                        <td className="py-2 font-medium">{u.name}</td>
-                        <td className="py-2 text-slate-500">{u.email}</td>
-                        <td className="py-2">
-                          <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${ROLE_COLORS[u.role] || "bg-slate-100 text-slate-600"}`}>
-                            {u.role}
-                          </span>
-                        </td>
-                        <td className="py-2 text-slate-400">{new Date(u.createdAt).toLocaleDateString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="text-sm text-slate-400">No users yet</p>
-              )}
-            </div>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-heading font-bold text-lg text-slate-900">Recent Users</h2>
+            <Link href="/dashboard/admin/users" className="text-xs text-primary font-semibold hover:underline">View All →</Link>
           </div>
-        )}
-
-        {activeTab === "users" && (
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <h3 className="font-heading font-bold text-lg mb-4">All Users</h3>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-slate-400 border-b">
-                  <th className="pb-2">Name</th>
-                  <th className="pb-2">Email</th>
-                  <th className="pb-2">Role</th>
-                  <th className="pb-2">Joined</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allUsers.map((u) => (
-                  <tr key={u.id} className="border-b border-slate-50">
-                    <td className="py-2 font-medium">{u.name}</td>
-                    <td className="py-2 text-slate-500">{u.email}</td>
-                    <td className="py-2">
-                      <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${ROLE_COLORS[u.role] || "bg-slate-100"}`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="py-2 text-slate-400">{new Date(u.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {activeTab === "learners" && (
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <h3 className="font-heading font-bold text-lg mb-4">All Learners</h3>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-slate-400 border-b">
-                  <th className="pb-2">Name</th>
-                  <th className="pb-2">Functioning Level</th>
-                  <th className="pb-2">Grade</th>
-                  <th className="pb-2">Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allLearners.map((l) => (
-                  <tr key={l.id} className="border-b border-slate-50">
-                    <td className="py-2 font-medium">{l.name}</td>
-                    <td className="py-2">
-                      <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${LEVEL_COLORS[l.functioningLevel || ""] || "bg-slate-100 text-slate-500"}`}>
-                        {l.functioningLevel || "N/A"}
-                      </span>
-                    </td>
-                    <td className="py-2 text-slate-500">{l.gradeLevel || "N/A"}</td>
-                    <td className="py-2 text-slate-400">{new Date(l.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {activeTab === "tenants" && (
-          <div className="space-y-6">
-            {isPlatformAdmin && (
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-                <h3 className="font-heading font-bold text-lg mb-1">Create District Account</h3>
-                <p className="text-sm text-slate-500 mb-5">Set up an enterprise district subscription. A district admin account will be created with a temporary password to share with the district administrator.</p>
-
-                {createResult && (
-                  <div className="mb-5 p-4 rounded-lg bg-green-50 border border-green-200">
-                    <h4 className="font-semibold text-green-800 mb-2">District account created successfully</h4>
-                    <div className="text-sm text-green-700 space-y-1">
-                      <p><span className="font-medium">District:</span> {createResult.district.name}</p>
-                      <p><span className="font-medium">Admin:</span> {createResult.admin.name} ({createResult.admin.email})</p>
-                      <div className="mt-3 p-3 bg-white rounded-lg border border-green-300">
-                        <p className="text-xs text-slate-500 mb-1">Send these login credentials to the district administrator:</p>
-                        <p className="font-mono text-sm"><span className="font-medium">Email:</span> {createResult.admin.email}</p>
-                        <p className="font-mono text-sm"><span className="font-medium">Temporary Password:</span> {createResult.temporaryPassword}</p>
-                      </div>
-                      <p className="text-xs text-green-600 mt-2">The district admin should change their password after first login.</p>
-                    </div>
-                  </div>
-                )}
-
-                {createError && (
-                  <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm">{createError}</div>
-                )}
-
-                <form onSubmit={handleCreateDistrict} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">District / School System Name</label>
-                    <input
-                      type="text"
-                      value={districtName}
-                      onChange={(e) => setDistrictName(e.target.value)}
-                      required
-                      placeholder="e.g. Fairfax County Public Schools"
-                      className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">District Admin Name</label>
-                    <input
-                      type="text"
-                      value={adminName}
-                      onChange={(e) => setAdminName(e.target.value)}
-                      required
-                      placeholder="e.g. Dr. Jane Smith"
-                      className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">District Admin Email</label>
-                    <input
-                      type="email"
-                      value={adminEmail}
-                      onChange={(e) => setAdminEmail(e.target.value)}
-                      required
-                      placeholder="e.g. admin@fcps.edu"
-                      className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition text-sm"
-                    />
-                  </div>
-                  <div className="md:col-span-3">
-                    <button
-                      type="submit"
-                      disabled={createLoading}
-                      className="px-6 py-2.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition disabled:opacity-50 text-sm"
-                    >
-                      {createLoading ? "Creating..." : "Create District Account"}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-              <h3 className="font-heading font-bold text-lg mb-4">All Tenants</h3>
-              {allTenants.length > 0 ? (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-slate-400 border-b">
-                      <th className="pb-2">Name</th>
-                      <th className="pb-2">Type</th>
-                      <th className="pb-2">Created</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allTenants.map((t) => (
-                      <tr key={t.id} className="border-b border-slate-50">
-                        <td className="py-2 font-medium">{t.name}</td>
-                        <td className="py-2">
-                          <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${TENANT_TYPE_LABELS[t.type]?.color || "bg-slate-100 text-slate-500"}`}>
-                            {TENANT_TYPE_LABELS[t.type]?.label || t.type}
-                          </span>
-                        </td>
-                        <td className="py-2 text-slate-400">{new Date(t.createdAt).toLocaleDateString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="text-sm text-slate-400">No tenants found.</p>
-              )}
-            </div>
-          </div>
-        )}
-        {activeTab === "analytics" && (
-          <div className="space-y-6">
-            {isPlatformAdmin && (
-              <div className="bg-gradient-to-r from-primary to-purple-600 rounded-2xl p-8 text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-                <div className="relative">
-                  <h2 className="text-xl font-heading font-bold mb-4">Platform Overview</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div>
-                      <p className="text-3xl font-bold">{stats?.totalUsers ?? 0}</p>
-                      <p className="text-white/70 text-sm">Total Users</p>
+          {stats?.recentUsers && stats.recentUsers.length > 0 ? (
+            <div className="space-y-2">
+              {stats.recentUsers.slice(0, 8).map((u) => (
+                <div key={u.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                      {u.name?.charAt(0) || "?"}
                     </div>
                     <div>
-                      <p className="text-3xl font-bold">{stats?.totalLearners ?? 0}</p>
-                      <p className="text-white/70 text-sm">Total Learners</p>
-                    </div>
-                    <div>
-                      <p className="text-3xl font-bold">{stats?.totalTenants ?? 0}</p>
-                      <p className="text-white/70 text-sm">Organizations</p>
-                    </div>
-                    <div>
-                      <p className="text-3xl font-bold">{services.filter(s => s.status === "healthy").length}/{SERVICES.length}</p>
-                      <p className="text-white/70 text-sm">Services Online</p>
+                      <p className="text-sm font-medium text-slate-700">{u.name}</p>
+                      <p className="text-xs text-slate-400">{u.email || "No email"}</p>
                     </div>
                   </div>
+                  <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${ROLE_COLORS[u.role] || "bg-slate-100"}`}>
+                    {u.role.replace(/_/g, " ")}
+                  </span>
                 </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-                <h3 className="font-heading font-bold text-lg mb-4">Functioning Level Distribution</h3>
-                {allLearners.length === 0 ? (
-                  <p className="text-sm text-slate-400">No learner data available. Switch to the Learners tab to load data first.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {Object.entries(
-                      allLearners.reduce((acc: Record<string, number>, l) => {
-                        const level = l.functioningLevel || "N/A";
-                        acc[level] = (acc[level] || 0) + 1;
-                        return acc;
-                      }, {})
-                    ).sort((a, b) => b[1] - a[1]).map(([level, count]) => {
-                      const pct = Math.round((count / allLearners.length) * 100);
-                      return (
-                        <div key={level}>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${LEVEL_COLORS[level] || "bg-slate-100 text-slate-500"}`}>{level}</span>
-                            <span className="text-sm font-bold text-slate-700">{count} ({pct}%)</span>
-                          </div>
-                          <div className="w-full bg-slate-100 rounded-full h-2">
-                            <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-                <h3 className="font-heading font-bold text-lg mb-4">Grade Distribution</h3>
-                {allLearners.length === 0 ? (
-                  <p className="text-sm text-slate-400">No learner data available.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {Object.entries(
-                      allLearners.reduce((acc: Record<string, number>, l) => {
-                        const grade = l.gradeLevel || "N/A";
-                        acc[grade] = (acc[grade] || 0) + 1;
-                        return acc;
-                      }, {})
-                    ).sort((a, b) => {
-                      const na = parseInt(a[0]) || 99;
-                      const nb = parseInt(b[0]) || 99;
-                      return na - nb;
-                    }).map(([grade, count]) => {
-                      const pct = Math.round((count / allLearners.length) * 100);
-                      return (
-                        <div key={grade} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
-                          <span className="text-sm font-medium text-slate-700">Grade {grade}</span>
-                          <div className="flex items-center gap-3">
-                            <div className="w-24 bg-slate-100 rounded-full h-1.5">
-                              <div className="h-1.5 rounded-full bg-cyan-500" style={{ width: `${pct}%` }} />
-                            </div>
-                            <span className="text-sm font-bold text-slate-700 w-16 text-right">{count} ({pct}%)</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
+          ) : (
+            <p className="text-sm text-slate-400 text-center py-4">Loading...</p>
+          )}
+        </div>
+      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-                <h3 className="font-heading font-bold text-lg mb-4">Tenant Breakdown</h3>
-                {allTenants.length === 0 ? (
-                  <p className="text-sm text-slate-400">No tenant data available. Switch to the Tenants tab to load data first.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {Object.entries(
-                      allTenants.reduce((acc: Record<string, number>, t) => {
-                        const type = TENANT_TYPE_LABELS[t.type]?.label || t.type;
-                        acc[type] = (acc[type] || 0) + 1;
-                        return acc;
-                      }, {})
-                    ).map(([type, count]) => (
-                      <div key={type} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
-                        <span className="text-sm font-medium text-slate-700">{type}</span>
-                        <span className="text-lg font-bold text-primary">{count}</span>
-                      </div>
-                    ))}
-                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-                      <span className="text-sm font-bold text-slate-900">Total</span>
-                      <span className="text-lg font-bold text-slate-900">{allTenants.length}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-                <h3 className="font-heading font-bold text-lg mb-4">System Status</h3>
-                <div className="space-y-2">
-                  {services.map(svc => (
-                    <div key={svc.name} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${svc.status === "healthy" ? "bg-green-500" : svc.status === "unhealthy" ? "bg-red-500" : "bg-amber-400 animate-pulse"}`} />
-                        <span className="text-sm font-medium text-slate-700">{svc.name}</span>
-                      </div>
-                      <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${svc.status === "healthy" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                        {svc.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-slate-700">Overall Health</span>
-                    <span className={`px-3 py-1 text-xs rounded-full font-bold ${services.every(s => s.status === "healthy") ? "bg-green-100 text-green-700" : services.some(s => s.status === "healthy") ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
-                      {services.every(s => s.status === "healthy") ? "All Systems Operational" : services.some(s => s.status === "healthy") ? "Partial Outage" : "System Down"}
-                    </span>
-                  </div>
-                </div>
-              </div>
+      {uptime && (
+        <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-6 text-white">
+          <h2 className="font-heading font-bold text-lg mb-4">30-Day Uptime</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+              <p className="text-3xl font-bold">{uptime.uptime?.overall ?? "99.9"}%</p>
+              <p className="text-sm text-slate-400">Overall Uptime</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold">{uptime.period ?? "30d"}</p>
+              <p className="text-sm text-slate-400">Monitoring Period</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold">{uptime.uptime?.byService?.length ?? 0}</p>
+              <p className="text-sm text-slate-400">Monitored Services</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold">{healthyCount}/{totalServices}</p>
+              <p className="text-sm text-slate-400">Services Online</p>
             </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
 }

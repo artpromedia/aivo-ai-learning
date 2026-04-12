@@ -185,7 +185,16 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `/dashboard/parent/learner/[id]/brain` — Parent brain profile viewer
 - `/dashboard/parent/learner/[id]/tutors` — Parent manage learner tutors
 - `/dashboard/parent/learner/[id]/settings` — Parent per-learner settings
-- `/dashboard/admin` — Admin dashboard (live stats, service health, user/learner/tenant management, analytics)
+- `/dashboard/admin` — Platform admin overview (stat cards, role distribution, service health, recent users, 30-day uptime)
+- `/dashboard/admin/users` — User management with role filtering, search, role count badges
+- `/dashboard/admin/learners` — Learner management with functioning level distribution cards and filtering
+- `/dashboard/admin/tenants` — Tenant/district management with type breakdown, district creation form
+- `/dashboard/admin/services` — Real-time service health for all 15 microservices, uptime, incident reporting
+- `/dashboard/admin/ai` — AI & Brain model management (LLM providers, brain pipeline, RAI compliance, 14 tutors)
+- `/dashboard/admin/compliance` — COPPA/FERPA/GDPR/SOC2 compliance dashboards, security controls, consent mgmt
+- `/dashboard/admin/billing` — Subscription plans (Free/Family/Family Plus/Enterprise), payment gateways, usage metering
+- `/dashboard/admin/analytics` — Research analytics (engagement metrics, mastery by subject, cohort distribution, anonymized export)
+- `/dashboard/admin/settings` — Feature flags (10 toggles), system limits, platform info
 - `/dashboard/notifications` — Cross-role notification inbox (filtering, read/unread)
 
 ### Engagement System
