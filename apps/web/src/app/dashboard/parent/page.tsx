@@ -60,6 +60,7 @@ export default function ParentDashboard() {
   const [curriculumLoading, setCurriculumLoading] = useState(false);
   const [pendingReviews, setPendingReviews] = useState<Record<string, boolean>>({});
   const [hasBrain, setHasBrain] = useState<Record<string, boolean>>({});
+  const [baselineCompleted, setBaselineCompleted] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -81,6 +82,14 @@ export default function ParentDashboard() {
                   if (brain.approval_status === "pending_parent_review") {
                     setPendingReviews((prev) => ({ ...prev, [l.id]: true }));
                   }
+                }
+              })
+              .catch(() => {});
+            fetch(`/api/assessments/learner/discovery/${l.id}/status`, { headers: { Authorization: `Bearer ${accessToken}` } })
+              .then((r) => r.ok ? r.json() : null)
+              .then((status) => {
+                if (status?.baselineCompleted) {
+                  setBaselineCompleted((prev) => ({ ...prev, [l.id]: true }));
                 }
               })
               .catch(() => {});
@@ -273,7 +282,7 @@ export default function ParentDashboard() {
                     />
                   </div>
                 )}
-                {pendingReviews[l.id] && (
+                {pendingReviews[l.id] ? (
                   <div
                     onClick={() => router.push(`/dashboard/parent/learner/${l.id}/brain-review`)}
                     className="mt-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4 cursor-pointer hover:shadow-md transition"
@@ -287,7 +296,20 @@ export default function ParentDashboard() {
                       <div className="w-3 h-3 rounded-full bg-amber-400 animate-pulse" />
                     </div>
                   </div>
-                )}
+                ) : baselineCompleted[l.id] && !hasBrain[l.id] ? (
+                  <div
+                    onClick={() => router.push(`/dashboard/parent/learner/${l.id}`)}
+                    className="mt-4 bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-4 cursor-pointer hover:shadow-md transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-xl">&#10003;</div>
+                      <div className="flex-1">
+                        <p className="text-sm font-heading font-bold text-emerald-800">Baseline Assessment Complete</p>
+                        <p className="text-xs text-emerald-600">{l.name}&apos;s learning profile is ready to view</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="mt-4 flex gap-2 flex-wrap">
                   <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}`)}
                     className="px-4 py-2 text-sm rounded-full bg-purple-50 text-primary font-bold hover:bg-purple-100 transition">
@@ -302,6 +324,11 @@ export default function ParentDashboard() {
                     <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/brain`)}
                       className="px-4 py-2 text-sm rounded-full bg-green-50 text-green-700 font-bold hover:bg-green-100 transition">
                       View Brain
+                    </button>
+                  ) : baselineCompleted[l.id] ? (
+                    <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}`)}
+                      className="px-4 py-2 text-sm rounded-full bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 transition border border-emerald-200">
+                      View Learning Profile
                     </button>
                   ) : l.functioningLevel ? (
                     <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/assessment`)}
