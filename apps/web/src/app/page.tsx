@@ -31,7 +31,7 @@ const ROLE_DASHBOARDS: Record<string, string> = {
   CAREGIVER: "/dashboard/caregiver",
   THERAPIST: "/dashboard/therapist",
   PLATFORM_ADMIN: "/dashboard/admin",
-  DISTRICT_ADMIN: "/dashboard/admin",
+  DISTRICT_ADMIN: "/dashboard/district",
   SALES: "/dashboard/internal/sales",
   MARKETING: "/dashboard/internal/marketing",
   CUSTOMER_CARE: "/dashboard/internal/customer-care",

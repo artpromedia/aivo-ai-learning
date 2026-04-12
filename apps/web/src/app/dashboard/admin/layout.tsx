@@ -45,8 +45,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
-    if (!loading && user && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) router.push("/");
+    if (!loading && !user) {
+      router.push("/login");
+    } else if (!loading && user) {
+      if (user.role === "DISTRICT_ADMIN") {
+        router.push("/dashboard/district");
+      } else if (user.role !== "PLATFORM_ADMIN") {
+        router.push("/");
+      }
+    }
   }, [user, loading, router]);
 
   if (loading || !user) return null;
