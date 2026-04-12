@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
 
@@ -30,6 +30,8 @@ interface ActiveSub {
 export default function TutorStorePage() {
   const { user, accessToken, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const highlightTutor = searchParams.get("tutor");
   const [catalog, setCatalog] = useState<TutorCatalogItem[]>([]);
   const [bundles, setBundles] = useState<Record<string, Bundle>>({});
   const [activeSubs, setActiveSubs] = useState<ActiveSub[]>([]);
@@ -37,6 +39,7 @@ export default function TutorStorePage() {
   const [selectedBundle, setSelectedBundle] = useState<string | null>(null);
   const [learners, setLearners] = useState<{ id: string; name: string }[]>([]);
   const [selectedLearner, setSelectedLearner] = useState<string>("");
+  const scrolledRef = useRef(false);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -57,6 +60,20 @@ export default function TutorStorePage() {
       fetch(`/api/tutors/active/${user.id}`).then(r => r.json()).then(setActiveSubs).catch((err: unknown) => { console.error("Failed to load subs:", err); });
     }
   }, [accessToken, user]);
+
+  useEffect(() => {
+    if (highlightTutor && catalog.length > 0 && !scrolledRef.current) {
+      scrolledRef.current = true;
+      setTimeout(() => {
+        const el = document.getElementById(`tutor-card-${highlightTutor}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.classList.add("ring-4", "ring-purple-400", "ring-offset-2");
+          setTimeout(() => el.classList.remove("ring-4", "ring-purple-400", "ring-offset-2"), 3000);
+        }
+      }, 300);
+    }
+  }, [highlightTutor, catalog]);
 
   const isActive = (sku: string) => activeSubs.some(s => s.tutorSku === sku && s.status === "active");
 
@@ -163,7 +180,7 @@ export default function TutorStorePage() {
             {coreTutors.map(t => {
               const active = isActive(t.sku);
               return (
-                <div key={t.key} className={`bg-white rounded-2xl p-5 border-2 transition ${active ? "border-green-300 shadow-md" : "border-slate-100 hover:border-purple-200"}`}>
+                <div key={t.key} id={`tutor-card-${t.key}`} className={`bg-white rounded-2xl p-5 border-2 transition ${active ? "border-green-300 shadow-md" : "border-slate-100 hover:border-purple-200"}`}>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 shadow" style={{ borderColor: t.color }}>
                       <Image src={t.avatar} alt={t.name} fill className="object-cover object-top" sizes="56px" />
@@ -197,7 +214,7 @@ export default function TutorStorePage() {
               {expansionTutors.map(t => {
                 const active = isActive(t.sku);
                 return (
-                  <div key={t.key} className={`bg-white rounded-2xl p-5 border-2 transition ${active ? "border-green-300 shadow-md" : "border-slate-100 hover:border-amber-200"}`}>
+                  <div key={t.key} id={`tutor-card-${t.key}`} className={`bg-white rounded-2xl p-5 border-2 transition ${active ? "border-green-300 shadow-md" : "border-slate-100 hover:border-amber-200"}`}>
                     <div className="flex items-center gap-3 mb-3">
                       <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 shadow" style={{ borderColor: t.color }}>
                         <Image src={t.avatar} alt={t.name} fill className="object-cover object-top" sizes="56px" />

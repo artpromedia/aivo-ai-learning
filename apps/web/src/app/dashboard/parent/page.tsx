@@ -384,7 +384,8 @@ export default function ParentDashboard() {
           <p className="text-sm text-slate-500 mb-6">7 core tutors + 7 expansion specialists</p>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-4">
             {Object.entries(TUTORS).map(([key, tutor]) => (
-              <div key={key} className="text-center p-3 rounded-2xl hover:bg-slate-50 transition cursor-pointer group">
+              <button key={key} onClick={() => router.push(`/dashboard/parent/store?tutor=${key}`)}
+                className="text-center p-3 rounded-2xl hover:bg-slate-50 transition cursor-pointer group">
                 <div className="relative w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden border-2 group-hover:scale-110 transition-transform shadow-md" style={{ borderColor: tutor.color }}>
                   <Image
                     src={tutor.avatar}
@@ -399,7 +400,7 @@ export default function ParentDashboard() {
                 {tutor.tier === "expansion" && (
                   <span className="inline-block mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-50 text-amber-600">NEW</span>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         </div>
