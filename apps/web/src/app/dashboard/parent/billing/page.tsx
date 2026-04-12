@@ -310,7 +310,7 @@ export default function ParentBillingPage() {
 
               return (
                 <div key={key} className={`flex items-center gap-3 p-3 rounded-xl border transition ${isIncluded ? "bg-slate-50 border-slate-100" : isAddon ? "bg-green-50 border-green-200" : "bg-white border-slate-200 hover:border-slate-300"}`}>
-                  <span className="text-2xl flex-shrink-0">{tutor.icon}</span>
+                  <Image src={tutor.avatar} alt={tutor.name} width={40} height={40} className="rounded-lg flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-slate-900">{tutor.name}</p>
                     <p className="text-xs text-slate-500 truncate">{tutor.domain}</p>
