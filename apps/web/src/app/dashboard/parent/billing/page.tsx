@@ -100,7 +100,7 @@ export default function ParentBillingPage() {
       if (res.ok) {
         setActiveTutorAddons(prev => [...prev, tutorId]);
         const tutor = TUTORS[tutorId as TutorKey];
-        setAddonMsg(`${tutor?.name || tutorId} tutor added — $7.99/mo will be added to your next bill.`);
+        setAddonMsg(`${tutor?.name || tutorId} tutor added — $4.99/mo will be added to your next bill.`);
       } else {
         const data = await res.json();
         setAddonMsg(data.error || "Failed to add tutor.");
@@ -231,7 +231,7 @@ export default function ParentBillingPage() {
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <h2 className="text-lg font-heading font-bold text-slate-900 mb-2">Choose Your Plan</h2>
-          <p className="text-sm text-slate-500 mb-6">All paid plans include ELA, Math, and 2 core AI tutors. Add more tutors anytime for $7.99/mo each.</p>
+          <p className="text-sm text-slate-500 mb-6">All paid plans include ELA, Math, and 2 core AI tutors. Add more tutors anytime for $4.99/mo each.</p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {parentPlans.map(plan => {
@@ -293,9 +293,9 @@ export default function ParentBillingPage() {
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <h2 className="text-lg font-heading font-bold text-slate-900 mb-2">Add-On Tutors — $7.99/mo each</h2>
+          <h2 className="text-lg font-heading font-bold text-slate-900 mb-2">Add-On Tutors — $4.99/mo each</h2>
           <p className="text-sm text-slate-500 mb-4">
-            Your plan includes {includedTutors.length} tutor{includedTutors.length !== 1 ? "s" : ""}. Add any additional tutor below for $7.99/mo.
+            Your plan includes {includedTutors.length} tutor{includedTutors.length !== 1 ? "s" : ""}. Add any additional tutor below for $4.99/mo.
           </p>
           {addonMsg && (
             <p className={`text-sm p-3 rounded-lg mb-4 ${addonMsg.includes("added") ? "text-green-600 bg-green-50" : addonMsg.includes("removed") ? "text-amber-600 bg-amber-50" : "text-red-600 bg-red-50"}`}>
@@ -331,7 +331,7 @@ export default function ParentBillingPage() {
                       disabled={isProcessing}
                       className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition flex-shrink-0 disabled:opacity-50"
                     >
-                      {isProcessing ? "..." : "+ $7.99/mo"}
+                      {isProcessing ? "..." : "+ $4.99/mo"}
                     </button>
                   )}
                 </div>
@@ -341,7 +341,7 @@ export default function ParentBillingPage() {
           {activeTutorAddons.length > 0 && (
             <div className="mt-4 p-3 rounded-lg bg-purple-50 border border-purple-100">
               <p className="text-sm text-slate-700">
-                <span className="font-semibold">{activeTutorAddons.length} add-on tutor{activeTutorAddons.length !== 1 ? "s" : ""}</span> &middot; <span className="text-primary font-bold">${(activeTutorAddons.length * 7.99).toFixed(2)}/mo</span> added to your subscription
+                <span className="font-semibold">{activeTutorAddons.length} add-on tutor{activeTutorAddons.length !== 1 ? "s" : ""}</span> &middot; <span className="text-primary font-bold">${(activeTutorAddons.length * 4.99).toFixed(2)}/mo</span> added to your subscription
               </p>
             </div>
           )}

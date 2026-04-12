@@ -32,7 +32,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
           interval: "month",
           priceLabel: "$24.99/mo per learner",
           learnerLimit: 1,
-          features: ["1 learner", "ELA + Math tutors", "2 core tutors included", "Full brain clone", "Parent dashboard", "Add extra tutors at $7.99/mo each"],
+          features: ["1 learner", "ELA + Math tutors", "2 core tutors included", "Full brain clone", "Parent dashboard", "Add extra tutors at $4.99/mo each"],
         },
         {
           id: "family",
@@ -42,7 +42,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
           priceLabel: "$19.99/mo per learner",
           learnerLimit: 10,
           learnerMinimum: 2,
-          features: ["2+ learners", "ELA + Math tutors", "2 core tutors included", "Full brain clone", "Parent dashboard", "Multi-learner discount", "Add extra tutors at $7.99/mo each"],
+          features: ["2+ learners", "ELA + Math tutors", "2 core tutors included", "Full brain clone", "Parent dashboard", "Multi-learner discount", "Add extra tutors at $4.99/mo each"],
         },
         {
           id: "district",
@@ -55,7 +55,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
         },
       ],
       addons: [
-        { id: "extra-tutor", name: "Additional Tutor", price: 7.99, interval: "month", description: "Add any extra AI tutor beyond your plan's included tutors" },
+        { id: "extra-tutor", name: "Additional Tutor", price: 4.99, interval: "month", description: "Add any extra AI tutor beyond your plan's included tutors" },
       ],
     };
   });
@@ -129,7 +129,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
     }
     return {
       status: "created",
-      addon: { tenantId, tutorId, price: 7.99, interval: "month", status: "active", createdAt: new Date().toISOString() },
+      addon: { tenantId, tutorId, price: 4.99, interval: "month", status: "active", createdAt: new Date().toISOString() },
     };
   });
 
