@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import DashboardHeader from "@/components/DashboardHeader";
 
 const INTERNAL_ROLES = ["PLATFORM_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
 
@@ -32,10 +33,34 @@ export default function InternalLayout({ children }: { children: React.ReactNode
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
+  const ROUTE_ROLE_MAP: Record<string, string> = {
+    "/dashboard/internal/sales": "SALES",
+    "/dashboard/internal/marketing": "MARKETING",
+    "/dashboard/internal/customer-care": "CUSTOMER_CARE",
+    "/dashboard/internal/support": "SUPPORT",
+    "/dashboard/internal/finance": "FINANCE",
+    "/dashboard/internal/devops": "DEVOPS",
+  };
+
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
-    if (!loading && user && !INTERNAL_ROLES.includes(user.role)) router.push("/");
-  }, [user, loading, router]);
+    if (!loading && !user) {
+      router.push("/login");
+      return;
+    }
+    if (!loading && user) {
+      if (!INTERNAL_ROLES.includes(user.role)) {
+        router.push("/");
+        return;
+      }
+      if (user.role !== "PLATFORM_ADMIN") {
+        const matchedRoute = Object.entries(ROUTE_ROLE_MAP).find(([path]) => pathname.startsWith(path));
+        if (matchedRoute && matchedRoute[1] !== user.role) {
+          const allowedSlug = user.role.toLowerCase().replace(/_/g, "-");
+          router.push(`/dashboard/internal/${allowedSlug}`);
+        }
+      }
+    }
+  }, [user, loading, router, pathname]);
 
   if (loading || !user) return null;
 
@@ -106,8 +131,18 @@ export default function InternalLayout({ children }: { children: React.ReactNode
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
-        {children}
+      <main className="flex-1 overflow-auto flex flex-col">
+        <DashboardHeader
+          userName={user.name || "Team Member"}
+          userRole={user.role}
+          userEmail={user.email || undefined}
+          accent="purple"
+          basePath="/dashboard/internal"
+          baseLabel="Internal"
+        />
+        <div className="flex-1 overflow-auto">
+          {children}
+        </div>
       </main>
     </div>
   );

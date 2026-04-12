@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import DashboardHeader from "@/components/DashboardHeader";
 
 const NAV_SECTIONS = [
   {
@@ -116,8 +117,18 @@ export default function DistrictLayout({ children }: { children: React.ReactNode
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
-        {children}
+      <main className="flex-1 overflow-auto flex flex-col">
+        <DashboardHeader
+          userName={user.name || "District Admin"}
+          userRole={user.role}
+          userEmail={user.email || undefined}
+          accent="violet"
+          basePath="/dashboard/district"
+          baseLabel="District"
+        />
+        <div className="flex-1 overflow-auto">
+          {children}
+        </div>
       </main>
     </div>
   );

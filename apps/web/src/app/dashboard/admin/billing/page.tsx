@@ -5,14 +5,29 @@ import { useEffect, useState } from "react";
 export default function AdminBillingPage() {
   const { accessToken } = useAuth();
   const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!accessToken) return;
+    setLoading(true);
     fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
       .then((r) => r.ok ? r.json() : null)
       .then(setStats)
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [accessToken]);
+
+  if (loading) {
+    return (
+      <div className="p-8 space-y-6">
+        <div className="h-8 bg-slate-200 rounded-lg w-48 animate-pulse" />
+        <div className="grid grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => <div key={i} className="h-24 bg-slate-200 rounded-xl animate-pulse" />)}
+        </div>
+        <div className="h-64 bg-slate-200 rounded-2xl animate-pulse" />
+      </div>
+    );
+  }
 
   const plans = [
     { name: "Free Trial", price: "$0", period: "14 days", features: ["1 learner", "3 AI tutors", "Basic assessments", "Limited sessions"], color: "from-slate-500 to-slate-600" },

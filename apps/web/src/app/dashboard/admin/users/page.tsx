@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Pagination from "@/components/Pagination";
 
 interface User {
   id: string;
@@ -279,6 +280,8 @@ export default function AdminUsersPage() {
   const [impersonating, setImpersonating] = useState<string | null>(null);
   const [impersonateError, setImpersonateError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const loadUsers = () => {
     if (!accessToken) return;
@@ -299,6 +302,11 @@ export default function AdminUsersPage() {
         u.email?.toLowerCase().includes(search.toLowerCase())
       )
     : users;
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedUsers = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => { setCurrentPage(1); }, [search, roleFilter]);
 
   const roleCounts = ROLES.slice(1).reduce((acc, role) => {
     acc[role] = users.filter((u) => u.role === role).length;
@@ -397,6 +405,7 @@ export default function AdminUsersPage() {
         {loading ? (
           <div className="p-10 text-center text-slate-400 animate-pulse">Loading users...</div>
         ) : (
+          <>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
@@ -408,7 +417,7 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((u) => (
+              {paginatedUsers.map((u) => (
                 <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
@@ -438,13 +447,21 @@ export default function AdminUsersPage() {
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {paginatedUsers.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-5 py-10 text-center text-slate-400">No users found</td>
                 </tr>
               )}
             </tbody>
           </table>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
+          />
+          </>
         )}
       </div>
     </div>

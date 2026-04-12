@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import Pagination from "@/components/Pagination";
 
 interface Learner {
   id: string;
@@ -29,6 +30,8 @@ export default function AdminLearnersPage() {
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [loading, setLoading] = useState(true);
   const [levelFilter, setLevelFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 15;
 
   useEffect(() => {
     if (!accessToken) return;
@@ -48,6 +51,11 @@ export default function AdminLearnersPage() {
   const filtered = levelFilter === "ALL"
     ? learners
     : learners.filter((l) => l.functioningLevel === levelFilter);
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedLearners = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => { setCurrentPage(1); }, [levelFilter]);
 
   const levelCounts = Object.keys(LEVEL_CONFIG).reduce((acc, level) => {
     acc[level] = learners.filter((l) => l.functioningLevel === level).length;
@@ -99,34 +107,43 @@ export default function AdminLearnersPage() {
         {loading ? (
           <div className="p-10 text-center text-slate-400 animate-pulse">Loading learners...</div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
-                <th className="px-5 py-3 font-semibold">Name</th>
-                <th className="px-5 py-3 font-semibold">Functioning Level</th>
-                <th className="px-5 py-3 font-semibold">Grade</th>
-                <th className="px-5 py-3 font-semibold">Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((l) => {
-                const lc = LEVEL_CONFIG[l.functioningLevel || ""] || { label: "N/A", color: "text-slate-500", bg: "bg-slate-100" };
-                return (
-                  <tr key={l.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
-                    <td className="px-5 py-3 font-medium text-slate-900">{l.name}</td>
-                    <td className="px-5 py-3">
-                      <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${lc.bg} ${lc.color}`}>{lc.label}</span>
-                    </td>
-                    <td className="px-5 py-3 text-slate-500">{l.gradeLevel || "—"}</td>
-                    <td className="px-5 py-3 text-slate-400">{new Date(l.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={4} className="px-5 py-10 text-center text-slate-400">No learners found</td></tr>
-              )}
-            </tbody>
-          </table>
+          <>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
+                  <th className="px-5 py-3 font-semibold">Name</th>
+                  <th className="px-5 py-3 font-semibold">Functioning Level</th>
+                  <th className="px-5 py-3 font-semibold">Grade</th>
+                  <th className="px-5 py-3 font-semibold">Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedLearners.map((l) => {
+                  const lc = LEVEL_CONFIG[l.functioningLevel || ""] || { label: "N/A", color: "text-slate-500", bg: "bg-slate-100" };
+                  return (
+                    <tr key={l.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+                      <td className="px-5 py-3 font-medium text-slate-900">{l.name}</td>
+                      <td className="px-5 py-3">
+                        <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${lc.bg} ${lc.color}`}>{lc.label}</span>
+                      </td>
+                      <td className="px-5 py-3 text-slate-500">{l.gradeLevel || "—"}</td>
+                      <td className="px-5 py-3 text-slate-400">{new Date(l.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  );
+                })}
+                {paginatedLearners.length === 0 && (
+                  <tr><td colSpan={4} className="px-5 py-10 text-center text-slate-400">No learners found</td></tr>
+                )}
+              </tbody>
+            </table>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={filtered.length}
+              pageSize={PAGE_SIZE}
+            />
+          </>
         )}
       </div>
     </div>

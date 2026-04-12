@@ -32,6 +32,12 @@ const ROLE_COLORS: Record<string, string> = {
   CAREGIVER: "bg-blue-100 text-blue-700",
   PLATFORM_ADMIN: "bg-red-100 text-red-700",
   DISTRICT_ADMIN: "bg-orange-100 text-orange-700",
+  SALES: "bg-emerald-100 text-emerald-700",
+  MARKETING: "bg-pink-100 text-pink-700",
+  CUSTOMER_CARE: "bg-sky-100 text-sky-700",
+  SUPPORT: "bg-teal-100 text-teal-700",
+  FINANCE: "bg-violet-100 text-violet-700",
+  DEVOPS: "bg-indigo-100 text-indigo-700",
 };
 
 export default function AdminOverview() {

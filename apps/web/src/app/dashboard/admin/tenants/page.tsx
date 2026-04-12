@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import Pagination from "@/components/Pagination";
 
 interface Tenant {
   id: string;
@@ -28,6 +29,8 @@ export default function AdminTenantsPage() {
   const [createError, setCreateError] = useState("");
   const [createResult, setCreateResult] = useState<any>(null);
   const [typeFilter, setTypeFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 15;
 
   const isPlatformAdmin = user?.role === "PLATFORM_ADMIN";
 
@@ -76,6 +79,10 @@ export default function AdminTenantsPage() {
   }, {} as Record<string, number>);
 
   const filtered = typeFilter === "ALL" ? tenants : tenants.filter((t) => t.type === typeFilter);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedTenants = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => { setCurrentPage(1); }, [typeFilter]);
 
   return (
     <div className="p-8 space-y-6">
@@ -175,37 +182,46 @@ export default function AdminTenantsPage() {
         {loading ? (
           <div className="p-10 text-center text-slate-400 animate-pulse">Loading tenants...</div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
-                <th className="px-5 py-3 font-semibold">Organization</th>
-                <th className="px-5 py-3 font-semibold">Type</th>
-                <th className="px-5 py-3 font-semibold">Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((t) => {
-                const tc = TYPE_CONFIG[t.type] || { label: t.type, icon: "📋", color: "bg-slate-100 text-slate-600" };
-                return (
-                  <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{tc.icon}</span>
-                        <span className="font-medium text-slate-900">{t.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${tc.color}`}>{tc.label}</span>
-                    </td>
-                    <td className="px-5 py-3 text-slate-400">{new Date(t.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={3} className="px-5 py-10 text-center text-slate-400">No tenants found</td></tr>
-              )}
-            </tbody>
-          </table>
+          <>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
+                  <th className="px-5 py-3 font-semibold">Organization</th>
+                  <th className="px-5 py-3 font-semibold">Type</th>
+                  <th className="px-5 py-3 font-semibold">Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedTenants.map((t) => {
+                  const tc = TYPE_CONFIG[t.type] || { label: t.type, icon: "📋", color: "bg-slate-100 text-slate-600" };
+                  return (
+                    <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{tc.icon}</span>
+                          <span className="font-medium text-slate-900">{t.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${tc.color}`}>{tc.label}</span>
+                      </td>
+                      <td className="px-5 py-3 text-slate-400">{new Date(t.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  );
+                })}
+                {paginatedTenants.length === 0 && (
+                  <tr><td colSpan={3} className="px-5 py-10 text-center text-slate-400">No tenants found</td></tr>
+                )}
+              </tbody>
+            </table>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={filtered.length}
+              pageSize={PAGE_SIZE}
+            />
+          </>
         )}
       </div>
     </div>

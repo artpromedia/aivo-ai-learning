@@ -24,7 +24,7 @@ export default function DistrictSchoolsPage() {
         if (user?.tenantId) {
           setTenants(all.filter((t: Tenant) => t.id === user.tenantId));
         } else {
-          setTenants(all.filter((t: Tenant) => t.type === "school" || t.type === "district"));
+          setTenants(all.filter((t: Tenant) => t.type === "B2B_SCHOOL" || t.type === "B2B_DISTRICT"));
         }
       })
       .catch(() => setTenants([]))

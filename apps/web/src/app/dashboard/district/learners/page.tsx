@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import Pagination from "@/components/Pagination";
 
 interface Learner {
   id: string;
@@ -24,6 +25,8 @@ export default function DistrictLearnersPage() {
   const [learners, setLearners] = useState<Learner[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 15;
 
   useEffect(() => {
     if (!accessToken) return;
@@ -37,6 +40,11 @@ export default function DistrictLearnersPage() {
   const filtered = search
     ? learners.filter((l) => l.name.toLowerCase().includes(search.toLowerCase()))
     : learners;
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedLearners = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => { setCurrentPage(1); }, [search]);
 
   return (
     <div className="p-8 space-y-6">
@@ -73,7 +81,7 @@ export default function DistrictLearnersPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((l) => (
+              {paginatedLearners.map((l) => (
                 <tr key={l.id} className="border-b border-slate-50 hover:bg-violet-50/30 transition">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
@@ -93,13 +101,20 @@ export default function DistrictLearnersPage() {
                   <td className="px-5 py-3 text-slate-400">{new Date(l.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {paginatedLearners.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-5 py-10 text-center text-slate-400">No learners found</td>
                 </tr>
               )}
             </tbody>
           </table>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
+          />
         </div>
       )}
     </div>
