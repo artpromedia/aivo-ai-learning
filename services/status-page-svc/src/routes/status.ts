@@ -10,6 +10,13 @@ const SERVICES = [
   { name: "tutor-svc", url: "http://localhost:3006/api/tutors/health" },
   { name: "family-svc", url: "http://localhost:3007/api/family/health" },
   { name: "engagement-svc", url: "http://localhost:3008/api/engagement/health" },
+  { name: "billing-svc", url: "http://localhost:3009/api/billing/health" },
+  { name: "comms-svc", url: "http://localhost:3010/api/comms/health" },
+  { name: "i18n-svc", url: "http://localhost:3011/api/i18n/health" },
+  { name: "integrations-svc", url: "http://localhost:3012/api/integrations/health" },
+  { name: "admin-svc", url: "http://localhost:3013/api/admin-svc/health" },
+  { name: "status-page-svc", url: "http://localhost:3014/api/status/health" },
+  { name: "research-svc", url: "http://localhost:3015/api/research/health" },
 ];
 
 async function checkService(svc: { name: string; url: string }) {

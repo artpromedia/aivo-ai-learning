@@ -55,4 +55,9 @@ echo "Starting research-svc on port 3015..."
 cd /home/runner/workspace/services/research-svc
 RESEARCH_SVC_PORT=3015 NODE_ENV=development npx tsx src/index.ts &
 
+echo "Starting ai-svc on port 3004..."
+cd /home/runner/workspace/services/ai-svc
+pip install -q -r requirements.txt 2>/dev/null
+PYTHONPATH=src python3 -m uvicorn ai_svc.main:app --host 0.0.0.0 --port 3004 &
+
 wait
