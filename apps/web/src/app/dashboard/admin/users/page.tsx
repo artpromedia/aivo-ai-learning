@@ -1,5 +1,6 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface User {
@@ -9,6 +10,12 @@ interface User {
   role: string;
   tenantId: string | null;
   createdAt: string;
+}
+
+interface Tenant {
+  id: string;
+  name: string;
+  type: string;
 }
 
 const ROLE_COLORS: Record<string, string> = {
@@ -29,14 +36,251 @@ const ROLE_COLORS: Record<string, string> = {
 
 const ROLES = ["ALL", "PARENT", "LEARNER", "TEACHER", "CAREGIVER", "THERAPIST", "PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
 
+const CREATABLE_ROLES = [
+  "PLATFORM_ADMIN", "DISTRICT_ADMIN",
+  "PARENT", "LEARNER", "TEACHER", "CAREGIVER", "THERAPIST",
+  "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS",
+];
+
+const INTERNAL_ROLES = ["SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS", "PLATFORM_ADMIN"];
+
+const ROLE_GROUPS: { label: string; roles: string[] }[] = [
+  { label: "Admin", roles: ["PLATFORM_ADMIN", "DISTRICT_ADMIN"] },
+  { label: "Education", roles: ["PARENT", "LEARNER", "TEACHER", "CAREGIVER", "THERAPIST"] },
+  { label: "Internal Team", roles: ["SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"] },
+];
+
+const ROLE_DASHBOARDS: Record<string, string> = {
+  PARENT: "/dashboard/parent",
+  LEARNER: "/dashboard/learner",
+  TEACHER: "/dashboard/teacher",
+  CAREGIVER: "/dashboard/caregiver",
+  THERAPIST: "/dashboard/therapist",
+  PLATFORM_ADMIN: "/dashboard/admin",
+  DISTRICT_ADMIN: "/dashboard/admin",
+  SALES: "/dashboard/internal/sales",
+  MARKETING: "/dashboard/internal/marketing",
+  CUSTOMER_CARE: "/dashboard/internal/customer-care",
+  SUPPORT: "/dashboard/internal/support",
+  FINANCE: "/dashboard/internal/finance",
+  DEVOPS: "/dashboard/internal/devops",
+};
+
+function CreateUserModal({
+  open,
+  onClose,
+  onCreated,
+  accessToken,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: () => void;
+  accessToken: string;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("PLATFORM_ADMIN");
+  const [tenantId, setTenantId] = useState("");
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<{ email: string; temporaryPassword: string } | null>(null);
+  const [error, setError] = useState("");
+
+  const needsTenant = !INTERNAL_ROLES.includes(role);
+
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/admin/tenants", { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setTenants(Array.isArray(data) ? data : []))
+      .catch(() => setTenants([]));
+  }, [open, accessToken]);
+
+  useEffect(() => {
+    if (!open) {
+      setName("");
+      setEmail("");
+      setRole("PLATFORM_ADMIN");
+      setTenantId("");
+      setResult(null);
+      setError("");
+    }
+  }, [open]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError("");
+    try {
+      const body: Record<string, string> = { name, email, role };
+      if (needsTenant && tenantId) body.tenantId = tenantId;
+
+      const res = await fetch("/api/admin/create-team-member", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to create user");
+      }
+      const data = await res.json();
+      setResult({ email: data.user.email, temporaryPassword: data.temporaryPassword });
+      onCreated();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create user");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+        <div className="p-6 border-b border-slate-100">
+          <h2 className="text-lg font-heading font-bold text-slate-900">Create New User</h2>
+          <p className="text-sm text-slate-500 mt-1">Add a new user to the platform with any role.</p>
+        </div>
+
+        {result ? (
+          <div className="p-6 space-y-4">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-2">
+              <p className="text-green-800 font-semibold">User created successfully!</p>
+              <div className="text-sm space-y-1">
+                <p className="text-green-700">
+                  Email: <span className="font-mono font-semibold">{result.email}</span>
+                </p>
+                <p className="text-green-700">
+                  Temporary Password: <span className="font-mono font-semibold bg-green-100 px-2 py-0.5 rounded select-all">{result.temporaryPassword}</span>
+                </p>
+              </div>
+              <p className="text-xs text-green-600 mt-2">
+                Share these credentials securely. The user should change their password on first login.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition"
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                placeholder="Jane Smith"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                placeholder="jane@aivo.test"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+              >
+                {ROLE_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.roles.map((r) => (
+                      <option key={r} value={r}>
+                        {r.replace(/_/g, " ")}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
+            {needsTenant && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Tenant / Organization <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={tenantId}
+                  onChange={(e) => setTenantId(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                >
+                  <option value="">Select a tenant...</option>
+                  {tenants.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.type})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-400 mt-1">
+                  Non-internal roles require assignment to a tenant.
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting || (needsTenant && !tenantId)}
+                className="flex-1 py-2.5 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 transition disabled:opacity-50"
+              >
+                {submitting ? "Creating..." : "Create User"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminUsersPage() {
-  const { accessToken } = useAuth();
+  const { user: currentUser, accessToken, impersonate } = useAuth();
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [impersonating, setImpersonating] = useState<string | null>(null);
+  const [impersonateError, setImpersonateError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  useEffect(() => {
+  const loadUsers = () => {
     if (!accessToken) return;
     setLoading(true);
     const params = roleFilter !== "ALL" ? `?role=${roleFilter}&limit=200` : "?limit=200";
@@ -45,7 +289,9 @@ export default function AdminUsersPage() {
       .then((data) => setUsers(Array.isArray(data) ? data : []))
       .catch(() => setUsers([]))
       .finally(() => setLoading(false));
-  }, [accessToken, roleFilter]);
+  };
+
+  useEffect(() => { loadUsers(); }, [accessToken, roleFilter]);
 
   const filtered = search
     ? users.filter((u) =>
@@ -59,11 +305,53 @@ export default function AdminUsersPage() {
     return acc;
   }, {} as Record<string, number>);
 
+  const canImpersonate = currentUser?.role === "PLATFORM_ADMIN";
+  const canCreate = currentUser?.role === "PLATFORM_ADMIN";
+
+  const handleImpersonate = async (userId: string, role: string) => {
+    setImpersonating(userId);
+    setImpersonateError(null);
+    try {
+      await impersonate(userId);
+      router.push(ROLE_DASHBOARDS[role] || "/");
+    } catch (err: unknown) {
+      setImpersonating(null);
+      setImpersonateError(err instanceof Error ? err.message : "Impersonation failed");
+      setTimeout(() => setImpersonateError(null), 5000);
+    }
+  };
+
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Users & Roles</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage all platform users, roles, and access controls.</p>
+      {impersonateError && (
+        <div className="fixed top-4 right-4 z-[9999] bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl shadow-lg text-sm font-medium">
+          {impersonateError}
+        </div>
+      )}
+
+      {canCreate && accessToken && (
+        <CreateUserModal
+          open={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onCreated={loadUsers}
+          accessToken={accessToken}
+        />
+      )}
+
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">Users & Roles</h1>
+          <p className="text-sm text-slate-500 mt-1">Manage all platform users, roles, and access controls.</p>
+        </div>
+        {canCreate && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 transition flex items-center gap-2"
+          >
+            <span className="text-lg leading-none">+</span>
+            Create User
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -116,6 +404,7 @@ export default function AdminUsersPage() {
                 <th className="px-5 py-3 font-semibold">Email</th>
                 <th className="px-5 py-3 font-semibold">Role</th>
                 <th className="px-5 py-3 font-semibold">Joined</th>
+                <th className="px-5 py-3 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -136,11 +425,22 @@ export default function AdminUsersPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3 text-slate-400">{new Date(u.createdAt).toLocaleDateString()}</td>
+                  <td className="px-5 py-3">
+                    {canImpersonate && u.id !== currentUser?.id && (
+                      <button
+                        onClick={() => handleImpersonate(u.id, u.role)}
+                        disabled={impersonating === u.id}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition disabled:opacity-50"
+                      >
+                        {impersonating === u.id ? "Switching..." : "Login as"}
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-5 py-10 text-center text-slate-400">No users found</td>
+                  <td colSpan={5} className="px-5 py-10 text-center text-slate-400">No users found</td>
                 </tr>
               )}
             </tbody>

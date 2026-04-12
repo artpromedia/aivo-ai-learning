@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { users, learners, tenants } from "@aivo/db";
-import { verifyJWT } from "@aivo/security";
+import { signJWT, verifyJWT } from "@aivo/security";
 import { eq, sql, desc } from "drizzle-orm";
 import argon2 from "argon2";
 import crypto from "crypto";
@@ -134,6 +134,63 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     }).from(learners).orderBy(desc(learners.createdAt)).limit(maxResults);
   });
 
+  app.post("/api/admin/impersonate", {
+    preHandler: requirePlatformAdmin,
+    schema: {
+      tags: ["Admin"],
+      body: {
+        type: "object",
+        required: ["userId"],
+        properties: {
+          userId: { type: "string", format: "uuid" },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { userId } = req.body as any;
+    const adminUser = req.user as any;
+
+    if (userId === adminUser.sub) {
+      return reply.status(400).send({ error: "Cannot impersonate yourself" });
+    }
+
+    const [targetUser] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        role: users.role,
+        tenantId: users.tenantId,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!targetUser) {
+      return reply.status(404).send({ error: "User not found" });
+    }
+
+    const impersonatedToken = await signJWT({
+      sub: targetUser.id,
+      tenantId: targetUser.tenantId || "",
+      role: targetUser.role,
+      email: targetUser.email || "",
+      name: targetUser.name,
+      impersonatedBy: adminUser.sub,
+    });
+
+    return {
+      accessToken: impersonatedToken,
+      user: {
+        id: targetUser.id,
+        email: targetUser.email,
+        name: targetUser.name,
+        role: targetUser.role,
+        tenantId: targetUser.tenantId,
+      },
+    };
+  });
+
   app.post("/api/admin/create-team-member", {
     preHandler: requirePlatformAdmin,
     schema: {
@@ -144,16 +201,35 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         properties: {
           name: { type: "string", minLength: 1 },
           email: { type: "string", format: "email" },
-          role: { type: "string", enum: ["SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"] },
+          role: { type: "string", enum: [
+            "PARENT", "LEARNER", "TEACHER", "CAREGIVER", "THERAPIST",
+            "PLATFORM_ADMIN", "DISTRICT_ADMIN",
+            "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"
+          ] },
+          tenantId: { type: "string" },
         },
       },
     },
   }, async (req, reply) => {
-    const { name, email, role } = req.body as any;
+    const { name, email, role, tenantId } = req.body as any;
 
     const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
     if (existing.length > 0) {
       return reply.status(409).send({ error: "A user with this email already exists" });
+    }
+
+    const INTERNAL_ROLES = ["SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS", "PLATFORM_ADMIN"];
+    const needsTenant = !INTERNAL_ROLES.includes(role);
+
+    if (needsTenant && !tenantId) {
+      return reply.status(400).send({ error: "tenantId is required for non-internal roles" });
+    }
+
+    if (needsTenant && tenantId) {
+      const [tenant] = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+      if (!tenant) {
+        return reply.status(400).send({ error: "Invalid tenantId — tenant not found" });
+      }
     }
 
     const tempPassword = crypto.randomBytes(6).toString("base64url");
@@ -163,6 +239,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       passwordHash: await argon2.hash(tempPassword),
       name,
       role: role as any,
+      ...(needsTenant && tenantId ? { tenantId } : {}),
     }).returning();
 
     return {
@@ -171,6 +248,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         name: member.name,
         email: member.email,
         role: member.role,
+        tenantId: member.tenantId,
       },
       temporaryPassword: tempPassword,
     };

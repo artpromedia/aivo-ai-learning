@@ -133,7 +133,8 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `GET /api/admin/users` — Admin user listing
 - `GET /api/admin/tenants` — Admin tenant listing
 - `GET /api/admin/learners` — Admin learner listing
-- `POST /api/admin/create-team-member` — Create internal team user (platform admin only, roles: SALES/MARKETING/CUSTOMER_CARE/SUPPORT/FINANCE/DEVOPS)
+- `POST /api/admin/create-team-member` — Create user with any role (platform admin only, all 13 roles supported; non-internal roles require valid tenantId)
+- `POST /api/admin/impersonate` — Login as another user (platform admin only, returns impersonated JWT + user data)
 - `POST /api/family/collaboration/accept-invite` — Accept pending collaboration invites by email
 - `GET /api/family/collaboration/pending-invites` — List pending invites for current user
 - `POST /api/iep/parse` — AI-powered IEP document text parsing via ai-svc

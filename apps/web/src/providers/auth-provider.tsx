@@ -13,20 +13,28 @@ interface AuthContextType {
   user: User | null;
   accessToken: string | null;
   loading: boolean;
+  isImpersonating: boolean;
+  originalAdmin: User | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string, role: string) => Promise<void>;
   pinLogin: (parentId: string, pin: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
+  impersonate: (userId: string) => Promise<void>;
+  exitImpersonation: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 export const useAuth = () => useContext(AuthContext);
 
+const IMPERSONATION_FLAG_KEY = "aivo_impersonating";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isImpersonating, setIsImpersonating] = useState(false);
+  const [originalAdmin, setOriginalAdmin] = useState<User | null>(null);
 
   const refreshToken = useCallback(async () => {
     try {
@@ -37,7 +45,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const meRes = await fetch("/api/users/me", {
           headers: { Authorization: `Bearer ${data.accessToken}` },
         });
-        if (meRes.ok) setUser(await meRes.json());
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          setUser(meData);
+
+          const flag = sessionStorage.getItem(IMPERSONATION_FLAG_KEY);
+          if (flag) {
+            setIsImpersonating(false);
+            setOriginalAdmin(null);
+            sessionStorage.removeItem(IMPERSONATION_FLAG_KEY);
+          }
+        }
       }
     } catch {}
     setLoading(false);
@@ -56,6 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await res.json();
     setUser(data.user);
     setAccessToken(data.accessToken);
+    setIsImpersonating(false);
+    setOriginalAdmin(null);
+    sessionStorage.removeItem(IMPERSONATION_FLAG_KEY);
   };
 
   const register = async (email: string, password: string, name: string, role: string) => {
@@ -87,10 +108,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     setUser(null);
     setAccessToken(null);
+    setIsImpersonating(false);
+    setOriginalAdmin(null);
+    sessionStorage.removeItem(IMPERSONATION_FLAG_KEY);
+  };
+
+  const impersonate = async (userId: string) => {
+    if (!accessToken || !user) throw new Error("Not authenticated");
+    if (user.role !== "PLATFORM_ADMIN") throw new Error("Not authorized");
+
+    const res = await fetch("/api/admin/impersonate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Impersonation failed");
+    }
+    const data = await res.json();
+
+    setOriginalAdmin({ ...user });
+    sessionStorage.setItem(IMPERSONATION_FLAG_KEY, "true");
+    setIsImpersonating(true);
+    setAccessToken(data.accessToken);
+    setUser(data.user);
+  };
+
+  const exitImpersonation = async () => {
+    sessionStorage.removeItem(IMPERSONATION_FLAG_KEY);
+    setIsImpersonating(false);
+    setOriginalAdmin(null);
+    await refreshToken();
   };
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, login, register, pinLogin, logout, refreshToken }}>
+    <AuthContext.Provider value={{
+      user, accessToken, loading,
+      isImpersonating, originalAdmin,
+      login, register, pinLogin, logout, refreshToken,
+      impersonate, exitImpersonation,
+    }}>
       {children}
     </AuthContext.Provider>
   );
