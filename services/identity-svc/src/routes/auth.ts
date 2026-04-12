@@ -17,7 +17,7 @@ function hashRefreshToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
-async function deleteLearnerCascade(tx: any, learnerId: string) {
+async function deleteLearnerCascade(db: any, learnerId: string) {
   const dependentTables = [
     "assessment_attempts",
     "avatar_inventory",
@@ -60,10 +60,25 @@ async function deleteLearnerCascade(tx: any, learnerId: string) {
     "virtual_currency",
     "xp_events",
   ];
-  for (const table of dependentTables) {
-    await tx.execute(sql`DELETE FROM ${sql.identifier(table)} WHERE learner_id = ${learnerId}`);
+
+  for (const t of dependentTables) {
+    await db.execute(sql.raw(`DELETE FROM "${t}" WHERE learner_id = '${learnerId}'`));
   }
-  await tx.delete(learners).where(eq(learners.id, learnerId));
+  await db.execute(sql.raw(`DELETE FROM "learners" WHERE id = '${learnerId}'`));
+}
+
+async function deleteUserCascade(db: any, userId: string) {
+  await db.execute(sql.raw(`DELETE FROM "consent_records" WHERE parent_id = '${userId}' OR child_id = '${userId}'`));
+  await db.execute(sql.raw(`DELETE FROM "collaboration_invites" WHERE invited_by = '${userId}'`));
+  await db.execute(sql.raw(`DELETE FROM "learner_caregivers" WHERE caregiver_user_id = '${userId}' OR invited_by = '${userId}'`));
+  await db.execute(sql.raw(`DELETE FROM "learner_teachers" WHERE teacher_user_id = '${userId}' OR invited_by = '${userId}'`));
+  await db.execute(sql.raw(`DELETE FROM "learner_therapists" WHERE therapist_user_id = '${userId}' OR invited_by = '${userId}'`));
+  await db.execute(sql.raw(`DELETE FROM "lesson_plans" WHERE teacher_user_id = '${userId}'`));
+  await db.execute(sql.raw(`DELETE FROM "audit_events" WHERE user_id = '${userId}'`));
+  await db.execute(sql.raw(`DELETE FROM "subscriptions" WHERE user_id = '${userId}'`));
+  await db.execute(sql.raw(`DELETE FROM "tutor_subscriptions" WHERE user_id = '${userId}'`));
+  await db.execute(sql.raw(`DELETE FROM "sessions" WHERE user_id = '${userId}'`));
+  await db.execute(sql.raw(`DELETE FROM "users" WHERE id = '${userId}'`));
 }
 
 export async function registerAuthRoutes(app: FastifyInstance) {
@@ -380,18 +395,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const valid = await verifyPassword(user.passwordHash, password);
     if (!valid) return reply.status(400).send({ error: "Incorrect password" });
 
-    await db.transaction(async (tx: any) => {
-      const userLearners = await tx.select().from(learners).where(eq(learners.parentId, payload.sub));
-      for (const l of userLearners) {
-        await deleteLearnerCascade(tx, l.id);
-        if (l.userId) {
-          await tx.delete(sessions).where(eq(sessions.userId, l.userId));
-          await tx.delete(users).where(eq(users.id, l.userId));
-        }
+    const userLearners = await db.select().from(learners).where(eq(learners.parentId, payload.sub));
+    for (const l of userLearners) {
+      await deleteLearnerCascade(db, l.id);
+      if (l.userId) {
+        await deleteUserCascade(db, l.userId);
       }
-      await tx.delete(sessions).where(eq(sessions.userId, payload.sub));
-      await tx.delete(users).where(eq(users.id, payload.sub));
-    });
+    }
+    await deleteUserCascade(db, payload.sub);
 
     reply.clearCookie("refreshToken", { path: "/" });
     return { success: true, deleted: true };
@@ -413,13 +424,15 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (!learner) return reply.status(404).send({ error: "Learner not found" });
     if (learner.parentId !== payload.sub) return reply.status(403).send({ error: "You can only delete your own learners" });
 
-    await db.transaction(async (tx: any) => {
-      await deleteLearnerCascade(tx, learnerId);
+    try {
+      await deleteLearnerCascade(db, learnerId);
       if (learner.userId) {
-        await tx.delete(sessions).where(eq(sessions.userId, learner.userId));
-        await tx.delete(users).where(eq(users.id, learner.userId));
+        await deleteUserCascade(db, learner.userId);
       }
-    });
+    } catch (err: any) {
+      app.log.error({ err: err.message, learnerId }, "Failed to delete learner");
+      return reply.status(500).send({ error: "Failed to delete learner", detail: err.message });
+    }
 
     return { success: true, deletedLearnerId: learnerId };
   });
