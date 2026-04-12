@@ -276,7 +276,7 @@ export default function LearnerDashboard() {
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <button onClick={() => router.push("/dashboard/learner/assessment")}
               className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-amber-100 text-amber-700 font-bold text-sm hover:bg-amber-200 transition">
-              <span>🧭</span> Discovery Adventure
+              <span>🧭</span> Baseline Assessment
             </button>
             <button onClick={() => router.push("/dashboard/learner/homework")}
               className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-purple-100 text-purple-700 font-bold text-sm hover:bg-purple-200 transition">
