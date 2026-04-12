@@ -183,6 +183,10 @@ export default function ParentAssessmentPage() {
             </p>
           </div>
           <div className="flex flex-col gap-3">
+            <button onClick={() => router.push("/dashboard/learner/assessment")}
+              className="px-8 py-3 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold hover:from-amber-500 hover:to-orange-600 transition shadow-lg shadow-amber-200">
+              Start Baseline Assessment
+            </button>
             <button onClick={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
               className="px-8 py-3 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200">
               Back to Profile
