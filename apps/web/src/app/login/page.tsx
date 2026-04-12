@@ -35,7 +35,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await pinLogin(parentId, pin);
-      router.push("/dashboard/learner");
+      router.push("/dashboard/learner/assessment");
     } catch (err: any) {
       setError(err.message || "PIN login failed");
     }

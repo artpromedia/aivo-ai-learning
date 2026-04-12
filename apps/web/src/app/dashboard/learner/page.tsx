@@ -53,10 +53,34 @@ export default function LearnerDashboard() {
   const [functioningLevel, setFunctioningLevel] = useState<FunctioningLevel>("STANDARD");
 
   const [baselineChecked, setBaselineChecked] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
+    if (!loading && !user) router.replace("/login");
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (!accessToken || !user || redirecting) return;
+
+    const checkBaseline = async () => {
+      try {
+        const res = await fetch(`/api/assessments/learner/discovery/${user.id}/status`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (!data.baselineCompleted) {
+            setRedirecting(true);
+            router.replace("/dashboard/learner/assessment");
+            return;
+          }
+        }
+      } catch {}
+      setBaselineChecked(true);
+    };
+
+    checkBaseline();
+  }, [accessToken, user, router, redirecting]);
 
   useEffect(() => {
     if (!accessToken || !user) return;
@@ -70,22 +94,6 @@ export default function LearnerDashboard() {
       })
       .catch(() => {});
   }, [accessToken, user]);
-
-  useEffect(() => {
-    if (!accessToken || !user) return;
-    fetch(`/api/assessments/learner/discovery/${user.id}/status`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (data && !data.baselineCompleted) {
-          router.push("/dashboard/learner/assessment");
-          return;
-        }
-        setBaselineChecked(true);
-      })
-      .catch(() => setBaselineChecked(true));
-  }, [accessToken, user, router]);
 
   const fetchProfile = useCallback(() => {
     if (!accessToken || !user) return;
@@ -118,7 +126,7 @@ export default function LearnerDashboard() {
     fetchProfile();
   };
 
-  if (loading || !user || !baselineChecked) return null;
+  if (loading || !user || !baselineChecked || redirecting) return null;
 
   const allTutors = Object.entries(TUTORS);
   const xpPercent = profile ? Math.min(100, (profile.xpProgress / profile.xpForNextLevel) * 100) : 0;

@@ -20,19 +20,35 @@ export default function DiscoveryAdventurePage() {
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
-    if (!loading && user) {
+    if (!loading && user && accessToken) {
       setLearnerName(user.name || "");
-      if (accessToken) {
-        fetch("/api/users/me", { headers: { Authorization: `Bearer ${accessToken}` } })
-          .then(r => r.ok ? r.json() : null)
-          .then(data => {
-            if (data?.functioningLevel) setLearnerFL(data.functioningLevel);
-          })
-          .catch(() => {})
-          .finally(() => setReady(true));
-      } else {
+
+      const init = async () => {
+        try {
+          const [meRes, statusRes] = await Promise.all([
+            fetch("/api/users/me", { headers: { Authorization: `Bearer ${accessToken}` } }),
+            fetch(`/api/assessments/learner/discovery/${user.id}/status`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+          ]);
+
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData?.functioningLevel) setLearnerFL(meData.functioningLevel);
+          }
+
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            if (statusData?.baselineCompleted) {
+              router.replace("/dashboard/learner");
+              return;
+            }
+          }
+        } catch {}
         setReady(true);
-      }
+      };
+
+      init();
+    } else if (!loading && user && !accessToken) {
+      setReady(true);
     }
   }, [user, loading, router, accessToken]);
 
