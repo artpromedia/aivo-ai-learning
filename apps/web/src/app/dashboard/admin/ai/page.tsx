@@ -1,6 +1,8 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import Image from "next/image";
+import { TUTORS, type TutorKey } from "@aivo/brand";
 
 interface BrainOverview {
   total: number;
@@ -34,6 +36,7 @@ export default function AdminAIPage() {
   const { accessToken } = useAuth();
   const [brainOverview, setBrainOverview] = useState<BrainOverview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expandedTutor, setExpandedTutor] = useState<TutorKey | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -158,33 +161,90 @@ export default function AdminAIPage() {
       </div>
 
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">AI Tutors</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-heading font-bold text-lg text-slate-900">AI Tutors</h2>
+          <div className="flex items-center gap-3 text-xs text-slate-400">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400" /> 7 Core</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> 7 Expansion</span>
+          </div>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          {[
-            { name: "Nova", domain: "Math", color: "#7C3AED" },
-            { name: "Sage", domain: "ELA", color: "#10B981" },
-            { name: "Spark", domain: "Science", color: "#F59E0B" },
-            { name: "Chrono", domain: "History", color: "#6366F1" },
-            { name: "Pixel", domain: "Coding", color: "#06B6D4" },
-            { name: "Echo", domain: "Speech", color: "#EC4899" },
-            { name: "Harmony", domain: "SEL", color: "#8B5CF6" },
-            { name: "Atlas", domain: "Geography", color: "#14B8A6" },
-            { name: "Cadence", domain: "Music", color: "#D946EF" },
-            { name: "Vigor", domain: "PE/Health", color: "#22C55E" },
-            { name: "Lingua", domain: "Languages", color: "#0EA5E9" },
-            { name: "Forge", domain: "STEM", color: "#EF4444" },
-            { name: "Compass", domain: "Life Skills", color: "#F97316" },
-            { name: "Muse", domain: "Creative", color: "#A855F7" },
-          ].map((t) => (
-            <div key={t.name} className="p-3 rounded-xl border border-slate-100 text-center hover:shadow-sm transition">
-              <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: t.color }}>
-                {t.name.charAt(0)}
+          {(Object.entries(TUTORS) as [TutorKey, typeof TUTORS[TutorKey]][]).map(([key, t]) => (
+            <button
+              key={key}
+              onClick={() => setExpandedTutor(expandedTutor === key ? null : key)}
+              className={`p-3 rounded-xl border text-center transition cursor-pointer group ${
+                expandedTutor === key
+                  ? "border-2 shadow-md"
+                  : "border-slate-100 hover:shadow-sm hover:border-slate-200"
+              }`}
+              style={expandedTutor === key ? { borderColor: t.color } : undefined}
+            >
+              <div className="relative w-12 h-12 rounded-full mx-auto mb-2 overflow-hidden border-2 group-hover:scale-110 transition-transform shadow-sm" style={{ borderColor: t.color }}>
+                <Image src={t.avatar} alt={t.name} fill className="object-cover object-top" sizes="48px" />
               </div>
               <p className="text-xs font-bold text-slate-700">{t.name}</p>
-              <p className="text-[10px] text-slate-400">{t.domain}</p>
-            </div>
+              <p className="text-[10px] text-slate-400 leading-tight">{t.domain}</p>
+              <span className={`inline-block mt-1 px-1.5 py-0.5 text-[9px] font-bold rounded-full ${
+                t.tier === "core" ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"
+              }`}>{t.tier}</span>
+            </button>
           ))}
         </div>
+
+        {expandedTutor && TUTORS[expandedTutor] && (() => {
+          const t = TUTORS[expandedTutor];
+          return (
+            <div className="mt-4 p-5 rounded-xl border-2 animate-in fade-in slide-in-from-top-2 duration-200" style={{ borderColor: t.color, backgroundColor: `${t.color}08` }}>
+              <div className="flex items-start gap-4">
+                <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 shadow-lg flex-shrink-0" style={{ borderColor: t.color }}>
+                  <Image src={t.avatar} alt={t.name} fill className="object-cover object-top" sizes="80px" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="font-heading font-bold text-lg" style={{ color: t.color }}>{t.name}</h3>
+                    <span className="text-xl">{t.icon}</span>
+                    <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
+                      t.tier === "core" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                    }`}>{t.tier}</span>
+                  </div>
+                  <p className="text-sm text-slate-600 font-semibold">{t.domain}</p>
+                  <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-white rounded-lg p-3 border border-slate-100">
+                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Tutor Key</p>
+                      <p className="text-sm font-mono font-bold text-slate-700">{expandedTutor}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 border border-slate-100">
+                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Tier</p>
+                      <p className="text-sm font-bold text-slate-700 capitalize">{t.tier}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 border border-slate-100">
+                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Color</p>
+                      <div className="flex items-center gap-2">
+                        <span className="w-4 h-4 rounded-full border" style={{ backgroundColor: t.color }} />
+                        <p className="text-sm font-mono font-bold text-slate-700">{t.color}</p>
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 border border-slate-100">
+                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Levels</p>
+                      <p className="text-sm font-bold text-slate-700">All 5</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 bg-white rounded-lg p-3 border border-slate-100">
+                    <p className="text-[10px] text-slate-400 font-semibold uppercase mb-1">Functioning Level Adaptations</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {["STANDARD", "SUPPORTED", "LOW_VERBAL", "NON_VERBAL", "PRE_SYMBOLIC"].map((level) => (
+                        <span key={level} className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${LEVEL_COLORS[level] || "bg-slate-100 text-slate-600"}`}>
+                          {level.replace(/_/g, " ")}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
