@@ -32,6 +32,12 @@ const ROLE_DASHBOARDS: Record<string, string> = {
   THERAPIST: "/dashboard/therapist",
   PLATFORM_ADMIN: "/dashboard/admin",
   DISTRICT_ADMIN: "/dashboard/admin",
+  SALES: "/dashboard/internal/sales",
+  MARKETING: "/dashboard/internal/marketing",
+  CUSTOMER_CARE: "/dashboard/internal/customer-care",
+  SUPPORT: "/dashboard/internal/support",
+  FINANCE: "/dashboard/internal/finance",
+  DEVOPS: "/dashboard/internal/devops",
 };
 
 const TUTORS = [

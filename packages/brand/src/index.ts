@@ -92,13 +92,19 @@ export const FUNCTIONING_LEVELS = {
 } as const;
 
 export const ROLES = {
-  PARENT: { label: "Parent / Guardian", canManageLearners: true },
-  LEARNER: { label: "Learner", canManageLearners: false },
-  TEACHER: { label: "Teacher", canManageLearners: false },
-  CAREGIVER: { label: "Caregiver", canManageLearners: false },
-  THERAPIST: { label: "Therapist", canManageLearners: false },
-  DISTRICT_ADMIN: { label: "District Admin", canManageLearners: false },
-  PLATFORM_ADMIN: { label: "Platform Admin", canManageLearners: false },
+  PARENT: { label: "Parent / Guardian", canManageLearners: true, internal: false },
+  LEARNER: { label: "Learner", canManageLearners: false, internal: false },
+  TEACHER: { label: "Teacher", canManageLearners: false, internal: false },
+  CAREGIVER: { label: "Caregiver", canManageLearners: false, internal: false },
+  THERAPIST: { label: "Therapist", canManageLearners: false, internal: false },
+  DISTRICT_ADMIN: { label: "District Admin", canManageLearners: false, internal: false },
+  PLATFORM_ADMIN: { label: "Platform Admin", canManageLearners: false, internal: true },
+  SALES: { label: "Sales", canManageLearners: false, internal: true },
+  MARKETING: { label: "Marketing", canManageLearners: false, internal: true },
+  CUSTOMER_CARE: { label: "Customer Care", canManageLearners: false, internal: true },
+  SUPPORT: { label: "Support", canManageLearners: false, internal: true },
+  FINANCE: { label: "Finance", canManageLearners: false, internal: true },
+  DEVOPS: { label: "DevOps", canManageLearners: false, internal: true },
 } as const;
 
 export type TutorKey = keyof typeof TUTORS;

@@ -5,6 +5,9 @@ import { eq, sql, desc } from "drizzle-orm";
 import argon2 from "argon2";
 import crypto from "crypto";
 
+const ADMIN_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN"];
+const INTERNAL_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
+
 async function requireAdmin(req: any, reply: any) {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer ")) {
@@ -12,7 +15,7 @@ async function requireAdmin(req: any, reply: any) {
   }
   try {
     const payload = await verifyJWT(auth.slice(7));
-    if (!["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(payload.role as string)) {
+    if (!INTERNAL_ROLES.includes(payload.role as string)) {
       return reply.status(403).send({ error: "Admin access required" });
     }
     req.user = payload;
@@ -129,6 +132,48 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       curriculumFramework: learners.curriculumFramework,
       createdAt: learners.createdAt,
     }).from(learners).orderBy(desc(learners.createdAt)).limit(maxResults);
+  });
+
+  app.post("/api/admin/create-team-member", {
+    preHandler: requirePlatformAdmin,
+    schema: {
+      tags: ["Admin"],
+      body: {
+        type: "object",
+        required: ["name", "email", "role"],
+        properties: {
+          name: { type: "string", minLength: 1 },
+          email: { type: "string", format: "email" },
+          role: { type: "string", enum: ["SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"] },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { name, email, role } = req.body as any;
+
+    const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (existing.length > 0) {
+      return reply.status(409).send({ error: "A user with this email already exists" });
+    }
+
+    const tempPassword = crypto.randomBytes(6).toString("base64url");
+
+    const [member] = await db.insert(users).values({
+      email,
+      passwordHash: await argon2.hash(tempPassword),
+      name,
+      role: role as any,
+    }).returning();
+
+    return {
+      user: {
+        id: member.id,
+        name: member.name,
+        email: member.email,
+        role: member.role,
+      },
+      temporaryPassword: tempPassword,
+    };
   });
 
   app.post("/api/admin/create-district", {

@@ -4,7 +4,7 @@ import { tenants } from "./tenants";
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id),
   email: varchar("email", { length: 255 }),
   passwordHash: text("password_hash"),
   name: varchar("name", { length: 255 }).notNull(),

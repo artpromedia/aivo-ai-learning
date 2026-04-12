@@ -43,7 +43,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Tutor Avatars**: AI-generated photorealistic portraits in `apps/web/public/images/tutors/` (14 PNG files, 3:4 aspect ratio)
 - **Parallax Tutor Carousel**: Landing page features auto-rotating parallax carousel with depth-stacked cards, center detail panel, and pause/play control
 - **5 Functioning Levels**: STANDARD → SUPPORTED → LOW_VERBAL → NON_VERBAL → PRE_SYMBOLIC
-- **7 Roles**: PARENT, LEARNER, TEACHER, CAREGIVER, THERAPIST, DISTRICT_ADMIN, PLATFORM_ADMIN
+- **13 Roles**: PARENT, LEARNER, TEACHER, CAREGIVER, THERAPIST, DISTRICT_ADMIN, PLATFORM_ADMIN, SALES, MARKETING, CUSTOMER_CARE, SUPPORT, FINANCE, DEVOPS
 - **Brain Clone**: Assessment → Level routing → Brain state creation → XAI explanation → Parent review/approve/amend/decline → Versioned snapshots → Rollback
 - **Brain Approval Flow (RAI/XAI)**: After baseline assessment, brain clone is created with `pending_parent_review` status. XAI explanation generated for every decision (mastery scores, accommodations, tutors, signals). Parent sees the **Brain Building Sequence** first (6-stage animated visualization), then reviews via `/dashboard/parent/learner/[id]/brain-review` with 6 tabs (Overview, Learning Levels, Supports, AI Tutors, Learner Profile, AI Safety). Three decision buttons per guide: **Approve Brain** (green, activates clone), **Add Context & Rebuild** (blue, structured 4-field context form: learning context, clinical context, assessment concerns, missing info — re-runs clone pipeline), **Start Over** (gray, archives current assessment, learner retakes baseline). Brain service endpoints: GET `/{id}/review`, POST `/{id}/approve`, `/{id}/amend`, `/{id}/decline` — all parent-authorized.
 - **Brain Building Sequence**: 6-stage parent-facing animated visualization (replaces Awakening on parent screen). Stages: (1) Template Selection — blueprint descends with grade/FL label, (2) Domain Assessment Results — grade ladders fill per domain with gap labels, (3) Accommodations — evidence-based cards appear with source badges, (4) Goal Mapping — stepping-stone paths from current to enrolled grade, (5) System Activation — pulse animation with encryption/versioning info, (6) Tutor Connections — each tutor connects with delivery level. Component at `apps/web/src/components/brain/BrainBuildingSequence.tsx`. Skippable animation, auto-advances through stages.
@@ -133,6 +133,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `GET /api/admin/users` — Admin user listing
 - `GET /api/admin/tenants` — Admin tenant listing
 - `GET /api/admin/learners` — Admin learner listing
+- `POST /api/admin/create-team-member` — Create internal team user (platform admin only, roles: SALES/MARKETING/CUSTOMER_CARE/SUPPORT/FINANCE/DEVOPS)
 - `POST /api/family/collaboration/accept-invite` — Accept pending collaboration invites by email
 - `GET /api/family/collaboration/pending-invites` — List pending invites for current user
 - `POST /api/iep/parse` — AI-powered IEP document text parsing via ai-svc
@@ -195,6 +196,12 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `/dashboard/admin/billing` — Subscription plans (Free/Family/Family Plus/Enterprise), payment gateways, usage metering
 - `/dashboard/admin/analytics` — Research analytics (engagement metrics, mastery by subject, cohort distribution, anonymized export)
 - `/dashboard/admin/settings` — Feature flags (10 toggles), system limits, platform info
+- `/dashboard/internal/sales` — Sales dashboard (pipeline, deals, revenue, MRR/ACV)
+- `/dashboard/internal/marketing` — Marketing dashboard (acquisition channels, campaigns, audience, content)
+- `/dashboard/internal/customer-care` — Customer Care dashboard (tickets, CSAT, NPS, categories)
+- `/dashboard/internal/support` — Support dashboard (escalations, knowledge base, runbooks, diagnostics)
+- `/dashboard/internal/finance` — Finance dashboard (MRR, subscriptions, costs, transactions, payment health)
+- `/dashboard/internal/devops` — DevOps dashboard (service health, infrastructure, deployments, alerts, performance)
 - `/dashboard/notifications` — Cross-role notification inbox (filtering, read/unread)
 
 ### Engagement System
