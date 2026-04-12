@@ -121,9 +121,10 @@ interface BrainVisualizationProps {
   learnerName: string;
   accessToken: string;
   compact?: boolean;
+  baselineCompleted?: boolean;
 }
 
-export default function BrainVisualization({ learnerId, learnerName, accessToken, compact = false }: BrainVisualizationProps) {
+export default function BrainVisualization({ learnerId, learnerName, accessToken, compact = false, baselineCompleted = false }: BrainVisualizationProps) {
   const [brainState, setBrainState] = useState<BrainState | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("brain");
   const [loading, setLoading] = useState(true);
@@ -200,10 +201,26 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
   if (error || !brainState) {
     return (
       <div className={`bg-white rounded-2xl border border-slate-200 ${compact ? "p-4" : "p-6"}`}>
+        {!compact && <h3 className="font-heading font-bold text-slate-900 mb-3">Brain Visualization</h3>}
         <div className="text-center py-8">
-          <div className="text-4xl mb-3">🧠</div>
-          <p className="text-slate-500 font-semibold">{error || "No brain data available"}</p>
-          <p className="text-xs text-slate-400 mt-1">Complete the baseline assessment to initialize the Brain Clone</p>
+          {baselineCompleted ? (
+            <>
+              <div className="text-4xl mb-3 animate-pulse">&#9889;</div>
+              <p className="text-slate-700 font-heading font-bold">Brain Clone Building</p>
+              <p className="text-xs text-slate-400 mt-1">Baseline assessment is complete. The Brain Clone is being assembled from the assessment data.</p>
+              <div className="flex justify-center gap-1 mt-3">
+                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-4xl mb-3">🧠</div>
+              <p className="text-slate-500 font-semibold">{error || "Brain not initialized yet"}</p>
+              <p className="text-xs text-slate-400 mt-1">Complete the baseline assessment to initialize the Brain Clone</p>
+            </>
+          )}
         </div>
       </div>
     );

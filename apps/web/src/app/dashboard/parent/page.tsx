@@ -279,6 +279,7 @@ export default function ParentDashboard() {
                       learnerName={l.name}
                       accessToken={accessToken}
                       compact
+                      baselineCompleted={!!baselineCompleted[l.id]}
                     />
                   </div>
                 )}

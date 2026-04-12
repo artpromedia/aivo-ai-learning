@@ -33,6 +33,7 @@ export default function LearnerProfilePage() {
 
   const [learner, setLearner] = useState<Learner | null>(null);
   const [loadingLearner, setLoadingLearner] = useState(true);
+  const [baselineCompleted, setBaselineCompleted] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -50,6 +51,15 @@ export default function LearnerProfilePage() {
       })
       .catch(() => {})
       .finally(() => setLoadingLearner(false));
+
+    fetch(`/api/assessments/learner/discovery/${learnerId}/status`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((status) => {
+        if (status?.baselineCompleted) setBaselineCompleted(true);
+      })
+      .catch(() => {});
   }, [accessToken, user, learnerId]);
 
   if (loading || !user) return null;
@@ -110,10 +120,16 @@ export default function LearnerProfilePage() {
                   )}
                 </div>
               </div>
-              <div className="flex-shrink-0">
-                <BrainVisualization learnerId={learnerId} compact />
-              </div>
+              {accessToken && (
+                <div className="flex-shrink-0 w-full md:w-80">
+                  <BrainVisualization learnerId={learnerId} learnerName={learner.name} accessToken={accessToken} compact baselineCompleted={baselineCompleted} />
+                </div>
+              )}
             </div>
+
+            {accessToken && (
+              <BrainVisualization learnerId={learnerId} learnerName={learner.name} accessToken={accessToken} baselineCompleted={baselineCompleted} />
+            )}
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {NAV_ITEMS.map((item) => (
