@@ -5,18 +5,12 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
-const ROLES = [
-  { value: "PARENT", label: "Parent / Guardian", desc: "Manage your child's learning journey" },
-  { value: "TEACHER", label: "Teacher", desc: "Track student progress and insights" },
-];
-
 export default function SignupPage() {
   const { register } = useAuth();
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("PARENT");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +19,7 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
     try {
-      await register(email, password, name, role);
+      await register(email, password, name, "PARENT");
       router.push("/");
     } catch (err: any) {
       setError(err.message || "Registration failed");
@@ -54,7 +48,10 @@ export default function SignupPage() {
           <div className="lg:hidden flex justify-center">
             <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={140} height={42} />
           </div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Create your account</h1>
+          <div>
+            <h1 className="text-2xl font-heading font-bold text-slate-900">Create your account</h1>
+            <p className="text-sm text-slate-500 mt-1">For parents and guardians. Teachers, therapists, and caregivers join through invitations.</p>
+          </div>
 
           {error && <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm">{error}</div>}
 
@@ -73,18 +70,6 @@ export default function SignupPage() {
               <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8}
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">I am a...</label>
-              <div className="grid grid-cols-2 gap-3">
-                {ROLES.map((r) => (
-                  <button key={r.value} type="button" onClick={() => setRole(r.value)}
-                    className={`p-3 rounded-lg border-2 text-left transition ${role === r.value ? "border-primary bg-purple-50" : "border-slate-200 hover:border-slate-300"}`}>
-                    <div className="font-medium text-sm">{r.label}</div>
-                    <div className="text-xs text-slate-500 mt-0.5">{r.desc}</div>
-                  </button>
-                ))}
-              </div>
             </div>
             <button type="submit" disabled={loading}
               className="w-full py-3 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition disabled:opacity-50">
