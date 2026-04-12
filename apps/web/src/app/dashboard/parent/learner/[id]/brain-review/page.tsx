@@ -561,8 +561,8 @@ export default function BrainReviewPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="font-heading font-bold text-slate-900">{tutor?.name || t.tutor_key}</p>
-                          {tutor?.subject && (
-                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">{tutor.subject}</span>
+                          {tutor?.domain && (
+                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">{tutor.domain}</span>
                           )}
                         </div>
                         <p className="text-sm text-slate-600">{t.reasoning}</p>

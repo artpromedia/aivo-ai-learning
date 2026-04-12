@@ -664,7 +664,7 @@ function StageTutors({ learnerName, tutorDecisions, masteryLevels, enrolled, tut
         {tutorDecisions.map((t, i) => {
           const tutor = TUTORS[t.tutor_key as TutorKey];
           if (!tutor) return null;
-          const domainScore = masteryLevels[tutor.subject?.toLowerCase() || ""] || 0.5;
+          const domainScore = masteryLevels[tutor.domain?.toLowerCase() || ""] || 0.5;
           const teachLevel = scoreToGradeEquiv(domainScore, enrolled);
           const revealed = i < tutorsRevealed;
 
@@ -681,8 +681,8 @@ function StageTutors({ learnerName, tutorDecisions, masteryLevels, enrolled, tut
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="font-heading font-bold text-sm text-white">{tutor.name}</span>
-                  {tutor.subject && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-semibold">{tutor.subject}</span>
+                  {tutor.domain && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/50 font-semibold">{tutor.domain}</span>
                   )}
                 </div>
                 <p className="text-white/40 text-xs font-body truncate">{t.reasoning}</p>

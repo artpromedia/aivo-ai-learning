@@ -16,7 +16,7 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
   const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [droppedItems, setDroppedItems] = useState<Record<string, string>>({});
-  const prevBeatId = useRef<string | undefined>();
+  const prevBeatId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (beat?.id !== prevBeatId.current) {

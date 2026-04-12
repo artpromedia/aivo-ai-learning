@@ -19,8 +19,8 @@ interface ServiceHealth {
 }
 
 interface StatusOverview {
-  status: string;
-  services: { name: string; status: string; latency: number }[];
+  overall: string;
+  services: { name: string; status: string; latencyMs: number }[];
   timestamp: string;
 }
 
