@@ -26,6 +26,59 @@ function buildParentAssessmentPayload(parentAssessment: any, learner: any) {
 
 export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
 
+  app.get("/api/assessments/learner/discovery/:learnerId/status", {
+    schema: {
+      tags: ["Discovery Adventure"],
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: "object",
+        required: ["learnerId"],
+        properties: { learnerId: { type: "string" } },
+      },
+    },
+    preHandler: authenticate,
+  }, async (req, reply) => {
+    const db = (app as any).db;
+    const user = (req as any).user;
+    const { learnerId } = req.params as { learnerId: string };
+
+    let [learner] = await db.select().from(learners).where(eq(learners.id, learnerId)).limit(1);
+    if (!learner) {
+      [learner] = await db.select().from(learners).where(eq(learners.userId, learnerId)).limit(1);
+    }
+    if (!learner) return reply.status(404).send({ error: "Learner not found" });
+
+    if (user.role === "LEARNER" && user.sub !== learner.userId) {
+      return reply.status(403).send({ error: "Access denied" });
+    }
+    if (user.role === "PARENT" && learner.parentId !== user.sub) {
+      return reply.status(403).send({ error: "Access denied" });
+    }
+
+    const [attempt] = await db
+      .select()
+      .from(assessmentAttempts)
+      .where(eq(assessmentAttempts.learnerId, learner.id))
+      .orderBy(desc(assessmentAttempts.createdAt))
+      .limit(1);
+
+    const completed = attempt?.status === "COMPLETED" && attempt?.type === "discovery_adventure";
+
+    const [parentAss] = await db
+      .select()
+      .from(parentAssessments)
+      .where(eq(parentAssessments.learnerId, learner.id))
+      .orderBy(desc(parentAssessments.createdAt))
+      .limit(1);
+
+    return reply.send({
+      learnerId: learner.id,
+      baselineCompleted: completed,
+      parentAssessmentCompleted: !!parentAss?.completedAt,
+      assessmentId: attempt?.id || null,
+    });
+  });
+
   app.post("/api/assessments/learner/discovery/:learnerId/chapter", {
     schema: {
       tags: ["Discovery Adventure"],

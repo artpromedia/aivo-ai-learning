@@ -52,6 +52,8 @@ export default function LearnerDashboard() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [functioningLevel, setFunctioningLevel] = useState<FunctioningLevel>("STANDARD");
 
+  const [baselineChecked, setBaselineChecked] = useState(false);
+
   useEffect(() => {
     if (!loading && !user) router.push("/login");
   }, [user, loading, router]);
@@ -68,6 +70,22 @@ export default function LearnerDashboard() {
       })
       .catch(() => {});
   }, [accessToken, user]);
+
+  useEffect(() => {
+    if (!accessToken || !user) return;
+    fetch(`/api/assessments/learner/discovery/${user.id}/status`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data && !data.baselineCompleted) {
+          router.push("/dashboard/learner/assessment");
+          return;
+        }
+        setBaselineChecked(true);
+      })
+      .catch(() => setBaselineChecked(true));
+  }, [accessToken, user, router]);
 
   const fetchProfile = useCallback(() => {
     if (!accessToken || !user) return;
@@ -100,7 +118,7 @@ export default function LearnerDashboard() {
     fetchProfile();
   };
 
-  if (loading || !user) return null;
+  if (loading || !user || !baselineChecked) return null;
 
   const allTutors = Object.entries(TUTORS);
   const xpPercent = profile ? Math.min(100, (profile.xpProgress / profile.xpForNextLevel) * 100) : 0;
@@ -274,10 +292,6 @@ export default function LearnerDashboard() {
 
         {!isLow && (
           <div className="flex items-center justify-center gap-3 flex-wrap">
-            <button onClick={() => router.push("/dashboard/learner/assessment")}
-              className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-amber-100 text-amber-700 font-bold text-sm hover:bg-amber-200 transition">
-              <span>🧭</span> Baseline Assessment
-            </button>
             <button onClick={() => router.push("/dashboard/learner/homework")}
               className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-purple-100 text-purple-700 font-bold text-sm hover:bg-purple-200 transition">
               <span>📸</span> Homework Helper

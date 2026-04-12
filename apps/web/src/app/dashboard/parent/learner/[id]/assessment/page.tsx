@@ -143,7 +143,7 @@ export default function ParentAssessmentPage() {
             <span className="text-4xl">&#10003;</span>
           </div>
           <h1 className="text-2xl font-heading font-bold text-slate-900">Assessment Complete!</h1>
-          <p className="text-slate-500">Thank you for taking the time to help us understand your child's needs.</p>
+          <p className="text-slate-500">Thank you for taking the time to help us understand your child&apos;s needs.</p>
           {result.functioningLevel && (
             <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
               <p className="text-sm font-bold text-purple-700">Recommended Functioning Level</p>
@@ -151,6 +151,14 @@ export default function ParentAssessmentPage() {
               <p className="text-xs text-purple-500 mt-1">Confidence: {Math.round((result.functioningLevel.confidence || 0) * 100)}%</p>
             </div>
           )}
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
+            <div className="text-2xl mb-2">🧭</div>
+            <p className="text-sm font-bold text-amber-700">Next Step: Baseline Assessment</p>
+            <p className="text-xs text-amber-600 mt-1">
+              When your child logs in, they&apos;ll complete a fun interactive baseline assessment.
+              This helps AIVO create their personalized learning brain and curriculum.
+            </p>
+          </div>
           <button onClick={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
             className="px-8 py-3 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200">
             Continue to Profile
