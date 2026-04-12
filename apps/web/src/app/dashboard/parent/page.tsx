@@ -126,7 +126,8 @@ export default function ParentDashboard() {
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         <div className="flex items-center gap-4">
           <span className="text-sm font-semibold text-slate-600">Welcome, {user.name}</span>
-          <span className="px-3 py-1 text-xs rounded-full bg-purple-100 text-primary font-bold">{user.role}</span>
+          <button onClick={() => router.push("/dashboard/parent/billing")} className="text-sm text-slate-500 font-semibold hover:text-primary transition">Billing</button>
+          <button onClick={() => router.push("/dashboard/parent/settings")} className="text-sm text-slate-500 font-semibold hover:text-primary transition">Settings</button>
           <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold transition">Logout</button>
         </div>
       </header>

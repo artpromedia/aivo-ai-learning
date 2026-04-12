@@ -235,4 +235,143 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     reply.clearCookie("refreshToken", { path: "/" });
     return { success: true };
   });
+
+  app.put("/api/auth/password", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["currentPassword", "newPassword"],
+        properties: {
+          currentPassword: { type: "string" },
+          newPassword: { type: "string", minLength: 8 },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) return reply.status(401).send({ error: "Missing authorization" });
+
+    let payload: any;
+    try { payload = await verifyJWT(auth.slice(7)); } catch { return reply.status(401).send({ error: "Invalid token" }); }
+
+    const db = (app as any).db;
+    const { currentPassword, newPassword } = req.body as any;
+
+    const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
+    if (!user || !user.passwordHash) return reply.status(404).send({ error: "User not found" });
+
+    const valid = await verifyPassword(user.passwordHash, currentPassword);
+    if (!valid) return reply.status(400).send({ error: "Current password is incorrect" });
+
+    await db.update(users).set({ passwordHash: await hashPassword(newPassword) }).where(eq(users.id, payload.sub));
+    await db.delete(sessions).where(eq(sessions.userId, payload.sub));
+    return { success: true };
+  });
+
+  app.put("/api/auth/profile", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        properties: {
+          name: { type: "string", minLength: 1 },
+          email: { type: "string", format: "email" },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) return reply.status(401).send({ error: "Missing authorization" });
+
+    let payload: any;
+    try { payload = await verifyJWT(auth.slice(7)); } catch { return reply.status(401).send({ error: "Invalid token" }); }
+
+    const db = (app as any).db;
+    const { name, email } = req.body as any;
+    const updates: any = {};
+    if (name) updates.name = name;
+    if (email) {
+      const [existing] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      if (existing && existing.id !== payload.sub) return reply.status(409).send({ error: "Email already in use" });
+      updates.email = email;
+    }
+
+    if (Object.keys(updates).length === 0) return reply.status(400).send({ error: "No fields to update" });
+
+    await db.update(users).set(updates).where(eq(users.id, payload.sub));
+    const [updated] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
+    return { user: { id: updated.id, name: updated.name, email: updated.email, role: updated.role } };
+  });
+
+  app.delete("/api/auth/account", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["password"],
+        properties: {
+          password: { type: "string" },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) return reply.status(401).send({ error: "Missing authorization" });
+
+    let payload: any;
+    try { payload = await verifyJWT(auth.slice(7)); } catch { return reply.status(401).send({ error: "Invalid token" }); }
+
+    const db = (app as any).db;
+    const { password } = req.body as any;
+
+    const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
+    if (!user || !user.passwordHash) return reply.status(404).send({ error: "User not found" });
+
+    const valid = await verifyPassword(user.passwordHash, password);
+    if (!valid) return reply.status(400).send({ error: "Incorrect password" });
+
+    await db.transaction(async (tx: any) => {
+      const userLearners = await tx.select().from(learners).where(eq(learners.parentId, payload.sub));
+      for (const l of userLearners) {
+        await tx.delete(learners).where(eq(learners.id, l.id));
+        if (l.userId) {
+          await tx.delete(sessions).where(eq(sessions.userId, l.userId));
+          await tx.delete(users).where(eq(users.id, l.userId));
+        }
+      }
+      await tx.delete(sessions).where(eq(sessions.userId, payload.sub));
+      await tx.delete(users).where(eq(users.id, payload.sub));
+    });
+
+    reply.clearCookie("refreshToken", { path: "/" });
+    return { success: true, deleted: true };
+  });
+
+  app.delete("/api/auth/learner/:learnerId", {
+    schema: { tags: ["Auth"] },
+  }, async (req, reply) => {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) return reply.status(401).send({ error: "Missing authorization" });
+
+    let payload: any;
+    try { payload = await verifyJWT(auth.slice(7)); } catch { return reply.status(401).send({ error: "Invalid token" }); }
+
+    const db = (app as any).db;
+    const { learnerId } = req.params as any;
+
+    const [learner] = await db.select().from(learners).where(eq(learners.id, learnerId)).limit(1);
+    if (!learner) return reply.status(404).send({ error: "Learner not found" });
+    if (learner.parentId !== payload.sub) return reply.status(403).send({ error: "You can only delete your own learners" });
+
+    await db.transaction(async (tx: any) => {
+      await tx.delete(learners).where(eq(learners.id, learnerId));
+      if (learner.userId) {
+        await tx.delete(sessions).where(eq(sessions.userId, learner.userId));
+        await tx.delete(users).where(eq(users.id, learner.userId));
+      }
+    });
+
+    return { success: true, deletedLearnerId: learnerId };
+  });
 }
