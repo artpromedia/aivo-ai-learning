@@ -70,5 +70,15 @@ class RecommendationResolve(BaseModel):
     status: str
     parent_notes: Optional[str] = None
 
+class BrainApproveRequest(BaseModel):
+    parent_notes: Optional[str] = None
+
+class BrainAmendRequest(BaseModel):
+    parent_notes: str
+    context_additions: Optional[dict] = None
+
+class BrainDeclineRequest(BaseModel):
+    reason: Optional[str] = None
+
 class BrainRollbackRequest(BaseModel):
     snapshot_id: str

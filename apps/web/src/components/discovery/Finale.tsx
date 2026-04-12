@@ -61,19 +61,22 @@ export default function Finale({ learnerName, chapterResults, totalCorrect, tota
 
     if (brainStatus === "ready") {
       return (
-        <div className="mt-6 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 backdrop-blur border border-emerald-500/30 rounded-2xl px-6 py-5">
+        <div className="mt-6 bg-gradient-to-r from-amber-500/20 to-purple-500/20 backdrop-blur border border-amber-500/30 rounded-2xl px-6 py-5">
           <div className="text-3xl mb-2">🧠✨</div>
-          <p className="text-sm font-heading font-bold text-emerald-400">Your Learning Brain is Ready!</p>
+          <p className="text-sm font-heading font-bold text-amber-400">Your Learning Brain is Built!</p>
+          <p className="text-[11px] text-white/60 mt-2 leading-relaxed">
+            Your parent or guardian will review your learning profile before your adventure begins.
+            They&apos;ll make sure everything is just right for you!
+          </p>
           {brainData?.active_tutors && (
-            <p className="text-[11px] text-white/50 mt-1">
-              {brainData.active_tutors.length} tutors activated for your journey
+            <p className="text-[11px] text-white/40 mt-2">
+              {brainData.active_tutors.length} tutors ready to help you learn
             </p>
           )}
-          {brainData?.functioning_level && (
-            <p className="text-[11px] text-white/40 mt-0.5">
-              Learning path: {brainData.functioning_level}
-            </p>
-          )}
+          <div className="mt-3 flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2">
+            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <p className="text-[11px] text-amber-300 font-semibold">Waiting for parent approval</p>
+          </div>
         </div>
       );
     }
@@ -180,7 +183,7 @@ export default function Finale({ learnerName, chapterResults, totalCorrect, tota
                 : "bg-gradient-to-r from-amber-400 to-orange-500 shadow-amber-500/30 hover:scale-105 active:scale-95"
             }`}
           >
-            {brainStatus === "building" ? "Building Brain..." : "Start Learning! 🚀"}
+            {brainStatus === "building" ? "Building Brain..." : brainStatus === "ready" ? "All Done! 🎉" : "Continue 🚀"}
           </button>
         </div>
       </div>

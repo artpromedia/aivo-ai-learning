@@ -56,6 +56,7 @@ export default function LearnerProfilePage() {
 
   const NAV_ITEMS = [
     { label: "Overview", href: `/dashboard/parent/learner/${learnerId}/overview`, emoji: "📊" },
+    { label: "Brain Review", href: `/dashboard/parent/learner/${learnerId}/brain-review`, emoji: "🔍" },
     { label: "Brain Profile", href: `/dashboard/parent/learner/${learnerId}/brain`, emoji: "🧠" },
     { label: "Gradebook", href: `/dashboard/parent/learner/${learnerId}/gradebook`, emoji: "📓" },
     { label: "Assessment", href: `/dashboard/parent/learner/${learnerId}/assessment`, emoji: "📝" },

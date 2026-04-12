@@ -87,6 +87,101 @@ def _build_disability_signals(parent_data) -> dict:
             signals["preferred_response"] = parent_data.responseMethod
     return signals
 
+def _build_xai_explanation(mastery_levels: dict, disability_signals: dict, template: dict, discovery_results, parent_data, functioning_level: str) -> dict:
+    explanation = {
+        "summary": f"Brain clone created based on Discovery Adventure performance and parent-provided context for a {functioning_level.replace('_', ' ').title()} functioning level learner.",
+        "rai_compliance": {
+            "data_sources": [],
+            "bias_mitigations": [
+                "Mastery scores derived from learner's own performance, not demographic data",
+                "Accommodations selected from evidence-based templates, not assumptions",
+                "Parent context treated as supplementary—never overrides learner-demonstrated ability",
+            ],
+            "transparency": "All decisions below include the reasoning and source data that informed them.",
+            "human_oversight": "This brain clone requires parent approval before activation.",
+        },
+        "mastery_decisions": [],
+        "accommodation_decisions": [],
+        "tutor_decisions": [],
+        "signal_decisions": [],
+    }
+
+    if discovery_results:
+        explanation["rai_compliance"]["data_sources"].append("Learner Discovery Adventure (baseline assessment)")
+    if parent_data:
+        explanation["rai_compliance"]["data_sources"].append("Parent/caregiver assessment questionnaire")
+    explanation["rai_compliance"]["data_sources"].append(f"Seed template for {functioning_level} functioning level")
+
+    for domain, score in mastery_levels.items():
+        decision = {
+            "domain": domain,
+            "score": score,
+            "display_label": domain.replace("_", " ").title(),
+            "reasoning": "",
+        }
+        if discovery_results:
+            ch_match = None
+            for ch in discovery_results.chapterResults:
+                mapped = DOMAIN_TO_MASTERY.get(ch.domain, ch.domain)
+                if mapped == domain:
+                    ch_match = ch
+                    break
+            if ch_match:
+                raw = ch_match.correct / ch_match.total if ch_match.total > 0 else 0
+                mult = DIFFICULTY_MULTIPLIER.get(ch_match.difficulty, 1.0)
+                decision["reasoning"] = (
+                    f"Scored {ch_match.correct}/{ch_match.total} ({raw:.0%}) on {ch_match.difficulty} difficulty. "
+                    f"Difficulty multiplier of {mult}x applied → mastery {score:.1%}."
+                )
+                decision["source"] = "discovery_adventure"
+                decision["raw_score"] = f"{ch_match.correct}/{ch_match.total}"
+                decision["difficulty"] = ch_match.difficulty
+            else:
+                decision["reasoning"] = f"No direct assessment data. Set to template default ({score:.1%}) for {functioning_level} level."
+                decision["source"] = "template_default"
+        else:
+            decision["reasoning"] = f"Template default for {functioning_level} level."
+            decision["source"] = "template_default"
+        explanation["mastery_decisions"].append(decision)
+
+    for acc in template["active_accommodations"]:
+        decision = {
+            "accommodation": acc,
+            "display_label": acc.replace("_", " ").title(),
+            "reasoning": f"Standard accommodation for {functioning_level.replace('_', ' ')} functioning level learners based on evidence-based practice.",
+            "source": "functioning_level_template",
+            "removable": True,
+        }
+        explanation["accommodation_decisions"].append(decision)
+
+    for tutor_key in template["active_tutors"]:
+        decision = {
+            "tutor_key": tutor_key,
+            "reasoning": f"Included in the {functioning_level.replace('_', ' ')} curriculum template as appropriate for this functioning level.",
+            "source": "functioning_level_template",
+        }
+        explanation["tutor_decisions"].append(decision)
+
+    for signal_key, signal_val in disability_signals.items():
+        labels = {
+            "communication_needs": "Communication Support",
+            "device_access": "Device Interaction",
+            "attention": "Attention Profile",
+            "diagnoses": "Diagnosis Information",
+            "preferred_response": "Response Method",
+        }
+        decision = {
+            "signal": signal_key,
+            "value": signal_val if not isinstance(signal_val, list) else ", ".join(signal_val),
+            "display_label": labels.get(signal_key, signal_key.replace("_", " ").title()),
+            "reasoning": "Reported by parent/caregiver during intake assessment. Used to personalize interactions, not to limit learning expectations.",
+            "source": "parent_assessment",
+        }
+        explanation["signal_decisions"].append(decision)
+
+    return explanation
+
+
 def _build_initial_episodic(discovery_results, parent_data) -> list:
     events = []
     now = datetime.utcnow().isoformat()
@@ -159,6 +254,12 @@ def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
 
     episodic_memory = _build_initial_episodic(request.discovery_results, request.parent_assessment_data)
 
+    xai_explanation = _build_xai_explanation(
+        mastery_levels, disability_signals, template,
+        request.discovery_results, request.parent_assessment_data,
+        request.functioning_level
+    )
+
     brain_data = {
         "mastery_levels": mastery_levels,
         "disability_signals": disability_signals,
@@ -177,8 +278,10 @@ def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
             (id, tenant_id, learner_id, mastery_levels, disability_signals,
              functioning_level_profile, iep_profile, sensory_profile,
              active_accommodations, curriculum_alignment, active_tutors,
-             functional_curriculum, episodic_memory, version, created_at, updated_at)
-            VALUES (:id, :tid, :lid, :ml, :ds, :flp, :ip, :sp, :aa, :ca, :at, :fc, :em, 1, :now, :now)"""),
+             functional_curriculum, episodic_memory, approval_status,
+             xai_explanation, version, created_at, updated_at)
+            VALUES (:id, :tid, :lid, :ml, :ds, :flp, :ip, :sp, :aa, :ca, :at, :fc, :em,
+                    'pending_parent_review', :xai, 1, :now, :now)"""),
         {
             "id": brain_state_id,
             "tid": request.tenant_id,
@@ -193,6 +296,7 @@ def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
             "at": json.dumps(brain_data["active_tutors"]),
             "fc": json.dumps(brain_data["functional_curriculum"]),
             "em": json.dumps(brain_data["episodic_memory"]),
+            "xai": json.dumps(xai_explanation),
             "now": now,
         }
     )

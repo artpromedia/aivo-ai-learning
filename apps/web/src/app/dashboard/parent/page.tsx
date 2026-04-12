@@ -58,6 +58,7 @@ export default function ParentDashboard() {
   });
   const [curriculumInfo, setCurriculumInfo] = useState<CurriculumInfo | null>(null);
   const [curriculumLoading, setCurriculumLoading] = useState(false);
+  const [pendingReviews, setPendingReviews] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -68,7 +69,19 @@ export default function ParentDashboard() {
     if (accessToken) {
       fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } })
         .then((r) => r.json())
-        .then(setLearners)
+        .then((data: Learner[]) => {
+          setLearners(data);
+          data.forEach((l) => {
+            fetch(`/api/brain/${l.id}/review`, { headers: { Authorization: `Bearer ${accessToken}` } })
+              .then((r) => r.ok ? r.json() : null)
+              .then((brain) => {
+                if (brain?.approval_status === "pending_parent_review") {
+                  setPendingReviews((prev) => ({ ...prev, [l.id]: true }));
+                }
+              })
+              .catch(() => {});
+          });
+        })
         .catch(() => {});
     }
   }, [accessToken]);
@@ -256,15 +269,37 @@ export default function ParentDashboard() {
                     />
                   </div>
                 )}
+                {pendingReviews[l.id] && (
+                  <div
+                    onClick={() => router.push(`/dashboard/parent/learner/${l.id}/brain-review`)}
+                    className="mt-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4 cursor-pointer hover:shadow-md transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-xl">🧠</div>
+                      <div className="flex-1">
+                        <p className="text-sm font-heading font-bold text-amber-800">Brain Clone Ready for Review</p>
+                        <p className="text-xs text-amber-600">Tap to review and approve {l.name}&apos;s learning profile</p>
+                      </div>
+                      <div className="w-3 h-3 rounded-full bg-amber-400 animate-pulse" />
+                    </div>
+                  </div>
+                )}
                 <div className="mt-4 flex gap-2 flex-wrap">
                   <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}`)}
                     className="px-4 py-2 text-sm rounded-full bg-purple-50 text-primary font-bold hover:bg-purple-100 transition">
                     View Profile
                   </button>
-                  <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/assessment`)}
-                    className="px-4 py-2 text-sm rounded-full bg-cyan-50 text-secondary font-bold hover:bg-cyan-100 transition">
-                    Start Assessment
-                  </button>
+                  {pendingReviews[l.id] ? (
+                    <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/brain-review`)}
+                      className="px-4 py-2 text-sm rounded-full bg-amber-50 text-amber-700 font-bold hover:bg-amber-100 transition border border-amber-200">
+                      Review Brain Clone
+                    </button>
+                  ) : (
+                    <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/assessment`)}
+                      className="px-4 py-2 text-sm rounded-full bg-cyan-50 text-secondary font-bold hover:bg-cyan-100 transition">
+                      Start Assessment
+                    </button>
+                  )}
                   <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/sensory`)}
                     className="px-4 py-2 text-sm rounded-full bg-violet-50 text-violet-700 font-bold hover:bg-violet-100 transition">
                     Sensory Profile

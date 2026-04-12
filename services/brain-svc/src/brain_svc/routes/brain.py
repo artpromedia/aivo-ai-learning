@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from brain_svc.models.database import get_db
-from brain_svc.models.schemas import BrainCloneRequest, BrainRollbackRequest
+from brain_svc.models.schemas import BrainCloneRequest, BrainRollbackRequest, BrainApproveRequest, BrainAmendRequest, BrainDeclineRequest
 from brain_svc.services.clone_pipeline import clone_brain
 from brain_svc.auth import AuthClaims, require_auth
 
@@ -27,6 +27,241 @@ async def get_brain_state(learner_id: str, db: Session = Depends(get_db), auth: 
         raise HTTPException(status_code=404, detail="Brain state not found")
 
     return dict(result)
+
+def _verify_parent_access(db: Session, auth: AuthClaims, learner_id: str):
+    if auth.role in ("admin", "service", "PLATFORM_ADMIN"):
+        return
+    if auth.role == "PARENT":
+        learner = db.execute(
+            text("SELECT parent_id FROM learners WHERE id = :lid"),
+            {"lid": learner_id}
+        ).first()
+        if not learner or str(learner[0]) != auth.sub:
+            raise HTTPException(status_code=403, detail="Not authorized for this learner")
+        return
+    raise HTTPException(status_code=403, detail="Only parents can review brain clones")
+
+
+@router.get("/{learner_id}/review")
+async def get_brain_review(learner_id: str, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
+    _verify_parent_access(db, auth, learner_id)
+
+    result = db.execute(
+        text("""SELECT bs.*, l.name as learner_name, l.grade_level, l.functioning_level,
+                       l.communication_mode, l.diagnoses
+                FROM brain_states bs
+                JOIN learners l ON l.id = bs.learner_id
+                WHERE bs.learner_id = :lid
+                ORDER BY bs.version DESC LIMIT 1"""),
+        {"lid": learner_id}
+    ).mappings().first()
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Brain state not found")
+
+    data = dict(result)
+    for field in ["mastery_levels", "disability_signals", "functioning_level_profile",
+                  "active_accommodations", "active_tutors", "xai_explanation",
+                  "episodic_memory", "curriculum_alignment", "functional_curriculum",
+                  "iep_profile", "sensory_profile"]:
+        val = data.get(field)
+        if isinstance(val, str):
+            try:
+                data[field] = json.loads(val)
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+    if isinstance(data.get("diagnoses"), str):
+        try:
+            data["diagnoses"] = json.loads(data["diagnoses"])
+        except:
+            pass
+
+    return data
+
+@router.post("/{learner_id}/approve")
+async def approve_brain(learner_id: str, request: BrainApproveRequest, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
+    _verify_parent_access(db, auth, learner_id)
+
+    current = db.execute(
+        text("SELECT * FROM brain_states WHERE learner_id = :lid ORDER BY version DESC LIMIT 1"),
+        {"lid": learner_id}
+    ).mappings().first()
+    if not current:
+        raise HTTPException(status_code=404, detail="Brain state not found")
+    if current.get("approval_status") not in ("pending_parent_review", None):
+        raise HTTPException(status_code=400, detail=f"Brain already {current.get('approval_status')}")
+
+    now = datetime.utcnow()
+    new_version = (current["version"] or 1) + 1
+    db.execute(
+        text("""UPDATE brain_states
+                SET approval_status = 'approved', parent_notes = :notes,
+                    version = :v, updated_at = :now
+                WHERE id = :id"""),
+        {"notes": request.parent_notes, "v": new_version, "now": now, "id": current["id"]}
+    )
+
+    snap_id = str(uuid.uuid4())
+    snap_data = {}
+    for field in ["mastery_levels", "disability_signals", "functioning_level_profile",
+                  "iep_profile", "sensory_profile", "active_accommodations",
+                  "active_tutors", "functional_curriculum", "episodic_memory"]:
+        val = current.get(field)
+        if isinstance(val, str):
+            try: val = json.loads(val)
+            except: pass
+        snap_data[field] = val
+
+    db.execute(
+        text("""INSERT INTO brain_state_snapshots
+                (id, brain_state_id, learner_id, version, trigger, snapshot, created_at)
+                VALUES (:id, :bsid, :lid, :v, 'parent_approved', :snap, :now)"""),
+        {"id": snap_id, "bsid": current["id"], "lid": learner_id, "v": new_version,
+         "snap": json.dumps(snap_data), "now": now}
+    )
+
+    db.commit()
+
+    try:
+        import httpx
+        mastery = current.get("mastery_levels", {})
+        if isinstance(mastery, str):
+            mastery = json.loads(mastery)
+        fl = current.get("functioning_level_profile", {})
+        if isinstance(fl, str):
+            fl = json.loads(fl)
+        for subject in list(mastery.keys()):
+            httpx.post(
+                f"http://localhost:3005/api/learning/path/{learner_id}/{subject}/init",
+                json={"functioning_level": fl.get("level", "STANDARD")},
+                timeout=5.0,
+            )
+    except Exception:
+        pass
+
+    return {"status": "approved", "version": new_version, "snapshot_id": snap_id}
+
+@router.post("/{learner_id}/amend")
+async def amend_brain(learner_id: str, request: BrainAmendRequest, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
+    _verify_parent_access(db, auth, learner_id)
+
+    current = db.execute(
+        text("SELECT * FROM brain_states WHERE learner_id = :lid ORDER BY version DESC LIMIT 1"),
+        {"lid": learner_id}
+    ).mappings().first()
+    if not current:
+        raise HTTPException(status_code=404, detail="Brain state not found")
+    if current.get("approval_status") not in ("pending_parent_review", None):
+        raise HTTPException(status_code=400, detail=f"Brain already {current.get('approval_status')}")
+
+    now = datetime.utcnow()
+    new_version = (current["version"] or 1) + 1
+
+    episodic = current.get("episodic_memory", [])
+    if isinstance(episodic, str):
+        try: episodic = json.loads(episodic)
+        except: episodic = []
+    if not isinstance(episodic, list):
+        episodic = []
+
+    episodic.append({
+        "type": "parent_amendment",
+        "timestamp": now.isoformat(),
+        "notes": request.parent_notes,
+        "context": request.context_additions or {},
+    })
+
+    xai = current.get("xai_explanation", {})
+    if isinstance(xai, str):
+        try: xai = json.loads(xai)
+        except: xai = {}
+    if not isinstance(xai, dict):
+        xai = {}
+    if "amendments" not in xai:
+        xai["amendments"] = []
+    xai["amendments"].append({
+        "timestamp": now.isoformat(),
+        "notes": request.parent_notes,
+        "context": request.context_additions or {},
+    })
+
+    db.execute(
+        text("""UPDATE brain_states
+                SET approval_status = 'amended', parent_notes = :notes,
+                    episodic_memory = :em, xai_explanation = :xai,
+                    version = :v, updated_at = :now
+                WHERE id = :id"""),
+        {"notes": request.parent_notes, "em": json.dumps(episodic),
+         "xai": json.dumps(xai), "v": new_version, "now": now, "id": current["id"]}
+    )
+
+    snap_data = {}
+    for field in ["mastery_levels", "disability_signals", "functioning_level_profile",
+                  "iep_profile", "sensory_profile", "active_accommodations",
+                  "active_tutors", "functional_curriculum"]:
+        val = current.get(field)
+        if isinstance(val, str):
+            try: val = json.loads(val)
+            except: pass
+        snap_data[field] = val
+    snap_data["episodic_memory"] = episodic
+
+    snap_id = str(uuid.uuid4())
+    db.execute(
+        text("""INSERT INTO brain_state_snapshots
+                (id, brain_state_id, learner_id, version, trigger, snapshot, created_at)
+                VALUES (:id, :bsid, :lid, :v, 'parent_amended', :snap, :now)"""),
+        {"id": snap_id, "bsid": current["id"], "lid": learner_id, "v": new_version,
+         "snap": json.dumps(snap_data), "now": now}
+    )
+
+    db.commit()
+
+    try:
+        import httpx
+        mastery = current.get("mastery_levels", {})
+        if isinstance(mastery, str):
+            mastery = json.loads(mastery)
+        fl = current.get("functioning_level_profile", {})
+        if isinstance(fl, str):
+            fl = json.loads(fl)
+        for subject in list(mastery.keys()):
+            httpx.post(
+                f"http://localhost:3005/api/learning/path/{learner_id}/{subject}/init",
+                json={"functioning_level": fl.get("level", "STANDARD")},
+                timeout=5.0,
+            )
+    except Exception:
+        pass
+
+    return {"status": "amended", "version": new_version, "snapshot_id": snap_id}
+
+@router.post("/{learner_id}/decline")
+async def decline_brain(learner_id: str, request: BrainDeclineRequest, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
+    _verify_parent_access(db, auth, learner_id)
+
+    current = db.execute(
+        text("SELECT * FROM brain_states WHERE learner_id = :lid ORDER BY version DESC LIMIT 1"),
+        {"lid": learner_id}
+    ).mappings().first()
+    if not current:
+        raise HTTPException(status_code=404, detail="Brain state not found")
+    if current.get("approval_status") not in ("pending_parent_review", None):
+        raise HTTPException(status_code=400, detail=f"Brain already {current.get('approval_status')}")
+
+    db.execute(text("DELETE FROM brain_state_snapshots WHERE brain_state_id = :bsid"), {"bsid": current["id"]})
+    db.execute(text("DELETE FROM brain_states WHERE id = :id"), {"id": current["id"]})
+
+    db.execute(
+        text("""DELETE FROM assessment_attempts
+                WHERE learner_id = :lid AND type = 'discovery_adventure'"""),
+        {"lid": learner_id}
+    )
+
+    db.commit()
+
+    return {"status": "declined", "reason": request.reason, "message": "Brain clone removed. Learner can retake the baseline assessment."}
 
 @router.get("/{learner_id}/history")
 async def get_brain_history(learner_id: str, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):

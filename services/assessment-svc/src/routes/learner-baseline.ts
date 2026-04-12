@@ -71,11 +71,23 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
       .orderBy(desc(parentAssessments.createdAt))
       .limit(1);
 
+    let approvalStatus: string | null = null;
+    try {
+      const brainRes = await fetch(`${BRAIN_SVC_URL}/api/brain/${learner.id}`, {
+        headers: { Authorization: req.headers.authorization as string },
+      });
+      if (brainRes.ok) {
+        const brainData = await brainRes.json();
+        approvalStatus = brainData.approval_status || null;
+      }
+    } catch {}
+
     return reply.send({
       learnerId: learner.id,
       baselineCompleted: completed,
       parentAssessmentCompleted: !!parentAss?.completedAt,
       assessmentId: attempt?.id || null,
+      approvalStatus,
     });
   });
 
@@ -271,6 +283,8 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
       brainResult = { error: "Failed to reach brain service", detail: e.message };
     }
 
+    const cloneSucceeded = brainResult && !brainResult.error;
+
     return reply.send({
       success: true,
       assessmentId: attempt.id,
@@ -278,6 +292,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
       functioningLevel: learner.functioningLevel,
       domainScores: attempt.domainScores,
       brain: brainResult,
+      brainCloneStatus: cloneSucceeded ? "pending_parent_review" : "clone_failed",
     });
   });
 

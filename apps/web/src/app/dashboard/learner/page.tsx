@@ -54,6 +54,7 @@ export default function LearnerDashboard() {
 
   const [baselineChecked, setBaselineChecked] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -72,6 +73,11 @@ export default function LearnerDashboard() {
           if (!data.baselineCompleted) {
             setRedirecting(true);
             router.replace("/dashboard/learner/assessment");
+            return;
+          }
+          if (data.approvalStatus === "pending_parent_review") {
+            setPendingApproval(true);
+            setBaselineChecked(true);
             return;
           }
         }
@@ -127,6 +133,34 @@ export default function LearnerDashboard() {
   };
 
   if (loading || !user || !baselineChecked || redirecting) return null;
+
+  if (pendingApproval) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-950 via-indigo-950 to-slate-950 flex flex-col items-center justify-center px-6">
+        <div className="max-w-md text-center">
+          <div className="text-7xl mb-6 animate-pulse">🧠</div>
+          <h1 className="text-3xl font-heading font-bold text-white mb-3">Your Brain is Ready!</h1>
+          <p className="text-white/60 font-body leading-relaxed mb-6">
+            Your parent or guardian is reviewing your learning profile.
+            Once they approve it, your personalized adventure will begin!
+          </p>
+          <div className="bg-white/10 backdrop-blur rounded-2xl p-6 mb-6">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="w-3 h-3 rounded-full bg-amber-400 animate-pulse" />
+              <p className="text-amber-300 font-heading font-bold text-sm">Waiting for Parent Approval</p>
+            </div>
+            <p className="text-white/40 text-xs">Ask your parent to check their dashboard</p>
+          </div>
+          <button
+            onClick={logout}
+            className="px-6 py-3 bg-white/10 backdrop-blur text-white/60 font-heading font-bold rounded-xl hover:bg-white/20 transition text-sm"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const allTutors = Object.entries(TUTORS);
   const xpPercent = profile ? Math.min(100, (profile.xpProgress / profile.xpForNextLevel) * 100) : 0;

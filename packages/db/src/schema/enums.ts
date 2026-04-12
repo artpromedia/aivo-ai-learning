@@ -63,9 +63,17 @@ export const recommendationStatusEnum = pgEnum("recommendation_status", [
   "ADJUSTED",
 ]);
 
+export const brainApprovalStatusEnum = pgEnum("brain_approval_status", [
+  "pending_parent_review",
+  "approved",
+  "amended",
+  "declined",
+]);
+
 export const snapshotTriggerEnum = pgEnum("snapshot_trigger", [
   "initial_clone",
   "parent_approved",
+  "parent_amended",
   "mastery_threshold",
   "rebaseline",
   "main_brain_upgrade",

@@ -1,5 +1,5 @@
 import { pgTable, uuid, varchar, timestamp, jsonb, text, integer, real } from "drizzle-orm/pg-core";
-import { snapshotTriggerEnum, recommendationTypeEnum, recommendationStatusEnum, milestoneStatusEnum } from "./enums";
+import { brainApprovalStatusEnum, snapshotTriggerEnum, recommendationTypeEnum, recommendationStatusEnum, milestoneStatusEnum } from "./enums";
 import { learners } from "./learners";
 import { tenants } from "./tenants";
 
@@ -26,6 +26,9 @@ export const brainStates = pgTable("brain_states", {
   activeTutors: jsonb("active_tutors").default([]),
   functionalCurriculum: jsonb("functional_curriculum").default({}),
   episodicMemory: jsonb("episodic_memory").default([]),
+  approvalStatus: brainApprovalStatusEnum("approval_status").default("pending_parent_review"),
+  xaiExplanation: jsonb("xai_explanation").default({}),
+  parentNotes: text("parent_notes"),
   version: integer("version").default(1),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

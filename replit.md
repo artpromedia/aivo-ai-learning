@@ -44,7 +44,8 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Parallax Tutor Carousel**: Landing page features auto-rotating parallax carousel with depth-stacked cards, center detail panel, and pause/play control
 - **5 Functioning Levels**: STANDARD → SUPPORTED → LOW_VERBAL → NON_VERBAL → PRE_SYMBOLIC
 - **7 Roles**: PARENT, LEARNER, TEACHER, CAREGIVER, THERAPIST, DISTRICT_ADMIN, PLATFORM_ADMIN
-- **Brain Clone**: Assessment → Level routing → Brain state creation → Versioned snapshots → Rollback
+- **Brain Clone**: Assessment → Level routing → Brain state creation → XAI explanation → Parent review/approve/amend/decline → Versioned snapshots → Rollback
+- **Brain Approval Flow (RAI/XAI)**: After baseline assessment, brain clone is created with `pending_parent_review` status. XAI explanation generated for every decision (mastery scores, accommodations, tutors, signals). Parent reviews via `/dashboard/parent/learner/[id]/brain-review` with 6 tabs (Overview, Learning Levels, Supports, AI Tutors, Learner Profile, AI Safety). Parent can: Approve (activates clone + init learning paths), Amend & Approve (adds context notes to episodic memory), or Decline (deletes clone + assessment, learner retakes). Learner sees "Waiting for parent approval" screen until resolved. Brain service endpoints: GET `/{id}/review`, POST `/{id}/approve`, `/{id}/amend`, `/{id}/decline` — all parent-authorized.
 
 ### Running Services
 1. **Start application** (port 5000): Next.js frontend
