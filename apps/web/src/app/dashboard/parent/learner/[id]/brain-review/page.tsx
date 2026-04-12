@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
+import BrainSphere from "@/components/brain/BrainSphere";
 
 interface MasteryDecision {
   domain: string;
@@ -52,6 +53,14 @@ interface XaiExplanation {
   signal_decisions: SignalDecision[];
 }
 
+interface VisualIdentity {
+  primaryHue: string;
+  secondaryHues: string[];
+  pulseRate: number;
+  growthParticles: { domain: string; color: string; intensity: number }[];
+  memoryBank: { domain: string; type: string; score: number }[];
+}
+
 interface BrainReview {
   id: string;
   learner_name: string;
@@ -63,6 +72,7 @@ interface BrainReview {
   active_accommodations: string[];
   active_tutors: string[];
   xai_explanation: XaiExplanation;
+  visual_identity?: VisualIdentity;
   parent_notes?: string;
 }
 
@@ -249,15 +259,13 @@ export default function BrainReviewPage() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-3xl shadow-lg">
-              🧠
-            </div>
+            <BrainSphere visualIdentity={review.visual_identity} size={64} />
             <div className="flex-1">
               <h1 className="text-2xl font-heading font-bold text-slate-900">
-                Brain Clone Review
+                {review.learner_name}&apos;s Brain
               </h1>
               <p className="text-slate-500 font-body">
-                Review {review.learner_name}&apos;s personalized learning profile before activation
+                Review your child&apos;s personalized learning profile before activation
               </p>
             </div>
             {isAlreadyResolved && (
@@ -271,9 +279,35 @@ export default function BrainReviewPage() {
             )}
           </div>
 
-          <p className="text-sm text-slate-600 bg-purple-50 rounded-xl p-4 font-body leading-relaxed">
-            {xai?.summary || "This brain clone was created from your child's baseline assessment results and your parent questionnaire responses."}
-          </p>
+          {(() => {
+            const strengths = xai?.mastery_decisions?.filter(m => m.score >= 0.6).sort((a, b) => b.score - a.score) || [];
+            const growth = xai?.mastery_decisions?.filter(m => m.score < 0.6 && m.source === "discovery_adventure") || [];
+            return (
+              <div className="space-y-3">
+                {strengths.length > 0 && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                    <p className="text-sm font-semibold text-emerald-700 mb-1">
+                      {review.learner_name} showed strong engagement with {strengths.map(s => s.display_label.toLowerCase()).join(" and ")}
+                    </p>
+                  </div>
+                )}
+                {growth.length > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <p className="text-sm text-amber-700">
+                      {review.learner_name} may benefit from more time with {growth.map(g => g.display_label.toLowerCase()).join(" and ")} — framed as growth opportunities, not limitations
+                    </p>
+                  </div>
+                )}
+                {review.functioning_level && review.functioning_level !== "STANDARD" && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                    <p className="text-sm text-purple-700">
+                      {review.learner_name} learns best through personalized content. Their Brain will create activities designed for how {review.learner_name} explores the world.
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
@@ -644,21 +678,21 @@ export default function BrainReviewPage() {
                     disabled={submitting}
                     className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
                   >
-                    {submitting ? "Approving..." : "✅ Approve Clone"}
+                    {submitting ? "Approving..." : "✅ This looks right"}
                   </button>
                   <button
                     onClick={() => setShowAmendForm(true)}
                     disabled={submitting}
                     className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
                   >
-                    📝 Amend & Approve
+                    ✏️ I want to add something
                   </button>
                   <button
                     onClick={() => setShowDeclineConfirm(true)}
                     disabled={submitting}
-                    className="px-6 py-3 border-2 border-red-200 text-red-600 font-heading font-bold rounded-xl hover:bg-red-50 transition disabled:opacity-50"
+                    className="px-6 py-3 border-2 border-slate-200 text-slate-500 font-heading font-bold rounded-xl hover:bg-slate-50 transition disabled:opacity-50"
                   >
-                    Decline
+                    I&apos;m not sure about this
                   </button>
                 </div>
               </div>

@@ -26,6 +26,7 @@ export const brainStates = pgTable("brain_states", {
   activeTutors: jsonb("active_tutors").default([]),
   functionalCurriculum: jsonb("functional_curriculum").default({}),
   episodicMemory: jsonb("episodic_memory").default([]),
+  visualIdentity: jsonb("visual_identity").default({}),
   approvalStatus: brainApprovalStatusEnum("approval_status").default("pending_parent_review"),
   xaiExplanation: jsonb("xai_explanation").default({}),
   parentNotes: text("parent_notes"),

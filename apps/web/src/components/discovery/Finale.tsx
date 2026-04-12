@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { TUTORS } from "@aivo/brand";
-import { ADVENTURE_CHAPTERS, TUTOR_INTROS, type ChapterResult } from "./types";
+import { ADVENTURE_CHAPTERS, TUTOR_INTROS, type ChapterResult, type FunctioningLevel } from "./types";
+import Awakening from "./Awakening";
 
 interface FinaleProps {
   learnerName: string;
@@ -10,13 +11,16 @@ interface FinaleProps {
   totalCorrect: number;
   totalAttempts: number;
   xpEarned: number;
+  functioningLevel: FunctioningLevel;
   onFinish: () => void;
   onSubmitResults: () => Promise<{ success: boolean; brain?: any; error?: string }>;
 }
 
+type FinaleStage = "celebration" | "awakening" | "complete";
 type BrainStatus = "idle" | "building" | "ready" | "error";
 
-export default function Finale({ learnerName, chapterResults, totalCorrect, totalAttempts, xpEarned, onFinish, onSubmitResults }: FinaleProps) {
+export default function Finale({ learnerName, chapterResults, totalCorrect, totalAttempts, xpEarned, functioningLevel, onFinish, onSubmitResults }: FinaleProps) {
+  const [stage, setStage] = useState<FinaleStage>("celebration");
   const [step, setStep] = useState(0);
   const [brainStatus, setBrainStatus] = useState<BrainStatus>("idle");
   const [brainData, setBrainData] = useState<any>(null);
@@ -43,13 +47,32 @@ export default function Finale({ learnerName, chapterResults, totalCorrect, tota
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [buildBrain]);
 
+  useEffect(() => {
+    if (brainStatus === "ready" && step >= 4) {
+      const timer = setTimeout(() => setStage("awakening"), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [brainStatus, step]);
+
+  if (stage === "awakening") {
+    return (
+      <Awakening
+        learnerName={learnerName}
+        chapterResults={chapterResults}
+        functioningLevel={functioningLevel}
+        brainData={brainData}
+        onComplete={onFinish}
+      />
+    );
+  }
+
   const brainStatusSection = () => {
     if (brainStatus === "building") {
       return (
         <div className="mt-6 bg-white/10 backdrop-blur rounded-2xl px-6 py-5 animate-pulse">
           <div className="text-3xl mb-2">🧠</div>
-          <p className="text-sm font-heading font-bold text-purple-300">Building Your Learning Brain...</p>
-          <p className="text-[11px] text-white/40 mt-1">Analyzing your adventure to create a personalized learning path</p>
+          <p className="text-sm font-heading font-bold text-purple-300">Something amazing is happening...</p>
+          <p className="text-[11px] text-white/40 mt-1">Your Brain is forming from everything you just did</p>
           <div className="flex gap-1 justify-center mt-3">
             <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "0ms" }} />
             <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -62,21 +85,9 @@ export default function Finale({ learnerName, chapterResults, totalCorrect, tota
     if (brainStatus === "ready") {
       return (
         <div className="mt-6 bg-gradient-to-r from-amber-500/20 to-purple-500/20 backdrop-blur border border-amber-500/30 rounded-2xl px-6 py-5">
-          <div className="text-3xl mb-2">🧠✨</div>
-          <p className="text-sm font-heading font-bold text-amber-400">Your Learning Brain is Built!</p>
-          <p className="text-[11px] text-white/60 mt-2 leading-relaxed">
-            Your parent or guardian will review your learning profile before your adventure begins.
-            They&apos;ll make sure everything is just right for you!
-          </p>
-          {brainData?.active_tutors && (
-            <p className="text-[11px] text-white/40 mt-2">
-              {brainData.active_tutors.length} tutors ready to help you learn
-            </p>
-          )}
-          <div className="mt-3 flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2">
-            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <p className="text-[11px] text-amber-300 font-semibold">Waiting for parent approval</p>
-          </div>
+          <div className="text-3xl mb-2 animate-pulse">✨</div>
+          <p className="text-sm font-heading font-bold text-amber-400">Your Brain is ready to awaken!</p>
+          <p className="text-[11px] text-white/40 mt-1">Get ready for something special...</p>
         </div>
       );
     }
@@ -87,6 +98,12 @@ export default function Finale({ learnerName, chapterResults, totalCorrect, tota
           <div className="text-3xl mb-2">🧠</div>
           <p className="text-sm font-heading font-bold text-amber-400">Your results are saved!</p>
           <p className="text-[11px] text-white/40 mt-1">Your learning brain will finish setting up when you start your first lesson</p>
+          <button
+            onClick={onFinish}
+            className="mt-4 px-8 py-3 rounded-full text-white text-base font-heading font-bold bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg hover:scale-105 active:scale-95 transition-all"
+          >
+            Continue 🚀
+          </button>
         </div>
       );
     }
@@ -173,18 +190,6 @@ export default function Finale({ learnerName, chapterResults, totalCorrect, tota
 
         <div className={`transition-all duration-1000 ${step >= 4 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
           {brainStatusSection()}
-
-          <button
-            onClick={onFinish}
-            disabled={brainStatus === "building"}
-            className={`mt-6 px-10 py-4 rounded-full text-white text-lg font-heading font-bold shadow-2xl transition-all ${
-              brainStatus === "building"
-                ? "bg-gray-500/50 cursor-wait shadow-none"
-                : "bg-gradient-to-r from-amber-400 to-orange-500 shadow-amber-500/30 hover:scale-105 active:scale-95"
-            }`}
-          >
-            {brainStatus === "building" ? "Building Brain..." : brainStatus === "ready" ? "All Done! 🎉" : "Continue 🚀"}
-          </button>
         </div>
       </div>
     </div>

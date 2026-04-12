@@ -182,6 +182,61 @@ def _build_xai_explanation(mastery_levels: dict, disability_signals: dict, templ
     return explanation
 
 
+DOMAIN_HUE_MAP = {
+    "ela": "#10B981",
+    "math": "#7C3AED",
+    "science": "#F59E0B",
+    "sel": "#8B5CF6",
+    "speech": "#EC4899",
+    "executive_function": "#06B6D4",
+    "social": "#8B5CF6",
+    "communication": "#EC4899",
+    "coding": "#06B6D4",
+    "history": "#6366F1",
+    "daily_living": "#F97316",
+    "cause_effect": "#14B8A6",
+    "sensory_engagement": "#A855F7",
+    "social_awareness": "#D946EF",
+}
+
+
+def _compute_visual_identity(mastery_levels: dict, discovery_results=None) -> dict:
+    scored = sorted(mastery_levels.items(), key=lambda x: x[1], reverse=True)
+    primary_domain = scored[0][0] if scored else "math"
+    primary_hue = DOMAIN_HUE_MAP.get(primary_domain, "#7C3AED")
+    secondary_hues = [DOMAIN_HUE_MAP.get(d, "#6366F1") for d, _ in scored[1:4]]
+
+    avg_mastery = sum(mastery_levels.values()) / max(1, len(mastery_levels))
+    pulse_rate = 0.8 + avg_mastery * 0.4
+
+    growth_particles = []
+    for domain, score in scored[:3]:
+        if score > 0.5:
+            growth_particles.append({
+                "domain": domain,
+                "color": DOMAIN_HUE_MAP.get(domain, "#7C3AED"),
+                "intensity": round(score, 2),
+            })
+
+    memory_bank = []
+    if discovery_results:
+        for ch in discovery_results.chapterResults:
+            if ch.total > 0 and ch.correct / ch.total >= 0.5:
+                memory_bank.append({
+                    "domain": ch.domain,
+                    "type": "discovery_highlight",
+                    "score": round(ch.correct / ch.total, 2),
+                })
+
+    return {
+        "primaryHue": primary_hue,
+        "secondaryHues": secondary_hues,
+        "pulseRate": round(pulse_rate, 2),
+        "growthParticles": growth_particles,
+        "memoryBank": memory_bank[:5],
+    }
+
+
 def _build_initial_episodic(discovery_results, parent_data) -> list:
     events = []
     now = datetime.utcnow().isoformat()
@@ -260,6 +315,8 @@ def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
         request.functioning_level
     )
 
+    visual_identity = _compute_visual_identity(mastery_levels, request.discovery_results)
+
     brain_data = {
         "mastery_levels": mastery_levels,
         "disability_signals": disability_signals,
@@ -271,6 +328,7 @@ def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
         "active_tutors": template["active_tutors"],
         "functional_curriculum": template.get("functional_curriculum", {}),
         "episodic_memory": episodic_memory,
+        "visual_identity": visual_identity,
     }
 
     db.execute(
@@ -278,9 +336,9 @@ def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
             (id, tenant_id, learner_id, mastery_levels, disability_signals,
              functioning_level_profile, iep_profile, sensory_profile,
              active_accommodations, curriculum_alignment, active_tutors,
-             functional_curriculum, episodic_memory, approval_status,
-             xai_explanation, version, created_at, updated_at)
-            VALUES (:id, :tid, :lid, :ml, :ds, :flp, :ip, :sp, :aa, :ca, :at, :fc, :em,
+             functional_curriculum, episodic_memory, visual_identity,
+             approval_status, xai_explanation, version, created_at, updated_at)
+            VALUES (:id, :tid, :lid, :ml, :ds, :flp, :ip, :sp, :aa, :ca, :at, :fc, :em, :vi,
                     'pending_parent_review', :xai, 1, :now, :now)"""),
         {
             "id": brain_state_id,
@@ -296,6 +354,7 @@ def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
             "at": json.dumps(brain_data["active_tutors"]),
             "fc": json.dumps(brain_data["functional_curriculum"]),
             "em": json.dumps(brain_data["episodic_memory"]),
+            "vi": json.dumps(visual_identity),
             "xai": json.dumps(xai_explanation),
             "now": now,
         }
@@ -337,4 +396,5 @@ def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
         "functioning_level": request.functioning_level,
         "active_tutors": brain_data["active_tutors"],
         "active_accommodations": brain_data["active_accommodations"],
+        "visual_identity": visual_identity,
     }

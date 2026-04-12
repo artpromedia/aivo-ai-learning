@@ -196,6 +196,7 @@ function DiscoveryAdventureInner({
         totalCorrect={state.totalCorrect}
         totalAttempts={state.totalAttempts}
         xpEarned={state.xpEarned}
+        functioningLevel={functioningLevel}
         onFinish={() => router.push("/dashboard/learner")}
         onSubmitResults={submitResults}
       />

@@ -63,7 +63,7 @@ async def get_brain_review(learner_id: str, db: Session = Depends(get_db), auth:
     for field in ["mastery_levels", "disability_signals", "functioning_level_profile",
                   "active_accommodations", "active_tutors", "xai_explanation",
                   "episodic_memory", "curriculum_alignment", "functional_curriculum",
-                  "iep_profile", "sensory_profile"]:
+                  "iep_profile", "sensory_profile", "visual_identity"]:
         val = data.get(field)
         if isinstance(val, str):
             try:
@@ -106,7 +106,8 @@ async def approve_brain(learner_id: str, request: BrainApproveRequest, db: Sessi
     snap_data = {}
     for field in ["mastery_levels", "disability_signals", "functioning_level_profile",
                   "iep_profile", "sensory_profile", "active_accommodations",
-                  "active_tutors", "functional_curriculum", "episodic_memory"]:
+                  "active_tutors", "functional_curriculum", "episodic_memory",
+                  "visual_identity"]:
         val = current.get(field)
         if isinstance(val, str):
             try: val = json.loads(val)
@@ -199,7 +200,7 @@ async def amend_brain(learner_id: str, request: BrainAmendRequest, db: Session =
     snap_data = {}
     for field in ["mastery_levels", "disability_signals", "functioning_level_profile",
                   "iep_profile", "sensory_profile", "active_accommodations",
-                  "active_tutors", "functional_curriculum"]:
+                  "active_tutors", "functional_curriculum", "visual_identity"]:
         val = current.get(field)
         if isinstance(val, str):
             try: val = json.loads(val)
