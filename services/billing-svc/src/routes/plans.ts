@@ -17,10 +17,45 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
   app.get("/api/billing/plans", async () => {
     return {
       plans: [
-        { id: "free", name: "Free Trial", price: 0, interval: "month", features: ["1 learner", "3 tutors", "Basic brain clone"] },
-        { id: "starter", name: "Starter", price: 9.99, interval: "month", features: ["2 learners", "7 core tutors", "Full brain clone", "Parent dashboard"] },
-        { id: "family", name: "Family", price: 19.99, interval: "month", features: ["5 learners", "14 tutors", "Full brain clone", "Collaboration", "IEP tracking"] },
-        { id: "school", name: "School", price: 49.99, interval: "month", features: ["Unlimited learners", "14 tutors", "Admin dashboard", "Research access", "Priority support"] },
+        {
+          id: "free",
+          name: "Free Trial",
+          price: 0,
+          interval: "month",
+          learnerLimit: 1,
+          features: ["1 learner", "ELA tutor only", "Basic brain clone", "Parent dashboard"],
+        },
+        {
+          id: "single",
+          name: "Single Learner",
+          price: 24.99,
+          interval: "month",
+          priceLabel: "$24.99/mo per learner",
+          learnerLimit: 1,
+          features: ["1 learner", "ELA + Math tutors", "2 core tutors included", "Full brain clone", "Parent dashboard", "Add extra tutors at $7.99/mo each"],
+        },
+        {
+          id: "family",
+          name: "Family",
+          price: 19.99,
+          interval: "month",
+          priceLabel: "$19.99/mo per learner",
+          learnerLimit: 10,
+          learnerMinimum: 2,
+          features: ["2+ learners", "ELA + Math tutors", "2 core tutors included", "Full brain clone", "Parent dashboard", "Multi-learner discount", "Add extra tutors at $7.99/mo each"],
+        },
+        {
+          id: "district",
+          name: "District / School",
+          price: 0,
+          interval: "month",
+          priceLabel: "Contact Sales",
+          learnerLimit: -1,
+          features: ["Unlimited learners", "All 14 AI tutors", "Full brain clone", "Admin dashboard", "IEP tracking & reporting", "Research access", "Priority support", "Dedicated onboarding"],
+        },
+      ],
+      addons: [
+        { id: "extra-tutor", name: "Additional Tutor", price: 7.99, interval: "month", description: "Add any extra AI tutor beyond your plan's included tutors" },
       ],
     };
   });
