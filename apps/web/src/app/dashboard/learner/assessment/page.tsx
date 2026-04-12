@@ -57,7 +57,7 @@ export default function DiscoveryAdventurePage() {
       <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 flex items-center justify-center">
         <div className="text-center">
           <div className="text-5xl mb-4 animate-bounce">🧭</div>
-          <p className="text-white/60 font-heading font-bold">Preparing your adventure...</p>
+          <p className="text-white/60 font-heading font-bold">Preparing your baseline assessment...</p>
           <div className="flex gap-1 justify-center mt-4">
             <div className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: "0ms" }} />
             <div className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: "150ms" }} />

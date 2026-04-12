@@ -305,7 +305,7 @@ export default function ParentDashboard() {
                     </button>
                   ) : l.functioningLevel ? (
                     <span className="px-4 py-2 text-sm rounded-full bg-cyan-50 text-cyan-600 font-semibold border border-cyan-200">
-                      Awaiting Discovery Adventure
+                      Awaiting Baseline Assessment
                     </span>
                   ) : (
                     <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/assessment`)}

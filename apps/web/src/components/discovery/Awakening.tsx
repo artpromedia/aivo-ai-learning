@@ -624,7 +624,7 @@ export default function Awakening({ learnerName, chapterResults, functioningLeve
             <div className="flex items-center gap-3 bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur border border-amber-500/30 rounded-2xl px-5 py-3">
               <span className="text-2xl">🏅</span>
               <div>
-                <p className="text-sm font-heading font-bold text-amber-400">Discovery Explorer</p>
+                <p className="text-sm font-heading font-bold text-amber-400">Baseline Complete</p>
                 <p className="text-[10px] text-white/40">Your first badge!</p>
               </div>
             </div>
@@ -637,7 +637,7 @@ export default function Awakening({ learnerName, chapterResults, functioningLeve
               <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2 mb-3 justify-center">
                 <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                 <p className="text-[11px] text-amber-300 font-semibold">
-                  Your parent will review your Brain before your adventure begins
+                  Your parent will review your Brain before your learning begins
                 </p>
               </div>
             </div>

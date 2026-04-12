@@ -183,7 +183,7 @@ export default function Finale({ learnerName, chapterResults, totalCorrect, tota
         <div className={`mt-6 transition-all duration-1000 ${step >= 3 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
           <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur border border-amber-500/30 rounded-2xl px-6 py-4 mb-2">
             <div className="text-3xl mb-1">🏅</div>
-            <p className="text-sm font-heading font-bold text-amber-400">Discovery Explorer</p>
+            <p className="text-sm font-heading font-bold text-amber-400">Baseline Complete</p>
             <p className="text-[11px] text-white/50">Your first badge!</p>
           </div>
         </div>

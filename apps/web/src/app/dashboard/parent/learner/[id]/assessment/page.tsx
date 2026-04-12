@@ -176,10 +176,10 @@ export default function ParentAssessmentPage() {
           </div>
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
             <div className="text-2xl mb-2">🧭</div>
-            <p className="text-sm font-bold text-amber-700">Next Step: Discovery Adventure</p>
+            <p className="text-sm font-bold text-amber-700">Next Step: Baseline Assessment</p>
             <p className="text-xs text-amber-600 mt-1">
-              When {learnerName || "your child"} logs in with their PIN, they&apos;ll go on a fun Discovery Adventure.
-              This interactive experience helps AIVO create their personalized learning brain.
+              When {learnerName || "your child"} logs in with their PIN, they&apos;ll complete a fun baseline assessment.
+              This helps AIVO create their personalized learning brain and curriculum.
             </p>
           </div>
           <div className="flex flex-col gap-3">

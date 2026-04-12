@@ -630,7 +630,7 @@ export default function BrainReviewPage() {
               <div className="space-y-4">
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                   <p className="text-sm font-semibold text-red-700 mb-1">Are you sure?</p>
-                  <p className="text-sm text-red-600">Declining will remove this brain clone. Your child will need to retake the Discovery Adventure baseline assessment.</p>
+                  <p className="text-sm text-red-600">Declining will remove this brain clone. Your child will need to retake the baseline assessment.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">
