@@ -8,8 +8,6 @@ import Link from "next/link";
 const ROLES = [
   { value: "PARENT", label: "Parent / Guardian", desc: "Manage your child's learning journey" },
   { value: "TEACHER", label: "Teacher", desc: "Track student progress and insights" },
-  { value: "THERAPIST", label: "Therapist", desc: "Contribute to learner brain profiles" },
-  { value: "CAREGIVER", label: "Caregiver", desc: "Support daily learning activities" },
 ];
 
 export default function SignupPage() {

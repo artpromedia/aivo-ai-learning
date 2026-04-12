@@ -28,7 +28,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
           email: { type: "string", format: "email" },
           password: { type: "string", minLength: 8 },
           name: { type: "string", minLength: 1 },
-          role: { type: "string", enum: ["PARENT", "TEACHER", "CAREGIVER", "THERAPIST"] },
+          role: { type: "string", enum: ["PARENT", "TEACHER"] },
         },
       },
     },
@@ -77,7 +77,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       maxAge: 30 * 24 * 60 * 60,
     });
 
-    if (["TEACHER", "CAREGIVER", "THERAPIST"].includes(role)) {
+    if (role === "TEACHER") {
       try {
         await fetch("http://localhost:3007/api/family/collaboration/accept-invite", {
           method: "POST",
