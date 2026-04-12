@@ -21,11 +21,35 @@ export default function ParentAssessmentPage() {
   const [result, setResult] = useState<any>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [alreadyCompleted, setAlreadyCompleted] = useState(false);
+  const [learnerName, setLearnerName] = useState("");
+  const [learnerFunctioningLevel, setLearnerFunctioningLevel] = useState("");
+  const [checkingStatus, setCheckingStatus] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
     if (!loading && user && user.role !== "PARENT") router.push("/");
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (!accessToken || !user) return;
+    fetch("/api/users/learners", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((learners: any[]) => {
+        const found = learners.find((l: any) => l.id === learnerId);
+        if (found) {
+          setLearnerName(found.name || "");
+          if (found.functioningLevel) {
+            setAlreadyCompleted(true);
+            setLearnerFunctioningLevel(found.functioningLevel);
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => setCheckingStatus(false));
+  }, [accessToken, user, learnerId]);
 
   const category = PARENT_ASSESSMENT_CATEGORIES[currentCategoryIdx];
   const question = category?.questions[currentQuestionIdx];
@@ -133,7 +157,45 @@ export default function ParentAssessmentPage() {
     setSubmitting(false);
   };
 
-  if (loading || !user) return null;
+  if (loading || !user || checkingStatus) return null;
+
+  if (alreadyCompleted && !submitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl p-10 shadow-xl border border-slate-100 text-center max-w-lg space-y-6">
+          <div className="w-20 h-20 mx-auto rounded-full bg-green-100 flex items-center justify-center">
+            <span className="text-4xl">&#10003;</span>
+          </div>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">Assessment Already Complete</h1>
+          <p className="text-slate-500">
+            You&apos;ve already completed the parent assessment for {learnerName || "this learner"}.
+          </p>
+          <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
+            <p className="text-sm font-bold text-purple-700">Functioning Level</p>
+            <p className="text-xl font-heading font-bold text-primary mt-1">{learnerFunctioningLevel.replace(/_/g, " ")}</p>
+          </div>
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
+            <div className="text-2xl mb-2">🧭</div>
+            <p className="text-sm font-bold text-amber-700">Next Step: Discovery Adventure</p>
+            <p className="text-xs text-amber-600 mt-1">
+              When {learnerName || "your child"} logs in with their PIN, they&apos;ll go on a fun Discovery Adventure.
+              This interactive experience helps AIVO create their personalized learning brain.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <button onClick={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
+              className="px-8 py-3 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200">
+              Back to Profile
+            </button>
+            <button onClick={() => router.push("/dashboard/parent")}
+              className="px-8 py-3 rounded-full bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition">
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (submitted && result) {
     return (

@@ -59,6 +59,7 @@ export default function ParentDashboard() {
   const [curriculumInfo, setCurriculumInfo] = useState<CurriculumInfo | null>(null);
   const [curriculumLoading, setCurriculumLoading] = useState(false);
   const [pendingReviews, setPendingReviews] = useState<Record<string, boolean>>({});
+  const [hasBrain, setHasBrain] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -75,8 +76,11 @@ export default function ParentDashboard() {
             fetch(`/api/brain/${l.id}/review`, { headers: { Authorization: `Bearer ${accessToken}` } })
               .then((r) => r.ok ? r.json() : null)
               .then((brain) => {
-                if (brain?.approval_status === "pending_parent_review") {
-                  setPendingReviews((prev) => ({ ...prev, [l.id]: true }));
+                if (brain) {
+                  setHasBrain((prev) => ({ ...prev, [l.id]: true }));
+                  if (brain.approval_status === "pending_parent_review") {
+                    setPendingReviews((prev) => ({ ...prev, [l.id]: true }));
+                  }
                 }
               })
               .catch(() => {});
@@ -248,8 +252,8 @@ export default function ParentDashboard() {
               <div key={l.id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-lg transition">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-heading font-bold text-slate-900">{l.name}</h3>
-                  <span className="px-3 py-1 text-xs rounded-full bg-purple-100 text-primary font-bold">
-                    {l.functioningLevel || "Pending Assessment"}
+                  <span className={`px-3 py-1 text-xs rounded-full font-bold ${l.functioningLevel ? "bg-purple-100 text-primary" : "bg-slate-100 text-slate-500"}`}>
+                    {l.functioningLevel ? l.functioningLevel.replace(/_/g, " ") : "Needs Assessment"}
                   </span>
                 </div>
                 {l.gradeLevel && <p className="text-sm text-slate-500 font-semibold">Grade: {l.gradeLevel}</p>}
@@ -294,6 +298,15 @@ export default function ParentDashboard() {
                       className="px-4 py-2 text-sm rounded-full bg-amber-50 text-amber-700 font-bold hover:bg-amber-100 transition border border-amber-200">
                       Review Brain Clone
                     </button>
+                  ) : hasBrain[l.id] ? (
+                    <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/brain`)}
+                      className="px-4 py-2 text-sm rounded-full bg-green-50 text-green-700 font-bold hover:bg-green-100 transition">
+                      View Brain
+                    </button>
+                  ) : l.functioningLevel ? (
+                    <span className="px-4 py-2 text-sm rounded-full bg-cyan-50 text-cyan-600 font-semibold border border-cyan-200">
+                      Awaiting Discovery Adventure
+                    </span>
                   ) : (
                     <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/assessment`)}
                       className="px-4 py-2 text-sm rounded-full bg-cyan-50 text-secondary font-bold hover:bg-cyan-100 transition">
