@@ -35,7 +35,11 @@
         "image": "./assets/images/splash-icon.png",
         "backgroundColor": "#7C3AED",
         "resizeMode": "contain"
-      }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -75,6 +79,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "805451c5-b129-41fe-81ea-92d4ace2b5db"
+      }
+    },
+    "owner": "iamofem"
   }
 }

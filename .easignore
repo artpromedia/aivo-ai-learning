@@ -1,0 +1,16 @@
+node_modules/
+.git/
+.expo/
+dist/
+*.log
+__tests__/
+coverage/
+apps/web/
+services/
+attached_assets/
+.local/
+packages/db/
+packages/events/
+packages/observability/
+packages/security/
+scripts/

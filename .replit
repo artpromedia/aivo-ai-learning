@@ -180,6 +180,9 @@ fQIDAQAB
 -----END PUBLIC KEY-----"""
 IDENTITY_SVC_PORT = "3001"
 
+[userenv.shared]
+EXPO_TOKEN = "eIZhSgu6Y1mA3weH6rR0Lc2n-f9ZraRJekRuAL_F"
+
 [deployment]
 deploymentTarget = "autoscale"
 run = ["bash", "start.sh"]
