@@ -1,5 +1,10 @@
 import { FastifyInstance } from "fastify";
 import { verifyJWT } from "@aivo/security";
+import { sendEmail, sendBatchEmails, isConfigured } from "../lib/postmark.js";
+import { renderTemplate, AVAILABLE_TEMPLATES } from "../lib/templates.js";
+import { createLogger } from "@aivo/observability";
+
+const logger = createLogger("comms-svc:notifications");
 
 async function requireAuth(req: any, reply: any) {
   const auth = req.headers.authorization;
@@ -30,11 +35,33 @@ async function requireAdmin(req: any, reply: any) {
 }
 
 export function registerNotificationRoutes(app: FastifyInstance, db: any) {
-  app.post("/api/comms/send", { preHandler: requireAdmin }, async (request, reply) => {
+  app.post("/api/comms/send", { preHandler: requireAuth }, async (request, reply) => {
     const { channel, recipient, template, data } = request.body as any;
     if (!channel || !recipient || !template) {
       return reply.code(400).send({ error: "channel, recipient, and template required" });
     }
+
+    if (channel === "email") {
+      if (!isConfigured()) {
+        return reply.code(503).send({ error: "Email service not configured" });
+      }
+
+      const rendered = renderTemplate(template, data || {});
+      try {
+        const result = await sendEmail({
+          to: recipient,
+          subject: rendered.subject,
+          htmlBody: rendered.html,
+          textBody: rendered.text,
+          tag: template,
+        });
+        return { status: result.status, messageId: result.messageId, channel, template };
+      } catch (err: any) {
+        logger.error({ err, template, recipient }, "Failed to send email");
+        return reply.code(500).send({ error: "Failed to send email", details: err.message });
+      }
+    }
+
     return {
       status: "queued",
       messageId: crypto.randomUUID(),
@@ -45,10 +72,76 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.post("/api/comms/email", { preHandler: requireAdmin }, async (request, reply) => {
-    const { to, subject, template, data } = request.body as any;
-    if (!to || !subject) return reply.code(400).send({ error: "to and subject required" });
-    return { status: "queued", messageId: crypto.randomUUID(), to, subject };
+  app.post("/api/comms/email", { preHandler: requireAuth }, async (request, reply) => {
+    const { to, subject, template, data, htmlBody, textBody } = request.body as any;
+    if (!to || (!subject && !template)) {
+      return reply.code(400).send({ error: "to and (subject or template) required" });
+    }
+
+    if (!isConfigured()) {
+      return reply.code(503).send({ error: "Email service not configured" });
+    }
+
+    let finalSubject = subject;
+    let finalHtml = htmlBody || "";
+    let finalText = textBody || "";
+
+    if (template) {
+      const rendered = renderTemplate(template, data || {});
+      finalSubject = finalSubject || rendered.subject;
+      finalHtml = finalHtml || rendered.html;
+      finalText = finalText || rendered.text;
+    }
+
+    try {
+      const result = await sendEmail({
+        to,
+        subject: finalSubject,
+        htmlBody: finalHtml,
+        textBody: finalText,
+        tag: template || "custom",
+      });
+      return { status: result.status, messageId: result.messageId, to, subject: finalSubject };
+    } catch (err: any) {
+      logger.error({ err, to, subject: finalSubject }, "Failed to send email");
+      return reply.code(500).send({ error: "Failed to send email", details: err.message });
+    }
+  });
+
+  app.post("/api/comms/email/batch", { preHandler: requireAdmin }, async (request, reply) => {
+    const { emails } = request.body as any;
+    if (!Array.isArray(emails) || emails.length === 0) {
+      return reply.code(400).send({ error: "emails array required" });
+    }
+    if (emails.length > 500) {
+      return reply.code(400).send({ error: "Maximum 500 emails per batch" });
+    }
+
+    if (!isConfigured()) {
+      return reply.code(503).send({ error: "Email service not configured" });
+    }
+
+    const prepared = emails.map((e: any) => {
+      if (e.template) {
+        const rendered = renderTemplate(e.template, e.data || {});
+        return {
+          to: e.to,
+          subject: e.subject || rendered.subject,
+          htmlBody: rendered.html,
+          textBody: rendered.text,
+          tag: e.template,
+        };
+      }
+      return { to: e.to, subject: e.subject, htmlBody: e.htmlBody, textBody: e.textBody };
+    });
+
+    try {
+      const result = await sendBatchEmails(prepared);
+      return { status: "completed", ...result };
+    } catch (err: any) {
+      logger.error({ err }, "Failed to send batch emails");
+      return reply.code(500).send({ error: "Failed to send batch emails", details: err.message });
+    }
   });
 
   app.post("/api/comms/push", { preHandler: requireAdmin }, async (request, reply) => {
@@ -82,15 +175,14 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
   });
 
   app.get("/api/comms/templates", { preHandler: requireAuth }, async () => {
+    return { templates: AVAILABLE_TEMPLATES };
+  });
+
+  app.get("/api/comms/status", async () => {
     return {
-      templates: [
-        { id: "welcome", name: "Welcome Email", channels: ["email"] },
-        { id: "session_reminder", name: "Session Reminder", channels: ["push", "email"] },
-        { id: "progress_report", name: "Weekly Progress Report", channels: ["email"] },
-        { id: "milestone_achieved", name: "Milestone Achievement", channels: ["push"] },
-        { id: "collaboration_invite", name: "Collaboration Invite", channels: ["email"] },
-        { id: "iep_update", name: "IEP Goal Update", channels: ["email", "push"] },
-      ],
+      postmark: isConfigured() ? "connected" : "not_configured",
+      push: "stub",
+      sms: "not_available",
     };
   });
 }

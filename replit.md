@@ -39,6 +39,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Backend (Python)**: FastAPI + LiteLLM + Uvicorn
 - **Auth**: JWT RS256 (jose library), refresh tokens, PIN login. Public key served at `/api/auth/public-key` for cross-service verification. Brain-svc (Python) fetches and caches the RSA public key from identity-svc.
 - **Database**: PostgreSQL 16 with JSONB brain states
+- **Email**: Postmark (transactional email via `postmark` SDK in comms-svc)
 - **Styling**: AIVO brand system (purple primary #7C3AED), game-themed Fredoka + Nunito fonts
 - **Marketing Pages**: 10 footer pages (about, blog, careers, contact, press-kit, privacy-policy, terms-of-service, coppa-compliance, ferpa-compliance, accessibility) with shared LegalPageLayout and CompanyPageLayout components
 

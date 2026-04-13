@@ -182,6 +182,7 @@ IDENTITY_SVC_PORT = "3001"
 
 [userenv.shared]
 EXPO_TOKEN = "eIZhSgu6Y1mA3weH6rR0Lc2n-f9ZraRJekRuAL_F"
+POSTMARK_API_TOKEN = "58d0ac3c-420b-40a2-b061-bacc755d5196"
 
 [deployment]
 deploymentTarget = "autoscale"
