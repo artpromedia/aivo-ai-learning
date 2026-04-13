@@ -36,7 +36,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Frontend**: Next.js 15 + Tailwind CSS v4 + TypeScript
 - **Mobile**: React Native (Expo SDK 54) + Expo Router v6 + TypeScript
 - **Backend (TS)**: Fastify 5 + Drizzle ORM + PostgreSQL 16
-- **Backend (Python)**: FastAPI + LiteLLM + Uvicorn
+- **Backend (Python)**: FastAPI + LiteLLM + Uvicorn (both ai-svc and brain-svc use LiteLLM with fallback chain: Claude Sonnet → Gemini Flash → GPT-4o-mini)
 - **Auth**: JWT RS256 (jose library), refresh tokens, PIN login. Public key served at `/api/auth/public-key` for cross-service verification. Brain-svc (Python) fetches and caches the RSA public key from identity-svc.
 - **Database**: PostgreSQL 16 with JSONB brain states
 - **Email**: Postmark (transactional email via `postmark` SDK in comms-svc)
