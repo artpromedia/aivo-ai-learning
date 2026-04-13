@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from brain_svc.models.database import get_db
 from brain_svc.services.llm_gateway import generate_completion
+from brain_svc.services.access_control import verify_learner_access, safe_json_parse
 from brain_svc.auth import AuthClaims, require_auth
 
 logger = logging.getLogger("brain-svc.analysis")
@@ -40,49 +41,6 @@ Provide a nuanced, non-alarmist analysis. Mastery fluctuations are normal. Only 
 Output valid JSON with: hypothesis, confidence (0-1), contributing_factors[], recommended_actions[], reassurance_note."""
 
 
-def _verify_learner_access(db: Session, auth: AuthClaims, learner_id: str):
-    if auth.role in ("admin", "service", "PLATFORM_ADMIN"):
-        return
-    if auth.role == "PARENT":
-        learner = db.execute(
-            text("SELECT parent_id FROM learners WHERE id = :lid"),
-            {"lid": learner_id}
-        ).first()
-        if not learner or str(learner[0]) != auth.sub:
-            raise HTTPException(status_code=403, detail="Not authorized for this learner")
-        return
-    if auth.role == "TEACHER":
-        access = db.execute(
-            text("SELECT 1 FROM classroom_students WHERE learner_id = :lid AND teacher_id = :tid LIMIT 1"),
-            {"lid": learner_id, "tid": auth.sub}
-        ).first()
-        if access:
-            return
-    if auth.role in ("CAREGIVER", "THERAPIST"):
-        access = db.execute(
-            text("SELECT 1 FROM care_team_members WHERE learner_id = :lid AND user_id = :uid AND status = 'active' LIMIT 1"),
-            {"lid": learner_id, "uid": auth.sub}
-        ).first()
-        if access:
-            return
-    raise HTTPException(status_code=403, detail="Not authorized to access this learner's data")
-
-
-def _safe_json_parse(val, default=None):
-    if default is None:
-        default = {}
-    if val is None:
-        return default
-    if isinstance(val, (dict, list)):
-        return val
-    if isinstance(val, str):
-        try:
-            return json.loads(val)
-        except (json.JSONDecodeError, TypeError):
-            return default
-    return default
-
-
 def _redact_for_llm(context: dict) -> dict:
     redacted = dict(context)
     learner = redacted.get("learner", {})
@@ -94,7 +52,7 @@ def _redact_for_llm(context: dict) -> dict:
 
 @router.post("/{learner_id}/ai-summary")
 async def generate_brain_summary(learner_id: str, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
-    _verify_learner_access(db, auth, learner_id)
+    verify_learner_access(db, auth, learner_id)
 
     brain = db.execute(
         text("SELECT * FROM brain_states WHERE learner_id = :lid ORDER BY version DESC LIMIT 1"),
@@ -107,7 +65,7 @@ async def generate_brain_summary(learner_id: str, db: Session = Depends(get_db),
     for field in ["mastery_levels", "disability_signals", "active_accommodations",
                   "active_tutors", "episodic_memory", "sensory_profile",
                   "iep_profile", "functioning_level_profile", "visual_identity"]:
-        brain_data[field] = _safe_json_parse(brain_data.get(field), [] if field in ("active_accommodations", "active_tutors", "episodic_memory") else {})
+        brain_data[field] = safe_json_parse(brain_data.get(field), [] if field in ("active_accommodations", "active_tutors", "episodic_memory") else {})
 
     learner = db.execute(
         text("SELECT name, grade_level, communication_mode, diagnoses FROM learners WHERE id = :lid"),
@@ -178,7 +136,7 @@ Respond with JSON:
 
 @router.post("/{learner_id}/ai-regression-analysis")
 async def analyze_regression(learner_id: str, domain: str = None, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
-    _verify_learner_access(db, auth, learner_id)
+    verify_learner_access(db, auth, learner_id)
 
     analyses = db.execute(
         text("""SELECT * FROM causal_analyses WHERE learner_id = :lid
@@ -196,7 +154,7 @@ async def analyze_regression(learner_id: str, domain: str = None, db: Session = 
 
     episodic = []
     if brain:
-        episodic = _safe_json_parse(brain.get("episodic_memory"), [])
+        episodic = safe_json_parse(brain.get("episodic_memory"), [])
         if isinstance(episodic, list):
             episodic = episodic[-20:]
         else:

@@ -17,7 +17,7 @@ packages/observability — Pino structured logging
 packages/security  — JWT RS256 sign/verify (jose)
 services/identity-svc  — Fastify auth service (port 3001)
 services/assessment-svc — Fastify assessment API (port 3003)
-services/brain-svc     — Python FastAPI brain clone (port 3002)
+services/brain-svc     — Python FastAPI brain clone + AI analysis + curriculum engine (port 3002)
 services/ai-svc        — Python FastAPI LLM gateway (port 3004)
 services/learning-svc  — Fastify lesson sessions (port 3005)
 services/tutor-svc     — Fastify tutor management (port 3006)

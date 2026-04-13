@@ -2,7 +2,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from brain_svc.routes import health, brain, snapshots, recommendations, analysis
+from brain_svc.routes import health, brain, snapshots, recommendations, analysis, curriculum
 from brain_svc.models.database import engine, Base
 
 @asynccontextmanager
@@ -31,3 +31,4 @@ app.include_router(brain.router, prefix="/api/brain", tags=["Brain"])
 app.include_router(snapshots.router, prefix="/api/brain/snapshots", tags=["Snapshots"])
 app.include_router(recommendations.router, prefix="/api/brain/recommendations", tags=["Recommendations"])
 app.include_router(analysis.router, prefix="/api/brain/analysis", tags=["AI Analysis"])
+app.include_router(curriculum.router, prefix="/api/brain/curriculum", tags=["Curriculum"])
