@@ -67,7 +67,7 @@ export default function SignupPage() {
         <LanguageSwitcher compact />
       </div>
 
-      <div className="relative z-10 w-full max-w-5xl mx-4 pt-28 pb-12">
+      <div className="relative z-10 w-full max-w-5xl mx-4 pt-32 pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <div className="hidden lg:block space-y-8">
             <div>
