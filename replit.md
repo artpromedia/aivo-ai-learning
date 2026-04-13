@@ -7,7 +7,8 @@ AI-powered adaptive learning platform for neurodiverse children. Features Brain-
 
 ### Monorepo Structure (Turborepo + pnpm)
 ```
-apps/web           — Next.js 15 frontend (port 5000)
+apps/web           — Next.js 15 main web app: dashboards + auth (port 5000)
+apps/marketing     — Next.js 15 marketing website (port 4000)
 apps/mobile        — React Native (Expo SDK 54) mobile app
 packages/db        — Drizzle ORM schema (PostgreSQL 16)
 packages/brand     — Design tokens, tutor catalog, roles
@@ -41,12 +42,12 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Database**: PostgreSQL 16 with JSONB brain states
 - **Email**: Postmark (transactional email via `postmark` SDK in comms-svc)
 - **Styling**: AIVO brand system (purple primary #7C3AED), game-themed Fredoka + Nunito fonts
-- **Marketing Pages**: 10 footer pages (about, blog, careers, contact, press-kit, privacy-policy, terms-of-service, coppa-compliance, ferpa-compliance, accessibility) with shared LegalPageLayout and CompanyPageLayout components
+- **Marketing Site** (`apps/marketing`): Standalone Next.js app with 10 pages (about, blog, careers, contact, press-kit, privacy-policy, terms-of-service, coppa-compliance, ferpa-compliance, accessibility) + landing page. Shared LegalPageLayout and CompanyPageLayout components. Split from apps/web for independent deployment.
 
 ### Key Concepts
 - **14 Tutors**: 7 core (Nova/Math, Sage/ELA, Spark/Science, Chrono/History, Pixel/Coding, Echo/Speech, Harmony/SEL) + 7 expansion (Atlas/Geography, Cadence/Music, Vigor/PE, Lingua/Languages, Forge/STEM Design, Compass/Life Skills, Muse/Creative Writing). All have full system prompts with functioning-level adaptations. Compass includes transition planning module (ages 14-22). Lingua includes bilingual scaffolding with code-switching awareness.
-- **Tutor Avatars**: AI-generated photorealistic portraits in `apps/web/public/images/tutors/` (14 PNG files, 3:4 aspect ratio)
-- **Marketing Website**: Comprehensive landing page rebuilt as modular components in `apps/web/src/components/marketing/`. Sections: Hero (parallax blobs, gradient text, stats bar), Features (6 cards with hover effects), How It Works (4-step flow), Functioning Levels (5-level visual showcase), Brain Clone (dark section with pulsing brain visual), Tutor Carousel (auto-rotating parallax carousel with depth-stacked cards), Testimonials (4 cards with star ratings), Pricing (3 B2C plans + B2B district CTA), FAQ (accordion), CTA (gradient section), Footer (4-column links + compliance badges). Sticky header with scroll-aware transparency. All use Fredoka headings + Nunito body.
+- **Tutor Avatars**: AI-generated photorealistic portraits in `apps/marketing/public/images/tutors/` and `apps/web/public/images/tutors/` (14 PNG files, 3:4 aspect ratio)
+- **Marketing Website** (`apps/marketing`): Comprehensive landing page with modular components in `apps/marketing/src/components/marketing/`. Sections: Hero (parallax blobs, gradient text, stats bar), Features (6 cards with hover effects), How It Works (4-step flow), Functioning Levels (5-level visual showcase), Brain Clone (dark section with pulsing brain visual), Tutor Carousel (auto-rotating parallax carousel with depth-stacked cards), Testimonials (4 cards with star ratings), Pricing (3 B2C plans + B2B district CTA), FAQ (accordion), CTA (gradient section), Footer (4-column links + compliance badges). Sticky header with scroll-aware transparency. All use Fredoka headings + Nunito body.
 - **5 Functioning Levels**: STANDARD → SUPPORTED → LOW_VERBAL → NON_VERBAL → PRE_SYMBOLIC
 - **13 Roles**: PARENT, LEARNER, TEACHER, CAREGIVER, THERAPIST, DISTRICT_ADMIN, PLATFORM_ADMIN, SALES, MARKETING, CUSTOMER_CARE, SUPPORT, FINANCE, DEVOPS
 - **Seat Allocation (per learner)**: 1 teacher seat, 2 caregiver seats, 1 therapist seat. Enforced in family-svc collaboration routes. Members API returns `seats` object with `{used, max}` per role. Collaboration UI shows seat cards with usage counters and disables invite when full.
