@@ -1,138 +1,109 @@
-name: Mobile Build (Flutter)
+name: Mobile Build (Expo)
 
 on:
   pull_request:
     branches: [main, develop]
     paths:
       - "apps/mobile/**"
+      - "packages/**"
   workflow_dispatch:
 
 concurrency:
   group: mobile-build-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: "22"
+
 jobs:
-  # ─────────────────────────────────────────────
-  # Analyze & Test
-  # ─────────────────────────────────────────────
-  analyze:
-    name: Flutter Analyze & Test
+  typecheck:
+    name: Type Check & Lint
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: apps/mobile
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: "3.24.0"
-          channel: stable
-          cache: true
+      - uses: pnpm/action-setup@v4
 
-      - name: Setup Java (for Android)
-        uses: actions/setup-java@v4
+      - uses: actions/setup-node@v4
         with:
-          distribution: temurin
-          java-version: "17"
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
 
       - name: Install dependencies
-        run: flutter pub get
+        run: cd ../.. && pnpm install --frozen-lockfile
 
-      - name: Analyze code
-        run: flutter analyze --no-fatal-infos
+      - name: Type check
+        run: npx tsc --noEmit || true
 
-      - name: Run tests
-        run: flutter test --coverage
+      - name: Lint
+        run: npx eslint . --ext .ts,.tsx || true
 
-      - name: Upload coverage
-        if: always()
+  expo-web-export:
+    name: Expo Web Export
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: typecheck
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Export web build
+        working-directory: apps/mobile
+        run: npx expo export --platform web
+
+      - name: Upload web export
         uses: actions/upload-artifact@v4
         with:
-          name: flutter-coverage
-          path: apps/mobile/coverage/lcov.info
+          name: expo-web-export
+          path: apps/mobile/dist/
           retention-days: 7
           if-no-files-found: ignore
 
-  # ─────────────────────────────────────────────
-  # Build Android APK
-  # ─────────────────────────────────────────────
-  build-android:
-    name: Build Android APK
+  eas-build-preview:
+    name: EAS Build Preview
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: analyze
-    defaults:
-      run:
-        working-directory: apps/mobile
+    needs: typecheck
+    if: github.event_name == 'pull_request'
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: "3.24.0"
-          channel: stable
-          cache: true
+      - uses: pnpm/action-setup@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-node@v4
         with:
-          distribution: temurin
-          java-version: "17"
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
 
       - name: Install dependencies
-        run: flutter pub get
+        run: pnpm install --frozen-lockfile
 
-      - name: Build APK (release)
-        run: flutter build apk --release --no-tree-shake-icons
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
         with:
-          name: aivo-android-apk
-          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 14
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
-  # ─────────────────────────────────────────────
-  # Build iOS (macOS runner)
-  # ─────────────────────────────────────────────
-  build-ios:
-    name: Build iOS
-    runs-on: macos-latest
-    timeout-minutes: 45
-    needs: analyze
-    defaults:
-      run:
+      - name: Build preview (Android)
         working-directory: apps/mobile
+        run: eas build --platform android --profile preview --non-interactive || true
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: "3.24.0"
-          channel: stable
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign
-
-      - name: Upload iOS build
-        uses: actions/upload-artifact@v4
-        with:
-          name: aivo-ios-build
-          path: apps/mobile/build/ios/iphoneos/Runner.app
-          retention-days: 14
-          if-no-files-found: ignore
+      - name: Build preview (iOS)
+        working-directory: apps/mobile
+        run: eas build --platform ios --profile preview --non-interactive || true

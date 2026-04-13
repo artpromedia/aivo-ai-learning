@@ -1,0 +1,84 @@
+name: Production Health Check
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    name: Check Production Health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check Brain Service
+        id: brain_check
+        run: |
+          if [ -n "${{ secrets.BRAIN_SVC_URL }}" ]; then
+            response=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.BRAIN_SVC_URL }}/health" --max-time 10)
+            if [ "$response" != "200" ]; then
+              echo "status=failed" >> $GITHUB_OUTPUT
+              echo "Brain Service health check failed (HTTP $response)"
+              exit 1
+            fi
+            echo "Brain Service is healthy"
+          else
+            echo "BRAIN_SVC_URL not configured, skipping"
+          fi
+          echo "status=healthy" >> $GITHUB_OUTPUT
+
+      - name: Check Identity Service
+        id: identity_check
+        run: |
+          if [ -n "${{ secrets.IDENTITY_SVC_URL }}" ]; then
+            response=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.IDENTITY_SVC_URL }}/health" --max-time 10)
+            if [ "$response" != "200" ]; then
+              echo "status=failed" >> $GITHUB_OUTPUT
+              echo "Identity Service health check failed (HTTP $response)"
+              exit 1
+            fi
+            echo "Identity Service is healthy"
+          else
+            echo "IDENTITY_SVC_URL not configured, skipping"
+          fi
+          echo "status=healthy" >> $GITHUB_OUTPUT
+
+      - name: Check API endpoints
+        run: |
+          if [ -n "${{ secrets.API_BASE_URL }}" ]; then
+            for endpoint in "/health" "/api/status"; do
+              response=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.API_BASE_URL }}${endpoint}" --max-time 10)
+              if [ "$response" != "200" ]; then
+                echo "Endpoint ${endpoint} returned HTTP $response"
+              else
+                echo "Endpoint ${endpoint} is healthy"
+              fi
+            done
+          else
+            echo "API_BASE_URL not configured, skipping"
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          status: ${{ job.status }}
+          text: 'AIVO Production Health Check Failed!'
+        continue-on-error: true
+
+      - name: Create incident issue
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Production Health Check Failed',
+              body: 'Automated health check detected issues in production. Immediate attention required.\n\nWorkflow: ' + context.workflow + '\nRun: ' + context.runId,
+              labels: ['incident', 'production', 'critical']
+            })
+        continue-on-error: true

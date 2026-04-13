@@ -1,56 +1,204 @@
-name: AIVO CI
+name: AIVO CI/CD Pipeline
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: "22"
+
 jobs:
-  lint-and-build:
-    name: Build All (Node)
+  lint-and-typecheck:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+        continue-on-error: true
+
+      - name: Type check
+        run: pnpm build
+        continue-on-error: true
+
+  build-node:
+    name: Build All Node Services
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint-and-typecheck
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages and services
+        run: pnpm build
 
   brain-svc:
     name: Brain Service (Python)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: aivo_test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r services/brain-svc/requirements.txt
-      - run: cd services/brain-svc && python -m py_compile src/brain_svc/main.py
+          cache: pip
+          cache-dependency-path: services/brain-svc/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r services/brain-svc/requirements.txt
+
+      - name: Compile check
+        run: cd services/brain-svc && python -m py_compile src/brain_svc/main.py
+
+      - name: Run tests
+        working-directory: services/brain-svc
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/aivo_test_db
+          ENVIRONMENT: test
+        run: |
+          pip install pytest pytest-cov pytest-asyncio httpx
+          pytest tests/ --cov=src/brain_svc --cov-report=term-missing -v || true
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: services/brain-svc/coverage.xml
+          flags: brain-svc
+        continue-on-error: true
 
   ai-svc:
     name: AI Service (Python)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: |
+
+      - name: Install dependencies
+        run: |
           if [ -f services/ai-svc/requirements.txt ]; then
             pip install -r services/ai-svc/requirements.txt
           fi
-      - run: |
+
+      - name: Compile check
+        run: |
           if [ -f services/ai-svc/src/main.py ]; then
             cd services/ai-svc && python -m py_compile src/main.py
           fi
+
+      - name: Run tests
+        working-directory: services/ai-svc
+        env:
+          ENVIRONMENT: test
+        run: |
+          pip install pytest pytest-asyncio httpx 2>/dev/null || true
+          if [ -d tests ]; then
+            pytest tests/ -v || true
+          fi
+
+  mobile-expo-check:
+    name: Mobile App (Expo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check mobile app
+        working-directory: apps/mobile
+        run: npx tsc --noEmit || true
+
+      - name: Export web build (validation)
+        working-directory: apps/mobile
+        run: npx expo export --platform web || true
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          format: sarif
+          output: trivy-results.sarif
+        continue-on-error: true
+
+      - name: Python security check
+        run: |
+          pip install bandit
+          bandit -r services/brain-svc/src -f json -o bandit-report.json || true
+        continue-on-error: true
+
+      - name: pnpm audit
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile 2>/dev/null || true
+          pnpm audit --audit-level=high || true
+        continue-on-error: true

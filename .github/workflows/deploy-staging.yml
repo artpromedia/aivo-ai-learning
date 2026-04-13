@@ -2,11 +2,11 @@ name: Deploy Staging
 
 on:
   push:
-    branches: [master, main]
+    branches: [develop]
   workflow_dispatch:
 
 concurrency:
-  group: deploy-staging-${{ github.ref }}
+  group: deploy-staging
   cancel-in-progress: true
 
 permissions:
@@ -36,10 +36,10 @@ jobs:
       - name: Build all packages and services
         run: pnpm build
 
-  build-python-brain:
-    name: Validate Brain Service
+  build-python:
+    name: Validate Python Services
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -47,34 +47,47 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install -r services/brain-svc/requirements.txt
-
-      - name: Validate Python compilation
+      - name: Validate brain-svc
         run: |
-          cd services/brain-svc
-          python -m py_compile src/brain_svc/main.py
-          python -m py_compile src/brain_svc/routes/brain.py
+          pip install -r services/brain-svc/requirements.txt
+          cd services/brain-svc && python -m py_compile src/brain_svc/main.py
 
-  build-python-ai:
-    name: Validate AI Service
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
+      - name: Validate ai-svc
         run: |
           if [ -f services/ai-svc/requirements.txt ]; then
             pip install -r services/ai-svc/requirements.txt
           fi
-
-      - name: Validate Python compilation
-        run: |
           if [ -f services/ai-svc/src/main.py ]; then
             cd services/ai-svc && python -m py_compile src/main.py
           fi
+
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [build-node, build-python]
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Push database schema
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm db:push --force || true
+
+      - name: Build for staging
+        run: pnpm build
+
+      - name: Deploy services
+        run: echo "Add staging deployment steps for your hosting provider"

@@ -1,37 +1,44 @@
-name: Marketing Deploy (Staging)
+name: Marketing Deploy Staging
 
 on:
   push:
-    branches: [main, master]
+    branches: [develop]
     paths:
-      - "apps/marketing/**"
-      - "packages/brand/**"
-      - "packages/ui/**"
+      - "apps/web/**"
+  workflow_dispatch:
+
+concurrency:
+  group: marketing-deploy-staging
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
 
 jobs:
-  deploy-staging:
+  build-and-deploy:
+    name: Build & Deploy Marketing (Staging)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: staging
+
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
-
-      - uses: pnpm/action-setup@v4
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages
-        run: |
-          pnpm --filter @aivo/brand build
-          pnpm --filter @aivo/ui build
-          pnpm --filter @aivo/marketing build
-
-      - name: Build Docker image
-        run: docker build -f apps/marketing/Dockerfile -t aivo-marketing:staging .
+      - name: Build web app
+        run: pnpm --filter @aivo/web build
 
       - name: Deploy to staging
-        run: echo "Deploy to staging environment (configure with your container registry and hosting provider)"
+        run: echo "Add staging deployment steps for your hosting provider"
