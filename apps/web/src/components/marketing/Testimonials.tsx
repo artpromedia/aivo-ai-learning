@@ -1,37 +1,16 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 const TESTIMONIALS = [
-  {
-    quote: "My son went from refusing to touch a tablet to eagerly asking for 'brain time' every morning. AIVO understood his sensory needs from day one.",
-    name: "Sarah M.",
-    role: "Parent of Level 3 learner",
-    avatar: "👩‍👦",
-    color: "border-purple-200 bg-purple-50/50",
-  },
-  {
-    quote: "As a special education teacher, I've never seen a platform that adapts this deeply. The brain clone gives me insights I couldn't get from any assessment alone.",
-    name: "Dr. James K.",
-    role: "Special Education Director",
-    avatar: "👨‍🏫",
-    color: "border-cyan-200 bg-cyan-50/50",
-  },
-  {
-    quote: "We deployed AIVO across 12 schools in our district. The IEP integration alone saved our teachers 10+ hours per student per quarter.",
-    name: "Maria L.",
-    role: "District Administrator",
-    avatar: "👩‍💼",
-    color: "border-amber-200 bg-amber-50/50",
-  },
-  {
-    quote: "My daughter has autism and communicates through AAC. AIVO's tutors work seamlessly with her device — she's learning math concepts we didn't think possible.",
-    name: "David & Priya R.",
-    role: "Parents of Level 4 learner",
-    avatar: "👨‍👩‍👧",
-    color: "border-emerald-200 bg-emerald-50/50",
-  },
-];
+  { quoteKey: "t1_quote", nameKey: "t1_name", roleKey: "t1_role", avatar: "👩‍👦", color: "border-purple-200 bg-purple-50/50" },
+  { quoteKey: "t2_quote", nameKey: "t2_name", roleKey: "t2_role", avatar: "👨‍🏫", color: "border-cyan-200 bg-cyan-50/50" },
+  { quoteKey: "t3_quote", nameKey: "t3_name", roleKey: "t3_role", avatar: "👩‍💼", color: "border-amber-200 bg-amber-50/50" },
+  { quoteKey: "t4_quote", nameKey: "t4_name", roleKey: "t4_role", avatar: "👨‍👩‍👧", color: "border-emerald-200 bg-emerald-50/50" },
+] as const;
 
 export function Testimonials() {
+  const t = useTranslations("marketing.testimonials");
+
   return (
     <section className="py-24 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-slate-50/50 to-white pointer-events-none" />
@@ -39,21 +18,21 @@ export function Testimonials() {
       <div className="max-w-6xl mx-auto px-6 md:px-8 relative z-10">
         <div className="text-center mb-16">
           <p className="text-sm font-bold text-pink-500 uppercase tracking-widest mb-3">
-            Loved by Families
+            {t("label")}
           </p>
           <h2 className="text-4xl md:text-5xl font-heading font-bold text-slate-900 mb-4">
-            Real stories, real growth
+            {t("title")}
           </h2>
           <p className="text-lg text-slate-500 max-w-2xl mx-auto font-body">
-            Hear from parents, educators, and districts who trust AIVO.
+            {t("subtitle")}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          {TESTIMONIALS.map((t) => (
+          {TESTIMONIALS.map((item) => (
             <div
-              key={t.name}
-              className={`border ${t.color} rounded-3xl p-8 hover:shadow-lg transition-all duration-300`}
+              key={item.nameKey}
+              className={`border ${item.color} rounded-3xl p-8 hover:shadow-lg transition-all duration-300`}
             >
               <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_, i) => (
@@ -63,15 +42,15 @@ export function Testimonials() {
                 ))}
               </div>
               <p className="text-slate-700 font-body leading-relaxed mb-6 italic">
-                &ldquo;{t.quote}&rdquo;
+                &ldquo;{t(item.quoteKey)}&rdquo;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-2xl">
-                  {t.avatar}
+                  {item.avatar}
                 </div>
                 <div>
-                  <p className="font-heading font-bold text-slate-900">{t.name}</p>
-                  <p className="text-sm text-slate-400 font-body">{t.role}</p>
+                  <p className="font-heading font-bold text-slate-900">{t(item.nameKey)}</p>
+                  <p className="text-sm text-slate-400 font-body">{t(item.roleKey)}</p>
                 </div>
               </div>
             </div>

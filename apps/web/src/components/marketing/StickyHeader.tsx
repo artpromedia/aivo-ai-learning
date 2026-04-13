@@ -2,8 +2,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useTranslations } from "next-intl";
 
 export function StickyHeader({ scrollY }: { scrollY: number }) {
+  const t = useTranslations("marketing.header");
   const isScrolled = scrollY > 20;
 
   return (
@@ -27,10 +29,10 @@ export function StickyHeader({ scrollY }: { scrollY: number }) {
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
-          <a href="#features" className="text-sm font-semibold text-slate-600 hover:text-primary transition">Features</a>
-          <a href="#tutors" className="text-sm font-semibold text-slate-600 hover:text-primary transition">Tutors</a>
-          <a href="#pricing" className="text-sm font-semibold text-slate-600 hover:text-primary transition">Pricing</a>
-          <a href="#faq" className="text-sm font-semibold text-slate-600 hover:text-primary transition">FAQ</a>
+          <a href="#features" className="text-sm font-semibold text-slate-600 hover:text-primary transition">{t("features")}</a>
+          <a href="#tutors" className="text-sm font-semibold text-slate-600 hover:text-primary transition">{t("tutors")}</a>
+          <a href="#pricing" className="text-sm font-semibold text-slate-600 hover:text-primary transition">{t("pricing")}</a>
+          <a href="#faq" className="text-sm font-semibold text-slate-600 hover:text-primary transition">{t("faq")}</a>
         </nav>
 
         <div className="flex items-center gap-3">
@@ -39,13 +41,13 @@ export function StickyHeader({ scrollY }: { scrollY: number }) {
             href="/login"
             className="px-5 py-2 rounded-lg text-slate-600 font-semibold hover:text-primary transition hidden sm:inline-flex"
           >
-            Sign In
+            {t("sign_in")}
           </Link>
           <Link
             href="/signup"
             className="px-5 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200"
           >
-            Get Started
+            {t("get_started")}
           </Link>
         </div>
       </div>

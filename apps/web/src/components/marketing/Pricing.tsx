@@ -1,124 +1,98 @@
 "use client";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
-const PLANS = [
-  {
-    name: "Free Trial",
-    price: "Free",
-    period: "",
-    perLearner: false,
-    desc: "Try AIVO with one learner — no credit card required.",
-    features: [
-      "1 learner profile",
-      "ELA tutor only (Sage)",
-      "Basic brain clone",
-      "Parent dashboard",
-    ],
-    cta: "Start Free",
-    href: "/signup",
-    popular: false,
-    bg: "bg-white",
-    border: "border-slate-200",
-    ctaBg: "bg-slate-900 hover:bg-slate-800",
-  },
-  {
-    name: "Single Learner",
-    price: "$24.99",
-    period: "/mo",
-    perLearner: true,
-    desc: "Full access for one learner with core tutors included.",
-    features: [
-      "1 learner profile",
-      "ELA + Math tutors",
-      "2 core tutors included",
-      "Full brain clone",
-      "Parent dashboard",
-      "Add extra tutors at $4.99/mo each",
-    ],
-    cta: "Start Free Trial",
-    href: "/signup?plan=single",
-    popular: false,
-    bg: "bg-white",
-    border: "border-slate-200",
-    ctaBg: "bg-slate-900 hover:bg-slate-800",
-  },
-  {
-    name: "Family",
-    price: "$19.99",
-    period: "/mo",
-    perLearner: true,
-    desc: "Best per-learner price — designed for families with 2+ learners.",
-    badge: "Best Value",
-    features: [
-      "2+ learner profiles (up to 10)",
-      "ELA + Math tutors",
-      "2 core tutors included",
-      "Full brain clone",
-      "Parent dashboard",
-      "Multi-learner discount",
-      "Add extra tutors at $4.99/mo each",
-    ],
-    cta: "Start Free Trial",
-    href: "/signup?plan=family",
-    popular: true,
-    bg: "bg-gradient-to-b from-purple-50 to-white",
-    border: "border-purple-200",
-    ctaBg: "bg-gradient-to-r from-primary to-purple-600 hover:from-primary-dark hover:to-purple-700",
-  },
-];
+const CHECK_ICON = (
+  <svg className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  </svg>
+);
+
+const CHECK_WHITE = (
+  <svg className="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  </svg>
+);
 
 export function Pricing() {
+  const t = useTranslations("marketing.pricing");
+
+  const PLANS = [
+    {
+      nameKey: "free_name" as const, priceKey: "free_price" as const, period: "", perLearner: false,
+      descKey: "free_desc" as const, featureKeys: ["free_f1", "free_f2", "free_f3", "free_f4"] as const,
+      ctaKey: "free_cta" as const, href: "/signup", popular: false,
+      bg: "bg-white", border: "border-slate-200", ctaBg: "bg-slate-900 hover:bg-slate-800",
+    },
+    {
+      nameKey: "single_name" as const, price: "$24.99", period: "/mo", perLearner: true,
+      descKey: "single_desc" as const, featureKeys: ["single_f1", "single_f2", "single_f3", "single_f4", "single_f5", "single_f6"] as const,
+      ctaKey: "single_cta" as const, href: "/signup?plan=single", popular: false,
+      bg: "bg-white", border: "border-slate-200", ctaBg: "bg-slate-900 hover:bg-slate-800",
+    },
+    {
+      nameKey: "family_name" as const, price: "$19.99", period: "/mo", perLearner: true,
+      descKey: "family_desc" as const, featureKeys: ["family_f1", "family_f2", "family_f3", "family_f4", "family_f5", "family_f6", "family_f7"] as const,
+      ctaKey: "family_cta" as const, href: "/signup?plan=family", popular: true,
+      bg: "bg-gradient-to-b from-purple-50 to-white", border: "border-purple-200",
+      ctaBg: "bg-gradient-to-r from-primary to-purple-600 hover:from-primary-dark hover:to-purple-700",
+    },
+  ];
+
+  const DISTRICT_FEATURES = [
+    "district_f1", "district_f2", "district_f3", "district_f4",
+    "district_f5", "district_f6", "district_f7", "district_f8",
+  ] as const;
+
   return (
     <section className="py-24 bg-gradient-to-b from-white to-slate-50/50" id="pricing">
       <div className="max-w-6xl mx-auto px-6 md:px-8">
         <div className="text-center mb-16">
           <p className="text-sm font-bold text-primary uppercase tracking-widest mb-3">
-            Simple Pricing
+            {t("label")}
           </p>
           <h2 className="text-4xl md:text-5xl font-heading font-bold text-slate-900 mb-4">
-            Plans for every family
+            {t("title")}
           </h2>
           <p className="text-lg text-slate-500 max-w-2xl mx-auto font-body">
-            Start free, upgrade when you&apos;re ready. No contracts, cancel anytime.
+            {t("subtitle")}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-10">
           {PLANS.map((plan) => (
             <div
-              key={plan.name}
+              key={plan.nameKey}
               className={`relative ${plan.bg} border ${plan.border} rounded-3xl p-8 ${plan.popular ? "shadow-xl shadow-purple-200/50 scale-[1.02] md:scale-105" : "hover:shadow-lg"} transition-all duration-300`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white text-xs font-bold shadow-lg">
-                  {plan.badge || "Best Value"}
+                  {t("best_value")}
                 </div>
               )}
               <div className="mb-6">
                 <h3 className="text-xl font-heading font-bold text-slate-900 mb-2">
-                  {plan.name}
+                  {t(plan.nameKey)}
                 </h3>
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-heading font-bold text-slate-900">
-                    {plan.price}
+                    {"priceKey" in plan ? t(plan.priceKey as "free_price") : plan.price}
                   </span>
                   {plan.period && (
                     <span className="text-slate-400 font-body">{plan.period}</span>
                   )}
                 </div>
                 {plan.perLearner && (
-                  <p className="text-xs text-primary font-semibold mt-1">per learner</p>
+                  <p className="text-xs text-primary font-semibold mt-1">{t("per_learner")}</p>
                 )}
-                <p className="text-sm text-slate-500 font-body mt-2">{plan.desc}</p>
+                <p className="text-sm text-slate-500 font-body mt-2">{t(plan.descKey)}</p>
               </div>
 
               <ul className="space-y-3 mb-8">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-slate-600 font-body">
-                    <svg className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    {f}
+                {plan.featureKeys.map((fk) => (
+                  <li key={fk} className="flex items-start gap-2.5 text-sm text-slate-600 font-body">
+                    {CHECK_ICON}
+                    {t(fk)}
                   </li>
                 ))}
               </ul>
@@ -127,7 +101,7 @@ export function Pricing() {
                 href={plan.href}
                 className={`block w-full py-3.5 rounded-full ${plan.ctaBg} text-white font-bold text-center transition shadow-lg`}
               >
-                {plan.cta}
+                {t(plan.ctaKey)}
               </Link>
             </div>
           ))}
@@ -138,7 +112,7 @@ export function Pricing() {
             <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
             </svg>
-            Paid plans include 2 core tutors. Add any extra AI tutor for just $4.99/mo each.
+            {t("addon_note")}
           </div>
         </div>
 
@@ -150,60 +124,34 @@ export function Pricing() {
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 mb-6">
               <span className="text-lg">🏫</span>
-              <span className="text-sm font-bold text-white/90">For Schools & Districts</span>
+              <span className="text-sm font-bold text-white/90">{t("district_badge")}</span>
             </div>
             <h3 className="text-3xl md:text-4xl font-heading font-bold text-white mb-4">
-              AIVO for Education
+              {t("district_title")}
             </h3>
             <p className="text-lg text-white/80 max-w-2xl mx-auto font-body mb-4">
-              Bring AIVO to your entire school or district with volume pricing and dedicated support.
+              {t("district_desc")}
             </p>
             <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/90 font-body mb-8">
-              <li className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                Unlimited learners
-              </li>
-              <li className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                All 14 AI tutors
-              </li>
-              <li className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                Full brain clone
-              </li>
-              <li className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                Admin dashboard
-              </li>
-              <li className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                IEP tracking & reporting
-              </li>
-              <li className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                Research access
-              </li>
-              <li className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                Priority support
-              </li>
-              <li className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                Dedicated onboarding
-              </li>
+              {DISTRICT_FEATURES.map((fk) => (
+                <li key={fk} className="flex items-center gap-1.5">
+                  {CHECK_WHITE}
+                  {t(fk)}
+                </li>
+              ))}
             </ul>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/signup?type=district"
                 className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-white text-primary font-bold text-lg hover:bg-slate-50 transition shadow-lg"
               >
-                Request a Demo
+                {t("district_demo")}
               </Link>
               <Link
                 href="/signup?type=school"
                 className="inline-flex items-center justify-center px-8 py-3.5 rounded-full border-2 border-white/30 text-white font-bold text-lg hover:bg-white/10 transition"
               >
-                Contact Sales
+                {t("district_sales")}
               </Link>
             </div>
           </div>

@@ -1,7 +1,10 @@
 "use client";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export function CTASection() {
+  const t = useTranslations("marketing.cta");
+
   return (
     <section className="py-24 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-600 to-indigo-700" />
@@ -14,20 +17,19 @@ export function CTASection() {
       <div className="max-w-4xl mx-auto px-6 md:px-8 text-center relative z-10">
         <div className="text-6xl mb-6">🚀</div>
         <h2 className="text-4xl md:text-5xl font-heading font-bold text-white mb-6 leading-tight">
-          Every child deserves a learning
+          {t("title_line1")}
           <br />
-          experience built just for them
+          {t("title_line2")}
         </h2>
         <p className="text-xl text-white/80 max-w-2xl mx-auto font-body mb-10">
-          Join thousands of families discovering what personalized, adaptive learning can do.
-          Start free — no credit card required.
+          {t("subtitle")}
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/signup"
             className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 rounded-full bg-white text-primary font-bold text-lg hover:bg-slate-50 transition-all shadow-xl hover:-translate-y-0.5"
           >
-            Start Your Free Trial
+            {t("cta_trial")}
             <svg
               className="w-5 h-5 group-hover:translate-x-1 transition-transform"
               fill="none"
@@ -41,7 +43,7 @@ export function CTASection() {
             href="#pricing"
             className="inline-flex items-center justify-center px-10 py-4 rounded-full border-2 border-white/30 text-white font-bold text-lg hover:bg-white/10 transition-all hover:-translate-y-0.5"
           >
-            View Pricing
+            {t("cta_pricing")}
           </Link>
         </div>
       </div>

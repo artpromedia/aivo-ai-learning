@@ -1,20 +1,22 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
-const STATS = [
-  { value: "14", label: "AI Tutors" },
-  { value: "5", label: "Functioning Levels" },
-  { value: "10", label: "Languages" },
-  { value: "24/7", label: "Adaptive Learning" },
-];
+import { useTranslations } from "next-intl";
 
 export function Hero({ scrollY }: { scrollY: number }) {
+  const t = useTranslations("marketing.hero");
   const [visible, setVisible] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 100);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setVisible(true), 100);
+    return () => clearTimeout(timer);
   }, []);
+
+  const STATS = [
+    { value: "14", label: t("stat_tutors") },
+    { value: "5", label: t("stat_levels") },
+    { value: "10", label: t("stat_languages") },
+    { value: "24/7", label: t("stat_adaptive") },
+  ];
 
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden">
@@ -64,24 +66,22 @@ export function Hero({ scrollY }: { scrollY: number }) {
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
             </span>
             <span className="text-sm font-bold text-primary tracking-wide">
-              The adaptive learning platform
+              {t("badge")}
             </span>
           </div>
 
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-heading font-bold text-slate-900 leading-[1.1] tracking-tight">
-            Learning adventures
+            {t("title_line1")}
             <br />
             <span className="bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent">
-              for every mind
+              {t("title_line2")}
             </span>
           </h1>
 
           <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed font-body">
-            AIVO meets each learner where they are — from standard curriculum to
-            pre-symbolic communication — with{" "}
-            <span className="text-primary font-semibold">14 AI tutors</span> and{" "}
-            <span className="text-primary font-semibold">brain-clone technology</span>{" "}
-            that truly adapts.
+            {t.rich("description", {
+              tutorCount: 14,
+            })}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
@@ -89,7 +89,7 @@ export function Hero({ scrollY }: { scrollY: number }) {
               href="/signup"
               className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white font-bold text-lg hover:from-primary-dark hover:to-purple-700 transition-all shadow-xl shadow-purple-300/40 hover:shadow-purple-400/50 hover:-translate-y-0.5"
             >
-              Start Free Trial
+              {t("cta_trial")}
               <svg
                 className="w-5 h-5 group-hover:translate-x-1 transition-transform"
                 fill="none"
@@ -103,7 +103,7 @@ export function Hero({ scrollY }: { scrollY: number }) {
               href="/login"
               className="inline-flex items-center justify-center px-10 py-4 rounded-full border-2 border-slate-200 text-slate-700 font-bold text-lg hover:border-primary hover:text-primary transition-all hover:-translate-y-0.5"
             >
-              Sign In
+              {t("cta_signin")}
             </Link>
           </div>
 

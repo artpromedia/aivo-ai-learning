@@ -1,39 +1,54 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-
-const FOOTER_LINKS = {
-  Platform: [
-    { label: "Features", href: "#features" },
-    { label: "Pricing", href: "#pricing" },
-    { label: "AI Tutors", href: "#tutors" },
-    { label: "Brain Clone", href: "#brain" },
-    { label: "Functioning Levels", href: "#levels" },
-  ],
-  Solutions: [
-    { label: "For Families", href: "/signup" },
-    { label: "For Schools", href: "/signup?type=school" },
-    { label: "For Districts", href: "/signup?type=district" },
-    { label: "Special Education", href: "#levels" },
-    { label: "IEP Integration", href: "#features" },
-  ],
-  Company: [
-    { label: "About AIVO", href: "#" },
-    { label: "Blog", href: "#" },
-    { label: "Careers", href: "#" },
-    { label: "Contact", href: "#" },
-    { label: "Press Kit", href: "#" },
-  ],
-  Legal: [
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
-    { label: "COPPA Compliance", href: "#" },
-    { label: "FERPA Compliance", href: "#" },
-    { label: "Accessibility", href: "#" },
-  ],
-};
+import { useTranslations } from "next-intl";
 
 export function Footer() {
+  const t = useTranslations("marketing.footer");
+
+  const FOOTER_SECTIONS = [
+    {
+      titleKey: "platform" as const,
+      links: [
+        { labelKey: "features" as const, href: "#features" },
+        { labelKey: "pricing" as const, href: "#pricing" },
+        { labelKey: "ai_tutors" as const, href: "#tutors" },
+        { labelKey: "brain_clone" as const, href: "#brain" },
+        { labelKey: "functioning_levels" as const, href: "#levels" },
+      ],
+    },
+    {
+      titleKey: "solutions" as const,
+      links: [
+        { labelKey: "for_families" as const, href: "/signup" },
+        { labelKey: "for_schools" as const, href: "/signup?type=school" },
+        { labelKey: "for_districts" as const, href: "/signup?type=district" },
+        { labelKey: "special_education" as const, href: "#levels" },
+        { labelKey: "iep_integration" as const, href: "#features" },
+      ],
+    },
+    {
+      titleKey: "company" as const,
+      links: [
+        { labelKey: "about_aivo" as const, href: "#" },
+        { labelKey: "blog" as const, href: "#" },
+        { labelKey: "careers" as const, href: "#" },
+        { labelKey: "contact" as const, href: "#" },
+        { labelKey: "press_kit" as const, href: "#" },
+      ],
+    },
+    {
+      titleKey: "legal" as const,
+      links: [
+        { labelKey: "privacy_policy" as const, href: "#" },
+        { labelKey: "terms_of_service" as const, href: "#" },
+        { labelKey: "coppa_compliance" as const, href: "#" },
+        { labelKey: "ferpa_compliance" as const, href: "#" },
+        { labelKey: "accessibility" as const, href: "#" },
+      ],
+    },
+  ];
+
   return (
     <footer className="bg-slate-900 pt-16 pb-8">
       <div className="max-w-6xl mx-auto px-6 md:px-8">
@@ -48,7 +63,7 @@ export function Footer() {
               style={{ width: "auto", height: "auto" }}
             />
             <p className="text-sm text-slate-400 font-body leading-relaxed mb-4">
-              AI-powered adaptive learning for every child, every mind, every potential.
+              {t("tagline")}
             </p>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold">
@@ -63,17 +78,17 @@ export function Footer() {
             </div>
           </div>
 
-          {Object.entries(FOOTER_LINKS).map(([section, links]) => (
-            <div key={section}>
-              <h4 className="text-sm font-heading font-bold text-white mb-4">{section}</h4>
+          {FOOTER_SECTIONS.map((section) => (
+            <div key={section.titleKey}>
+              <h4 className="text-sm font-heading font-bold text-white mb-4">{t(section.titleKey)}</h4>
               <ul className="space-y-2.5">
-                {links.map((link) => (
-                  <li key={link.label}>
+                {section.links.map((link) => (
+                  <li key={link.labelKey}>
                     <Link
                       href={link.href}
                       className="text-sm text-slate-400 hover:text-white transition font-body"
                     >
-                      {link.label}
+                      {t(link.labelKey)}
                     </Link>
                   </li>
                 ))}
@@ -84,10 +99,10 @@ export function Footer() {
 
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-slate-500 font-body">
-            &copy; {new Date().getFullYear()} AIVO Learning Platform. All rights reserved.
+            {t("copyright", { year: new Date().getFullYear() })}
           </p>
           <p className="text-xs text-slate-600 font-body">
-            Built with care for every learner.
+            {t("built_with_care")}
           </p>
         </div>
       </div>

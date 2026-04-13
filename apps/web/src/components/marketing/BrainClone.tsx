@@ -1,29 +1,16 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 const BRAIN_FEATURES = [
-  {
-    icon: "🔄",
-    title: "Continuous Adaptation",
-    desc: "The brain clone evolves with every interaction, adjusting difficulty, pace, and teaching style in real-time.",
-  },
-  {
-    icon: "📸",
-    title: "Snapshots & Rollback",
-    desc: "Save brain states at key milestones. If something isn't working, roll back and try a different approach.",
-  },
-  {
-    icon: "🎯",
-    title: "Multi-Dimensional Mastery",
-    desc: "Tracks progress across cognitive, behavioral, communication, and academic domains simultaneously.",
-  },
-  {
-    icon: "🔗",
-    title: "Cross-Tutor Intelligence",
-    desc: "What one tutor learns about your child, all tutors know — creating a unified learning experience.",
-  },
-];
+  { icon: "🔄", titleKey: "f1_title", descKey: "f1_desc" },
+  { icon: "📸", titleKey: "f2_title", descKey: "f2_desc" },
+  { icon: "🎯", titleKey: "f3_title", descKey: "f3_desc" },
+  { icon: "🔗", titleKey: "f4_title", descKey: "f4_desc" },
+] as const;
 
 export function BrainClone() {
+  const t = useTranslations("marketing.brain_clone");
+
   return (
     <section className="py-24 bg-gradient-to-b from-slate-900 via-purple-950 to-slate-900 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
@@ -35,13 +22,13 @@ export function BrainClone() {
       <div className="max-w-6xl mx-auto px-6 md:px-8 relative z-10">
         <div className="text-center mb-16">
           <p className="text-sm font-bold text-amber-400 uppercase tracking-widest mb-3">
-            Core Technology
+            {t("label")}
           </p>
           <h2 className="text-4xl md:text-5xl font-heading font-bold text-white mb-4">
-            The Brain Clone
+            {t("title")}
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto font-body">
-            A living digital model of your child&apos;s learning mind — it grows, adapts, and remembers so every lesson picks up exactly where they left off.
+            {t("subtitle")}
           </p>
         </div>
 
@@ -62,16 +49,16 @@ export function BrainClone() {
 
           <div className="space-y-6">
             {BRAIN_FEATURES.map((f) => (
-              <div key={f.title} className="flex gap-4">
+              <div key={f.titleKey} className="flex gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-xl flex-shrink-0">
                   {f.icon}
                 </div>
                 <div>
                   <h3 className="text-lg font-heading font-bold text-white mb-1">
-                    {f.title}
+                    {t(f.titleKey)}
                   </h3>
                   <p className="text-sm text-slate-400 font-body leading-relaxed">
-                    {f.desc}
+                    {t(f.descKey)}
                   </p>
                 </div>
               </div>
