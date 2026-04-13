@@ -3,7 +3,7 @@ name: Marketing Lighthouse
 on:
   pull_request:
     paths:
-      - "apps/web/**"
+      - "apps/marketing/**"
       - "packages/brand/**"
       - "packages/ui/**"
 
@@ -25,8 +25,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build web app
-        run: pnpm --filter @aivo/web build
+      - name: Build marketing site
+        run: pnpm --filter @aivo/marketing build
 
       - name: Run Lighthouse CI
         run: |

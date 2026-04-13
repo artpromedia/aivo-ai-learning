@@ -4,7 +4,7 @@ on:
   push:
     branches: [develop]
     paths:
-      - "apps/web/**"
+      - "apps/marketing/**"
   workflow_dispatch:
 
 concurrency:
@@ -37,8 +37,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build web app
-        run: pnpm --filter @aivo/web build
+      - name: Build marketing site
+        run: pnpm --filter @aivo/marketing build
 
       - name: Deploy to staging
         run: echo "Add staging deployment steps for your hosting provider"

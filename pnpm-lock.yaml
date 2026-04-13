@@ -22,6 +22,46 @@ importers:
         specifier: ^5.7.3
         version: 5.7.3
 
+  apps/marketing:
+    dependencies:
+      '@aivo/brand':
+        specifier: workspace:*
+        version: link:../../packages/brand
+      lucide-react:
+        specifier: ^0.513.0
+        version: 0.513.0(react@19.1.0)
+      next:
+        specifier: ^15.3.3
+        version: 15.5.15(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      next-intl:
+        specifier: ^4.9.1
+        version: 4.9.1(next@15.5.15(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)(typescript@5.8.3)
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4.1.8
+        version: 4.2.2
+      '@types/react':
+        specifier: ^19.1.4
+        version: 19.1.17
+      '@types/react-dom':
+        specifier: ^19.1.5
+        version: 19.2.3(@types/react@19.1.17)
+      postcss:
+        specifier: ^8.5.4
+        version: 8.5.9
+      tailwindcss:
+        specifier: ^4.1.8
+        version: 4.2.2
+      typescript:
+        specifier: ^5.7.3
+        version: 5.8.3
+
   apps/mobile:
     dependencies:
       '@aivo/brand':
@@ -11209,7 +11249,6 @@ snapshots:
   '@types/react-dom@19.2.3(@types/react@19.1.17)':
     dependencies:
       '@types/react': 19.1.17
-    optional: true
 
   '@types/react-dom@19.2.3(@types/react@19.2.14)':
     dependencies:
@@ -14498,6 +14537,23 @@ snapshots:
       use-intl: 4.9.1(react@19.1.0)
     optionalDependencies:
       typescript: 5.7.3
+    transitivePeerDependencies:
+      - '@swc/helpers'
+
+  next-intl@4.9.1(next@15.5.15(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)(typescript@5.8.3):
+    dependencies:
+      '@formatjs/intl-localematcher': 0.8.2
+      '@parcel/watcher': 2.5.6
+      '@swc/core': 1.15.24
+      icu-minify: 4.9.1
+      negotiator: 1.0.0
+      next: 15.5.15(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      next-intl-swc-plugin-extractor: 4.9.1
+      po-parser: 2.1.1
+      react: 19.1.0
+      use-intl: 4.9.1(react@19.1.0)
+    optionalDependencies:
+      typescript: 5.8.3
     transitivePeerDependencies:
       - '@swc/helpers'
 

@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main, develop]
     paths:
+      - "apps/marketing/**"
       - "apps/web/**"
       - "packages/brand/**"
   workflow_dispatch:
