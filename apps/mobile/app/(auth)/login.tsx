@@ -1,21 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView,
-  Platform, ScrollView, Image,
+  Platform, ScrollView, Modal, Switch,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '@/hooks/useAuth';
 import { colors, spacing, radius } from '@/constants/colors';
 import { AivoButton } from '@aivo/mobile-ui';
 
+WebBrowser.maybeCompleteAuthSession();
+
+const GOOGLE_CLIENT_ID = '373030578076-ftkmofvss349u7qecvsjmiqavq4mt3hs.apps.googleusercontent.com';
+
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [consentModal, setConsentModal] = useState(false);
+  const [pendingIdToken, setPendingIdToken] = useState<string | null>(null);
+  const [coppaConsent, setCoppaConsent] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  const discovery = AuthSession.useAutoDiscovery('https://accounts.google.com');
+
+  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: GOOGLE_CLIENT_ID,
+      scopes: ['openid', 'profile', 'email'],
+      responseType: AuthSession.ResponseType.IdToken,
+      redirectUri: AuthSession.makeRedirectUri({ scheme: 'aivo' }),
+    },
+    discovery
+  );
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const idToken = response.params.id_token;
+      if (idToken) {
+        handleGoogleResponse(idToken);
+      }
+    }
+  }, [response]);
+
+  const handleGoogleResponse = async (idToken: string, consent?: { coppaConsent: boolean; termsAccepted: boolean }) => {
+    setGoogleLoading(true);
+    setError('');
+    const result = await loginWithGoogle(idToken, consent);
+    if (result.success) {
+      router.replace('/');
+    } else if (result.requiresConsent) {
+      setPendingIdToken(idToken);
+      setConsentModal(true);
+    } else {
+      setError(result.error || 'Google sign-in failed');
+    }
+    setGoogleLoading(false);
+  };
+
+  const handleConsentConfirm = async () => {
+    if (!coppaConsent || !termsAccepted || !pendingIdToken) return;
+    setConsentModal(false);
+    await handleGoogleResponse(pendingIdToken, { coppaConsent: true, termsAccepted: true });
+    setPendingIdToken(null);
+    setCoppaConsent(false);
+    setTermsAccepted(false);
+  };
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -94,6 +150,23 @@ export default function LoginScreen() {
             style={{ marginTop: spacing.md }}
           />
 
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <Pressable
+            style={styles.googleButton}
+            onPress={() => promptAsync()}
+            disabled={!request || googleLoading}
+          >
+            <Text style={styles.googleIcon}>G</Text>
+            <Text style={styles.googleButtonText}>
+              {googleLoading ? 'Signing in...' : 'Continue with Google'}
+            </Text>
+          </Pressable>
+
           <Pressable style={styles.pinButton} onPress={() => router.push('/(auth)/pin')}>
             <Text style={styles.pinButtonText}>Learner PIN Login</Text>
           </Pressable>
@@ -105,6 +178,52 @@ export default function LoginScreen() {
           </Text>
         </Pressable>
       </ScrollView>
+
+      <Modal visible={consentModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Almost there!</Text>
+            <Text style={styles.modalSubtitle}>
+              To create your AIVO account, please confirm the following:
+            </Text>
+            <View style={styles.switchRow}>
+              <Switch
+                value={coppaConsent}
+                onValueChange={setCoppaConsent}
+                trackColor={{ false: colors.border, true: colors.primaryLight }}
+                thumbColor={coppaConsent ? colors.primary : '#f4f3f4'}
+              />
+              <Text style={styles.switchLabel}>
+                I confirm I am the parent/legal guardian (COPPA compliance)
+              </Text>
+            </View>
+            <View style={styles.switchRow}>
+              <Switch
+                value={termsAccepted}
+                onValueChange={setTermsAccepted}
+                trackColor={{ false: colors.border, true: colors.primaryLight }}
+                thumbColor={termsAccepted ? colors.primary : '#f4f3f4'}
+              />
+              <Text style={styles.switchLabel}>
+                I accept the Terms of Service and Privacy Policy
+              </Text>
+            </View>
+            <AivoButton
+              title="Continue"
+              onPress={handleConsentConfirm}
+              disabled={!coppaConsent || !termsAccepted}
+              size="lg"
+              style={{ marginTop: spacing.md }}
+            />
+            <Pressable
+              onPress={() => { setConsentModal(false); setPendingIdToken(null); }}
+              style={{ marginTop: spacing.sm, alignItems: 'center' }}
+            >
+              <Text style={styles.forgotLink}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -200,6 +319,43 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginBottom: 8,
   },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    fontSize: 13,
+    fontFamily: 'Nunito-Regular',
+    color: colors.textSecondary,
+    marginHorizontal: 12,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    gap: 10,
+  },
+  googleIcon: {
+    fontSize: 20,
+    fontFamily: 'Nunito-ExtraBold',
+    color: '#4285F4',
+  },
+  googleButtonText: {
+    fontSize: 15,
+    fontFamily: 'Nunito-SemiBold',
+    color: colors.text,
+  },
   pinButton: {
     marginTop: spacing.md,
     alignItems: 'center',
@@ -212,6 +368,43 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Nunito-Bold',
     color: colors.secondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  modalCard: {
+    backgroundColor: colors.card,
+    borderRadius: radius.xxl,
+    padding: spacing.lg,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontFamily: 'Nunito-ExtraBold',
+    color: colors.text,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 10,
+  },
+  switchLabel: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: 'Nunito-Regular',
+    color: colors.textSecondary,
   },
   signupLink: {
     marginTop: spacing.lg,

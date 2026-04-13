@@ -17,5 +17,10 @@
   "packageManager": "pnpm@10.6.5",
   "engines": {
     "node": ">=22"
+  },
+  "dependencies": {
+    "expo-auth-session": "^55.0.14",
+    "expo-crypto": "^55.0.14",
+    "expo-web-browser": "^55.0.14"
   }
 }

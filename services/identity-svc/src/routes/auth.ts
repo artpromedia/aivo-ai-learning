@@ -81,6 +81,28 @@ async function deleteUserCascade(db: any, userId: string) {
   await db.execute(sql.raw(`DELETE FROM "users" WHERE id = '${userId}'`));
 }
 
+async function verifyGoogleToken(idToken: string): Promise<{ email: string; name: string; googleId: string } | null> {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId) return null;
+
+  try {
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+    if (!response.ok) return null;
+    const payload = await response.json();
+    if (payload.aud !== clientId) return null;
+    if (payload.iss !== "accounts.google.com" && payload.iss !== "https://accounts.google.com") return null;
+    if (!payload.email || payload.email_verified !== "true") return null;
+    if (payload.exp && Number(payload.exp) * 1000 < Date.now()) return null;
+    return {
+      email: payload.email,
+      name: payload.name || payload.email.split("@")[0],
+      googleId: payload.sub,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function registerAuthRoutes(app: FastifyInstance) {
   app.get("/api/auth/public-key", async (_req, reply) => {
     const { getPublicKeyPEM } = await import("@aivo/security");
@@ -180,6 +202,98 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const valid = await verifyPassword(user.passwordHash, password);
     if (!valid) {
       return reply.status(401).send({ error: "Invalid credentials" });
+    }
+
+    const accessToken = await signJWT({
+      sub: user.id,
+      tenantId: user.tenantId,
+      role: user.role,
+      email: user.email!,
+      name: user.name,
+    });
+
+    const rawRefreshToken = crypto.randomUUID();
+    await db.insert(sessions).values({
+      userId: user.id,
+      refreshToken: hashRefreshToken(rawRefreshToken),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    reply.setCookie("refreshToken", rawRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60,
+    });
+
+    return {
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
+      accessToken,
+    };
+  });
+
+  app.post("/api/auth/google", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["idToken"],
+        properties: {
+          idToken: { type: "string" },
+          coppaConsent: { type: "boolean" },
+          termsAccepted: { type: "boolean" },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { idToken, coppaConsent, termsAccepted } = req.body as any;
+    const db = (app as any).db;
+
+    const googleUser = await verifyGoogleToken(idToken);
+    if (!googleUser) {
+      return reply.status(401).send({ error: "Invalid Google token" });
+    }
+
+    const [existingByGoogleId] = await db.select().from(users)
+      .where(eq(users.googleId, googleUser.googleId)).limit(1);
+
+    let user;
+    if (existingByGoogleId) {
+      user = existingByGoogleId;
+    } else {
+      const [existingByEmail] = await db.select().from(users)
+        .where(eq(users.email, googleUser.email)).limit(1);
+
+      if (existingByEmail) {
+        if (existingByEmail.googleId && existingByEmail.googleId !== googleUser.googleId) {
+          return reply.status(409).send({ error: "This email is already linked to a different Google account" });
+        }
+        if (!existingByEmail.googleId) {
+          await db.update(users)
+            .set({ googleId: googleUser.googleId })
+            .where(eq(users.id, existingByEmail.id));
+        }
+        user = { ...existingByEmail, googleId: googleUser.googleId };
+      } else {
+        if (!coppaConsent || !termsAccepted) {
+          return reply.status(400).send({ error: "COPPA consent and terms acceptance required for new accounts", requiresConsent: true });
+        }
+
+        const [tenant] = await db.insert(tenants).values({
+          name: `${googleUser.name}'s Family`,
+          type: "B2C_FAMILY",
+        }).returning();
+
+        const [newUser] = await db.insert(users).values({
+          tenantId: tenant.id,
+          email: googleUser.email,
+          name: googleUser.name,
+          role: "PARENT",
+          googleId: googleUser.googleId,
+        }).returning();
+        user = newUser;
+      }
     }
 
     const accessToken = await signJWT({

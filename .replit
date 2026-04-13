@@ -35,7 +35,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd apps/mobile && npx expo start --web --port 5000 --host lan"
+args = "cd apps/mobile && EXPO_ROUTER_APP_ROOT=app npx expo start --web --port 5000 --host lan"
 waitForPort = 5000
 
 [[workflows.workflow]]
@@ -127,11 +127,6 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 6379
-externalPort = 3000
-exposeLocalhost = true
-
-[[ports]]
 localPort = 8222
 externalPort = 3002
 
@@ -183,6 +178,8 @@ IDENTITY_SVC_PORT = "3001"
 [userenv.shared]
 EXPO_TOKEN = "eIZhSgu6Y1mA3weH6rR0Lc2n-f9ZraRJekRuAL_F"
 POSTMARK_API_TOKEN = "58d0ac3c-420b-40a2-b061-bacc755d5196"
+GOOGLE_CLIENT_ID = "373030578076-ftkmofvss349u7qecvsjmiqavq4mt3hs.apps.googleusercontent.com"
+EXPO_ROUTER_APP_ROOT = "app"
 
 [deployment]
 deploymentTarget = "autoscale"

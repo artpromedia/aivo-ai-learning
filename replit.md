@@ -37,7 +37,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Mobile**: React Native (Expo SDK 54) + Expo Router v6 + TypeScript
 - **Backend (TS)**: Fastify 5 + Drizzle ORM + PostgreSQL 16
 - **Backend (Python)**: FastAPI + LiteLLM + Uvicorn (both ai-svc and brain-svc use LiteLLM with fallback chain: Claude Sonnet → Gemini Flash → GPT-4o-mini)
-- **Auth**: JWT RS256 (jose library), refresh tokens, PIN login. Public key served at `/api/auth/public-key` for cross-service verification. Brain-svc (Python) fetches and caches the RSA public key from identity-svc.
+- **Auth**: JWT RS256 (jose library), refresh tokens, PIN login, Google OAuth. Public key served at `/api/auth/public-key` for cross-service verification. Brain-svc (Python) fetches and caches the RSA public key from identity-svc. Google Sign-In via `expo-auth-session` on mobile, `POST /api/auth/google` on identity-svc verifies Google ID tokens and creates/links accounts.
 - **Database**: PostgreSQL 16 with JSONB brain states
 - **Email**: Postmark (transactional email via `postmark` SDK in comms-svc)
 - **Styling**: AIVO brand system (purple primary #7C3AED), game-themed Fredoka + Nunito fonts

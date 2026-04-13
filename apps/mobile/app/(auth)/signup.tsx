@@ -1,17 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView,
   Platform, ScrollView, Switch,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '@/hooks/useAuth';
 import { colors, spacing, radius } from '@/constants/colors';
 import { AivoButton } from '@aivo/mobile-ui';
 
+WebBrowser.maybeCompleteAuthSession();
+
+const GOOGLE_CLIENT_ID = '373030578076-ftkmofvss349u7qecvsjmiqavq4mt3hs.apps.googleusercontent.com';
+
 export default function SignupScreen() {
   const insets = useSafeAreaInsets();
-  const { signup } = useAuth();
+  const { signup, loginWithGoogle } = useAuth();
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -22,6 +28,46 @@ export default function SignupScreen() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const discovery = AuthSession.useAutoDiscovery('https://accounts.google.com');
+
+  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: GOOGLE_CLIENT_ID,
+      scopes: ['openid', 'profile', 'email'],
+      responseType: AuthSession.ResponseType.IdToken,
+      redirectUri: AuthSession.makeRedirectUri({ scheme: 'aivo' }),
+    },
+    discovery
+  );
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const idToken = response.params.id_token;
+      if (idToken) {
+        handleGoogleResponse(idToken);
+      }
+    }
+  }, [response]);
+
+  const handleGoogleResponse = async (idToken: string) => {
+    if (!coppaConsent || !termsAccepted) {
+      setError('Please accept COPPA consent and Terms of Service before signing up with Google');
+      return;
+    }
+    setGoogleLoading(true);
+    setError('');
+    const result = await loginWithGoogle(idToken, { coppaConsent: true, termsAccepted: true });
+    if (result.success) {
+      router.replace('/');
+    } else if (result.error === 'requiresConsent') {
+      setError('Please accept COPPA consent and Terms of Service');
+    } else {
+      setError(result.error || 'Google sign-up failed');
+    }
+    setGoogleLoading(false);
+  };
 
   const updateField = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -77,6 +123,23 @@ export default function SignupScreen() {
         <Text style={styles.subtitle}>Start your child's personalized learning journey</Text>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <Pressable
+          style={styles.googleButton}
+          onPress={() => promptAsync()}
+          disabled={!request || googleLoading}
+        >
+          <Text style={styles.googleIcon}>G</Text>
+          <Text style={styles.googleButtonText}>
+            {googleLoading ? 'Signing up...' : 'Sign up with Google'}
+          </Text>
+        </Pressable>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or sign up with email</Text>
+          <View style={styles.dividerLine} />
+        </View>
 
         <View style={styles.card}>
           <View style={styles.inputGroup}>
@@ -209,6 +272,49 @@ const styles = StyleSheet.create({
     backgroundColor: colors.error + '10',
     padding: 8,
     borderRadius: radius.md,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    gap: 10,
+    marginBottom: spacing.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  googleIcon: {
+    fontSize: 20,
+    fontFamily: 'Nunito-ExtraBold',
+    color: '#4285F4',
+  },
+  googleButtonText: {
+    fontSize: 15,
+    fontFamily: 'Nunito-SemiBold',
+    color: colors.text,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    fontSize: 13,
+    fontFamily: 'Nunito-Regular',
+    color: colors.textSecondary,
+    marginHorizontal: 12,
   },
   card: {
     backgroundColor: colors.card,

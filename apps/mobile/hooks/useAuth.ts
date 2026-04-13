@@ -22,6 +22,7 @@ interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   loginWithPin: (pin: string, parentId: string) => Promise<{ success: boolean; error?: string }>;
   signup: (data: SignupData) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: (idToken: string, consent?: { coppaConsent: boolean; termsAccepted: boolean }) => Promise<{ success: boolean; error?: string; requiresConsent?: boolean }>;
   logout: () => Promise<void>;
 }
 
@@ -162,6 +163,39 @@ export function useAuthState(): AuthContextValue {
     }
   }, []);
 
+  const loginWithGoogle = useCallback(async (idToken: string, consent?: { coppaConsent: boolean; termsAccepted: boolean }) => {
+    try {
+      const body: Record<string, unknown> = { idToken };
+      if (consent) {
+        body.coppaConsent = consent.coppaConsent;
+        body.termsAccepted = consent.termsAccepted;
+      }
+
+      const response = await apiFetch(API.IDENTITY, '/api/auth/google', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        skipAuth: true,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        await setToken(data.accessToken);
+        const user = extractUser(data.accessToken);
+        if (user) {
+          setState({ user, isLoading: false, isAuthenticated: true });
+          return { success: true };
+        }
+      }
+      const error = await response.json().catch(() => ({}));
+      if (error.requiresConsent) {
+        return { success: false, error: 'requiresConsent', requiresConsent: true };
+      }
+      return { success: false, error: error.error || 'Google sign-in failed' };
+    } catch {
+      return { success: false, error: 'Network error. Please try again.' };
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await apiFetch(API.IDENTITY, '/api/auth/logout', { method: 'POST' });
@@ -175,6 +209,7 @@ export function useAuthState(): AuthContextValue {
     login,
     loginWithPin,
     signup,
+    loginWithGoogle,
     logout,
   };
 }
