@@ -30,7 +30,7 @@ export default function OnboardScreen() {
     }
     try {
       await addLearner.mutateAsync(form);
-      router.replace('/(parent)/');
+      router.replace('/(parent)' as any);
     } catch {
       Alert.alert('Error', 'Failed to add child. Please try again.');
     }

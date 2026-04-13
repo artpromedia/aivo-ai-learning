@@ -13,6 +13,6 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, 'node_modules'),
 ];
 
-config.resolver.disableHierarchicalLookup = true;
+config.resolver.unstable_enableSymlinks = true;
 
 module.exports = config;

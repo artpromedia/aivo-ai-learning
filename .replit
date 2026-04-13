@@ -35,7 +35,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd apps/web && pnpm run dev"
+args = "cd apps/mobile && npx expo start --web --port 5000 --host lan"
 waitForPort = 5000
 
 [[workflows.workflow]]

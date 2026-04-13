@@ -32,7 +32,9 @@ export default function PinScreen() {
 
     if (newPin.length === 4) {
       const result = await loginWithPin(newPin, parentId.trim());
-      if (!result.success) {
+      if (result.success) {
+        router.replace('/');
+      } else {
         setAttempts(prev => prev + 1);
         setPin('');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

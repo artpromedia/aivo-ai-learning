@@ -25,7 +25,9 @@ export default function LoginScreen() {
     setLoading(true);
     setError('');
     const result = await login(email.trim(), password);
-    if (!result.success) {
+    if (result.success) {
+      router.replace('/');
+    } else {
       setError(result.error || 'Login failed');
     }
     setLoading(false);

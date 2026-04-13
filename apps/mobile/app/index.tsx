@@ -17,19 +17,19 @@ export default function Index() {
 
     switch (user.role) {
       case 'PARENT':
-        router.replace('/(parent)/');
+        router.replace('/(parent)' as any);
         break;
       case 'LEARNER':
-        router.replace('/(learner)/');
+        router.replace('/(learner)' as any);
         break;
       case 'TEACHER':
-        router.replace('/(teacher)/');
+        router.replace('/(teacher)' as any);
         break;
       case 'CAREGIVER':
-        router.replace('/(caregiver)/');
+        router.replace('/(caregiver)' as any);
         break;
       case 'THERAPIST':
-        router.replace('/(therapist)/');
+        router.replace('/(therapist)' as any);
         break;
       default:
         router.replace('/(auth)/login');

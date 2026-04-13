@@ -1,18 +1,42 @@
+import { Platform } from 'react-native';
 import { API } from '@/constants/api';
-import * as SecureStore from 'expo-secure-store';
 
 const TOKEN_KEY = 'aivo_access_token';
 
+let SecureStore: typeof import('expo-secure-store') | null = null;
+if (Platform.OS !== 'web') {
+  SecureStore = require('expo-secure-store');
+}
+
 export async function getToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(TOKEN_KEY);
+  if (Platform.OS === 'web') {
+    try {
+      return localStorage.getItem(TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  }
+  return SecureStore!.getItemAsync(TOKEN_KEY);
 }
 
 export async function setToken(token: string): Promise<void> {
-  await SecureStore.setItemAsync(TOKEN_KEY, token);
+  if (Platform.OS === 'web') {
+    try {
+      localStorage.setItem(TOKEN_KEY, token);
+    } catch {}
+    return;
+  }
+  await SecureStore!.setItemAsync(TOKEN_KEY, token);
 }
 
 export async function clearTokens(): Promise<void> {
-  await SecureStore.deleteItemAsync(TOKEN_KEY);
+  if (Platform.OS === 'web') {
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+    } catch {}
+    return;
+  }
+  await SecureStore!.deleteItemAsync(TOKEN_KEY);
 }
 
 interface FetchOptions extends RequestInit {

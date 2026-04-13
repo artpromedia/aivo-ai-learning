@@ -8,7 +8,7 @@ AI-powered adaptive learning platform for neurodiverse children. Features Brain-
 ### Monorepo Structure (Turborepo + pnpm)
 ```
 apps/web           — Next.js 15 frontend (port 5000)
-apps/mobile        — React Native (Expo SDK 52) mobile app
+apps/mobile        — React Native (Expo SDK 54) mobile app
 packages/db        — Drizzle ORM schema (PostgreSQL 16)
 packages/brand     — Design tokens, tutor catalog, roles
 packages/mobile-ui — Shared mobile UI components + theme
@@ -34,7 +34,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 
 ### Tech Stack
 - **Frontend**: Next.js 15 + Tailwind CSS v4 + TypeScript
-- **Mobile**: React Native (Expo SDK 52) + Expo Router + TypeScript
+- **Mobile**: React Native (Expo SDK 54) + Expo Router v6 + TypeScript
 - **Backend (TS)**: Fastify 5 + Drizzle ORM + PostgreSQL 16
 - **Backend (Python)**: FastAPI + LiteLLM + Uvicorn
 - **Auth**: JWT RS256 (jose library), refresh tokens, PIN login. Public key served at `/api/auth/public-key` for cross-service verification. Brain-svc (Python) fetches and caches the RSA public key from identity-svc.
@@ -61,7 +61,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **All 6 Domains Assessed**: ELA, Math, Science, SEL, Speech, Executive Function — each with 3-5 fallback activities per difficulty tier. Updated FUNCTIONING_LEVEL_CONFIG: STANDARD=6 chapters/5 activities, SUPPORTED=6/4, LOW_VERBAL=6/3, NON_VERBAL=4/3.
 
 ### Mobile App (`apps/mobile/`)
-- **Framework**: Expo SDK 52 + Expo Router (file-based routing)
+- **Framework**: Expo SDK 54 + Expo Router v6 (file-based routing)
 - **Package**: `@aivo/mobile` with monorepo workspace links to `@aivo/brand`, `@aivo/mobile-ui`
 - **UI Kit**: `packages/mobile-ui/` — AivoButton, AivoCard, AivoHeader, StatCard, EmptyState, LoadingState, TutorCard
 - **Auth**: JWT tokens stored in `expo-secure-store`, auto-refresh, PIN pad for learners
@@ -77,7 +77,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Offline**: NetInfo-based online detection with sync queue (useOffline hook)
 
 ### Running Services
-1. **Start application** (port 5000): Next.js frontend
+1. **Start application** (port 5000): Expo mobile app (web mode)
 2. **Identity Service** (ports 3001, 3003, 3005, 3006, 3007, 3008): Identity + Assessment + Learning + Tutor + Family + Engagement services
 3. **Brain Service** (port 3002): Python FastAPI brain-svc
 4. **ai-svc** (port 3004): Python FastAPI LLM gateway (start separately)

@@ -52,7 +52,9 @@ export default function SignupScreen() {
       email: form.email.trim(),
       password: form.password,
     });
-    if (!result.success) {
+    if (result.success) {
+      router.replace('/');
+    } else {
       setError(result.error || 'Registration failed');
     }
     setLoading(false);
