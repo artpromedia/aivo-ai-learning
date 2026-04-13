@@ -111,7 +111,7 @@ export function I18nProvider({
 
   return (
     <I18nContext.Provider value={{ locale, setLocale, locales, localeNames, localeFlags }}>
-      <NextIntlClientProvider locale={locale} messages={messages}>
+      <NextIntlClientProvider locale={locale} messages={messages} timeZone="America/New_York">
         {children}
       </NextIntlClientProvider>
     </I18nContext.Provider>
