@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { PARENT_ASSESSMENT_CATEGORIES, TOTAL_QUESTIONS, type AssessmentQuestion } from "@/lib/assessment-questions";
 
@@ -11,6 +12,8 @@ export default function ParentAssessmentPage() {
   const { user, accessToken, loading } = useAuth();
   const router = useRouter();
   const params = useParams();
+  const t = useTranslations("assessment");
+  const tc = useTranslations("common");
   const learnerId = params.id as string;
 
   const [currentCategoryIdx, setCurrentCategoryIdx] = useState(0);
@@ -122,7 +125,7 @@ export default function ParentAssessmentPage() {
         const qi = PARENT_ASSESSMENT_CATEGORIES[ci].questions.findIndex(q => q.id === firstMissing);
         if (qi !== -1) { setCurrentCategoryIdx(ci); setCurrentQuestionIdx(qi); break; }
       }
-      setSubmitError(`Please answer all required questions. ${missing.length} remaining.`);
+      setSubmitError(t("missing_required", { count: missing.length }));
       return;
     }
 
@@ -149,10 +152,10 @@ export default function ParentAssessmentPage() {
         setSubmitted(true);
       } else {
         const err = await res.json().catch(() => null);
-        setSubmitError(err?.message || `Submission failed (${res.status}). Please try again.`);
+        setSubmitError(err?.message || t("submission_failed"));
       }
     } catch (e: any) {
-      setSubmitError("Network error. Please check your connection and try again.");
+      setSubmitError(t("network_error_retry"));
     }
     setSubmitting(false);
   };
@@ -166,34 +169,33 @@ export default function ParentAssessmentPage() {
           <div className="w-20 h-20 mx-auto rounded-full bg-green-100 flex items-center justify-center">
             <span className="text-4xl">&#10003;</span>
           </div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Assessment Already Complete</h1>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("already_complete_title")}</h1>
           <p className="text-slate-500">
-            You&apos;ve already completed the parent assessment for {learnerName || "this learner"}.
+            {t("already_complete_desc", { name: learnerName || t("this_learner") })}
           </p>
           <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
-            <p className="text-sm font-bold text-purple-700">Functioning Level</p>
+            <p className="text-sm font-bold text-purple-700">{t("functioning_level_label")}</p>
             <p className="text-xl font-heading font-bold text-primary mt-1">{learnerFunctioningLevel.replace(/_/g, " ")}</p>
           </div>
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
             <div className="text-2xl mb-2">🧭</div>
-            <p className="text-sm font-bold text-amber-700">Next Step: Baseline Assessment</p>
+            <p className="text-sm font-bold text-amber-700">{t("next_step_baseline")}</p>
             <p className="text-xs text-amber-600 mt-1">
-              When {learnerName || "your child"} logs in with their PIN, they&apos;ll complete a fun baseline assessment.
-              This helps AIVO create their personalized learning brain and curriculum.
+              {t("baseline_child_desc", { name: learnerName || t("your_child") })}
             </p>
           </div>
           <div className="flex flex-col gap-3">
             <button onClick={() => router.push(`/dashboard/learner/assessment?learnerId=${learnerId}`)}
               className="px-8 py-3 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold hover:from-amber-500 hover:to-orange-600 transition shadow-lg shadow-amber-200">
-              Start Baseline Assessment
+              {t("start_baseline")}
             </button>
             <button onClick={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
               className="px-8 py-3 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200">
-              Back to Profile
+              {t("back_to_profile")}
             </button>
             <button onClick={() => router.push("/dashboard/parent")}
               className="px-8 py-3 rounded-full bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition">
-              Back to Dashboard
+              {t("back_to_dashboard")}
             </button>
           </div>
         </div>
@@ -208,26 +210,25 @@ export default function ParentAssessmentPage() {
           <div className="w-20 h-20 mx-auto rounded-full bg-green-100 flex items-center justify-center">
             <span className="text-4xl">&#10003;</span>
           </div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Assessment Complete!</h1>
-          <p className="text-slate-500">Thank you for taking the time to help us understand your child&apos;s needs.</p>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("assessment_complete_title")}</h1>
+          <p className="text-slate-500">{t("assessment_thank_you")}</p>
           {result.functioningLevel && (
             <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
-              <p className="text-sm font-bold text-purple-700">Recommended Functioning Level</p>
+              <p className="text-sm font-bold text-purple-700">{t("recommended_level")}</p>
               <p className="text-xl font-heading font-bold text-primary mt-1">{result.functioningLevel.level}</p>
-              <p className="text-xs text-purple-500 mt-1">Confidence: {Math.round((result.functioningLevel.confidence || 0) * 100)}%</p>
+              <p className="text-xs text-purple-500 mt-1">{t("confidence")}: {Math.round((result.functioningLevel.confidence || 0) * 100)}%</p>
             </div>
           )}
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
             <div className="text-2xl mb-2">🧭</div>
-            <p className="text-sm font-bold text-amber-700">Next Step: Baseline Assessment</p>
+            <p className="text-sm font-bold text-amber-700">{t("next_step_baseline")}</p>
             <p className="text-xs text-amber-600 mt-1">
-              When your child logs in, they&apos;ll complete a fun interactive baseline assessment.
-              This helps AIVO create their personalized learning brain and curriculum.
+              {t("baseline_generic_desc")}
             </p>
           </div>
           <button onClick={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
             className="px-8 py-3 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200">
-            Continue to Profile
+            {t("continue_to_profile")}
           </button>
         </div>
       </div>
@@ -240,12 +241,12 @@ export default function ParentAssessmentPage() {
         <div className="flex items-center gap-4">
           <button onClick={() => router.push(`/dashboard/parent`)}
             className="text-sm text-slate-500 hover:text-primary font-semibold">
-            Back
+            {tc("back")}
           </button>
           <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
         </div>
         <div className="text-sm text-slate-500 font-semibold">
-          {answeredCount} of {TOTAL_QUESTIONS} questions
+          {t("questions_progress", { answered: answeredCount, total: TOTAL_QUESTIONS })}
         </div>
       </header>
 
@@ -259,8 +260,8 @@ export default function ParentAssessmentPage() {
             <div className="w-16 h-16 rounded-full bg-green-400 flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl text-white">&#10003;</span>
             </div>
-            <h3 className="text-xl font-heading font-bold text-slate-900">Section Complete!</h3>
-            <p className="text-sm text-slate-500 mt-1">Great job! Moving to the next section...</p>
+            <h3 className="text-xl font-heading font-bold text-slate-900">{t("section_complete")}</h3>
+            <p className="text-sm text-slate-500 mt-1">{t("moving_next")}</p>
           </div>
         </div>
       )}
@@ -295,7 +296,7 @@ export default function ParentAssessmentPage() {
                   {category.label}
                 </p>
                 <p className="text-xs text-slate-400">
-                  Question {currentQuestionIdx + 1} of {category.questions.length}
+                  {t("question_of", { current: currentQuestionIdx + 1, total: category.questions.length })}
                 </p>
               </div>
             </div>
@@ -329,19 +330,19 @@ export default function ParentAssessmentPage() {
               <button onClick={goPrev}
                 disabled={currentCategoryIdx === 0 && currentQuestionIdx === 0}
                 className="px-5 py-2.5 rounded-full text-sm font-bold text-slate-500 hover:bg-slate-100 transition disabled:opacity-30">
-                Previous
+                {t("previous")}
               </button>
 
               {isLastQuestion ? (
                 <button onClick={submit} disabled={submitting}
                   className="px-8 py-2.5 rounded-full bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition disabled:opacity-50 shadow-lg">
-                  {submitting ? "Submitting..." : "Submit Assessment"}
+                  {submitting ? t("submitting") : t("submit_assessment")}
                 </button>
               ) : (
                 <button onClick={goNext} disabled={!canAdvance}
                   className="px-6 py-2.5 rounded-full text-white font-bold text-sm transition disabled:opacity-50 shadow-md"
                   style={{ backgroundColor: category.color }}>
-                  Next
+                  {tc("next")}
                 </button>
               )}
             </div>
@@ -371,6 +372,7 @@ function QuestionInput({
   onTextChange: (v: string) => void;
   onScaleChange: (v: number) => void;
 }) {
+  const t = useTranslations("assessment");
   if (q.questionType === "multiple_choice" || q.questionType === "yes_no") {
     return (
       <div className="space-y-2">
@@ -457,7 +459,7 @@ function QuestionInput({
       <textarea
         value={(value as string) ?? ""}
         onChange={(e) => onTextChange(e.target.value)}
-        placeholder="Type your answer..."
+        placeholder={t("type_answer")}
         rows={3}
         className="w-full rounded-2xl border-2 border-slate-200 p-4 text-sm text-slate-800 placeholder-slate-300 focus:outline-none resize-none transition-all font-body"
         onFocus={(e) => { e.currentTarget.style.borderColor = categoryColor; }}

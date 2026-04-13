@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
+import { useTranslations } from "next-intl";
 import { useDiscoveryEngine } from "@/components/discovery/useDiscoveryEngine";
 import PreAdventure from "@/components/discovery/PreAdventure";
 import AdventureMap from "@/components/discovery/AdventureMap";
@@ -12,16 +13,21 @@ import BreakActivity from "@/components/discovery/BreakActivity";
 import Finale from "@/components/discovery/Finale";
 import type { FunctioningLevel } from "@/components/discovery/types";
 
+function LoadingFallback() {
+  const t = useTranslations("assessment");
+  return (
+    <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 flex items-center justify-center">
+      <div className="text-center">
+        <div className="text-5xl mb-4 animate-bounce">🧭</div>
+        <p className="text-white/60 font-heading font-bold">{t("preparing_baseline")}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function DiscoveryAdventurePageWrapper() {
   return (
-    <Suspense fallback={
-      <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-5xl mb-4 animate-bounce">🧭</div>
-          <p className="text-white/60 font-heading font-bold">Preparing your baseline assessment...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<LoadingFallback />}>
       <DiscoveryAdventurePage />
     </Suspense>
   );
@@ -30,6 +36,7 @@ export default function DiscoveryAdventurePageWrapper() {
 function DiscoveryAdventurePage() {
   const { user, accessToken, loading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("assessment");
   const searchParams = useSearchParams();
   const queryLearnerId = searchParams.get("learnerId");
   const [learnerFL, setLearnerFL] = useState<FunctioningLevel>("STANDARD");
@@ -93,7 +100,7 @@ function DiscoveryAdventurePage() {
       <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 flex items-center justify-center">
         <div className="text-center">
           <div className="text-5xl mb-4 animate-bounce">🧭</div>
-          <p className="text-white/60 font-heading font-bold">Preparing your baseline assessment...</p>
+          <p className="text-white/60 font-heading font-bold">{t("preparing_baseline")}</p>
           <div className="flex gap-1 justify-center mt-4">
             <div className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: "0ms" }} />
             <div className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -128,6 +135,7 @@ function DiscoveryAdventureInner({
   accessToken: string | null;
 }) {
   const router = useRouter();
+  const t = useTranslations("assessment");
   const {
     state,
     chapters,
@@ -158,8 +166,8 @@ function DiscoveryAdventureInner({
       <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 flex items-center justify-center">
         <div className="text-center">
           <div className="text-5xl mb-4 animate-pulse">🧠</div>
-          <p className="text-white/60 font-heading font-bold">Your AI friends are preparing activities...</p>
-          <p className="text-white/30 text-sm mt-2 font-body">Personalizing just for you</p>
+          <p className="text-white/60 font-heading font-bold">{t("ai_preparing")}</p>
+          <p className="text-white/30 text-sm mt-2 font-body">{t("personalizing")}</p>
           <div className="flex gap-1 justify-center mt-4">
             <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "0ms" }} />
             <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "150ms" }} />
