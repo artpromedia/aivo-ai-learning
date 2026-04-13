@@ -38,6 +38,7 @@ export default function LoginScreen() {
       scopes: ['openid', 'profile', 'email'],
       responseType: AuthSession.ResponseType.IdToken,
       redirectUri: AuthSession.makeRedirectUri({ scheme: 'aivo' }),
+      usePKCE: false, // implicit flow (IdToken) does not support PKCE
     },
     discovery
   );
