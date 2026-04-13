@@ -4,7 +4,7 @@ import { createLogger } from "@aivo/observability";
 const logger = createLogger("comms-svc:postmark");
 
 const POSTMARK_TOKEN = process.env.POSTMARK_API_TOKEN || "";
-const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@aivo.app";
+const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@aivolearning.com";
 const FROM_NAME = process.env.FROM_NAME || "AIVO Learning";
 
 let client: ServerClient | null = null;
