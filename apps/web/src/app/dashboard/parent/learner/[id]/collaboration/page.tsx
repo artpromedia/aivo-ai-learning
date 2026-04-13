@@ -27,7 +27,14 @@ export default function CollaborationPage() {
   const t = useTranslations("parent");
   const tCommon = useTranslations("common");
 
-  const [members, setMembers] = useState<{ teachers: TeamMember[]; caregivers: TeamMember[]; therapists: TeamMember[] }>({
+  interface SeatInfo { used: number; max: number }
+  interface MembersState {
+    teachers: TeamMember[];
+    caregivers: TeamMember[];
+    therapists: TeamMember[];
+    seats?: { teacher: SeatInfo; caregiver: SeatInfo; therapist: SeatInfo };
+  }
+  const [members, setMembers] = useState<MembersState>({
     teachers: [], caregivers: [], therapists: [],
   });
   const [showInvite, setShowInvite] = useState<"teacher" | "caregiver" | "therapist" | null>(null);
@@ -140,20 +147,57 @@ export default function CollaborationPage() {
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <button onClick={() => setShowInvite("teacher")}
-            className="px-5 py-2.5 rounded-full bg-blue-50 text-blue-700 font-bold hover:bg-blue-100 transition text-sm">
-            {t("invite_teacher")}
-          </button>
-          <button onClick={() => setShowInvite("caregiver")}
-            className="px-5 py-2.5 rounded-full bg-green-50 text-green-700 font-bold hover:bg-green-100 transition text-sm">
-            {t("invite_caregiver")}
-          </button>
-          <button onClick={() => setShowInvite("therapist")}
-            className="px-5 py-2.5 rounded-full bg-purple-50 text-purple-700 font-bold hover:bg-purple-100 transition text-sm">
-            {t("invite_therapist")}
-          </button>
-        </div>
+        {members.seats && (
+          <div className="grid grid-cols-3 gap-4">
+            {([
+              { key: "teacher" as const, label: t("invite_teacher"), color: "blue", icon: "👩‍🏫" },
+              { key: "caregiver" as const, label: t("invite_caregiver"), color: "green", icon: "🤝" },
+              { key: "therapist" as const, label: t("invite_therapist"), color: "purple", icon: "🧠" },
+            ] as const).map(({ key, label, color, icon }) => {
+              const seat = members.seats![key];
+              const isFull = seat.used >= seat.max;
+              return (
+                <div key={key} className={`rounded-2xl p-4 border ${isFull ? "bg-slate-50 border-slate-200" : `bg-${color}-50 border-${color}-100`}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-2xl">{icon}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isFull ? "bg-slate-200 text-slate-500" : `bg-${color}-100 text-${color}-700`}`}>
+                      {seat.used}/{seat.max}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold text-slate-700 capitalize mb-2">{key}</p>
+                  <button
+                    onClick={() => !isFull && setShowInvite(key)}
+                    disabled={isFull}
+                    className={`w-full px-4 py-2 rounded-full text-sm font-bold transition ${
+                      isFull
+                        ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                        : `bg-${color}-500 text-white hover:bg-${color}-600`
+                    }`}
+                  >
+                    {isFull ? t("seats_full") : label}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!members.seats && (
+          <div className="flex gap-3">
+            <button onClick={() => setShowInvite("teacher")}
+              className="px-5 py-2.5 rounded-full bg-blue-50 text-blue-700 font-bold hover:bg-blue-100 transition text-sm">
+              {t("invite_teacher")}
+            </button>
+            <button onClick={() => setShowInvite("caregiver")}
+              className="px-5 py-2.5 rounded-full bg-green-50 text-green-700 font-bold hover:bg-green-100 transition text-sm">
+              {t("invite_caregiver")}
+            </button>
+            <button onClick={() => setShowInvite("therapist")}
+              className="px-5 py-2.5 rounded-full bg-purple-50 text-purple-700 font-bold hover:bg-purple-100 transition text-sm">
+              {t("invite_therapist")}
+            </button>
+          </div>
+        )}
 
         {showInvite && (
           <form onSubmit={inviteMember} className="bg-white rounded-2xl p-6 shadow-md border border-slate-100 space-y-4">

@@ -822,7 +822,8 @@
     "total_goals_label": "Total Goals",
     "processing": "Processing...",
     "raw_score": "Raw: {score} on {difficulty} difficulty",
-    "current_label": "Current"
+    "current_label": "Current",
+    "seats_full": "All Seats Filled"
   },
   "language": {
     "en": "English",

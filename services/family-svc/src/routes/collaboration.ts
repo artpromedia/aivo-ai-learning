@@ -67,6 +67,11 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
       teachers: teachers.map((t) => ({ ...t, memberType: "teacher" })),
       caregivers: caregivers.map((c) => ({ ...c, memberType: "caregiver" })),
       therapists: therapists.map((t) => ({ ...t, memberType: "therapist" })),
+      seats: {
+        teacher: { used: teachers.length, max: 1 },
+        caregiver: { used: caregivers.length, max: 2 },
+        therapist: { used: therapists.length, max: 1 },
+      },
     };
   });
 
@@ -158,6 +163,11 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
       and(eq(learnerTherapists.learnerId, learnerId), eq(learnerTherapists.therapistEmail, body.email))
     );
     if (existing.length > 0) return reply.code(409).send({ error: "Therapist already invited" });
+
+    const existingCount = await db.select().from(learnerTherapists).where(eq(learnerTherapists.learnerId, learnerId));
+    if (existingCount.length >= 1) {
+      return reply.code(400).send({ error: "Maximum 1 therapist allowed per learner" });
+    }
 
     const learnerRows = await db.select().from(learners).where(eq(learners.id, learnerId));
     if (learnerRows.length === 0) return reply.code(404).send({ error: "Learner not found" });
