@@ -30,21 +30,21 @@ export function Footer() {
     {
       titleKey: "company" as const,
       links: [
-        { labelKey: "about_aivo" as const, href: "#" },
-        { labelKey: "blog" as const, href: "#" },
-        { labelKey: "careers" as const, href: "#" },
-        { labelKey: "contact" as const, href: "#" },
-        { labelKey: "press_kit" as const, href: "#" },
+        { labelKey: "about_aivo" as const, href: "/about" },
+        { labelKey: "blog" as const, href: "/blog" },
+        { labelKey: "careers" as const, href: "/careers" },
+        { labelKey: "contact" as const, href: "/contact" },
+        { labelKey: "press_kit" as const, href: "/press-kit" },
       ],
     },
     {
       titleKey: "legal" as const,
       links: [
-        { labelKey: "privacy_policy" as const, href: "#" },
-        { labelKey: "terms_of_service" as const, href: "#" },
-        { labelKey: "coppa_compliance" as const, href: "#" },
-        { labelKey: "ferpa_compliance" as const, href: "#" },
-        { labelKey: "accessibility" as const, href: "#" },
+        { labelKey: "privacy_policy" as const, href: "/privacy-policy" },
+        { labelKey: "terms_of_service" as const, href: "/terms-of-service" },
+        { labelKey: "coppa_compliance" as const, href: "/coppa-compliance" },
+        { labelKey: "ferpa_compliance" as const, href: "/ferpa-compliance" },
+        { labelKey: "accessibility" as const, href: "/accessibility" },
       ],
     },
   ];

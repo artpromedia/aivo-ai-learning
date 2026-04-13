@@ -37,6 +37,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Auth**: JWT RS256 (jose library), refresh tokens, PIN login. Public key served at `/api/auth/public-key` for cross-service verification. Brain-svc (Python) fetches and caches the RSA public key from identity-svc.
 - **Database**: PostgreSQL 16 with JSONB brain states
 - **Styling**: AIVO brand system (purple primary #7C3AED), game-themed Fredoka + Nunito fonts
+- **Marketing Pages**: 10 footer pages (about, blog, careers, contact, press-kit, privacy-policy, terms-of-service, coppa-compliance, ferpa-compliance, accessibility) with shared LegalPageLayout and CompanyPageLayout components
 
 ### Key Concepts
 - **14 Tutors**: 7 core (Nova/Math, Sage/ELA, Spark/Science, Chrono/History, Pixel/Coding, Echo/Speech, Harmony/SEL) + 7 expansion (Atlas/Geography, Cadence/Music, Vigor/PE, Lingua/Languages, Forge/STEM Design, Compass/Life Skills, Muse/Creative Writing). All have full system prompts with functioning-level adaptations. Compass includes transition planning module (ages 14-22). Lingua includes bilingual scaffolding with code-switching awareness.
