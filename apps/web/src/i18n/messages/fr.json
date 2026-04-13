@@ -86,7 +86,21 @@
     "confirm_password": "Confirmer le mot de passe",
     "password_requirements": "Le mot de passe doit contenir au moins 8 caractères",
     "terms_agree": "J'accepte les Conditions d'utilisation et la Politique de confidentialité",
-    "continue_description": "Poursuivez votre parcours d'apprentissage avec les tuteurs IA adaptatifs d'AIVO."
+    "continue_description": "Poursuivez votre parcours d'apprentissage avec les tuteurs IA adaptatifs d'AIVO.",
+    "join_headline": "Commencez l'Aventure d'Apprentissage de Votre Enfant",
+    "signup_feature_brain_clone": "Technologie adaptative Brain Clone",
+    "signup_feature_tutors": "14 tuteurs IA spécialisés",
+    "signup_feature_levels": "5 niveaux de fonctionnement pour toutes les capacités",
+    "signup_feature_coppa": "Conforme COPPA et sûr pour les enfants",
+    "signup_free_trial": "Essai gratuit inclus",
+    "signup_no_credit_card": "Aucune carte de crédit requise",
+    "signup_subtitle": "Créez un compte parent gratuit pour commencer",
+    "name_placeholder": "Votre nom complet",
+    "password_hint": "Minimum 8 caractères",
+    "agree_terms_prefix": "En créant un compte, vous acceptez nos",
+    "and": "et",
+    "privacy": "Politique de Confidentialité",
+    "terms": "Conditions de Service"
   },
   "onboarding": {
     "add_learner_title": "Ajouter un nouvel élève",

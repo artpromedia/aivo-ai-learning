@@ -86,7 +86,21 @@
     "confirm_password": "パスワードの確認",
     "password_requirements": "パスワードは8文字以上で入力してください",
     "terms_agree": "利用規約とプライバシーポリシーに同意します",
-    "continue_description": "AIVOの適応型AIチューターで学習を続けましょう。"
+    "continue_description": "AIVOの適応型AIチューターで学習を続けましょう。",
+    "join_headline": "お子様の学習アドベンチャーを始めましょう",
+    "signup_feature_brain_clone": "適応型Brain Cloneテクノロジー",
+    "signup_feature_tutors": "14人の専門AIチューター",
+    "signup_feature_levels": "すべての能力に対応する5つの機能レベル",
+    "signup_feature_coppa": "COPPA準拠、お子様に安全",
+    "signup_free_trial": "無料トライアル付き",
+    "signup_no_credit_card": "クレジットカード不要",
+    "signup_subtitle": "無料の保護者アカウントを作成して始めましょう",
+    "name_placeholder": "フルネーム",
+    "password_hint": "8文字以上",
+    "agree_terms_prefix": "アカウントを作成すると、以下に同意したことになります：",
+    "and": "と",
+    "privacy": "プライバシーポリシー",
+    "terms": "利用規約"
   },
   "onboarding": {
     "add_learner_title": "新しい学習者を追加",

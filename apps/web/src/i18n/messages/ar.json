@@ -86,7 +86,21 @@
     "confirm_password": "تأكيد كلمة المرور",
     "password_requirements": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
     "terms_agree": "أوافق على شروط الخدمة وسياسة الخصوصية",
-    "continue_description": "تابع رحلة التعلم مع معلمي AIVO التكيفيين بالذكاء الاصطناعي."
+    "continue_description": "تابع رحلة التعلم مع معلمي AIVO التكيفيين بالذكاء الاصطناعي.",
+    "join_headline": "ابدأ مغامرة التعلم لطفلك",
+    "signup_feature_brain_clone": "تقنية Brain Clone التكيفية",
+    "signup_feature_tutors": "14 معلمًا متخصصًا بالذكاء الاصطناعي",
+    "signup_feature_levels": "5 مستويات أداء لجميع القدرات",
+    "signup_feature_coppa": "متوافق مع COPPA وآمن للأطفال",
+    "signup_free_trial": "تجربة مجانية مضمنة",
+    "signup_no_credit_card": "لا حاجة لبطاقة ائتمان",
+    "signup_subtitle": "أنشئ حساب والد مجاني للبدء",
+    "name_placeholder": "اسمك الكامل",
+    "password_hint": "8 أحرف على الأقل",
+    "agree_terms_prefix": "بإنشاء حساب، فإنك توافق على",
+    "and": "و",
+    "privacy": "سياسة الخصوصية",
+    "terms": "شروط الخدمة"
   },
   "onboarding": {
     "add_learner_title": "إضافة متعلم جديد",

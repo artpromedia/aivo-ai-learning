@@ -86,7 +86,21 @@
     "confirm_password": "비밀번호 확인",
     "password_requirements": "비밀번호는 8자 이상이어야 합니다",
     "terms_agree": "이용약관 및 개인정보처리방침에 동의합니다",
-    "continue_description": "AIVO의 적응형 AI 튜터와 함께 학습을 계속하세요."
+    "continue_description": "AIVO의 적응형 AI 튜터와 함께 학습을 계속하세요.",
+    "join_headline": "자녀의 학습 모험을 시작하세요",
+    "signup_feature_brain_clone": "적응형 Brain Clone 기술",
+    "signup_feature_tutors": "14명의 전문 AI 튜터",
+    "signup_feature_levels": "모든 능력에 맞는 5개 기능 수준",
+    "signup_feature_coppa": "COPPA 준수 및 아동 안전",
+    "signup_free_trial": "무료 체험 포함",
+    "signup_no_credit_card": "신용카드 불필요",
+    "signup_subtitle": "무료 학부모 계정을 만들어 시작하세요",
+    "name_placeholder": "전체 이름",
+    "password_hint": "최소 8자",
+    "agree_terms_prefix": "계정을 만들면 다음에 동의하는 것입니다:",
+    "and": "및",
+    "privacy": "개인정보 보호정책",
+    "terms": "서비스 이용약관"
   },
   "onboarding": {
     "add_learner_title": "새 학습자 추가",

@@ -86,7 +86,21 @@
     "confirm_password": "确认密码",
     "password_requirements": "密码至少需要8个字符",
     "terms_agree": "我同意服务条款和隐私政策",
-    "continue_description": "通过AIVO的自适应AI导师继续您的学习之旅。"
+    "continue_description": "通过AIVO的自适应AI导师继续您的学习之旅。",
+    "join_headline": "开启孩子的学习冒险之旅",
+    "signup_feature_brain_clone": "自适应Brain Clone技术",
+    "signup_feature_tutors": "14位专业AI导师",
+    "signup_feature_levels": "5个功能水平适合所有能力",
+    "signup_feature_coppa": "符合COPPA标准，儿童安全",
+    "signup_free_trial": "包含免费试用",
+    "signup_no_credit_card": "无需信用卡",
+    "signup_subtitle": "创建免费家长账户开始使用",
+    "name_placeholder": "您的全名",
+    "password_hint": "最少8个字符",
+    "agree_terms_prefix": "创建账户即表示您同意我们的",
+    "and": "和",
+    "privacy": "隐私政策",
+    "terms": "服务条款"
   },
   "onboarding": {
     "add_learner_title": "添加新学生",

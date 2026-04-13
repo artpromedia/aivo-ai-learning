@@ -86,7 +86,21 @@
     "confirm_password": "पासवर्ड की पुष्टि करें",
     "password_requirements": "पासवर्ड कम से कम 8 अक्षरों का होना चाहिए",
     "terms_agree": "मैं सेवा की शर्तों और गोपनीयता नीति से सहमत हूं",
-    "continue_description": "AIVO के अनुकूली AI ट्यूटर्स के साथ अपनी सीखने की यात्रा जारी रखें।"
+    "continue_description": "AIVO के अनुकूली AI ट्यूटर्स के साथ अपनी सीखने की यात्रा जारी रखें।",
+    "join_headline": "अपने बच्चे की सीखने की यात्रा शुरू करें",
+    "signup_feature_brain_clone": "अनुकूली Brain Clone तकनीक",
+    "signup_feature_tutors": "14 विशेष AI ट्यूटर",
+    "signup_feature_levels": "सभी क्षमताओं के लिए 5 कार्यात्मक स्तर",
+    "signup_feature_coppa": "COPPA अनुपालक और बच्चों के लिए सुरक्षित",
+    "signup_free_trial": "मुफ्त परीक्षण शामिल",
+    "signup_no_credit_card": "क्रेडिट कार्ड की आवश्यकता नहीं",
+    "signup_subtitle": "शुरू करने के लिए एक मुफ्त अभिभावक खाता बनाएं",
+    "name_placeholder": "आपका पूरा नाम",
+    "password_hint": "न्यूनतम 8 अक्षर",
+    "agree_terms_prefix": "खाता बनाकर, आप हमारी इन शर्तों से सहमत होते हैं:",
+    "and": "और",
+    "privacy": "गोपनीयता नीति",
+    "terms": "सेवा की शर्तें"
   },
   "onboarding": {
     "add_learner_title": "नया शिक्षार्थी जोड़ें",

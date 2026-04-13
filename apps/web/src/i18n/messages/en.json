@@ -86,7 +86,21 @@
     "confirm_password": "Confirm Password",
     "password_requirements": "Password must be at least 8 characters",
     "terms_agree": "I agree to the Terms of Service and Privacy Policy",
-    "continue_description": "Continue your learning journey with AIVO's adaptive AI tutors."
+    "continue_description": "Continue your learning journey with AIVO's adaptive AI tutors.",
+    "join_headline": "Start Your Child's Learning Adventure",
+    "signup_feature_brain_clone": "Adaptive Brain Clone technology",
+    "signup_feature_tutors": "14 specialized AI tutors",
+    "signup_feature_levels": "5 functioning levels for all abilities",
+    "signup_feature_coppa": "COPPA compliant & child-safe",
+    "signup_free_trial": "Free trial included",
+    "signup_no_credit_card": "No credit card required",
+    "signup_subtitle": "Create a free parent account to get started",
+    "name_placeholder": "Your full name",
+    "password_hint": "Minimum 8 characters",
+    "agree_terms_prefix": "By creating an account, you agree to our",
+    "and": "and",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
   },
   "onboarding": {
     "add_learner_title": "Add a New Learner",
