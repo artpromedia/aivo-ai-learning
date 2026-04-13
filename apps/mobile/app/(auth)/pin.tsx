@@ -2,12 +2,14 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useTranslation } from '@/hooks/useTranslation';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/hooks/useAuth';
 import { colors, spacing } from '@/constants/colors';
 
 export default function PinScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { loginWithPin } = useAuth();
   const [parentId, setParentId] = useState('');
   const [pin, setPin] = useState('');
@@ -17,12 +19,12 @@ export default function PinScreen() {
 
   const handleParentSubmit = useCallback(() => {
     if (!parentId.trim()) {
-      setError('Please enter parent email');
+      setError(t('auth.pleaseEnterParentEmail'));
       return;
     }
     setError('');
     setStep('pin');
-  }, [parentId]);
+  }, [parentId, t]);
 
   const handlePress = useCallback(async (digit: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -39,13 +41,13 @@ export default function PinScreen() {
         setPin('');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         if (attempts >= 4) {
-          setError('Too many attempts. Ask a parent for help.');
+          setError(t('auth.tooManyAttempts'));
         } else {
-          setError('Incorrect PIN. Try again.');
+          setError(t('auth.incorrectPin'));
         }
       }
     }
-  }, [pin, attempts, loginWithPin, parentId]);
+  }, [pin, attempts, loginWithPin, parentId, t]);
 
   const handleDelete = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -62,21 +64,21 @@ export default function PinScreen() {
       >
         <View style={[styles.container, { paddingTop: insets.top + 40 }]}>
           <Pressable onPress={() => router.back()} style={styles.back}>
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>{t('common.back')}</Text>
           </Pressable>
 
           <View style={styles.header}>
             <View style={styles.avatarCircle}>
               <Text style={styles.avatarEmoji}>🎓</Text>
             </View>
-            <Text style={styles.title}>Learner Login</Text>
-            <Text style={styles.subtitle}>Enter your parent's email first</Text>
+            <Text style={styles.title}>{t('auth.learnerLogin')}</Text>
+            <Text style={styles.subtitle}>{t('auth.enterParentEmail')}</Text>
           </View>
 
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Parent email address"
+              placeholder={t('auth.parentEmailPlaceholder')}
               placeholderTextColor="rgba(255,255,255,0.4)"
               value={parentId}
               onChangeText={setParentId}
@@ -90,7 +92,7 @@ export default function PinScreen() {
               onPress={handleParentSubmit}
               disabled={!parentId.trim()}
             >
-              <Text style={styles.continueBtnText}>Continue to PIN</Text>
+              <Text style={styles.continueBtnText}>{t('auth.continueToPin')}</Text>
             </Pressable>
           </View>
         </View>
@@ -101,14 +103,14 @@ export default function PinScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + 40 }]}>
       <Pressable onPress={() => { setStep('parent'); setPin(''); setError(''); }} style={styles.back}>
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
       <View style={styles.header}>
         <View style={styles.avatarCircle}>
           <Text style={styles.avatarEmoji}>🎓</Text>
         </View>
-        <Text style={styles.title}>Enter Your PIN</Text>
+        <Text style={styles.title}>{t('auth.enterYourPin')}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
 

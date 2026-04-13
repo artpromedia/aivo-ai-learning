@@ -3,11 +3,13 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useBrain } from '@/hooks/useBrain';
 import { AivoCard, AivoButton, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function StudentBrainProfile() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const { data: brain, isLoading } = useBrain(id);
@@ -21,17 +23,17 @@ export default function StudentBrainProfile() {
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>{brain?.learnerName || 'Student'}'s Brain</Text>
-      <Text style={styles.subtitle}>Read-only brain profile</Text>
+      <Text style={styles.title}>{t('teacherStudent.brain', { name: brain?.learnerName || 'Student' })}</Text>
+      <Text style={styles.subtitle}>{t('teacherStudent.readOnlyProfile')}</Text>
 
       <AivoCard style={styles.overviewCard}>
         <View style={styles.brainCircle}>
           <Ionicons name="bulb" size={36} color={colors.primary} />
         </View>
-        <Text style={styles.levelText}>Level: {brain?.overallLevel || 'Standard'}</Text>
+        <Text style={styles.levelText}>{t('teacherStudent.level', { level: brain?.overallLevel || 'Standard' })}</Text>
       </AivoCard>
 
       {brain?.domains?.map((d) => (
@@ -41,20 +43,20 @@ export default function StudentBrainProfile() {
             <View style={[styles.progressFill, { width: `${d.masteryPercent}%` }]} />
           </View>
           <Text style={styles.gradeInfo}>
-            Enrolled: {d.enrolledGrade} | Functioning: {d.functioningGrade}
+            {t('teacherStudent.enrolled', { grade: d.enrolledGrade })} | {t('teacherStudent.functioning', { grade: d.functioningGrade })}
           </Text>
         </AivoCard>
       ))}
 
       <View style={styles.actions}>
         <AivoButton
-          title="Submit Insight"
+          title={t('teacherStudent.submitInsight')}
           onPress={() => router.push(`/(teacher)/student/${id}/insight` as any)}
           icon={<Ionicons name="chatbubble-outline" size={18} color="#FFF" />}
           style={{ flex: 1, marginRight: 8 }}
         />
         <AivoButton
-          title="Upload IEP"
+          title={t('teacherStudent.uploadIEP')}
           onPress={() => router.push(`/(teacher)/student/${id}/iep` as any)}
           variant="outline"
           icon={<Ionicons name="document-outline" size={18} color={colors.primary} />}

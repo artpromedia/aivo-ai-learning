@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
@@ -15,6 +16,7 @@ const plans = [
 
 export default function BillingScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <ScrollView
@@ -23,17 +25,17 @@ export default function BillingScreen() {
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>Billing & Subscription</Text>
-      <Text style={styles.subtitle}>Manage your plan and payment methods</Text>
+      <Text style={styles.title}>{t('parentBilling.title')}</Text>
+      <Text style={styles.subtitle}>{t('parentBilling.subtitle')}</Text>
 
       {plans.map((plan) => (
         <AivoCard key={plan.name} style={[styles.planCard, plan.current && styles.planCurrent]}>
           {plan.current && (
             <View style={styles.currentBadge}>
-              <Text style={styles.currentText}>Current Plan</Text>
+              <Text style={styles.currentText}>{t('parentBilling.currentPlan')}</Text>
             </View>
           )}
           <Text style={styles.planName}>{plan.name}</Text>
@@ -49,7 +51,7 @@ export default function BillingScreen() {
           ))}
           {!plan.current && (
             <AivoButton
-              title={plan.name === 'District' ? 'Contact Sales' : 'Switch Plan'}
+              title={plan.name === 'District' ? t('parentBilling.contactSales') : t('parentBilling.switchPlan')}
               onPress={() => {}}
               variant="outline"
               size="sm"
@@ -60,7 +62,7 @@ export default function BillingScreen() {
       ))}
 
       <Text style={[styles.sectionTitle, { marginTop: spacing.lg, marginBottom: spacing.md }]}>
-        Payment Method
+        {t('parentBilling.paymentMethod')}
       </Text>
       <AivoCard>
         <View style={styles.paymentRow}>
@@ -70,7 +72,7 @@ export default function BillingScreen() {
             <Text style={styles.cardExpiry}>Expires 12/2027</Text>
           </View>
           <Pressable>
-            <Text style={styles.editLink}>Edit</Text>
+            <Text style={styles.editLink}>{t('common.edit')}</Text>
           </Pressable>
         </View>
       </AivoCard>

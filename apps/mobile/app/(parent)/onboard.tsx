@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable } from 'react-native';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAddLearner } from '@/hooks/useLearners';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
@@ -12,6 +13,7 @@ export default function OnboardScreen() {
   const insets = useSafeAreaInsets();
   const addLearner = useAddLearner();
   const [step, setStep] = useState(0);
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -25,18 +27,18 @@ export default function OnboardScreen() {
 
   const handleAddChild = async () => {
     if (!form.firstName || !form.gradeLevel || !form.pin) {
-      Alert.alert('Missing Info', 'Please fill in all required fields');
+      Alert.alert(t('parentOnboard.missingInfo'), t('parentOnboard.fillRequired'));
       return;
     }
     try {
       await addLearner.mutateAsync(form);
       router.replace('/(parent)' as any);
     } catch {
-      Alert.alert('Error', 'Failed to add child. Please try again.');
+      Alert.alert(t('common.error'), t('parentOnboard.addChildFailed'));
     }
   };
 
-  const steps = ['Child Info', 'Grade & Assessment', 'IEP Upload', 'Review'];
+  const steps = [t('parentOnboard.stepChildInfo'), t('parentOnboard.stepGrade'), t('parentOnboard.stepIEP'), t('parentOnboard.stepReview')];
 
   return (
     <ScrollView
@@ -46,11 +48,11 @@ export default function OnboardScreen() {
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>Add a Child</Text>
-      <Text style={styles.subtitle}>Set up your child's personalized learning profile</Text>
+      <Text style={styles.title}>{t('parentOnboard.title')}</Text>
+      <Text style={styles.subtitle}>{t('parentOnboard.subtitle')}</Text>
 
       <View style={styles.stepper}>
         {steps.map((s, i) => (
@@ -67,49 +69,49 @@ export default function OnboardScreen() {
         {step === 0 && (
           <>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>First Name *</Text>
+              <Text style={styles.label}>{t('parentOnboard.firstName')}</Text>
               <TextInput
                 style={styles.input}
                 value={form.firstName}
                 onChangeText={(v) => updateField('firstName', v)}
-                placeholder="Child's first name"
+                placeholder={t('parentOnboard.firstNamePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
               />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Last Name</Text>
+              <Text style={styles.label}>{t('parentOnboard.lastName')}</Text>
               <TextInput
                 style={styles.input}
                 value={form.lastName}
                 onChangeText={(v) => updateField('lastName', v)}
-                placeholder="Child's last name"
+                placeholder={t('parentOnboard.lastNamePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
               />
             </View>
-            <AivoButton title="Next" onPress={() => setStep(1)} size="lg" />
+            <AivoButton title={t('common.next')} onPress={() => setStep(1)} size="lg" />
           </>
         )}
 
         {step === 1 && (
           <>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Grade Level *</Text>
+              <Text style={styles.label}>{t('parentOnboard.gradeLevel')}</Text>
               <TextInput
                 style={styles.input}
                 value={form.gradeLevel}
                 onChangeText={(v) => updateField('gradeLevel', v)}
-                placeholder="e.g., 3"
+                placeholder={t('parentOnboard.gradePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 keyboardType="numeric"
               />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Learner PIN *</Text>
+              <Text style={styles.label}>{t('parentOnboard.learnerPin')}</Text>
               <TextInput
                 style={styles.input}
                 value={form.pin}
                 onChangeText={(v) => updateField('pin', v.replace(/\D/g, '').slice(0, 4))}
-                placeholder="4-digit PIN"
+                placeholder={t('parentOnboard.pinPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 keyboardType="numeric"
                 maxLength={4}
@@ -117,8 +119,8 @@ export default function OnboardScreen() {
               />
             </View>
             <View style={styles.btnRow}>
-              <AivoButton title="Back" onPress={() => setStep(0)} variant="outline" size="lg" style={{ flex: 1, marginRight: 8 }} />
-              <AivoButton title="Next" onPress={() => setStep(2)} size="lg" style={{ flex: 1 }} />
+              <AivoButton title={t('common.back')} onPress={() => setStep(0)} variant="outline" size="lg" style={{ flex: 1, marginRight: 8 }} />
+              <AivoButton title={t('common.next')} onPress={() => setStep(2)} size="lg" style={{ flex: 1 }} />
             </View>
           </>
         )}
@@ -127,41 +129,41 @@ export default function OnboardScreen() {
           <>
             <View style={styles.uploadArea}>
               <Ionicons name="document-outline" size={40} color={colors.textSecondary} />
-              <Text style={styles.uploadTitle}>Upload IEP (Optional)</Text>
-              <Text style={styles.uploadDesc}>You can upload your child's IEP now or later</Text>
+              <Text style={styles.uploadTitle}>{t('parentOnboard.uploadIEPOptional')}</Text>
+              <Text style={styles.uploadDesc}>{t('parentOnboard.uploadIEPLater')}</Text>
               <AivoButton
-                title="Upload IEP"
-                onPress={() => Alert.alert('Upload', 'Document upload coming soon')}
+                title={t('parentOnboard.uploadIEP')}
+                onPress={() => Alert.alert(t('parentOnboard.uploadIEP'), t('parentOnboard.uploadComingSoon'))}
                 variant="outline"
                 size="sm"
                 style={{ marginTop: spacing.md }}
               />
             </View>
             <View style={styles.btnRow}>
-              <AivoButton title="Back" onPress={() => setStep(1)} variant="outline" size="lg" style={{ flex: 1, marginRight: 8 }} />
-              <AivoButton title="Skip & Continue" onPress={() => setStep(3)} size="lg" style={{ flex: 1 }} />
+              <AivoButton title={t('common.back')} onPress={() => setStep(1)} variant="outline" size="lg" style={{ flex: 1, marginRight: 8 }} />
+              <AivoButton title={t('parentOnboard.skipContinue')} onPress={() => setStep(3)} size="lg" style={{ flex: 1 }} />
             </View>
           </>
         )}
 
         {step === 3 && (
           <>
-            <Text style={styles.reviewTitle}>Review</Text>
+            <Text style={styles.reviewTitle}>{t('parentOnboard.review')}</Text>
             <View style={styles.reviewRow}>
-              <Text style={styles.reviewLabel}>Name</Text>
+              <Text style={styles.reviewLabel}>{t('parentOnboard.name')}</Text>
               <Text style={styles.reviewValue}>{form.firstName} {form.lastName}</Text>
             </View>
             <View style={styles.reviewRow}>
-              <Text style={styles.reviewLabel}>Grade</Text>
+              <Text style={styles.reviewLabel}>{t('common.grade', { grade: '' }).trim()}</Text>
               <Text style={styles.reviewValue}>{form.gradeLevel}</Text>
             </View>
             <View style={styles.reviewRow}>
-              <Text style={styles.reviewLabel}>PIN</Text>
+              <Text style={styles.reviewLabel}>{t('parentOnboard.pin')}</Text>
               <Text style={styles.reviewValue}>****</Text>
             </View>
             <View style={styles.btnRow}>
-              <AivoButton title="Back" onPress={() => setStep(2)} variant="outline" size="lg" style={{ flex: 1, marginRight: 8 }} />
-              <AivoButton title="Add Child" onPress={handleAddChild} loading={addLearner.isPending} size="lg" style={{ flex: 1 }} />
+              <AivoButton title={t('common.back')} onPress={() => setStep(2)} variant="outline" size="lg" style={{ flex: 1, marginRight: 8 }} />
+              <AivoButton title={t('parent.addChild')} onPress={handleAddChild} loading={addLearner.isPending} size="lg" style={{ flex: 1 }} />
             </View>
           </>
         )}

@@ -3,10 +3,12 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { AivoCard, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function SessionLogScreen() {
+  const { t } = useTranslation();
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
 
@@ -14,15 +16,15 @@ export default function SessionLogScreen() {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Session Log</Text>
-      <Text style={styles.subtitle}>Chronological learning sessions</Text>
+      <Text style={styles.title}>{t('caregiverSessions.title')}</Text>
+      <Text style={styles.subtitle}>{t('caregiverSessions.subtitle')}</Text>
 
       <EmptyState
         icon={<Ionicons name="time-outline" size={48} color={colors.textSecondary} />}
-        title="No Sessions Yet"
-        message="Session history will appear as the learner completes activities."
+        title={t('caregiverSessions.noTitle')}
+        message={t('caregiverSessions.noMessage')}
       />
     </ScrollView>
   );

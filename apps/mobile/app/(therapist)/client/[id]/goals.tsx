@@ -3,11 +3,13 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useTherapyGoals } from '@/hooks/useFamily';
 import { AivoCard, AivoButton, LoadingState, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function TherapyGoals() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const { data: goals, isLoading } = useTherapyGoals(id);
@@ -17,17 +19,17 @@ export default function TherapyGoals() {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Therapy Goal Alignment</Text>
-      <Text style={styles.subtitle}>Align therapy goals with Brain/IEP goals</Text>
+      <Text style={styles.title}>{t('therapistClient.goalsTitle')}</Text>
+      <Text style={styles.subtitle}>{t('therapistClient.goalsSubtitle')}</Text>
 
       {!goals?.length ? (
         <EmptyState
           icon={<Ionicons name="flag-outline" size={48} color={colors.textSecondary} />}
-          title="No Therapy Goals"
-          message="Create therapy goals aligned with the learner's IEP and Brain profile."
-          actionLabel="Create Goal"
+          title={t('therapistClient.noGoalsTitle')}
+          message={t('therapistClient.noGoalsMessage')}
+          actionLabel={t('therapistClient.addGoal')}
           onAction={() => {}}
         />
       ) : (

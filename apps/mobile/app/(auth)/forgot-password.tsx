@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { API } from '@/constants/api';
 import { colors, spacing, radius } from '@/constants/colors';
@@ -9,6 +10,7 @@ import { AivoButton } from '@aivo/mobile-ui';
 
 export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,7 +18,7 @@ export default function ForgotPasswordScreen() {
 
   const handleSubmit = async () => {
     if (!email.trim()) {
-      setError('Please enter your email');
+      setError(t('auth.pleaseEnterEmail'));
       return;
     }
     setLoading(true);
@@ -29,7 +31,7 @@ export default function ForgotPasswordScreen() {
       });
       setSent(true);
     } catch {
-      setError('Something went wrong. Please try again.');
+      setError(t('auth.somethingWentWrong'));
     }
     setLoading(false);
   };
@@ -41,18 +43,18 @@ export default function ForgotPasswordScreen() {
     >
       <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>{t('common.back')}</Text>
         </Pressable>
 
         <View style={styles.card}>
           {sent ? (
             <>
-              <Text style={styles.title}>Check Your Email</Text>
+              <Text style={styles.title}>{t('auth.checkYourEmail')}</Text>
               <Text style={styles.message}>
-                If an account exists for {email}, you'll receive a password reset link shortly.
+                {t('auth.resetEmailSent', { email })}
               </Text>
               <AivoButton
-                title="Back to Login"
+                title={t('auth.backToLogin')}
                 onPress={() => router.push('/(auth)/login')}
                 size="lg"
                 style={{ marginTop: spacing.lg }}
@@ -60,25 +62,25 @@ export default function ForgotPasswordScreen() {
             </>
           ) : (
             <>
-              <Text style={styles.title}>Reset Password</Text>
+              <Text style={styles.title}>{t('auth.resetPassword')}</Text>
               <Text style={styles.subtitle}>
-                Enter your email and we'll send you a reset link
+                {t('auth.resetSubtitle')}
               </Text>
               {error ? <Text style={styles.error}>{error}</Text> : null}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
+                <Text style={styles.label}>{t('auth.email')}</Text>
                 <TextInput
                   style={styles.input}
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="parent@example.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   placeholderTextColor={colors.textSecondary}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
               </View>
               <AivoButton
-                title="Send Reset Link"
+                title={t('auth.sendResetLink')}
                 onPress={handleSubmit}
                 loading={loading}
                 size="lg"

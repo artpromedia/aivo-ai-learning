@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useEngagement } from '@/hooks/useEngagement';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
-const categories = ['All', 'Hats', 'Outfits', 'Pets', 'Backgrounds', 'Effects', 'Special'];
+const categoryKeys = ['all', 'hats', 'outfits', 'pets', 'backgrounds', 'effects', 'special'] as const;
+const categoryOriginals = ['All', 'Hats', 'Outfits', 'Pets', 'Backgrounds', 'Effects', 'Special'];
 const shopItems = [
   { id: '1', name: 'Wizard Hat', category: 'Hats', price: 50, currency: 'coins', rarity: 'common' },
   { id: '2', name: 'Space Suit', category: 'Outfits', price: 150, currency: 'coins', rarity: 'rare' },
@@ -31,6 +33,7 @@ export default function ShopScreen() {
   const { user } = useAuth();
   const { data: engagement } = useEngagement(user?.id || '');
   const [selectedCat, setSelectedCat] = useState('All');
+  const { t } = useTranslation();
 
   const filtered = selectedCat === 'All' ? shopItems : shopItems.filter(i => i.category === selectedCat);
 
@@ -40,7 +43,7 @@ export default function ShopScreen() {
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Avatar Shop</Text>
+        <Text style={styles.title}>{t('learnerShop.title')}</Text>
         <View style={styles.currencyRow}>
           <View style={styles.currencyBadge}>
             <Text>🪙</Text>
@@ -54,13 +57,13 @@ export default function ShopScreen() {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
-        {categories.map((cat) => (
+        {categoryKeys.map((key, idx) => (
           <Pressable
-            key={cat}
-            style={[styles.catBtn, selectedCat === cat && styles.catBtnActive]}
-            onPress={() => setSelectedCat(cat)}
+            key={key}
+            style={[styles.catBtn, selectedCat === categoryOriginals[idx] && styles.catBtnActive]}
+            onPress={() => setSelectedCat(categoryOriginals[idx])}
           >
-            <Text style={[styles.catText, selectedCat === cat && styles.catTextActive]}>{cat}</Text>
+            <Text style={[styles.catText, selectedCat === categoryOriginals[idx] && styles.catTextActive]}>{t(`learnerShop.${key}`)}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -77,7 +80,7 @@ export default function ShopScreen() {
               <Text>{item.currency === 'coins' ? '🪙' : '💎'}</Text>
               <Text style={styles.priceText}>{item.price}</Text>
             </View>
-            <AivoButton title="Buy" onPress={() => {}} size="sm" style={{ marginTop: 8 }} />
+            <AivoButton title={t('common.buy')} onPress={() => {}} size="sm" style={{ marginTop: 8 }} />
           </AivoCard>
         ))}
       </View>

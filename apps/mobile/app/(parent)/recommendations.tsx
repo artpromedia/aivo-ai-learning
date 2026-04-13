@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useLearners } from '@/hooks/useLearners';
 import { useBrainRecommendations, useRecommendationAction } from '@/hooks/useBrain';
 import { AivoCard, AivoButton, EmptyState, LoadingState } from '@aivo/mobile-ui';
@@ -13,6 +14,7 @@ export default function RecommendationsScreen() {
   const firstLearnerId = learners?.[0]?.id || '';
   const { data: recommendations, isLoading, refetch } = useBrainRecommendations(firstLearnerId);
   const action = useRecommendationAction();
+  const { t } = useTranslation();
 
   const pending = recommendations?.filter(r => r.status === 'pending') || [];
 
@@ -24,14 +26,14 @@ export default function RecommendationsScreen() {
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
       refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} colors={[colors.primary]} />}
     >
-      <Text style={styles.title}>Recommendations</Text>
-      <Text style={styles.subtitle}>Review and respond to AI learning recommendations</Text>
+      <Text style={styles.title}>{t('parentRecommendations.title')}</Text>
+      <Text style={styles.subtitle}>{t('parentRecommendations.subtitle')}</Text>
 
       {pending.length === 0 ? (
         <EmptyState
           icon={<Ionicons name="checkmark-circle-outline" size={48} color={colors.success} />}
-          title="All Caught Up"
-          message="No pending recommendations at this time."
+          title={t('parentRecommendations.allCaughtUp')}
+          message={t('parentRecommendations.noPending')}
         />
       ) : (
         pending.map((rec) => (
@@ -48,7 +50,7 @@ export default function RecommendationsScreen() {
             <Text style={styles.recDesc}>{rec.description}</Text>
             <View style={styles.recActions}>
               <AivoButton
-                title="Approve"
+                title={t('common.approve')}
                 onPress={() => action.mutate({
                   learnerId: firstLearnerId,
                   recommendationId: rec.id,
@@ -58,7 +60,7 @@ export default function RecommendationsScreen() {
                 style={{ flex: 1, marginRight: 8 }}
               />
               <AivoButton
-                title="Decline"
+                title={t('common.decline')}
                 onPress={() => action.mutate({
                   learnerId: firstLearnerId,
                   recommendationId: rec.id,

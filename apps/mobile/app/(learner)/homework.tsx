@@ -3,38 +3,40 @@ import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function HomeworkScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>Homework Helper</Text>
-      <Text style={styles.subtitle}>Snap a photo and get help!</Text>
+      <Text style={styles.title}>{t('learnerHomework.title')}</Text>
+      <Text style={styles.subtitle}>{t('learnerHomework.subtitle')}</Text>
 
       <AivoCard style={styles.captureCard}>
         <View style={styles.cameraPreview}>
           <Ionicons name="camera" size={48} color={colors.textSecondary} />
-          <Text style={styles.cameraText}>Center your homework in the frame</Text>
+          <Text style={styles.cameraText}>{t('learnerHomework.centerHomework')}</Text>
         </View>
 
         <View style={styles.captureActions}>
           <AivoButton
-            title="Take Photo"
+            title={t('learnerHomework.takePhoto')}
             onPress={() => Alert.alert('Camera', 'Camera capture coming soon')}
             size="lg"
             icon={<Ionicons name="camera-outline" size={20} color="#FFF" />}
             style={{ flex: 1, marginRight: 8 }}
           />
           <AivoButton
-            title="Gallery"
+            title={t('learnerHomework.gallery')}
             onPress={() => Alert.alert('Gallery', 'Gallery picker coming soon')}
             variant="outline"
             size="lg"
@@ -46,10 +48,10 @@ export default function HomeworkScreen() {
 
       <AivoCard style={styles.uploadCard}>
         <Ionicons name="document-outline" size={32} color={colors.secondary} />
-        <Text style={styles.uploadTitle}>Upload PDF</Text>
-        <Text style={styles.uploadDesc}>Upload a homework PDF for help</Text>
+        <Text style={styles.uploadTitle}>{t('learnerHomework.uploadPDF')}</Text>
+        <Text style={styles.uploadDesc}>{t('learnerHomework.uploadPDFDesc')}</Text>
         <AivoButton
-          title="Choose File"
+          title={t('learnerHomework.chooseFile')}
           onPress={() => Alert.alert('Upload', 'PDF upload coming soon')}
           variant="secondary"
           size="sm"

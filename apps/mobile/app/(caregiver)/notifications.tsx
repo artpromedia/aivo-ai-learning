@@ -2,20 +2,22 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function CaregiverNotifications() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}>
-      <Text style={styles.title}>Notifications</Text>
-      <Text style={styles.subtitle}>Alerts and milestones</Text>
+      <Text style={styles.title}>{t('caregiverNotifications.title')}</Text>
+      <Text style={styles.subtitle}>{t('caregiverNotifications.subtitle')}</Text>
       <EmptyState
         icon={<Ionicons name="notifications-outline" size={48} color={colors.textSecondary} />}
-        title="No Notifications"
-        message="You'll receive alerts for IEP goal milestones, functioning level changes, and streak achievements."
+        title={t('caregiverNotifications.noNotificationsTitle')}
+        message={t('caregiverNotifications.noNotificationsMessage')}
       />
     </ScrollView>
   );

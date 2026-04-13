@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing } from '@/constants/colors';
 
 export default function StageScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -33,7 +35,7 @@ export default function StageScreen() {
             <Text style={{ fontSize: 40 }}>🤖</Text>
           </View>
           <View style={styles.speechBubble}>
-            <Text style={styles.speechText}>Let's solve this together!</Text>
+            <Text style={styles.speechText}>{t('learnerStage.letsSolve')}</Text>
           </View>
         </View>
 

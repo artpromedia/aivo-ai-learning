@@ -3,12 +3,14 @@ import { View, Text, ScrollView, Pressable, StyleSheet, RefreshControl } from 'r
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useConnectedLearners } from '@/hooks/useFamily';
 import { AivoCard, StatCard, EmptyState, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function TeacherDashboard() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { data: students, isLoading, refetch } = useConnectedLearners();
@@ -23,8 +25,8 @@ export default function TeacherDashboard() {
     >
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hello, {user?.name}</Text>
-          <Text style={styles.subGreeting}>Your classroom overview</Text>
+          <Text style={styles.greeting}>{t('teacher.greeting', { name: user?.name })}</Text>
+          <Text style={styles.subGreeting}>{t('teacher.classroomOverview')}</Text>
         </View>
         <Pressable onPress={logout}>
           <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
@@ -32,19 +34,19 @@ export default function TeacherDashboard() {
       </View>
 
       <View style={styles.statsRow}>
-        <StatCard label="Students" value={students?.length || 0} icon={<Ionicons name="people" size={20} color={colors.primary} />} />
+        <StatCard label={t('teacher.students')} value={students?.length || 0} icon={<Ionicons name="people" size={20} color={colors.primary} />} />
         <View style={{ width: 8 }} />
-        <StatCard label="At Risk" value={2} icon={<Ionicons name="warning" size={20} color={colors.error} />} color={colors.error} />
+        <StatCard label={t('teacher.atRisk')} value={2} icon={<Ionicons name="warning" size={20} color={colors.error} />} color={colors.error} />
         <View style={{ width: 8 }} />
-        <StatCard label="Avg. Progress" value="72%" icon={<Ionicons name="trending-up" size={20} color={colors.success} />} color={colors.success} />
+        <StatCard label={t('teacher.avgProgress')} value="72%" icon={<Ionicons name="trending-up" size={20} color={colors.success} />} color={colors.success} />
       </View>
 
-      <Text style={styles.sectionTitle}>Students</Text>
+      <Text style={styles.sectionTitle}>{t('teacher.students')}</Text>
       {!students?.length ? (
         <EmptyState
           icon={<Ionicons name="people-outline" size={48} color={colors.textSecondary} />}
-          title="No Students Connected"
-          message="Parents need to invite you to their child's care team."
+          title={t('teacher.noStudentsTitle')}
+          message={t('teacher.noStudentsMessage')}
         />
       ) : (
         students.map((student: any) => (

@@ -2,8 +2,10 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants/colors';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function CaregiverLayout() {
+  const { t } = useTranslation();
   return (
     <Tabs
       screenOptions={{
@@ -23,21 +25,21 @@ export default function CaregiverLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
-          title: 'Alerts',
+          title: t('tabs.alerts'),
           tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: t('tabs.settings'),
           tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
         }}
       />

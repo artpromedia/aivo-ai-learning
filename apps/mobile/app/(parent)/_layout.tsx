@@ -2,8 +2,10 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants/colors';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function ParentLayout() {
+  const { t } = useTranslation();
   return (
     <Tabs
       screenOptions={{
@@ -26,14 +28,14 @@ export default function ParentLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="brain/[childId]/index"
         options={{
-          title: 'Brain',
+          title: t('tabs.brain'),
           tabBarIcon: ({ color, size }) => <Ionicons name="bulb" size={size} color={color} />,
           href: null,
         }}
@@ -49,21 +51,21 @@ export default function ParentLayout() {
       <Tabs.Screen
         name="recommendations"
         options={{
-          title: 'Inbox',
+          title: t('tabs.inbox'),
           tabBarIcon: ({ color, size }) => <Ionicons name="mail" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="tutors"
         options={{
-          title: 'Tutors',
+          title: t('tabs.tutors'),
           tabBarIcon: ({ color, size }) => <Ionicons name="school" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: t('tabs.settings'),
           tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
         }}
       />

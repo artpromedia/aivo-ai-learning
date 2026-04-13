@@ -3,11 +3,13 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { AivoCard, AivoButton, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function ChallengesScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <ScrollView
@@ -16,39 +18,39 @@ export default function ChallengesScreen() {
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Challenges</Text>
-      <Text style={styles.subtitle}>Compete and earn rewards</Text>
+      <Text style={styles.title}>{t('learnerChallenges.title')}</Text>
+      <Text style={styles.subtitle}>{t('learnerChallenges.subtitle')}</Text>
 
       <AivoCard style={styles.battleCard}>
         <Ionicons name="flash" size={32} color={colors.accent} />
-        <Text style={styles.battleTitle}>Quick Battle (1v1)</Text>
-        <Text style={styles.battleDesc}>Challenge a friend to a quiz battle</Text>
-        <AivoButton title="Find Match" onPress={() => {}} size="sm" style={{ marginTop: spacing.md }} />
+        <Text style={styles.battleTitle}>{t('learnerChallenges.quickBattle')}</Text>
+        <Text style={styles.battleDesc}>{t('learnerChallenges.quickBattleDesc')}</Text>
+        <AivoButton title={t('learnerChallenges.findMatch')} onPress={() => {}} size="sm" style={{ marginTop: spacing.md }} />
       </AivoCard>
 
       <AivoCard style={styles.battleCard}>
         <Ionicons name="people" size={32} color={colors.secondary} />
-        <Text style={styles.battleTitle}>Team Challenge</Text>
-        <Text style={styles.battleDesc}>Work with friends to solve problems</Text>
-        <AivoButton title="Join Team" onPress={() => {}} variant="secondary" size="sm" style={{ marginTop: spacing.md }} />
+        <Text style={styles.battleTitle}>{t('learnerChallenges.teamChallenge')}</Text>
+        <Text style={styles.battleDesc}>{t('learnerChallenges.teamChallengeDesc')}</Text>
+        <AivoButton title={t('learnerChallenges.joinTeam')} onPress={() => {}} variant="secondary" size="sm" style={{ marginTop: spacing.md }} />
       </AivoCard>
 
       <AivoCard style={styles.battleCard}>
         <Ionicons name="trophy" size={32} color={colors.primary} />
-        <Text style={styles.battleTitle}>Weekly Tournament</Text>
-        <Text style={styles.battleDesc}>Compete for the top of the leaderboard</Text>
-        <AivoButton title="Enter Tournament" onPress={() => {}} variant="outline" size="sm" style={{ marginTop: spacing.md }} />
+        <Text style={styles.battleTitle}>{t('learnerChallenges.weeklyTournament')}</Text>
+        <Text style={styles.battleDesc}>{t('learnerChallenges.weeklyTournamentDesc')}</Text>
+        <AivoButton title={t('learnerChallenges.enterTournament')} onPress={() => {}} variant="outline" size="sm" style={{ marginTop: spacing.md }} />
       </AivoCard>
 
-      <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>Invite a Friend</Text>
+      <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>{t('learnerChallenges.inviteFriend')}</Text>
       <AivoCard>
-        <Text style={styles.inviteText}>Share your invite code to play with friends!</Text>
+        <Text style={styles.inviteText}>{t('learnerChallenges.inviteText')}</Text>
         <View style={styles.codeBox}>
           <Text style={styles.codeText}>AIVO-XK7M</Text>
         </View>
-        <AivoButton title="Copy Code" onPress={() => {}} variant="outline" size="sm" style={{ marginTop: spacing.md }} />
+        <AivoButton title={t('learnerChallenges.copyCode')} onPress={() => {}} variant="outline" size="sm" style={{ marginTop: spacing.md }} />
       </AivoCard>
     </ScrollView>
   );

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView,
-  Platform, ScrollView, Switch,
+  Platform, ScrollView, Switch, Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from '@/hooks/useTranslation';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +18,7 @@ const GOOGLE_CLIENT_ID = '373030578076-ftkmofvss349u7qecvsjmiqavq4mt3hs.apps.goo
 
 export default function SignupScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { signup, loginWithGoogle } = useAuth();
   const [form, setForm] = useState({
     name: '',
@@ -53,7 +55,7 @@ export default function SignupScreen() {
 
   const handleGoogleResponse = async (idToken: string) => {
     if (!coppaConsent || !termsAccepted) {
-      setError('Please accept COPPA consent and Terms of Service before signing up with Google');
+      setError(t('auth.acceptCoppaGoogle'));
       return;
     }
     setGoogleLoading(true);
@@ -62,9 +64,9 @@ export default function SignupScreen() {
     if (result.success) {
       router.replace('/');
     } else if (result.error === 'requiresConsent') {
-      setError('Please accept COPPA consent and Terms of Service');
+      setError(t('auth.acceptTerms'));
     } else {
-      setError(result.error || 'Google sign-up failed');
+      setError(result.error || t('auth.googleSignUpFailed'));
     }
     setGoogleLoading(false);
   };
@@ -75,19 +77,19 @@ export default function SignupScreen() {
 
   const handleSignup = async () => {
     if (!form.name || !form.email || !form.password) {
-      setError('Please fill in all fields');
+      setError(t('auth.fillAllFields'));
       return;
     }
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('auth.passwordsMismatch'));
       return;
     }
     if (form.password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('auth.passwordTooShort'));
       return;
     }
     if (!coppaConsent || !termsAccepted) {
-      setError('Please accept the terms and COPPA consent');
+      setError(t('auth.acceptTerms'));
       return;
     }
 
@@ -101,7 +103,7 @@ export default function SignupScreen() {
     if (result.success) {
       router.replace('/');
     } else {
-      setError(result.error || 'Registration failed');
+      setError(result.error || t('auth.registrationFailed'));
     }
     setLoading(false);
   };
@@ -116,11 +118,19 @@ export default function SignupScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>{t('common.back')}</Text>
         </Pressable>
 
-        <Text style={styles.title}>Create Your Account</Text>
-        <Text style={styles.subtitle}>Start your child's personalized learning journey</Text>
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('@/assets/images/aivo-logo-purple.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
+
+        <Text style={styles.title}>{t('auth.createAccount')}</Text>
+        <Text style={styles.subtitle}>{t('auth.createAccountSubtitle')}</Text>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -131,36 +141,36 @@ export default function SignupScreen() {
         >
           <Text style={styles.googleIcon}>G</Text>
           <Text style={styles.googleButtonText}>
-            {googleLoading ? 'Signing up...' : 'Sign up with Google'}
+            {googleLoading ? t('auth.signingUp') : t('auth.signUpWithGoogle')}
           </Text>
         </Pressable>
 
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or sign up with email</Text>
+          <Text style={styles.dividerText}>{t('auth.orSignUpWithEmail')}</Text>
           <View style={styles.dividerLine} />
         </View>
 
         <View style={styles.card}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Full Name</Text>
+            <Text style={styles.label}>{t('auth.fullName')}</Text>
             <TextInput
               style={styles.input}
               value={form.name}
               onChangeText={(v) => updateField('name', v)}
-              placeholder="Your full name"
+              placeholder={t('auth.fullNamePlaceholder')}
               placeholderTextColor={colors.textSecondary}
               autoComplete="name"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{t('auth.email')}</Text>
             <TextInput
               style={styles.input}
               value={form.email}
               onChangeText={(v) => updateField('email', v)}
-              placeholder="parent@example.com"
+              placeholder={t('auth.emailPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -169,24 +179,24 @@ export default function SignupScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>{t('auth.password')}</Text>
             <TextInput
               style={styles.input}
               value={form.password}
               onChangeText={(v) => updateField('password', v)}
-              placeholder="At least 8 characters"
+              placeholder={t('auth.atLeast8Chars')}
               placeholderTextColor={colors.textSecondary}
               secureTextEntry
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Confirm Password</Text>
+            <Text style={styles.label}>{t('auth.confirmPassword')}</Text>
             <TextInput
               style={styles.input}
               value={form.confirmPassword}
               onChangeText={(v) => updateField('confirmPassword', v)}
-              placeholder="Confirm your password"
+              placeholder={t('auth.confirmPasswordPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               secureTextEntry
             />
@@ -200,7 +210,7 @@ export default function SignupScreen() {
               thumbColor={coppaConsent ? colors.primary : '#f4f3f4'}
             />
             <Text style={styles.switchLabel}>
-              I confirm I am the parent/legal guardian (COPPA compliance)
+              {t('auth.coppaConsent')}
             </Text>
           </View>
 
@@ -212,12 +222,12 @@ export default function SignupScreen() {
               thumbColor={termsAccepted ? colors.primary : '#f4f3f4'}
             />
             <Text style={styles.switchLabel}>
-              I accept the Terms of Service and Privacy Policy
+              {t('auth.termsConsent')}
             </Text>
           </View>
 
           <AivoButton
-            title="Create Account"
+            title={t('auth.createAccountBtn')}
             onPress={handleSignup}
             loading={loading}
             size="lg"
@@ -227,7 +237,7 @@ export default function SignupScreen() {
 
         <Pressable onPress={() => router.push('/(auth)/login')} style={styles.loginLink}>
           <Text style={styles.loginText}>
-            Already have an account? <Text style={styles.loginBold}>Sign In</Text>
+            {t('auth.haveAccount')} <Text style={styles.loginBold}>{t('auth.signIn')}</Text>
           </Text>
         </Pressable>
       </ScrollView>
@@ -248,6 +258,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Nunito-SemiBold',
     color: colors.primary,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  logo: {
+    width: 160,
+    height: 48,
   },
   title: {
     fontSize: 26,

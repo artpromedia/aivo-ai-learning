@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet, RefreshControl } from 'r
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useLearners } from '@/hooks/useLearners';
 import { AivoCard, StatCard, AivoButton, EmptyState } from '@aivo/mobile-ui';
@@ -13,6 +14,7 @@ export default function ParentDashboard() {
   const { user, logout } = useAuth();
   const { data: learners, isLoading, refetch } = useLearners();
   const [refreshing, setRefreshing] = React.useState(false);
+  const { t } = useTranslation();
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -28,8 +30,8 @@ export default function ParentDashboard() {
     >
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hello, {user?.name || 'Parent'}</Text>
-          <Text style={styles.subGreeting}>Your children's learning overview</Text>
+          <Text style={styles.greeting}>{t('parent.greeting', { name: user?.name || 'Parent' })}</Text>
+          <Text style={styles.subGreeting}>{t('parent.learningOverview')}</Text>
         </View>
         <Pressable onPress={logout} style={styles.logoutBtn}>
           <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
@@ -38,20 +40,20 @@ export default function ParentDashboard() {
 
       <View style={styles.statsRow}>
         <StatCard
-          label="Children"
+          label={t('parent.children')}
           value={learners?.length || 0}
           icon={<Ionicons name="people" size={20} color={colors.primary} />}
         />
         <View style={{ width: 8 }} />
         <StatCard
-          label="Active Tutors"
+          label={t('parent.activeTutors')}
           value={7}
           icon={<Ionicons name="school" size={20} color={colors.secondary} />}
           color={colors.secondary}
         />
         <View style={{ width: 8 }} />
         <StatCard
-          label="Sessions"
+          label={t('parent.sessions')}
           value={24}
           icon={<Ionicons name="book" size={20} color={colors.success} />}
           color={colors.success}
@@ -59,7 +61,7 @@ export default function ParentDashboard() {
       </View>
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Your Children</Text>
+        <Text style={styles.sectionTitle}>{t('parent.yourChildren')}</Text>
         <Pressable onPress={() => router.push('/(parent)/onboard')}>
           <Ionicons name="add-circle" size={28} color={colors.primary} />
         </Pressable>
@@ -68,9 +70,9 @@ export default function ParentDashboard() {
       {!learners || learners.length === 0 ? (
         <EmptyState
           icon={<Ionicons name="people-outline" size={48} color={colors.textSecondary} />}
-          title="No Children Added"
-          message="Add your first child to begin their personalized learning journey."
-          actionLabel="Add Child"
+          title={t('parent.noChildrenTitle')}
+          message={t('parent.noChildrenMessage')}
+          actionLabel={t('parent.addChild')}
           onAction={() => router.push('/(parent)/onboard')}
         />
       ) : (
@@ -88,7 +90,7 @@ export default function ParentDashboard() {
                 </View>
                 <View style={styles.childInfo}>
                   <Text style={styles.childName}>{learner.firstName} {learner.lastName}</Text>
-                  <Text style={styles.childGrade}>Grade {learner.gradeLevel}</Text>
+                  <Text style={styles.childGrade}>{t('common.grade', { grade: learner.gradeLevel })}</Text>
                   <View style={styles.levelBadge}>
                     <Text style={styles.levelText}>{learner.functioningLevel}</Text>
                   </View>
@@ -101,28 +103,28 @@ export default function ParentDashboard() {
                   onPress={() => router.push(`/(parent)/brain/${learner.id}` as any)}
                 >
                   <Ionicons name="bulb-outline" size={18} color={colors.primary} />
-                  <Text style={styles.actionText}>Brain</Text>
+                  <Text style={styles.actionText}>{t('parent.brain')}</Text>
                 </Pressable>
                 <Pressable
                   style={styles.actionBtn}
                   onPress={() => router.push(`/(parent)/progress/${learner.id}` as any)}
                 >
                   <Ionicons name="trending-up-outline" size={18} color={colors.success} />
-                  <Text style={styles.actionText}>Progress</Text>
+                  <Text style={styles.actionText}>{t('parent.progress')}</Text>
                 </Pressable>
                 <Pressable
                   style={styles.actionBtn}
                   onPress={() => router.push(`/(parent)/iep/${learner.id}` as any)}
                 >
                   <Ionicons name="document-outline" size={18} color={colors.info} />
-                  <Text style={styles.actionText}>IEP</Text>
+                  <Text style={styles.actionText}>{t('parent.iep')}</Text>
                 </Pressable>
                 <Pressable
                   style={styles.actionBtn}
                   onPress={() => router.push(`/(parent)/team/${learner.id}` as any)}
                 >
                   <Ionicons name="people-outline" size={18} color={colors.accent} />
-                  <Text style={styles.actionText}>Team</Text>
+                  <Text style={styles.actionText}>{t('parent.team')}</Text>
                 </Pressable>
               </View>
             </AivoCard>
@@ -132,14 +134,14 @@ export default function ParentDashboard() {
 
       <View style={styles.quickActions}>
         <AivoButton
-          title="Tutor Store"
+          title={t('parent.tutorStore')}
           onPress={() => router.push('/(parent)/tutors')}
           variant="outline"
           icon={<Ionicons name="storefront-outline" size={18} color={colors.primary} />}
           style={{ flex: 1, marginRight: 8 }}
         />
         <AivoButton
-          title="Billing"
+          title={t('parent.billing')}
           onPress={() => router.push('/(parent)/billing')}
           variant="outline"
           icon={<Ionicons name="card-outline" size={18} color={colors.primary} />}

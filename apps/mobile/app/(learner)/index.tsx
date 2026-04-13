@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet, RefreshControl } from 'r
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useEngagement } from '@/hooks/useEngagement';
 import { TUTORS } from '@aivo/brand';
@@ -13,6 +14,7 @@ export default function LearnerWorldMap() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { data: engagement, refetch } = useEngagement(user?.id || '');
+  const { t } = useTranslation();
 
   const coreTutors = Object.entries(TUTORS).filter(([, t]) => t.tier === 'core');
 
@@ -28,8 +30,8 @@ export default function LearnerWorldMap() {
             <Text style={styles.avatarText}>🎮</Text>
           </View>
           <View>
-            <Text style={styles.greeting}>Hi, {user?.name || 'Learner'}!</Text>
-            <Text style={styles.level}>Level {engagement?.level || 1}</Text>
+            <Text style={styles.greeting}>{t('learner.greeting', { name: user?.name || 'Learner' })}</Text>
+            <Text style={styles.level}>{t('learner.level', { level: engagement?.level || 1 })}</Text>
           </View>
         </View>
         <View style={styles.streakBadge}>
@@ -45,21 +47,21 @@ export default function LearnerWorldMap() {
 
       <View style={styles.statsRow}>
         <StatCard
-          label="Coins"
+          label={t('learner.coins')}
           value={engagement?.coins || 0}
           icon={<Text style={{ fontSize: 18 }}>🪙</Text>}
           color={colors.accent}
         />
         <View style={{ width: 8 }} />
         <StatCard
-          label="Badges"
+          label={t('learner.badges')}
           value={engagement?.badges?.length || 0}
           icon={<Text style={{ fontSize: 18 }}>🏆</Text>}
           color={colors.secondary}
         />
         <View style={{ width: 8 }} />
         <StatCard
-          label="Gems"
+          label={t('learner.gems')}
           value={engagement?.gems || 0}
           icon={<Text style={{ fontSize: 18 }}>💎</Text>}
           color={colors.info}
@@ -72,13 +74,13 @@ export default function LearnerWorldMap() {
       >
         <Ionicons name="flash" size={24} color={colors.accent} />
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.challengeTitle}>Daily Challenge</Text>
-          <Text style={styles.challengeDesc}>Complete 3 sessions today</Text>
+          <Text style={styles.challengeTitle}>{t('learner.dailyChallenge')}</Text>
+          <Text style={styles.challengeDesc}>{t('learner.dailyChallengeDesc')}</Text>
         </View>
         <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
       </Pressable>
 
-      <Text style={styles.sectionTitle}>Quest Worlds</Text>
+      <Text style={styles.sectionTitle}>{t('learner.questWorlds')}</Text>
       <View style={styles.worldGrid}>
         {coreTutors.map(([key, tutor]) => (
           <Pressable
@@ -96,19 +98,19 @@ export default function LearnerWorldMap() {
       <View style={styles.quickActions}>
         <Pressable style={styles.quickBtn} onPress={() => router.push('/(learner)/homework')}>
           <Ionicons name="camera" size={24} color={colors.primary} />
-          <Text style={styles.quickLabel}>Homework</Text>
+          <Text style={styles.quickLabel}>{t('learner.homework')}</Text>
         </Pressable>
         <Pressable style={styles.quickBtn} onPress={() => router.push('/(learner)/quests')}>
           <Ionicons name="compass" size={24} color={colors.secondary} />
-          <Text style={styles.quickLabel}>Quests</Text>
+          <Text style={styles.quickLabel}>{t('learner.quests')}</Text>
         </Pressable>
         <Pressable style={styles.quickBtn} onPress={() => router.push('/(learner)/badges')}>
           <Ionicons name="ribbon" size={24} color={colors.accent} />
-          <Text style={styles.quickLabel}>Badges</Text>
+          <Text style={styles.quickLabel}>{t('learner.badgesLabel')}</Text>
         </Pressable>
         <Pressable style={styles.quickBtn} onPress={() => router.push('/(learner)/gradebook')}>
           <Ionicons name="bar-chart" size={24} color={colors.success} />
-          <Text style={styles.quickLabel}>Grades</Text>
+          <Text style={styles.quickLabel}>{t('learner.grades')}</Text>
         </Pressable>
       </View>
     </ScrollView>

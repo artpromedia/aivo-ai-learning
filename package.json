@@ -18,9 +18,10 @@
   "engines": {
     "node": ">=22"
   },
-  "dependencies": {
-    "expo-auth-session": "^55.0.14",
-    "expo-crypto": "^55.0.14",
-    "expo-web-browser": "^55.0.14"
+  "pnpm": {
+    "overrides": {
+      "react": "19.1.0",
+      "react-dom": "19.1.0"
+    }
   }
 }

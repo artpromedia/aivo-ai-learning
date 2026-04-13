@@ -3,22 +3,24 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function AdventureScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color="rgba(255,255,255,0.7)" />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Discovery Adventure</Text>
-        <Text style={styles.subtitle}>Let's discover what you know!</Text>
+        <Text style={styles.title}>{t('learnerAdventure.title')}</Text>
+        <Text style={styles.subtitle}>{t('learnerAdventure.subtitle')}</Text>
 
         <View style={styles.chapters}>
           {[
@@ -37,7 +39,7 @@ export default function AdventureScreen() {
               </View>
               {i === 0 ? (
                 <View style={styles.currentBadge}>
-                  <Text style={styles.currentText}>Start</Text>
+                  <Text style={styles.currentText}>{t('learnerAdventure.start')}</Text>
                 </View>
               ) : (
                 <Ionicons name="lock-closed" size={18} color="rgba(255,255,255,0.3)" />
@@ -47,7 +49,7 @@ export default function AdventureScreen() {
         </View>
 
         <AivoButton
-          title="Begin Adventure"
+          title={t('learnerAdventure.beginAdventure')}
           onPress={() => router.push('/(learner)/stage/adventure-1' as any)}
           size="lg"
           style={{ marginTop: spacing.lg }}

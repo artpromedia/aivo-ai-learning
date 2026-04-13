@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import '@/lib/i18n';
 import { AuthContext, useAuthState } from '@/hooks/useAuth';
 import { colors } from '@/constants/colors';
 

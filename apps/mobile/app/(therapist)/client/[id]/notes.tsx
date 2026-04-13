@@ -3,10 +3,12 @@ import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Alert } from 
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function SessionNotesScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const [skillTargeted, setSkillTargeted] = useState('');
@@ -18,10 +20,10 @@ export default function SessionNotesScreen() {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Session Notes</Text>
-      <Text style={styles.subtitle}>Notes feed into the Brain's insight layer</Text>
+      <Text style={styles.title}>{t('therapistClient.notesTitle')}</Text>
+      <Text style={styles.subtitle}>{t('therapistClient.notesSubtitle')}</Text>
 
       <AivoCard>
         <View style={styles.field}>

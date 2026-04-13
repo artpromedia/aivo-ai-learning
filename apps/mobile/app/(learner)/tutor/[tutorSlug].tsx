@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { TUTORS } from '@aivo/brand';
 import { AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
@@ -13,6 +14,7 @@ export default function TutorSessionScreen() {
   const { tutorSlug } = useLocalSearchParams<{ tutorSlug: string }>();
   const insets = useSafeAreaInsets();
   const tutor = TUTORS[tutorSlug as TutorKey];
+  const { t } = useTranslation();
 
   if (!tutor) {
     return (
@@ -20,7 +22,7 @@ export default function TutorSessionScreen() {
         <Pressable onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </Pressable>
-        <Text style={styles.title}>Tutor not found</Text>
+        <Text style={styles.title}>{t('learnerTutor.tutorNotFound')}</Text>
       </View>
     );
   }
@@ -29,7 +31,7 @@ export default function TutorSessionScreen() {
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color="rgba(255,255,255,0.7)" />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
       <View style={styles.tutorIntro}>
@@ -43,20 +45,20 @@ export default function TutorSessionScreen() {
       <View style={styles.sessionInfo}>
         <View style={styles.infoCard}>
           <Ionicons name="time-outline" size={20} color={colors.primaryLight} />
-          <Text style={styles.infoText}>~15 min session</Text>
+          <Text style={styles.infoText}>{t('learnerTutor.sessionDuration')}</Text>
         </View>
         <View style={styles.infoCard}>
           <Ionicons name="sparkles-outline" size={20} color={colors.accent} />
-          <Text style={styles.infoText}>Adaptive difficulty</Text>
+          <Text style={styles.infoText}>{t('learnerTutor.adaptiveDifficulty')}</Text>
         </View>
         <View style={styles.infoCard}>
           <Ionicons name="shield-checkmark-outline" size={20} color={colors.success} />
-          <Text style={styles.infoText}>Brain-informed</Text>
+          <Text style={styles.infoText}>{t('learnerTutor.brainInformed')}</Text>
         </View>
       </View>
 
       <AivoButton
-        title={`Start Session with ${tutor.name}`}
+        title={t('learnerTutor.startSession', { name: tutor.name })}
         onPress={() => router.push(`/(learner)/stage/${tutorSlug}-session` as any)}
         size="lg"
         style={{ marginTop: spacing.xl }}

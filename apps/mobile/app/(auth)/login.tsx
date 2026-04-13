@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView,
-  Platform, ScrollView, Modal, Switch,
+  Platform, ScrollView, Modal, Switch, Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from '@/hooks/useTranslation';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +18,7 @@ const GOOGLE_CLIENT_ID = '373030578076-ftkmofvss349u7qecvsjmiqavq4mt3hs.apps.goo
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -59,7 +61,7 @@ export default function LoginScreen() {
       setPendingIdToken(idToken);
       setConsentModal(true);
     } else {
-      setError(result.error || 'Google sign-in failed');
+      setError(result.error || t('auth.googleSignInFailed'));
     }
     setGoogleLoading(false);
   };
@@ -75,7 +77,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      setError('Please enter email and password');
+      setError(t('auth.enterEmailPassword'));
       return;
     }
     setLoading(true);
@@ -84,7 +86,7 @@ export default function LoginScreen() {
     if (result.success) {
       router.replace('/');
     } else {
-      setError(result.error || 'Login failed');
+      setError(result.error || t('auth.loginFailed'));
     }
     setLoading(false);
   };
@@ -99,25 +101,27 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.logoContainer}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoText}>AIVO</Text>
-          </View>
-          <Text style={styles.tagline}>AI-Powered Learning</Text>
+          <Image
+            source={require('@/assets/images/aivo-logo-purple.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.tagline}>{t('auth.aiPoweredLearning')}</Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to your account</Text>
+          <Text style={styles.title}>{t('auth.welcomeBack')}</Text>
+          <Text style={styles.subtitle}>{t('auth.signInSubtitle')}</Text>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{t('auth.email')}</Text>
             <TextInput
               style={styles.input}
               value={email}
               onChangeText={setEmail}
-              placeholder="parent@example.com"
+              placeholder={t('auth.emailPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -126,12 +130,12 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>{t('auth.password')}</Text>
             <TextInput
               style={styles.input}
               value={password}
               onChangeText={setPassword}
-              placeholder="Enter your password"
+              placeholder={t('auth.passwordPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               secureTextEntry
               autoComplete="password"
@@ -139,11 +143,11 @@ export default function LoginScreen() {
           </View>
 
           <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
-            <Text style={styles.forgotLink}>Forgot password?</Text>
+            <Text style={styles.forgotLink}>{t('auth.forgotPassword')}</Text>
           </Pressable>
 
           <AivoButton
-            title="Sign In"
+            title={t('auth.signIn')}
             onPress={handleLogin}
             loading={loading}
             size="lg"
@@ -152,7 +156,7 @@ export default function LoginScreen() {
 
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
+            <Text style={styles.dividerText}>{t('common.or')}</Text>
             <View style={styles.dividerLine} />
           </View>
 
@@ -163,18 +167,18 @@ export default function LoginScreen() {
           >
             <Text style={styles.googleIcon}>G</Text>
             <Text style={styles.googleButtonText}>
-              {googleLoading ? 'Signing in...' : 'Continue with Google'}
+              {googleLoading ? t('auth.signingIn') : t('auth.continueWithGoogle')}
             </Text>
           </Pressable>
 
           <Pressable style={styles.pinButton} onPress={() => router.push('/(auth)/pin')}>
-            <Text style={styles.pinButtonText}>Learner PIN Login</Text>
+            <Text style={styles.pinButtonText}>{t('auth.learnerPinLogin')}</Text>
           </Pressable>
         </View>
 
         <Pressable onPress={() => router.push('/(auth)/signup')} style={styles.signupLink}>
           <Text style={styles.signupText}>
-            Don't have an account? <Text style={styles.signupBold}>Sign Up</Text>
+            {t('auth.noAccount')} <Text style={styles.signupBold}>{t('auth.signUp')}</Text>
           </Text>
         </Pressable>
       </ScrollView>
@@ -182,9 +186,9 @@ export default function LoginScreen() {
       <Modal visible={consentModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Almost there!</Text>
+            <Text style={styles.modalTitle}>{t('auth.consentTitle')}</Text>
             <Text style={styles.modalSubtitle}>
-              To create your AIVO account, please confirm the following:
+              {t('auth.consentSubtitle')}
             </Text>
             <View style={styles.switchRow}>
               <Switch
@@ -194,7 +198,7 @@ export default function LoginScreen() {
                 thumbColor={coppaConsent ? colors.primary : '#f4f3f4'}
               />
               <Text style={styles.switchLabel}>
-                I confirm I am the parent/legal guardian (COPPA compliance)
+                {t('auth.coppaConsent')}
               </Text>
             </View>
             <View style={styles.switchRow}>
@@ -205,11 +209,11 @@ export default function LoginScreen() {
                 thumbColor={termsAccepted ? colors.primary : '#f4f3f4'}
               />
               <Text style={styles.switchLabel}>
-                I accept the Terms of Service and Privacy Policy
+                {t('auth.termsConsent')}
               </Text>
             </View>
             <AivoButton
-              title="Continue"
+              title={t('auth.continue')}
               onPress={handleConsentConfirm}
               disabled={!coppaConsent || !termsAccepted}
               size="lg"
@@ -219,7 +223,7 @@ export default function LoginScreen() {
               onPress={() => { setConsentModal(false); setPendingIdToken(null); }}
               style={{ marginTop: spacing.sm, alignItems: 'center' }}
             >
-              <Text style={styles.forgotLink}>Cancel</Text>
+              <Text style={styles.forgotLink}>{t('common.cancel')}</Text>
             </Pressable>
           </View>
         </View>
@@ -238,19 +242,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    color: '#FFF',
-    fontSize: 24,
-    fontFamily: 'Nunito-ExtraBold',
-    letterSpacing: 2,
+  logo: {
+    width: 180,
+    height: 60,
   },
   tagline: {
     fontSize: 14,

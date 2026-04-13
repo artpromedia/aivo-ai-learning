@@ -2,8 +2,10 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants/colors';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function TeacherLayout() {
+  const { t } = useTranslation();
   return (
     <Tabs
       screenOptions={{
@@ -23,21 +25,21 @@ export default function TeacherLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Classroom',
+          title: t('tabs.classroom'),
           tabBarIcon: ({ color, size }) => <Ionicons name="school" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="lesson-plan"
         options={{
-          title: 'Lesson Plans',
+          title: t('tabs.lessonPlans'),
           tabBarIcon: ({ color, size }) => <Ionicons name="document-text" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="analytics"
         options={{
-          title: 'Analytics',
+          title: t('tabs.analytics'),
           tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart" size={size} color={color} />,
         }}
       />

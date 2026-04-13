@@ -3,11 +3,13 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useIEPGoals } from '@/hooks/useFamily';
 import { AivoCard, LoadingState, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function CaregiverIEPGoals() {
+  const { t } = useTranslation();
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
   const { data: goals, isLoading } = useIEPGoals(childId);
@@ -17,13 +19,13 @@ export default function CaregiverIEPGoals() {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>IEP Goals</Text>
-      <Text style={styles.subtitle}>Read-only progress tracking</Text>
+      <Text style={styles.title}>{t('caregiverIEP.title')}</Text>
+      <Text style={styles.subtitle}>{t('caregiverIEP.subtitle')}</Text>
 
       {!goals?.length ? (
-        <EmptyState icon={<Ionicons name="flag-outline" size={48} color={colors.textSecondary} />} title="No IEP Goals" message="No IEP goals have been set up yet." />
+        <EmptyState icon={<Ionicons name="flag-outline" size={48} color={colors.textSecondary} />} title={t('caregiverIEP.noTitle')} message={t('caregiverIEP.noMessage')} />
       ) : (
         goals.map((g: any) => (
           <AivoCard key={g.id} style={styles.goalCard}>

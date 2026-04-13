@@ -3,11 +3,13 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useBrain } from '@/hooks/useBrain';
 import { AivoCard, LoadingState, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function AccommodationsScreen() {
+  const { t } = useTranslation();
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
   const { data: brain, isLoading } = useBrain(childId);
@@ -19,13 +21,13 @@ export default function AccommodationsScreen() {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Accommodations</Text>
-      <Text style={styles.subtitle}>Active accommodations and explanations</Text>
+      <Text style={styles.title}>{t('caregiverAccommodations.title')}</Text>
+      <Text style={styles.subtitle}>{t('caregiverAccommodations.subtitle')}</Text>
 
       {allAccommodations.length === 0 ? (
-        <EmptyState icon={<Ionicons name="shield-outline" size={48} color={colors.textSecondary} />} title="No Accommodations" message="No active accommodations at this time." />
+        <EmptyState icon={<Ionicons name="shield-outline" size={48} color={colors.textSecondary} />} title={t('caregiverAccommodations.noTitle')} message={t('caregiverAccommodations.noMessage')} />
       ) : (
         allAccommodations.map((item, i) => (
           <AivoCard key={i} style={styles.accCard}>

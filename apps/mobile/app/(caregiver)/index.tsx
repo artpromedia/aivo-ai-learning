@@ -3,12 +3,14 @@ import { View, Text, ScrollView, Pressable, StyleSheet, RefreshControl } from 'r
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useConnectedLearners } from '@/hooks/useFamily';
 import { AivoCard, EmptyState, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function CaregiverDashboard() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { data: children, isLoading, refetch } = useConnectedLearners();
@@ -23,8 +25,8 @@ export default function CaregiverDashboard() {
     >
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hello, {user?.name}</Text>
-          <Text style={styles.subGreeting}>Your assigned children</Text>
+          <Text style={styles.greeting}>{t('caregiver.greeting', { name: user?.name })}</Text>
+          <Text style={styles.subGreeting}>{t('caregiver.assignedChildren')}</Text>
         </View>
         <Pressable onPress={logout}>
           <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
@@ -34,8 +36,8 @@ export default function CaregiverDashboard() {
       {!children?.length ? (
         <EmptyState
           icon={<Ionicons name="people-outline" size={48} color={colors.textSecondary} />}
-          title="No Children Assigned"
-          message="A parent needs to invite you as a caregiver for their child."
+          title={t('caregiver.noChildrenTitle')}
+          message={t('caregiver.noChildrenMessage')}
         />
       ) : (
         children.map((child: any) => (
@@ -57,19 +59,19 @@ export default function CaregiverDashboard() {
               <View style={styles.quickLinks}>
                 <Pressable style={styles.linkBtn} onPress={() => router.push(`/(caregiver)/child/${child.id}/brain` as any)}>
                   <Ionicons name="bulb-outline" size={16} color={colors.primary} />
-                  <Text style={styles.linkText}>Brain</Text>
+                  <Text style={styles.linkText}>{t('caregiver.brain')}</Text>
                 </Pressable>
                 <Pressable style={styles.linkBtn} onPress={() => router.push(`/(caregiver)/child/${child.id}/iep-goals` as any)}>
                   <Ionicons name="flag-outline" size={16} color={colors.info} />
-                  <Text style={styles.linkText}>IEP</Text>
+                  <Text style={styles.linkText}>{t('caregiver.iep')}</Text>
                 </Pressable>
                 <Pressable style={styles.linkBtn} onPress={() => router.push(`/(caregiver)/child/${child.id}/sessions` as any)}>
                   <Ionicons name="time-outline" size={16} color={colors.secondary} />
-                  <Text style={styles.linkText}>Sessions</Text>
+                  <Text style={styles.linkText}>{t('caregiver.sessions')}</Text>
                 </Pressable>
                 <Pressable style={styles.linkBtn} onPress={() => router.push(`/(caregiver)/child/${child.id}/observation` as any)}>
                   <Ionicons name="create-outline" size={16} color={colors.accent} />
-                  <Text style={styles.linkText}>Note</Text>
+                  <Text style={styles.linkText}>{t('caregiver.note')}</Text>
                 </Pressable>
               </View>
             </AivoCard>

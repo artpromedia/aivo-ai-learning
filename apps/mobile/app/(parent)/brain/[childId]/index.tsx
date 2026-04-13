@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useBrain } from '@/hooks/useBrain';
 import { AivoCard, LoadingState, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
@@ -11,8 +12,9 @@ export default function BrainProfileScreen() {
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
   const { data: brain, isLoading } = useBrain(childId);
+  const { t } = useTranslation();
 
-  if (isLoading) return <LoadingState message="Loading Brain Profile..." />;
+  if (isLoading) return <LoadingState message={t('common.loading')} />;
 
   return (
     <ScrollView
@@ -21,11 +23,11 @@ export default function BrainProfileScreen() {
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>{brain?.learnerName || 'Learner'}'s Brain</Text>
-      <Text style={styles.subtitle}>AI-powered learning profile</Text>
+      <Text style={styles.title}>{t('parentBrain.title', { name: brain?.learnerName || 'Learner' })}</Text>
+      <Text style={styles.subtitle}>{t('parentBrain.subtitle')}</Text>
 
       <AivoCard style={styles.overviewCard}>
         <View style={styles.brainVisual}>
@@ -33,7 +35,7 @@ export default function BrainProfileScreen() {
             <Ionicons name="bulb" size={40} color={colors.primary} />
           </View>
           <Text style={styles.overallLevel}>
-            Overall: {brain?.overallLevel || 'Standard'}
+            {t('parentBrain.overallLevel')}: {brain?.overallLevel || 'Standard'}
           </Text>
         </View>
       </AivoCard>
@@ -41,7 +43,7 @@ export default function BrainProfileScreen() {
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Domain Grade Ladders</Text>
         <Pressable onPress={() => router.push(`/(parent)/brain/${childId}/history` as any)}>
-          <Text style={styles.historyLink}>History</Text>
+          <Text style={styles.historyLink}>{t('parentBrain.viewHistory')}</Text>
         </Pressable>
       </View>
 
@@ -55,7 +57,7 @@ export default function BrainProfileScreen() {
               <View>
                 <Text style={styles.domainName}>{domain.domain}</Text>
                 <Text style={styles.domainGrade}>
-                  Enrolled: {domain.enrolledGrade} | Functioning: {domain.functioningGrade}
+                  {t('parentBrain.enrolledGrade', { grade: domain.enrolledGrade })} | {t('parentBrain.functioningGrade', { grade: domain.functioningGrade })}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
@@ -71,7 +73,7 @@ export default function BrainProfileScreen() {
                 ]}
               />
             </View>
-            <Text style={styles.masteryText}>{domain.masteryPercent}% mastery</Text>
+            <Text style={styles.masteryText}>{t('parentBrain.mastered', { percent: domain.masteryPercent })}</Text>
             {domain.accommodations.length > 0 && (
               <View style={styles.accommodations}>
                 {domain.accommodations.map((acc) => (

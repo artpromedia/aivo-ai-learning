@@ -2,8 +2,10 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants/colors';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function TherapistLayout() {
+  const { t } = useTranslation();
   return (
     <Tabs
       screenOptions={{
@@ -23,7 +25,7 @@ export default function TherapistLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Clients',
+          title: t('tabs.clients'),
           tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
         }}
       />

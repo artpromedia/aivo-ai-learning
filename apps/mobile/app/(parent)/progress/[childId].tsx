@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useBrain } from '@/hooks/useBrain';
 import { AivoCard, StatCard, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
@@ -11,6 +12,7 @@ export default function ProgressScreen() {
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
   const { data: brain, isLoading } = useBrain(childId);
+  const { t } = useTranslation();
 
   if (isLoading) return <LoadingState />;
 
@@ -21,14 +23,14 @@ export default function ProgressScreen() {
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>Progress Dashboard</Text>
-      <Text style={styles.subtitle}>Learning trends and engagement</Text>
+      <Text style={styles.title}>{t('parentProgress.title', { name: brain?.learnerName || '' })}</Text>
+      <Text style={styles.subtitle}>{t('parentProgress.subtitle')}</Text>
 
       <View style={styles.statsRow}>
-        <StatCard label="Sessions" value={24} icon={<Ionicons name="book" size={20} color={colors.primary} />} />
+        <StatCard label={t('parent.sessions')} value={24} icon={<Ionicons name="book" size={20} color={colors.primary} />} />
         <View style={{ width: 8 }} />
         <StatCard label="Avg. Time" value="18m" icon={<Ionicons name="time" size={20} color={colors.secondary} />} color={colors.secondary} />
         <View style={{ width: 8 }} />
@@ -42,7 +44,7 @@ export default function ProgressScreen() {
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: `${d.masteryPercent}%` }]} />
           </View>
-          <Text style={styles.masteryText}>{d.masteryPercent}% mastery</Text>
+          <Text style={styles.masteryText}>{t('parentBrain.mastered', { percent: d.masteryPercent })}</Text>
         </AivoCard>
       ))}
 

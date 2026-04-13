@@ -3,27 +3,29 @@ import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { AivoCard } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
-const settingsItems = [
-  { icon: 'person-outline' as const, label: 'Account Details', route: '' },
-  { icon: 'notifications-outline' as const, label: 'Notifications', route: '' },
-  { icon: 'language-outline' as const, label: 'Language', route: '' },
-  { icon: 'key-outline' as const, label: 'Manage PINs', route: '' },
-  { icon: 'download-outline' as const, label: 'Export Data (GDPR)', route: '' },
-  { icon: 'trash-outline' as const, label: 'Delete Account', route: '', danger: true },
-];
-
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
+
+  const settingsItems = [
+    { icon: 'person-outline' as const, label: t('parentSettings.accountDetails'), route: '' },
+    { icon: 'notifications-outline' as const, label: t('parentSettings.notifications'), route: '' },
+    { icon: 'language-outline' as const, label: t('parentSettings.language'), route: '' },
+    { icon: 'key-outline' as const, label: t('parentSettings.managePins'), route: '' },
+    { icon: 'download-outline' as const, label: t('parentSettings.exportData'), route: '' },
+    { icon: 'trash-outline' as const, label: t('parentSettings.deleteAccount'), route: '', danger: true },
+  ];
 
   const handleLogout = () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log Out', style: 'destructive', onPress: logout },
+    Alert.alert(t('common.logOut'), t('common.logOutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.logOut'), style: 'destructive', onPress: logout },
     ]);
   };
 
@@ -32,7 +34,7 @@ export default function SettingsScreen() {
       style={styles.container}
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
     >
-      <Text style={styles.title}>Settings</Text>
+      <Text style={styles.title}>{t('parentSettings.title')}</Text>
 
       <AivoCard style={styles.profileCard}>
         <View style={styles.profileRow}>
@@ -71,10 +73,10 @@ export default function SettingsScreen() {
 
       <Pressable style={styles.logoutBtn} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={20} color={colors.error} />
-        <Text style={styles.logoutText}>Log Out</Text>
+        <Text style={styles.logoutText}>{t('common.logOut')}</Text>
       </Pressable>
 
-      <Text style={styles.version}>AIVO Learning v1.0.0</Text>
+      <Text style={styles.version}>{t('parentSettings.appVersion')}</Text>
     </ScrollView>
   );
 }

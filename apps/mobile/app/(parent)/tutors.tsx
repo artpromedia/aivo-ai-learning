@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { TUTORS } from '@aivo/brand';
 import { TutorCard } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
@@ -11,6 +12,7 @@ type TutorKey = keyof typeof TUTORS;
 export default function TutorStoreScreen() {
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<'all' | 'core' | 'expansion'>('all');
+  const { t } = useTranslation();
 
   const tutorEntries = Object.entries(TUTORS) as [TutorKey, (typeof TUTORS)[TutorKey]][];
   const filtered = filter === 'all'
@@ -22,8 +24,8 @@ export default function TutorStoreScreen() {
       style={styles.container}
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
     >
-      <Text style={styles.title}>Tutor Store</Text>
-      <Text style={styles.subtitle}>Browse and subscribe to AI tutors</Text>
+      <Text style={styles.title}>{t('parentTutors.title')}</Text>
+      <Text style={styles.subtitle}>{t('parentTutors.subtitle')}</Text>
 
       <View style={styles.filters}>
         {(['all', 'core', 'expansion'] as const).map((f) => (
@@ -33,7 +35,7 @@ export default function TutorStoreScreen() {
             onPress={() => setFilter(f)}
           >
             <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
-              {f === 'all' ? 'All (14)' : f === 'core' ? 'Core (7)' : 'Expansion (7)'}
+              {f === 'all' ? t('parentTutors.all') : f === 'core' ? t('parentTutors.core') : t('parentTutors.expansion')}
             </Text>
           </Pressable>
         ))}
@@ -41,12 +43,12 @@ export default function TutorStoreScreen() {
 
       <View style={styles.bundles}>
         <Pressable style={[styles.bundleCard, { borderColor: colors.primary }]}>
-          <Text style={styles.bundleName}>Core 7 Bundle</Text>
-          <Text style={styles.bundlePrice}>Included with subscription</Text>
+          <Text style={styles.bundleName}>{t('parentTutors.core7Bundle')}</Text>
+          <Text style={styles.bundlePrice}>{t('parentTutors.includedWithSub')}</Text>
         </Pressable>
         <Pressable style={[styles.bundleCard, { borderColor: colors.secondary }]}>
-          <Text style={styles.bundleName}>Full 14 Bundle</Text>
-          <Text style={styles.bundlePrice}>$9.99/mo add-on</Text>
+          <Text style={styles.bundleName}>{t('parentTutors.full14Bundle')}</Text>
+          <Text style={styles.bundlePrice}>{t('parentTutors.full14Price')}</Text>
         </Pressable>
       </View>
 

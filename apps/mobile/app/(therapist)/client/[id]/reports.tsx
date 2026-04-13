@@ -3,10 +3,12 @@ import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-nati
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { AivoCard, AivoButton, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function ProgressReports() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
@@ -14,17 +16,17 @@ export default function ProgressReports() {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Progress Reports</Text>
-      <Text style={styles.subtitle}>Insurance-documentation formatted reports</Text>
+      <Text style={styles.title}>{t('therapistClient.reportsTitle')}</Text>
+      <Text style={styles.subtitle}>{t('therapistClient.reportsSubtitle')}</Text>
 
       <AivoCard style={styles.genCard}>
         <Ionicons name="document-text" size={32} color={colors.primary} />
-        <Text style={styles.genTitle}>Generate Report</Text>
+        <Text style={styles.genTitle}>{t('therapistClient.generateReport')}</Text>
         <Text style={styles.genDesc}>CPT code aligned progress report for insurance documentation</Text>
         <AivoButton
-          title="Generate PDF Report"
+          title={t('therapistClient.generateReport')}
           onPress={() => Alert.alert('Report', 'Report generation coming soon')}
           style={{ marginTop: spacing.md }}
         />
@@ -33,8 +35,8 @@ export default function ProgressReports() {
       <Text style={[styles.sectionTitle, { marginBottom: spacing.md }]}>Previous Reports</Text>
       <EmptyState
         icon={<Ionicons name="folder-open-outline" size={48} color={colors.textSecondary} />}
-        title="No Reports Yet"
-        message="Generate your first progress report above."
+        title={t('therapistClient.noReportsTitle')}
+        message={t('therapistClient.noReportsMessage')}
       />
     </ScrollView>
   );

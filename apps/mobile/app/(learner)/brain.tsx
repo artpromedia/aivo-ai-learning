@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrain } from '@/hooks/useBrain';
 import { AivoCard, LoadingState } from '@aivo/mobile-ui';
@@ -11,27 +12,28 @@ export default function LearnerBrainScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { data: brain, isLoading } = useBrain(user?.id || '');
+  const { t } = useTranslation();
 
-  if (isLoading) return <LoadingState message="Loading your Brain..." />;
+  if (isLoading) return <LoadingState message={t('learnerBrain.loadingBrain')} />;
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
     >
-      <Text style={styles.title}>My Brain</Text>
-      <Text style={styles.subtitle}>See how much you've learned!</Text>
+      <Text style={styles.title}>{t('learnerBrain.title')}</Text>
+      <Text style={styles.subtitle}>{t('learnerBrain.subtitle')}</Text>
 
       <AivoCard style={styles.brainCard}>
         <View style={styles.brainVisual}>
           <Ionicons name="bulb" size={48} color={colors.primary} />
         </View>
         <Text style={styles.brainLevel}>
-          Level: {brain?.overallLevel || 'Standard'}
+          {t('learnerBrain.level', { level: brain?.overallLevel || 'Standard' })}
         </Text>
       </AivoCard>
 
-      <Text style={[styles.sectionTitle, { marginBottom: spacing.md }]}>My Subjects</Text>
+      <Text style={[styles.sectionTitle, { marginBottom: spacing.md }]}>{t('learnerBrain.mySubjects')}</Text>
       {brain?.domains?.map((domain) => (
         <AivoCard key={domain.domain} style={styles.subjectCard}>
           <Text style={styles.subjectName}>{domain.domain}</Text>
@@ -40,11 +42,11 @@ export default function LearnerBrainScreen() {
               <View style={[styles.progressFill, { width: `${domain.masteryPercent}%` }]} />
             </View>
             <View style={styles.gradeLabels}>
-              <Text style={styles.gradeLabel}>Grade {domain.functioningGrade}</Text>
-              <Text style={styles.gradeTarget}>Goal: {domain.enrolledGrade}</Text>
+              <Text style={styles.gradeLabel}>{t('learnerBrain.gradeLabel', { grade: domain.functioningGrade })}</Text>
+              <Text style={styles.gradeTarget}>{t('learnerBrain.goalLabel', { grade: domain.enrolledGrade })}</Text>
             </View>
           </View>
-          <Text style={styles.masteryText}>{domain.masteryPercent}% mastered</Text>
+          <Text style={styles.masteryText}>{t('learnerBrain.mastered', { percent: domain.masteryPercent })}</Text>
         </AivoCard>
       ))}
     </ScrollView>

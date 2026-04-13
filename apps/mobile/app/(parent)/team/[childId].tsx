@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Alert } from 
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useCollaboration, useInviteMember } from '@/hooks/useFamily';
 import { AivoCard, AivoButton, LoadingState, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
@@ -14,25 +15,26 @@ export default function TeamScreen() {
   const invite = useInviteMember();
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('TEACHER');
+  const { t } = useTranslation();
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) {
-      Alert.alert('Error', 'Please enter an email');
+      Alert.alert(t('common.error'), 'Please enter an email');
       return;
     }
     try {
       await invite.mutateAsync({ learnerId: childId, email: inviteEmail.trim(), role: inviteRole });
       setInviteEmail('');
-      Alert.alert('Success', 'Invitation sent!');
+      Alert.alert(t('common.success'), 'Invitation sent!');
     } catch {
-      Alert.alert('Error', 'Failed to send invitation');
+      Alert.alert(t('common.error'), 'Failed to send invitation');
     }
   };
 
   const roles = [
-    { key: 'TEACHER', label: 'Teacher', icon: 'school' as const, max: 1 },
-    { key: 'CAREGIVER', label: 'Caregiver', icon: 'heart' as const, max: 2 },
-    { key: 'THERAPIST', label: 'Therapist', icon: 'medkit' as const, max: 1 },
+    { key: 'TEACHER', label: t('parentTeam.teachers'), icon: 'school' as const, max: 1 },
+    { key: 'CAREGIVER', label: t('parentTeam.caregivers'), icon: 'heart' as const, max: 2 },
+    { key: 'THERAPIST', label: t('parentTeam.therapists'), icon: 'medkit' as const, max: 1 },
   ];
 
   if (isLoading) return <LoadingState />;
@@ -45,11 +47,11 @@ export default function TeamScreen() {
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>Care Team</Text>
-      <Text style={styles.subtitle}>Manage your child's support team</Text>
+      <Text style={styles.title}>{t('parentTeam.title')}</Text>
+      <Text style={styles.subtitle}>{t('parentTeam.subtitle', { name: '' })}</Text>
 
       <View style={styles.seatCards}>
         {roles.map((r) => {
@@ -88,12 +90,12 @@ export default function TeamScreen() {
       ) : (
         <EmptyState
           icon={<Ionicons name="people-outline" size={40} color={colors.textSecondary} />}
-          title="No Team Members"
-          message="Invite teachers, caregivers, or therapists below."
+          title={t('parentTeam.noTeamMembers')}
+          message={t('parentTeam.noTeamMessage')}
         />
       )}
 
-      <Text style={[styles.sectionTitle, { marginTop: spacing.lg, marginBottom: spacing.md }]}>Invite Member</Text>
+      <Text style={[styles.sectionTitle, { marginTop: spacing.lg, marginBottom: spacing.md }]}>{t('parentTeam.addMember')}</Text>
       <AivoCard>
         <View style={styles.roleSelector}>
           {roles.map((r) => (

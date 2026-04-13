@@ -3,11 +3,13 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useBrain } from '@/hooks/useBrain';
 import { AivoCard, AivoButton, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function TherapistClientProfile() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const { data: brain, isLoading } = useBrain(id);
@@ -17,10 +19,10 @@ export default function TherapistClientProfile() {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>{brain?.learnerName || 'Client'} — Brain Profile</Text>
-      <Text style={styles.subtitle}>HIPAA-scoped therapy view</Text>
+      <Text style={styles.title}>{t('therapistClient.overview', { name: brain?.learnerName || 'Client' })}</Text>
+      <Text style={styles.subtitle}>{t('therapistClient.brainProfile')}</Text>
 
       <AivoCard style={styles.overviewCard}>
         <Ionicons name="shield-checkmark" size={24} color={colors.success} />
@@ -37,11 +39,11 @@ export default function TherapistClientProfile() {
       ))}
 
       <View style={styles.actions}>
-        <AivoButton title="Therapy Goals" onPress={() => router.push(`/(therapist)/client/${id}/goals` as any)} style={{ flex: 1, marginRight: 8 }} />
-        <AivoButton title="Session Notes" onPress={() => router.push(`/(therapist)/client/${id}/notes` as any)} variant="outline" style={{ flex: 1 }} />
+        <AivoButton title={t('therapistClient.goalsTitle')} onPress={() => router.push(`/(therapist)/client/${id}/goals` as any)} style={{ flex: 1, marginRight: 8 }} />
+        <AivoButton title={t('therapistClient.notesTitle')} onPress={() => router.push(`/(therapist)/client/${id}/notes` as any)} variant="outline" style={{ flex: 1 }} />
       </View>
       <AivoButton
-        title="Generate Report"
+        title={t('therapistClient.generateReport')}
         onPress={() => router.push(`/(therapist)/client/${id}/reports` as any)}
         variant="secondary"
         style={{ marginTop: spacing.sm }}

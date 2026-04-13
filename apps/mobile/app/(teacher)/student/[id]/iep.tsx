@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function TeacherIEPUpload() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
@@ -14,26 +16,26 @@ export default function TeacherIEPUpload() {
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Upload IEP</Text>
-      <Text style={styles.subtitle}>Upload on behalf of parent (pending their approval)</Text>
+      <Text style={styles.title}>{t('teacherIEP.title')}</Text>
+      <Text style={styles.subtitle}>{t('teacherIEP.subtitle')}</Text>
 
       <AivoCard style={styles.uploadCard}>
         <Ionicons name="cloud-upload-outline" size={40} color={colors.primary} />
-        <Text style={styles.uploadTitle}>Upload IEP Document</Text>
-        <Text style={styles.uploadDesc}>Take a photo or select a PDF file</Text>
+        <Text style={styles.uploadTitle}>{t('teacherIEP.uploadDocument')}</Text>
+        <Text style={styles.uploadDesc}>{t('teacherIEP.uploadDesc')}</Text>
         <View style={styles.uploadActions}>
           <AivoButton
-            title="Camera"
-            onPress={() => Alert.alert('Camera', 'Coming soon')}
+            title={t('teacherIEP.camera')}
+            onPress={() => Alert.alert(t('teacherIEP.camera'), t('common.comingSoon'))}
             size="sm"
             icon={<Ionicons name="camera-outline" size={16} color="#FFF" />}
             style={{ flex: 1, marginRight: 8 }}
           />
           <AivoButton
-            title="PDF"
-            onPress={() => Alert.alert('PDF', 'Coming soon')}
+            title={t('teacherIEP.pdf')}
+            onPress={() => Alert.alert(t('teacherIEP.pdf'), t('common.comingSoon'))}
             variant="outline"
             size="sm"
             icon={<Ionicons name="document-outline" size={16} color={colors.primary} />}

@@ -2,17 +2,19 @@ import React from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { AivoCard } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function CaregiverSettings() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}>
-      <Text style={styles.title}>Settings</Text>
+      <Text style={styles.title}>{t('caregiverSettings.title')}</Text>
       <AivoCard style={styles.profileCard}>
         <View style={styles.profileRow}>
           <View style={styles.avatar}><Text style={styles.avatarText}>{user?.name?.[0] || 'C'}</Text></View>
@@ -23,8 +25,8 @@ export default function CaregiverSettings() {
         </View>
       </AivoCard>
       {[
-        { icon: 'notifications-outline' as const, label: 'Notification Preferences' },
-        { icon: 'person-outline' as const, label: 'Account Details' },
+        { icon: 'notifications-outline' as const, label: t('caregiverSettings.notificationPreferences') },
+        { icon: 'person-outline' as const, label: t('caregiverSettings.accountDetails') },
       ].map((item) => (
         <AivoCard key={item.label} style={styles.settingRow}>
           <Ionicons name={item.icon} size={22} color={colors.textSecondary} />
@@ -32,9 +34,9 @@ export default function CaregiverSettings() {
           <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
         </AivoCard>
       ))}
-      <Pressable style={styles.logoutBtn} onPress={() => Alert.alert('Log Out', 'Are you sure?', [{ text: 'Cancel' }, { text: 'Log Out', style: 'destructive', onPress: logout }])}>
+      <Pressable style={styles.logoutBtn} onPress={() => Alert.alert(t('common.logOut'), t('common.logOutConfirm'), [{ text: t('common.cancel') }, { text: t('common.logOut'), style: 'destructive', onPress: logout }])}>
         <Ionicons name="log-out-outline" size={20} color={colors.error} />
-        <Text style={styles.logoutText}>Log Out</Text>
+        <Text style={styles.logoutText}>{t('common.logOut')}</Text>
       </Pressable>
     </ScrollView>
   );

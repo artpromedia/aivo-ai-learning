@@ -3,10 +3,12 @@ import { View, Text, TextInput, ScrollView, Pressable, StyleSheet, Alert } from 
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function SubmitInsightScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const [insightText, setInsightText] = useState('');
@@ -19,26 +21,26 @@ export default function SubmitInsightScreen() {
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Submit Insight</Text>
-      <Text style={styles.subtitle}>Share an observation about this student's learning</Text>
+      <Text style={styles.title}>{t('teacherInsight.title')}</Text>
+      <Text style={styles.subtitle}>{t('teacherInsight.subtitle')}</Text>
 
       <AivoCard>
-        <Text style={styles.label}>Your Insight</Text>
+        <Text style={styles.label}>{t('teacherInsight.yourInsight')}</Text>
         <TextInput
           style={styles.textArea}
           value={insightText}
           onChangeText={setInsightText}
-          placeholder="Describe what you've observed about this student..."
+          placeholder={t('teacherInsight.placeholder')}
           placeholderTextColor={colors.textSecondary}
           multiline
           numberOfLines={6}
           textAlignVertical="top"
         />
         <AivoButton
-          title="Submit Insight"
-          onPress={() => { Alert.alert('Success', 'Insight submitted to parent inbox'); router.back(); }}
+          title={t('teacherInsight.title')}
+          onPress={() => { Alert.alert(t('common.success'), t('teacherInsight.submitted')); router.back(); }}
           disabled={!insightText.trim()}
           style={{ marginTop: spacing.md }}
         />

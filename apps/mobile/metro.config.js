@@ -17,5 +17,29 @@ config.resolver.nodeModulesPaths = [
 ];
 
 config.resolver.unstable_enableSymlinks = true;
+config.resolver.disableHierarchicalLookup = true;
+
+const singletonPackages = {
+  react: path.resolve(projectRoot, 'node_modules/react'),
+  'react-dom': path.resolve(projectRoot, 'node_modules/react-dom'),
+  'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
+  'react-native-web': path.resolve(projectRoot, 'node_modules/react-native-web'),
+};
+
+config.resolver.extraNodeModules = singletonPackages;
+
+const originalResolveRequest = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (singletonPackages[moduleName]) {
+    return {
+      type: 'sourceFile',
+      filePath: require.resolve(moduleName, { paths: [projectRoot] }),
+    };
+  }
+  if (originalResolveRequest) {
+    return originalResolveRequest(context, moduleName, platform);
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
 
 module.exports = config;

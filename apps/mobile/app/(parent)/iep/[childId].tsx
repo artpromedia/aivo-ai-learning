@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-nati
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useIEPGoals } from '@/hooks/useFamily';
 import { AivoCard, AivoButton, LoadingState, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
@@ -11,6 +12,7 @@ export default function IEPScreen() {
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
   const { data: goals, isLoading } = useIEPGoals(childId);
+  const { t } = useTranslation();
 
   if (isLoading) return <LoadingState />;
 
@@ -21,15 +23,15 @@ export default function IEPScreen() {
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>IEP Management</Text>
-      <Text style={styles.subtitle}>Upload documents and track goals</Text>
+      <Text style={styles.title}>{t('parentIEP.title')}</Text>
+      <Text style={styles.subtitle}>{t('parentIEP.subtitle')}</Text>
 
       <AivoCard style={styles.uploadCard}>
         <Ionicons name="cloud-upload-outline" size={32} color={colors.primary} />
-        <Text style={styles.uploadTitle}>Upload IEP Document</Text>
+        <Text style={styles.uploadTitle}>{t('parentOnboard.uploadIEP')}</Text>
         <Text style={styles.uploadDesc}>Take a photo or select a PDF</Text>
         <View style={styles.uploadActions}>
           <AivoButton

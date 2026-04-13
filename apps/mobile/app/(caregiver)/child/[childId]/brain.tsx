@@ -3,11 +3,13 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useBrain } from '@/hooks/useBrain';
 import { AivoCard, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function CaregiverBrainScreen() {
+  const { t } = useTranslation();
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
   const { data: brain, isLoading } = useBrain(childId);
@@ -17,17 +19,17 @@ export default function CaregiverBrainScreen() {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Brain Summary</Text>
-      <Text style={styles.subtitle}>Read-only view of learning profile</Text>
+      <Text style={styles.title}>{t('caregiverBrain.title')}</Text>
+      <Text style={styles.subtitle}>{t('caregiverBrain.subtitle')}</Text>
 
       {brain?.domains?.map((d) => (
         <AivoCard key={d.domain} style={styles.card}>
           <Text style={styles.domainName}>{d.domain}</Text>
           <View style={styles.gradeRow}>
-            <Text style={styles.gradeLabel}>Enrolled: {d.enrolledGrade}</Text>
-            <Text style={styles.gradeLabel}>Functioning: {d.functioningGrade}</Text>
+            <Text style={styles.gradeLabel}>{t('caregiverBrain.enrolled', { grade: d.enrolledGrade })}</Text>
+            <Text style={styles.gradeLabel}>{t('caregiverBrain.functioning', { grade: d.functioningGrade })}</Text>
           </View>
           <View style={styles.bar}><View style={[styles.fill, { width: `${d.masteryPercent}%` }]} /></View>
           <Text style={styles.pct}>{d.masteryPercent}%</Text>

@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useEngagement } from '@/hooks/useEngagement';
 import { AivoCard, StatCard, AivoButton } from '@aivo/mobile-ui';
@@ -12,6 +13,7 @@ export default function GamificationScreen() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { data: engagement } = useEngagement(user?.id || '');
+  const { t } = useTranslation();
 
   return (
     <ScrollView
@@ -19,7 +21,7 @@ export default function GamificationScreen() {
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>My Profile</Text>
+        <Text style={styles.title}>{t('learnerGamification.title')}</Text>
         <Pressable onPress={logout}>
           <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
         </Pressable>
@@ -30,7 +32,7 @@ export default function GamificationScreen() {
           <Text style={{ fontSize: 40 }}>🎮</Text>
         </View>
         <Text style={styles.userName}>{user?.name}</Text>
-        <Text style={styles.userLevel}>Level {engagement?.level || 1}</Text>
+        <Text style={styles.userLevel}>{t('learner.level', { level: engagement?.level || 1 })}</Text>
         <View style={styles.xpBar}>
           <View style={[styles.xpFill, { width: `${((engagement?.xp || 0) % 1000) / 10}%` }]} />
         </View>
@@ -38,14 +40,14 @@ export default function GamificationScreen() {
       </AivoCard>
 
       <View style={styles.statsRow}>
-        <StatCard label="Streak" value={`${engagement?.streakDays || 0}🔥`} color={colors.accent} />
+        <StatCard label={t('learnerGamification.streak')} value={`${engagement?.streakDays || 0}🔥`} color={colors.accent} />
         <View style={{ width: 8 }} />
-        <StatCard label="Badges" value={engagement?.badges?.length || 0} color={colors.secondary} />
+        <StatCard label={t('learner.badges')} value={engagement?.badges?.length || 0} color={colors.secondary} />
         <View style={{ width: 8 }} />
-        <StatCard label="Coins" value={engagement?.coins || 0} color={colors.accent} />
+        <StatCard label={t('learner.coins')} value={engagement?.coins || 0} color={colors.accent} />
       </View>
 
-      <Text style={styles.sectionTitle}>Active Challenges</Text>
+      <Text style={styles.sectionTitle}>{t('learnerGamification.activeChallenges')}</Text>
       {engagement?.activeChallenges?.map((c) => (
         <AivoCard key={c.id} style={styles.challengeCard}>
           <View style={styles.challengeRow}>
@@ -69,20 +71,20 @@ export default function GamificationScreen() {
         </AivoCard>
       )) || (
         <AivoCard>
-          <Text style={styles.noData}>No active challenges. Check back soon!</Text>
+          <Text style={styles.noData}>{t('learnerGamification.noChallenges')}</Text>
         </AivoCard>
       )}
 
       <View style={styles.quickLinks}>
         <AivoButton
-          title="Badges"
+          title={t('learner.badges')}
           onPress={() => router.push('/(learner)/badges')}
           variant="outline"
           icon={<Ionicons name="ribbon-outline" size={18} color={colors.primary} />}
           style={{ flex: 1, marginRight: 8 }}
         />
         <AivoButton
-          title="Gradebook"
+          title={t('learnerGamification.gradebook')}
           onPress={() => router.push('/(learner)/gradebook')}
           variant="outline"
           icon={<Ionicons name="bar-chart-outline" size={18} color={colors.primary} />}

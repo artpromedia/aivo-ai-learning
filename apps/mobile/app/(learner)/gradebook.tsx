@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrain } from '@/hooks/useBrain';
 import { AivoCard, LoadingState } from '@aivo/mobile-ui';
@@ -12,6 +13,7 @@ export default function GradebookScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { data: brain, isLoading } = useBrain(user?.id || '');
+  const { t } = useTranslation();
 
   if (isLoading) return <LoadingState />;
 
@@ -22,10 +24,10 @@ export default function GradebookScreen() {
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Gradebook</Text>
-      <Text style={styles.subtitle}>Your subject mastery</Text>
+      <Text style={styles.title}>{t('learnerGradebook.title')}</Text>
+      <Text style={styles.subtitle}>{t('learnerGradebook.subtitle')}</Text>
 
       {brain?.domains?.map((domain) => (
         <AivoCard key={domain.domain} style={styles.subjectCard}>
@@ -37,7 +39,7 @@ export default function GradebookScreen() {
             <View style={[styles.masteryFill, { width: `${domain.masteryPercent}%` }]} />
           </View>
           <Text style={styles.gradeInfo}>
-            Functioning at Grade {domain.functioningGrade} (Enrolled: {domain.enrolledGrade})
+            {t('learnerGradebook.functioningAt', { functioning: domain.functioningGrade, enrolled: domain.enrolledGrade })}
           </Text>
         </AivoCard>
       ))}

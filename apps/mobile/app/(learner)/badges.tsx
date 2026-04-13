@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useEngagement } from '@/hooks/useEngagement';
 import { AivoCard, EmptyState } from '@aivo/mobile-ui';
@@ -19,6 +20,7 @@ export default function BadgesScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { data: engagement } = useEngagement(user?.id || '');
+  const { t } = useTranslation();
 
   return (
     <ScrollView
@@ -27,16 +29,16 @@ export default function BadgesScreen() {
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Badge Cabinet</Text>
-      <Text style={styles.subtitle}>{engagement?.badges?.length || 0} badges earned</Text>
+      <Text style={styles.title}>{t('learnerBadges.title')}</Text>
+      <Text style={styles.subtitle}>{t('learnerBadges.earned', { count: engagement?.badges?.length || 0 })}</Text>
 
       {!engagement?.badges?.length ? (
         <EmptyState
           icon={<Ionicons name="ribbon-outline" size={48} color={colors.textSecondary} />}
-          title="No Badges Yet"
-          message="Complete lessons and challenges to earn badges!"
+          title={t('learnerBadges.noBadgesTitle')}
+          message={t('learnerBadges.noBadgesMessage')}
         />
       ) : (
         <View style={styles.grid}>

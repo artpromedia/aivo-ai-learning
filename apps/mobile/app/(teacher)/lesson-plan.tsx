@@ -2,10 +2,12 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { AivoCard, AivoButton, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function LessonPlanScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   return (
@@ -13,21 +15,21 @@ export default function LessonPlanScreen() {
       style={styles.container}
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
     >
-      <Text style={styles.title}>Lesson Plans</Text>
-      <Text style={styles.subtitle}>Brain-informed lesson plan generator</Text>
+      <Text style={styles.title}>{t('teacherLessonPlan.title')}</Text>
+      <Text style={styles.subtitle}>{t('teacherLessonPlan.subtitle')}</Text>
 
       <AivoCard style={styles.genCard}>
         <Ionicons name="sparkles" size={32} color={colors.primary} />
-        <Text style={styles.genTitle}>Generate New Plan</Text>
-        <Text style={styles.genDesc}>Select students and let AI create a differentiated lesson plan based on their Brain profiles</Text>
-        <AivoButton title="Create Lesson Plan" onPress={() => {}} style={{ marginTop: spacing.md }} />
+        <Text style={styles.genTitle}>{t('teacherLessonPlan.generateNew')}</Text>
+        <Text style={styles.genDesc}>{t('teacherLessonPlan.generateDesc')}</Text>
+        <AivoButton title={t('teacherLessonPlan.createPlan')} onPress={() => {}} style={{ marginTop: spacing.md }} />
       </AivoCard>
 
-      <Text style={[styles.sectionTitle, { marginBottom: spacing.md }]}>Recent Plans</Text>
+      <Text style={[styles.sectionTitle, { marginBottom: spacing.md }]}>{t('teacherLessonPlan.recentPlans')}</Text>
       <EmptyState
         icon={<Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />}
-        title="No Lesson Plans Yet"
-        message="Generate your first Brain-informed lesson plan above."
+        title={t('teacherLessonPlan.noPlansTitle')}
+        message={t('teacherLessonPlan.noPlansMessage')}
       />
     </ScrollView>
   );

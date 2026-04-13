@@ -3,12 +3,14 @@ import { View, Text, ScrollView, Pressable, StyleSheet, RefreshControl } from 'r
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useConnectedLearners } from '@/hooks/useFamily';
 import { AivoCard, EmptyState, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function TherapistDashboard() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { data: clients, isLoading, refetch } = useConnectedLearners();
@@ -23,8 +25,8 @@ export default function TherapistDashboard() {
     >
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hello, {user?.name}</Text>
-          <Text style={styles.subGreeting}>Your client caseload</Text>
+          <Text style={styles.greeting}>{t('therapist.greeting', { name: user?.name })}</Text>
+          <Text style={styles.subGreeting}>{t('therapist.caseload')}</Text>
         </View>
         <Pressable onPress={logout}>
           <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
@@ -34,8 +36,8 @@ export default function TherapistDashboard() {
       {!clients?.length ? (
         <EmptyState
           icon={<Ionicons name="medkit-outline" size={48} color={colors.textSecondary} />}
-          title="No Clients"
-          message="A parent needs to invite you as a therapist for their child."
+          title={t('therapist.noClientsTitle')}
+          message={t('therapist.noClientsMessage')}
         />
       ) : (
         clients.map((client: any) => (
@@ -57,15 +59,15 @@ export default function TherapistDashboard() {
               <View style={styles.quickActions}>
                 <Pressable style={styles.actionBtn} onPress={() => router.push(`/(therapist)/client/${client.id}/goals` as any)}>
                   <Ionicons name="flag-outline" size={16} color={colors.primary} />
-                  <Text style={styles.actionText}>Goals</Text>
+                  <Text style={styles.actionText}>{t('therapist.goals')}</Text>
                 </Pressable>
                 <Pressable style={styles.actionBtn} onPress={() => router.push(`/(therapist)/client/${client.id}/notes` as any)}>
                   <Ionicons name="create-outline" size={16} color={colors.info} />
-                  <Text style={styles.actionText}>Notes</Text>
+                  <Text style={styles.actionText}>{t('therapist.notes')}</Text>
                 </Pressable>
                 <Pressable style={styles.actionBtn} onPress={() => router.push(`/(therapist)/client/${client.id}/reports` as any)}>
                   <Ionicons name="document-text-outline" size={16} color={colors.success} />
-                  <Text style={styles.actionText}>Reports</Text>
+                  <Text style={styles.actionText}>{t('therapist.reports')}</Text>
                 </Pressable>
               </View>
             </AivoCard>

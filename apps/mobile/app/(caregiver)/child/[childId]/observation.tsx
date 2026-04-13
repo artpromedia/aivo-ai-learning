@@ -3,10 +3,12 @@ import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, Alert } from 
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function ObservationScreen() {
+  const { t } = useTranslation();
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
   const [note, setNote] = useState('');
@@ -15,26 +17,26 @@ export default function ObservationScreen() {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Submit Observation</Text>
-      <Text style={styles.subtitle}>Share what you've noticed today</Text>
+      <Text style={styles.title}>{t('caregiverObservation.title')}</Text>
+      <Text style={styles.subtitle}>{t('caregiverObservation.subtitle')}</Text>
 
       <AivoCard>
-        <Text style={styles.prompt}>How did the child do today?</Text>
+        <Text style={styles.prompt}>{t('caregiverObservation.prompt')}</Text>
         <TextInput
           style={styles.textArea}
           value={note}
           onChangeText={setNote}
-          placeholder="Share your observation..."
+          placeholder={t('caregiverObservation.placeholder')}
           placeholderTextColor={colors.textSecondary}
           multiline
           numberOfLines={6}
           textAlignVertical="top"
         />
         <AivoButton
-          title="Submit Observation"
-          onPress={() => { Alert.alert('Submitted', 'Observation saved to Brain insights'); router.back(); }}
+          title={t('caregiverObservation.submitBtn')}
+          onPress={() => { Alert.alert(t('common.success'), t('caregiverObservation.submitted')); router.back(); }}
           disabled={!note.trim()}
           style={{ marginTop: spacing.md }}
         />

@@ -1,0 +1,468 @@
+{
+  "common": {
+    "back": "Atrás",
+    "next": "Siguiente",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "retry": "Reintentar",
+    "or": "o",
+    "logOut": "Cerrar Sesión",
+    "logOutConfirm": "¿Estás seguro de que quieres cerrar sesión?",
+    "grade": "Grado {{grade}}",
+    "buy": "Comprar",
+    "approve": "Aprobar",
+    "decline": "Rechazar",
+    "comingSoon": "Próximamente",
+    "overview": "Resumen"
+  },
+  "auth": {
+    "aiPoweredLearning": "Aprendizaje con IA",
+    "welcomeBack": "Bienvenido de vuelta",
+    "signInSubtitle": "Inicia sesión en tu cuenta",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "padre@ejemplo.com",
+    "password": "Contraseña",
+    "passwordPlaceholder": "Ingresa tu contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "signIn": "Iniciar Sesión",
+    "continueWithGoogle": "Continuar con Google",
+    "signingIn": "Iniciando sesión...",
+    "learnerPinLogin": "Acceso con PIN de Estudiante",
+    "noAccount": "¿No tienes cuenta?",
+    "signUp": "Registrarse",
+    "enterEmailPassword": "Ingresa tu correo y contraseña",
+    "loginFailed": "Error al iniciar sesión",
+    "googleSignInFailed": "Error con Google",
+    "createAccount": "Crea Tu Cuenta",
+    "createAccountSubtitle": "Comienza el viaje de aprendizaje personalizado de tu hijo",
+    "signUpWithGoogle": "Registrarse con Google",
+    "signingUp": "Registrando...",
+    "orSignUpWithEmail": "o regístrate con correo",
+    "fullName": "Nombre Completo",
+    "fullNamePlaceholder": "Tu nombre completo",
+    "confirmPassword": "Confirmar Contraseña",
+    "confirmPasswordPlaceholder": "Confirma tu contraseña",
+    "atLeast8Chars": "Al menos 8 caracteres",
+    "coppaConsent": "Confirmo que soy el padre/tutor legal (cumplimiento COPPA)",
+    "termsConsent": "Acepto los Términos de Servicio y la Política de Privacidad",
+    "createAccountBtn": "Crear Cuenta",
+    "haveAccount": "¿Ya tienes cuenta?",
+    "fillAllFields": "Completa todos los campos",
+    "passwordsMismatch": "Las contraseñas no coinciden",
+    "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+    "acceptTerms": "Acepta los términos y el consentimiento COPPA",
+    "acceptCoppaGoogle": "Acepta el consentimiento COPPA y los Términos de Servicio antes de registrarte con Google",
+    "registrationFailed": "Error en el registro",
+    "googleSignUpFailed": "Error al registrarse con Google",
+    "consentTitle": "¡Casi listo!",
+    "consentSubtitle": "Para crear tu cuenta AIVO, confirma lo siguiente:",
+    "continue": "Continuar",
+    "learnerLogin": "Acceso de Estudiante",
+    "enterParentEmail": "Ingresa el correo de tu padre primero",
+    "parentEmailPlaceholder": "Correo del padre",
+    "pleaseEnterParentEmail": "Ingresa el correo del padre",
+    "continueToPin": "Continuar al PIN",
+    "enterYourPin": "Ingresa Tu PIN",
+    "tooManyAttempts": "Demasiados intentos. Pide ayuda a un padre.",
+    "incorrectPin": "PIN incorrecto. Intenta de nuevo.",
+    "resetPassword": "Restablecer Contraseña",
+    "resetSubtitle": "Ingresa tu correo y te enviaremos un enlace",
+    "sendResetLink": "Enviar Enlace",
+    "pleaseEnterEmail": "Ingresa tu correo electrónico",
+    "somethingWentWrong": "Algo salió mal. Intenta de nuevo.",
+    "checkYourEmail": "Revisa Tu Correo",
+    "resetEmailSent": "Si existe una cuenta para {{email}}, recibirás un enlace para restablecer tu contraseña.",
+    "backToLogin": "Volver al Inicio de Sesión"
+  },
+  "parent": {
+    "greeting": "Hola, {{name}}",
+    "learningOverview": "Resumen de aprendizaje de tus hijos",
+    "children": "Hijos",
+    "activeTutors": "Tutores Activos",
+    "sessions": "Sesiones",
+    "yourChildren": "Tus Hijos",
+    "noChildrenTitle": "Sin Hijos Agregados",
+    "noChildrenMessage": "Agrega tu primer hijo para comenzar su viaje de aprendizaje personalizado.",
+    "addChild": "Agregar Hijo",
+    "brain": "Cerebro",
+    "progress": "Progreso",
+    "iep": "PEI",
+    "team": "Equipo",
+    "tutorStore": "Tienda de Tutores",
+    "billing": "Facturación"
+  },
+  "parentSettings": {
+    "title": "Configuración",
+    "accountDetails": "Detalles de Cuenta",
+    "notifications": "Notificaciones",
+    "language": "Idioma",
+    "managePins": "Administrar PINs",
+    "exportData": "Exportar Datos (RGPD)",
+    "deleteAccount": "Eliminar Cuenta",
+    "appVersion": "AIVO Learning v1.0.0"
+  },
+  "parentBilling": {
+    "title": "Facturación y Suscripción",
+    "subtitle": "Administra tu plan y métodos de pago",
+    "currentPlan": "Plan Actual",
+    "switchPlan": "Cambiar Plan",
+    "contactSales": "Contactar Ventas",
+    "paymentMethod": "Método de Pago",
+    "expires": "Expira {{date}}"
+  },
+  "parentTutors": {
+    "title": "Tienda de Tutores",
+    "subtitle": "Explora y suscríbete a tutores de IA",
+    "all": "Todos (14)",
+    "core": "Básicos (7)",
+    "expansion": "Expansión (7)",
+    "core7Bundle": "Paquete 7 Básicos",
+    "includedWithSub": "Incluido con la suscripción",
+    "full14Bundle": "Paquete Completo 14",
+    "full14Price": "$9.99/mes adicional"
+  },
+  "parentRecommendations": {
+    "title": "Recomendaciones",
+    "subtitle": "Revisa y responde a las recomendaciones de aprendizaje con IA",
+    "allCaughtUp": "Todo al Día",
+    "noPending": "No hay recomendaciones pendientes en este momento."
+  },
+  "parentOnboard": {
+    "title": "Agregar un Hijo",
+    "subtitle": "Configura el perfil de aprendizaje personalizado de tu hijo",
+    "stepChildInfo": "Datos del Hijo",
+    "stepGrade": "Grado y Evaluación",
+    "stepIEP": "Subir PEI",
+    "stepReview": "Revisar",
+    "firstName": "Nombre *",
+    "firstNamePlaceholder": "Nombre del hijo",
+    "lastName": "Apellido",
+    "lastNamePlaceholder": "Apellido del hijo",
+    "gradeLevel": "Nivel de Grado *",
+    "gradePlaceholder": "ej., 3",
+    "learnerPin": "PIN del Estudiante *",
+    "pinPlaceholder": "PIN de 4 dígitos",
+    "uploadIEPOptional": "Subir PEI (Opcional)",
+    "uploadIEPLater": "Puedes subir el PEI de tu hijo ahora o después",
+    "uploadIEP": "Subir PEI",
+    "uploadComingSoon": "Carga de documentos próximamente",
+    "skipContinue": "Omitir y Continuar",
+    "review": "Revisar",
+    "name": "Nombre",
+    "pin": "PIN",
+    "missingInfo": "Información Faltante",
+    "fillRequired": "Completa todos los campos requeridos",
+    "addChildFailed": "Error al agregar hijo. Intenta de nuevo."
+  },
+  "parentBrain": {
+    "title": "Cerebro de {{name}}",
+    "subtitle": "Perfil de aprendizaje completo",
+    "overallLevel": "Nivel General",
+    "enrolledGrade": "Inscrito: {{grade}}",
+    "functioningGrade": "Funcionamiento: {{grade}}",
+    "mastered": "{{percent}}% dominado",
+    "viewHistory": "Ver Historial",
+    "brainHistory": "Historial del Cerebro",
+    "historySubtitle": "Línea de tiempo de cambios e hitos"
+  },
+  "parentProgress": {
+    "title": "Progreso de {{name}}",
+    "subtitle": "Progreso de aprendizaje a lo largo del tiempo"
+  },
+  "parentIEP": {
+    "title": "Administrador de PEI",
+    "subtitle": "Administra las metas y adaptaciones del PEI"
+  },
+  "parentTeam": {
+    "title": "Equipo de Cuidado",
+    "subtitle": "Administra quién tiene acceso al perfil de {{name}}",
+    "addMember": "Agregar Miembro",
+    "teachers": "Profesores",
+    "caregivers": "Cuidadores",
+    "therapists": "Terapeutas",
+    "noTeamMembers": "Sin Miembros del Equipo",
+    "noTeamMessage": "Invita a profesores, cuidadores y terapeutas a colaborar."
+  },
+  "parentSession": {
+    "title": "Sesión Co-View",
+    "subtitle": "Observa el aprendizaje de {{name}} juntos"
+  },
+  "parentColearn": {
+    "title": "Co-Aprender",
+    "subtitle": "Aprende junto a {{name}}"
+  },
+  "learner": {
+    "greeting": "¡Hola, {{name}}!",
+    "level": "Nivel {{level}}",
+    "coins": "Monedas",
+    "badges": "Insignias",
+    "gems": "Gemas",
+    "dailyChallenge": "Desafío Diario",
+    "dailyChallengeDesc": "Completa 3 sesiones hoy",
+    "questWorlds": "Mundos de Misiones",
+    "homework": "Tarea",
+    "quests": "Misiones",
+    "badgesLabel": "Insignias",
+    "grades": "Notas"
+  },
+  "learnerBrain": {
+    "title": "Mi Cerebro",
+    "subtitle": "¡Mira cuánto has aprendido!",
+    "loadingBrain": "Cargando tu Cerebro...",
+    "level": "Nivel: {{level}}",
+    "mySubjects": "Mis Materias",
+    "gradeLabel": "Grado {{grade}}",
+    "goalLabel": "Meta: {{grade}}",
+    "mastered": "{{percent}}% dominado"
+  },
+  "learnerShop": {
+    "title": "Tienda de Avatar",
+    "all": "Todo",
+    "hats": "Sombreros",
+    "outfits": "Trajes",
+    "pets": "Mascotas",
+    "backgrounds": "Fondos",
+    "effects": "Efectos",
+    "special": "Especial"
+  },
+  "learnerGamification": {
+    "title": "Mi Perfil",
+    "streak": "Racha",
+    "activeChallenges": "Desafíos Activos",
+    "noChallenges": "No hay desafíos activos. ¡Vuelve pronto!",
+    "gradebook": "Libreta de Notas"
+  },
+  "learnerAdventure": {
+    "title": "Aventura de Descubrimiento",
+    "subtitle": "¡Descubramos lo que sabes!",
+    "start": "Iniciar",
+    "beginAdventure": "Comenzar Aventura"
+  },
+  "learnerHomework": {
+    "title": "Ayuda con Tareas",
+    "subtitle": "¡Toma una foto y recibe ayuda!",
+    "centerHomework": "Centra tu tarea en el marco",
+    "takePhoto": "Tomar Foto",
+    "gallery": "Galería",
+    "uploadPDF": "Subir PDF",
+    "uploadPDFDesc": "Sube un PDF de tarea para recibir ayuda",
+    "chooseFile": "Elegir Archivo"
+  },
+  "learnerQuests": {
+    "title": "Mundos de Misiones",
+    "subtitle": "Explora aventuras de aprendizaje con tus tutores",
+    "world": "Mundo de {{name}}",
+    "chapter": "Capítulo {{current}} de {{total}}"
+  },
+  "learnerChallenges": {
+    "title": "Desafíos",
+    "subtitle": "Compite y gana recompensas",
+    "quickBattle": "Batalla Rápida (1v1)",
+    "quickBattleDesc": "Desafía a un amigo a una batalla de preguntas",
+    "findMatch": "Buscar Oponente",
+    "teamChallenge": "Desafío en Equipo",
+    "teamChallengeDesc": "Trabaja con amigos para resolver problemas",
+    "joinTeam": "Unirse al Equipo",
+    "weeklyTournament": "Torneo Semanal",
+    "weeklyTournamentDesc": "Compite por el primer lugar en la tabla",
+    "enterTournament": "Entrar al Torneo",
+    "inviteFriend": "Invitar a un Amigo",
+    "inviteText": "¡Comparte tu código de invitación para jugar con amigos!",
+    "copyCode": "Copiar Código"
+  },
+  "learnerBadges": {
+    "title": "Vitrina de Insignias",
+    "earned": "{{count}} insignias ganadas",
+    "noBadgesTitle": "Sin Insignias Aún",
+    "noBadgesMessage": "¡Completa lecciones y desafíos para ganar insignias!"
+  },
+  "learnerGradebook": {
+    "title": "Libreta de Notas",
+    "subtitle": "Tu dominio por materia",
+    "functioningAt": "Funcionando en Grado {{functioning}} (Inscrito: {{enrolled}})"
+  },
+  "learnerStage": {
+    "letsSolve": "¡Resolvamos esto juntos!"
+  },
+  "learnerTutor": {
+    "tutorNotFound": "Tutor no encontrado",
+    "sessionDuration": "~15 min de sesión",
+    "adaptiveDifficulty": "Dificultad adaptativa",
+    "brainInformed": "Basado en el Cerebro",
+    "startSession": "Iniciar Sesión con {{name}}"
+  },
+  "teacher": {
+    "greeting": "Hola, {{name}}",
+    "classroomOverview": "Resumen de tu aula",
+    "students": "Estudiantes",
+    "atRisk": "En Riesgo",
+    "avgProgress": "Progreso Prom.",
+    "noStudentsTitle": "Sin Estudiantes Conectados",
+    "noStudentsMessage": "Los padres necesitan invitarte al equipo de cuidado de su hijo."
+  },
+  "teacherAnalytics": {
+    "title": "Analíticas del Aula",
+    "subtitle": "Distribución de niveles de funcionamiento y progreso",
+    "standard": "Estándar",
+    "supported": "Con Apoyo",
+    "lowVerbal": "Bajo Verbal",
+    "domainProgress": "Progreso por Área",
+    "engagementTrends": "Tendencias de Participación",
+    "avgSessionsWeek": "Sesiones Prom./Semana",
+    "avgSessionDuration": "Duración Prom. de Sesión",
+    "tutorUsageRate": "Tasa de Uso de Tutores"
+  },
+  "teacherLessonPlan": {
+    "title": "Planes de Lección",
+    "subtitle": "Generador de planes basado en el Cerebro",
+    "generateNew": "Generar Nuevo Plan",
+    "generateDesc": "Selecciona estudiantes y deja que la IA cree un plan de lección diferenciado basado en sus perfiles de Cerebro",
+    "createPlan": "Crear Plan de Lección",
+    "recentPlans": "Planes Recientes",
+    "noPlansTitle": "Sin Planes de Lección",
+    "noPlansMessage": "Genera tu primer plan de lección basado en el Cerebro arriba."
+  },
+  "teacherStudent": {
+    "brain": "Cerebro de {{name}}",
+    "readOnlyProfile": "Perfil de cerebro (solo lectura)",
+    "level": "Nivel: {{level}}",
+    "enrolled": "Inscrito: {{grade}}",
+    "functioning": "Funcionamiento: {{grade}}",
+    "submitInsight": "Enviar Observación",
+    "uploadIEP": "Subir PEI"
+  },
+  "teacherInsight": {
+    "title": "Enviar Observación",
+    "subtitle": "Comparte una observación sobre el aprendizaje de este estudiante",
+    "yourInsight": "Tu Observación",
+    "placeholder": "Describe lo que has observado sobre este estudiante...",
+    "submitted": "Observación enviada a la bandeja del padre"
+  },
+  "teacherIEP": {
+    "title": "Subir PEI",
+    "subtitle": "Subir en nombre del padre (pendiente de su aprobación)",
+    "uploadDocument": "Subir Documento PEI",
+    "uploadDesc": "Toma una foto o selecciona un archivo PDF",
+    "camera": "Cámara",
+    "pdf": "PDF"
+  },
+  "caregiver": {
+    "greeting": "Hola, {{name}}",
+    "assignedChildren": "Tus niños asignados",
+    "noChildrenTitle": "Sin Niños Asignados",
+    "noChildrenMessage": "Un padre necesita invitarte como cuidador de su hijo.",
+    "brain": "Cerebro",
+    "iep": "PEI",
+    "sessions": "Sesiones",
+    "note": "Nota"
+  },
+  "caregiverNotifications": {
+    "title": "Notificaciones",
+    "subtitle": "Alertas e hitos",
+    "noNotificationsTitle": "Sin Notificaciones",
+    "noNotificationsMessage": "Recibirás alertas por hitos de metas PEI, cambios en el nivel de funcionamiento y logros de racha."
+  },
+  "caregiverSettings": {
+    "title": "Configuración",
+    "notificationPreferences": "Preferencias de Notificación",
+    "accountDetails": "Detalles de Cuenta"
+  },
+  "caregiverChild": {
+    "overview": "Resumen de {{name}}",
+    "streak": "Racha",
+    "sessionsToday": "Sesiones Hoy",
+    "accommodations": "Adaptaciones",
+    "iepGoals": "Metas PEI",
+    "gradebook": "Libreta de Notas",
+    "observation": "Observación"
+  },
+  "caregiverBrain": {
+    "title": "Resumen del Cerebro",
+    "subtitle": "Vista de solo lectura del perfil de aprendizaje",
+    "enrolled": "Inscrito: {{grade}}",
+    "functioning": "Funcionamiento: {{grade}}"
+  },
+  "caregiverAccommodations": {
+    "title": "Adaptaciones",
+    "subtitle": "Adaptaciones activas y explicaciones",
+    "noTitle": "Sin Adaptaciones",
+    "noMessage": "No hay adaptaciones activas en este momento."
+  },
+  "caregiverIEP": {
+    "title": "Metas PEI",
+    "subtitle": "Seguimiento de progreso (solo lectura)",
+    "noTitle": "Sin Metas PEI",
+    "noMessage": "Aún no se han configurado metas PEI.",
+    "progressLabel": "{{percent}}% (Línea Base → Actual → Meta)"
+  },
+  "caregiverSessions": {
+    "title": "Registro de Sesiones",
+    "subtitle": "Sesiones de aprendizaje cronológicas",
+    "noTitle": "Sin Sesiones Aún",
+    "noMessage": "El historial de sesiones aparecerá cuando el estudiante complete actividades."
+  },
+  "caregiverObservation": {
+    "title": "Enviar Observación",
+    "subtitle": "Comparte lo que has notado hoy",
+    "prompt": "¿Cómo le fue al niño hoy?",
+    "placeholder": "Comparte tu observación...",
+    "submitBtn": "Enviar Observación",
+    "submitted": "Observación guardada en las perspectivas del Cerebro"
+  },
+  "caregiverProgress": {
+    "title": "Progreso",
+    "subtitle": "Progreso de aprendizaje a lo largo del tiempo"
+  },
+  "caregiverGradebook": {
+    "title": "Libreta de Notas",
+    "subtitle": "Resumen de dominio por materia"
+  },
+  "therapist": {
+    "greeting": "Hola, {{name}}",
+    "caseload": "Tu carga de clientes",
+    "noClientsTitle": "Sin Clientes",
+    "noClientsMessage": "Un padre necesita invitarte como terapeuta de su hijo.",
+    "goals": "Metas",
+    "notes": "Notas",
+    "reports": "Reportes"
+  },
+  "therapistClient": {
+    "overview": "Perfil de {{name}}",
+    "brainProfile": "Perfil de cerebro y datos de terapia",
+    "goalsTitle": "Metas de Terapia",
+    "goalsSubtitle": "Rastrea y administra las metas de terapia",
+    "noGoalsTitle": "Sin Metas Establecidas",
+    "noGoalsMessage": "Agrega metas de terapia para este cliente.",
+    "addGoal": "Agregar Meta",
+    "notesTitle": "Notas de Sesión",
+    "notesSubtitle": "Registra las observaciones de sesiones de terapia",
+    "noNotesTitle": "Sin Notas Aún",
+    "noNotesMessage": "Agrega notas de sesión después de cada sesión de terapia.",
+    "addNote": "Agregar Nota",
+    "reportsTitle": "Reportes de Progreso",
+    "reportsSubtitle": "Genera y visualiza reportes de progreso de terapia",
+    "noReportsTitle": "Sin Reportes",
+    "noReportsMessage": "Genera un reporte de progreso cuando estés listo.",
+    "generateReport": "Generar Reporte"
+  },
+  "tabs": {
+    "home": "Inicio",
+    "brain": "Cerebro",
+    "inbox": "Buzón",
+    "tutors": "Tutores",
+    "settings": "Configuración",
+    "worldMap": "Mapa",
+    "shop": "Tienda",
+    "profile": "Perfil",
+    "classroom": "Aula",
+    "analytics": "Analíticas",
+    "lessonPlans": "Planes",
+    "alerts": "Alertas",
+    "clients": "Clientes"
+  }
+}

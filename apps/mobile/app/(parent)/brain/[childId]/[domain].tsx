@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useBrain } from '@/hooks/useBrain';
 import { AivoCard, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
@@ -11,6 +12,7 @@ export default function DomainDrillDown() {
   const { childId, domain } = useLocalSearchParams<{ childId: string; domain: string }>();
   const insets = useSafeAreaInsets();
   const { data: brain, isLoading } = useBrain(childId);
+  const { t } = useTranslation();
 
   const domainData = brain?.domains?.find(d => d.domain === domain);
 
@@ -23,7 +25,7 @@ export default function DomainDrillDown() {
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
       <Text style={styles.title}>{domain}</Text>
@@ -31,7 +33,7 @@ export default function DomainDrillDown() {
 
       <AivoCard style={styles.ladderCard}>
         <View style={styles.ladderHeader}>
-          <Text style={styles.ladderLabel}>Enrolled Grade</Text>
+          <Text style={styles.ladderLabel}>{t('parentBrain.enrolledGrade', { grade: '' }).trim()}</Text>
           <Text style={styles.ladderValue}>{domainData?.enrolledGrade || 'N/A'}</Text>
         </View>
         <View style={styles.ladderBar}>
@@ -41,7 +43,7 @@ export default function DomainDrillDown() {
           </View>
         </View>
         <View style={styles.ladderFooter}>
-          <Text style={styles.ladderLabel}>Functioning Grade</Text>
+          <Text style={styles.ladderLabel}>{t('parentBrain.functioningGrade', { grade: '' }).trim()}</Text>
           <Text style={styles.ladderValue}>{domainData?.functioningGrade || 'N/A'}</Text>
         </View>
       </AivoCard>

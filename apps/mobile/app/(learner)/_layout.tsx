@@ -2,8 +2,10 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants/colors';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function LearnerLayout() {
+  const { t } = useTranslation();
   return (
     <Tabs
       screenOptions={{
@@ -26,28 +28,28 @@ export default function LearnerLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'World Map',
+          title: t('tabs.worldMap'),
           tabBarIcon: ({ color, size }) => <Ionicons name="map" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="brain"
         options={{
-          title: 'Brain',
+          title: t('tabs.brain'),
           tabBarIcon: ({ color, size }) => <Ionicons name="bulb" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="shop"
         options={{
-          title: 'Shop',
+          title: t('tabs.shop'),
           tabBarIcon: ({ color, size }) => <Ionicons name="cart" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="gamification"
         options={{
-          title: 'Profile',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color, size }) => <Ionicons name="trophy" size={size} color={color} />,
         }}
       />

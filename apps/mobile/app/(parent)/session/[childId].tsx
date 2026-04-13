@@ -4,24 +4,26 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function CoViewSession() {
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
+        <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>Live Session</Text>
+      <Text style={styles.title}>{t('parentSession.title')}</Text>
       <EmptyState
         icon={<Ionicons name="videocam-outline" size={48} color={colors.textSecondary} />}
         title="No Active Session"
-        message="When your child starts a learning session, you can watch their progress in real-time here."
+        message={t('parentSession.subtitle', { name: '' })}
       />
     </View>
   );
