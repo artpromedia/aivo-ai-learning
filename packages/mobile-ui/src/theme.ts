@@ -1,0 +1,68 @@
+import { BRAND } from '@aivo/brand';
+
+export const theme = {
+  colors: {
+    primary: BRAND.colors.primary,
+    primaryLight: BRAND.colors.primaryLight,
+    primaryDark: BRAND.colors.primaryDark,
+    secondary: BRAND.colors.secondary,
+    accent: BRAND.colors.accent,
+    success: BRAND.colors.success,
+    warning: BRAND.colors.warning,
+    error: BRAND.colors.error,
+    info: BRAND.colors.info,
+    navy: '#1A1A2E',
+    background: '#FFFBF7',
+    card: '#FFFFFF',
+    surface: BRAND.colors.surface,
+    text: BRAND.colors.text,
+    textSecondary: BRAND.colors.textSecondary,
+    border: BRAND.colors.border,
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+    xxl: 48,
+  },
+  radius: {
+    sm: 6,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    xxl: 24,
+    full: 9999,
+  },
+  shadows: {
+    sm: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    md: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    lg: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 5,
+    },
+  },
+  fonts: {
+    heading: 'Nunito-ExtraBold',
+    headingSemiBold: 'Nunito-SemiBold',
+    body: 'Nunito-Regular',
+    bodyBold: 'Nunito-Bold',
+    mono: 'JetBrainsMono-Regular',
+  },
+} as const;

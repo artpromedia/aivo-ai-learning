@@ -1,0 +1,206 @@
+import React from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet, RefreshControl } from 'react-native';
+import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@/hooks/useAuth';
+import { useLearners } from '@/hooks/useLearners';
+import { AivoCard, StatCard, AivoButton, EmptyState } from '@aivo/mobile-ui';
+import { colors, spacing, radius } from '@/constants/colors';
+
+export default function ParentDashboard() {
+  const insets = useSafeAreaInsets();
+  const { user, logout } = useAuth();
+  const { data: learners, isLoading, refetch } = useLearners();
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
+    >
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Hello, {user?.name || 'Parent'}</Text>
+          <Text style={styles.subGreeting}>Your children's learning overview</Text>
+        </View>
+        <Pressable onPress={logout} style={styles.logoutBtn}>
+          <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
+        </Pressable>
+      </View>
+
+      <View style={styles.statsRow}>
+        <StatCard
+          label="Children"
+          value={learners?.length || 0}
+          icon={<Ionicons name="people" size={20} color={colors.primary} />}
+        />
+        <View style={{ width: 8 }} />
+        <StatCard
+          label="Active Tutors"
+          value={7}
+          icon={<Ionicons name="school" size={20} color={colors.secondary} />}
+          color={colors.secondary}
+        />
+        <View style={{ width: 8 }} />
+        <StatCard
+          label="Sessions"
+          value={24}
+          icon={<Ionicons name="book" size={20} color={colors.success} />}
+          color={colors.success}
+        />
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Your Children</Text>
+        <Pressable onPress={() => router.push('/(parent)/onboard')}>
+          <Ionicons name="add-circle" size={28} color={colors.primary} />
+        </Pressable>
+      </View>
+
+      {!learners || learners.length === 0 ? (
+        <EmptyState
+          icon={<Ionicons name="people-outline" size={48} color={colors.textSecondary} />}
+          title="No Children Added"
+          message="Add your first child to begin their personalized learning journey."
+          actionLabel="Add Child"
+          onAction={() => router.push('/(parent)/onboard')}
+        />
+      ) : (
+        learners.map((learner) => (
+          <Pressable
+            key={learner.id}
+            onPress={() => router.push(`/(parent)/brain/${learner.id}` as any)}
+          >
+            <AivoCard style={styles.childCard}>
+              <View style={styles.childRow}>
+                <View style={styles.childAvatar}>
+                  <Text style={styles.childInitial}>
+                    {learner.firstName[0]}
+                  </Text>
+                </View>
+                <View style={styles.childInfo}>
+                  <Text style={styles.childName}>{learner.firstName} {learner.lastName}</Text>
+                  <Text style={styles.childGrade}>Grade {learner.gradeLevel}</Text>
+                  <View style={styles.levelBadge}>
+                    <Text style={styles.levelText}>{learner.functioningLevel}</Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+              </View>
+              <View style={styles.childActions}>
+                <Pressable
+                  style={styles.actionBtn}
+                  onPress={() => router.push(`/(parent)/brain/${learner.id}` as any)}
+                >
+                  <Ionicons name="bulb-outline" size={18} color={colors.primary} />
+                  <Text style={styles.actionText}>Brain</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.actionBtn}
+                  onPress={() => router.push(`/(parent)/progress/${learner.id}` as any)}
+                >
+                  <Ionicons name="trending-up-outline" size={18} color={colors.success} />
+                  <Text style={styles.actionText}>Progress</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.actionBtn}
+                  onPress={() => router.push(`/(parent)/iep/${learner.id}` as any)}
+                >
+                  <Ionicons name="document-outline" size={18} color={colors.info} />
+                  <Text style={styles.actionText}>IEP</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.actionBtn}
+                  onPress={() => router.push(`/(parent)/team/${learner.id}` as any)}
+                >
+                  <Ionicons name="people-outline" size={18} color={colors.accent} />
+                  <Text style={styles.actionText}>Team</Text>
+                </Pressable>
+              </View>
+            </AivoCard>
+          </Pressable>
+        ))
+      )}
+
+      <View style={styles.quickActions}>
+        <AivoButton
+          title="Tutor Store"
+          onPress={() => router.push('/(parent)/tutors')}
+          variant="outline"
+          icon={<Ionicons name="storefront-outline" size={18} color={colors.primary} />}
+          style={{ flex: 1, marginRight: 8 }}
+        />
+        <AivoButton
+          title="Billing"
+          onPress={() => router.push('/(parent)/billing')}
+          variant="outline"
+          icon={<Ionicons name="card-outline" size={18} color={colors.primary} />}
+          style={{ flex: 1 }}
+        />
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.md },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  greeting: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', color: colors.text },
+  subGreeting: { fontSize: 14, fontFamily: 'Nunito-Regular', color: colors.textSecondary, marginTop: 2 },
+  logoutBtn: { padding: 8 },
+  statsRow: { flexDirection: 'row', marginBottom: spacing.lg },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  sectionTitle: { fontSize: 18, fontFamily: 'Nunito-Bold', color: colors.text },
+  childCard: { marginBottom: spacing.md },
+  childRow: { flexDirection: 'row', alignItems: 'center' },
+  childAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.primaryLight + '30',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  childInitial: { fontSize: 20, fontFamily: 'Nunito-ExtraBold', color: colors.primary },
+  childInfo: { flex: 1, marginLeft: 12 },
+  childName: { fontSize: 16, fontFamily: 'Nunito-Bold', color: colors.text },
+  childGrade: { fontSize: 13, fontFamily: 'Nunito-Regular', color: colors.textSecondary },
+  levelBadge: {
+    backgroundColor: colors.primary + '15',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  levelText: { fontSize: 11, fontFamily: 'Nunito-SemiBold', color: colors.primary },
+  childActions: {
+    flexDirection: 'row',
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    justifyContent: 'space-around',
+  },
+  actionBtn: { alignItems: 'center', gap: 4 },
+  actionText: { fontSize: 12, fontFamily: 'Nunito-SemiBold', color: colors.textSecondary },
+  quickActions: { flexDirection: 'row', marginTop: spacing.md },
+});

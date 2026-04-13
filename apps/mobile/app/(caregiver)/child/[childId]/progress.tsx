@@ -1,0 +1,52 @@
+import React from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { useLocalSearchParams, router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useBrain } from '@/hooks/useBrain';
+import { AivoCard, LoadingState } from '@aivo/mobile-ui';
+import { colors, spacing } from '@/constants/colors';
+
+export default function CaregiverProgressScreen() {
+  const { childId } = useLocalSearchParams<{ childId: string }>();
+  const insets = useSafeAreaInsets();
+  const { data: brain, isLoading } = useBrain(childId);
+  if (isLoading) return <LoadingState />;
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}>
+      <Pressable onPress={() => router.back()} style={styles.backRow}>
+        <Ionicons name="arrow-back" size={20} color={colors.primary} />
+        <Text style={styles.backText}>Back</Text>
+      </Pressable>
+      <Text style={styles.title}>Progress Trends</Text>
+      <Text style={styles.subtitle}>Delivery level movement over time</Text>
+
+      {brain?.domains?.map((d) => (
+        <AivoCard key={d.domain} style={styles.card}>
+          <Text style={styles.domainName}>{d.domain}</Text>
+          <View style={styles.trendRow}>
+            <Text style={styles.levelLabel}>Current: {d.functioningGrade}</Text>
+            <Text style={styles.targetLabel}>Target: {d.enrolledGrade}</Text>
+          </View>
+          <View style={styles.bar}><View style={[styles.fill, { width: `${d.masteryPercent}%` }]} /></View>
+        </AivoCard>
+      ))}
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.md },
+  backRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: spacing.md },
+  backText: { fontSize: 16, fontFamily: 'Nunito-SemiBold', color: colors.primary },
+  title: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', color: colors.text },
+  subtitle: { fontSize: 14, fontFamily: 'Nunito-Regular', color: colors.textSecondary, marginBottom: spacing.lg },
+  card: { marginBottom: spacing.sm },
+  domainName: { fontSize: 15, fontFamily: 'Nunito-Bold', color: colors.text, marginBottom: 4 },
+  trendRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  levelLabel: { fontSize: 13, fontFamily: 'Nunito-SemiBold', color: colors.primary },
+  targetLabel: { fontSize: 13, fontFamily: 'Nunito-Regular', color: colors.textSecondary },
+  bar: { height: 8, backgroundColor: colors.border, borderRadius: 4 },
+  fill: { height: 8, borderRadius: 4, backgroundColor: colors.primary },
+});

@@ -8,8 +8,10 @@ AI-powered adaptive learning platform for neurodiverse children. Features Brain-
 ### Monorepo Structure (Turborepo + pnpm)
 ```
 apps/web           — Next.js 15 frontend (port 5000)
+apps/mobile        — React Native (Expo SDK 52) mobile app
 packages/db        — Drizzle ORM schema (PostgreSQL 16)
 packages/brand     — Design tokens, tutor catalog, roles
+packages/mobile-ui — Shared mobile UI components + theme
 packages/events    — Typed NATS event definitions
 packages/observability — Pino structured logging
 packages/security  — JWT RS256 sign/verify (jose)
@@ -32,6 +34,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 
 ### Tech Stack
 - **Frontend**: Next.js 15 + Tailwind CSS v4 + TypeScript
+- **Mobile**: React Native (Expo SDK 52) + Expo Router + TypeScript
 - **Backend (TS)**: Fastify 5 + Drizzle ORM + PostgreSQL 16
 - **Backend (Python)**: FastAPI + LiteLLM + Uvicorn
 - **Auth**: JWT RS256 (jose library), refresh tokens, PIN login. Public key served at `/api/auth/public-key` for cross-service verification. Brain-svc (Python) fetches and caches the RSA public key from identity-svc.
@@ -56,6 +59,22 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **The Awakening Sequence**: (Child-facing, retained) Cinematic 7-phase animation (25s STANDARD, 15s LOW_VERBAL, 10s NON_VERBAL, parent-only PRE_SYMBOLIC) in discovery Finale. Canvas-based particle system runs at 60fps. BrainSphere reusable component at `apps/web/src/components/brain/BrainSphere.tsx`.
 - **Baseline Assessment Breaks**: After each chapter in the Baseline Assessment, learners are offered a 30-45s break activity (Listen to Music, Word Game, or Move & Stretch). Break component at `apps/web/src/components/discovery/BreakActivity.tsx`. Skippable. Music shows animated equalizer bars, word game has letter unscramble, exercise cycles through movement prompts.
 - **All 6 Domains Assessed**: ELA, Math, Science, SEL, Speech, Executive Function — each with 3-5 fallback activities per difficulty tier. Updated FUNCTIONING_LEVEL_CONFIG: STANDARD=6 chapters/5 activities, SUPPORTED=6/4, LOW_VERBAL=6/3, NON_VERBAL=4/3.
+
+### Mobile App (`apps/mobile/`)
+- **Framework**: Expo SDK 52 + Expo Router (file-based routing)
+- **Package**: `@aivo/mobile` with monorepo workspace links to `@aivo/brand`, `@aivo/mobile-ui`
+- **UI Kit**: `packages/mobile-ui/` — AivoButton, AivoCard, AivoHeader, StatCard, EmptyState, LoadingState, TutorCard
+- **Auth**: JWT tokens stored in `expo-secure-store`, auto-refresh, PIN pad for learners
+- **5 Role Dashboards** (47 screens total):
+  - Parent (14): Dashboard, Brain profile, Brain domain drill-down, Brain history, Recommendations, Tutors, IEP, Progress, Session, Co-learn, Onboard, Team, Billing, Settings
+  - Learner (12): World Map, Brain, Shop, Gamification, Stage, Adventure, Tutor session, Homework, Quests, Challenges, Badges, Gradebook
+  - Teacher (6): Classroom, Student brain, Insight, IEP upload, Lesson plan, Analytics
+  - Caregiver (10): Dashboard, Child overview, Brain summary, Accommodations, IEP goals, Gradebook, Session log, Observation, Progress, Notifications, Settings
+  - Therapist (5): Client dashboard, Brain profile, Goals, Notes, Reports
+- **Hooks**: useAuth, useBrain, useEngagement, useLearners, useFamily, useTutor, useSensory, useOffline, useHaptic, useAudio
+- **Fonts**: Nunito (Regular, Bold, SemiBold, ExtraBold) — TTF files in `apps/mobile/assets/fonts/`
+- **API**: Same microservice architecture as web, configured in `apps/mobile/constants/api.ts`
+- **Offline**: NetInfo-based online detection with sync queue (useOffline hook)
 
 ### Running Services
 1. **Start application** (port 5000): Next.js frontend
