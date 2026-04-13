@@ -77,7 +77,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
         headers: { Authorization: req.headers.authorization as string },
       });
       if (brainRes.ok) {
-        const brainData = await brainRes.json();
+        const brainData = await brainRes.json() as { approval_status?: string };
         approvalStatus = brainData.approval_status || null;
       }
     } catch {}

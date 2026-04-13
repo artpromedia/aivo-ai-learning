@@ -50,7 +50,7 @@ export function getPublicKey() {
 export async function getPublicKeyPEM(): Promise<string | null> {
   if (!publicKey) await initKeys();
   if (!publicKey) return null;
-  const spki = await jose.exportSPKI(publicKey as CryptoKey);
+  const spki = await jose.exportSPKI(publicKey as jose.CryptoKey);
   return spki;
 }
 
