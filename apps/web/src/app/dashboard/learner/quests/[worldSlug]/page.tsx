@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 interface QuestWorld {
   slug: string;
@@ -64,6 +65,9 @@ const SAMPLE_WORLDS: Record<string, QuestWorld> = {
 export default function QuestWorldPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("learner");
+  const tCommon = useTranslations("common");
+  const tGamification = useTranslations("gamification");
   const params = useParams();
   const worldSlug = params.worldSlug as string;
   const world = SAMPLE_WORLDS[worldSlug];
@@ -75,8 +79,8 @@ export default function QuestWorldPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-slate-500 font-semibold">Quest world not found</p>
-          <Link href="/dashboard/learner/quests" className="text-primary hover:underline text-sm mt-2 inline-block">← Back to Quests</Link>
+          <p className="text-slate-500 font-semibold">{t("quest_not_found")}</p>
+          <Link href="/dashboard/learner/quests" className="text-primary hover:underline text-sm mt-2 inline-block">← {tCommon("back")}</Link>
         </div>
       </div>
     );
@@ -95,7 +99,7 @@ export default function QuestWorldPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50">
       <div className="max-w-4xl mx-auto px-6 py-8">
-        <Link href="/dashboard/learner/quests" className="text-sm text-primary hover:underline font-semibold mb-6 inline-block">← Back to Quests</Link>
+        <Link href="/dashboard/learner/quests" className="text-sm text-primary hover:underline font-semibold mb-6 inline-block">← {tCommon("back")}</Link>
 
         <div className={`bg-gradient-to-r ${world.theme} rounded-3xl p-8 text-white mb-8 relative overflow-hidden`}>
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -106,11 +110,11 @@ export default function QuestWorldPage() {
             <div className="flex gap-6 mt-4">
               <div>
                 <p className="text-2xl font-bold">{completed}/{world.quests.length}</p>
-                <p className="text-white/60 text-xs">Quests Done</p>
+                <p className="text-white/60 text-xs">{t("quests_done")}</p>
               </div>
               <div>
                 <p className="text-2xl font-bold">{totalXP}</p>
-                <p className="text-white/60 text-xs">XP Earned</p>
+                <p className="text-white/60 text-xs">{tGamification("xp")}</p>
               </div>
             </div>
           </div>
@@ -159,12 +163,12 @@ export default function QuestWorldPage() {
 
                   {quest.status === "available" && (
                     <button className="mt-3 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition">
-                      Start Quest
+                      {t("start_quest")}
                     </button>
                   )}
                   {quest.status === "in_progress" && (
                     <button className="mt-3 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition">
-                      Continue Quest
+                      {t("continue_quest")}
                     </button>
                   )}
                 </div>

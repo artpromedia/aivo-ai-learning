@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface AuditEntry {
   action: string;
@@ -12,6 +13,8 @@ interface AuditEntry {
 
 export default function AdminCompliancePage() {
   const { accessToken } = useAuth();
+  const t = useTranslations("platformAdmin");
+  const tc = useTranslations("common");
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
 
@@ -107,7 +110,7 @@ export default function AdminCompliancePage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Compliance & Security</h1>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("audit_logs")}</h1>
           <p className="text-sm text-slate-500 mt-1">COPPA, FERPA, GDPR compliance status, security controls, and audit trail.</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-semibold">
@@ -151,7 +154,7 @@ export default function AdminCompliancePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-          <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Security Controls</h2>
+          <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("system_health")}</h2>
           <div className="space-y-2">
             {securityControls.map((ctrl) => (
               <div key={ctrl.label} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-slate-50 transition">
@@ -167,7 +170,7 @@ export default function AdminCompliancePage() {
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading font-bold text-lg text-slate-900">Audit Trail</h2>
+            <h2 className="font-heading font-bold text-lg text-slate-900">{t("audit_logs")}</h2>
             <span className="text-xs text-slate-400">Last 30 days</span>
           </div>
           <div className="space-y-2">

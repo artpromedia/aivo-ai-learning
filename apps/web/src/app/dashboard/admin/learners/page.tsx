@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Pagination from "@/components/Pagination";
+import { useTranslations } from "next-intl";
 
 interface Learner {
   id: string;
@@ -26,6 +27,9 @@ const LEVEL_CONFIG: Record<string, { label: string; color: string; bg: string; d
 
 export default function AdminLearnersPage() {
   const { accessToken } = useAuth();
+  const t = useTranslations("platformAdmin");
+  const tc = useTranslations("common");
+  const td = useTranslations("dashboard");
   const [learners, setLearners] = useState<Learner[]>([]);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +71,7 @@ export default function AdminLearnersPage() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Learner Management</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{td("learners")}</h1>
         <p className="text-sm text-slate-500 mt-1">View and manage all learner profiles across the platform.</p>
       </div>
 
@@ -111,9 +115,9 @@ export default function AdminLearnersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
-                  <th className="px-5 py-3 font-semibold">Name</th>
+                  <th className="px-5 py-3 font-semibold">{tc("name")}</th>
                   <th className="px-5 py-3 font-semibold">Functioning Level</th>
-                  <th className="px-5 py-3 font-semibold">Grade</th>
+                  <th className="px-5 py-3 font-semibold">{tc("type")}</th>
                   <th className="px-5 py-3 font-semibold">Created</th>
                 </tr>
               </thead>

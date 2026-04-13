@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 interface Recommendation {
   id: string;
@@ -51,6 +52,8 @@ export default function RecommendationsPage() {
   const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
+  const t = useTranslations("parent");
+  const tCommon = useTranslations("common");
 
   const [recs, setRecs] = useState<Recommendation[]>([]);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
@@ -108,21 +111,21 @@ export default function RecommendationsPage() {
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button onClick={() => router.push("/dashboard/parent")}
-            className="text-sm text-slate-500 hover:text-primary font-semibold">Back to Dashboard</button>
+            className="text-sm text-slate-500 hover:text-primary font-semibold">{t("back_to_dashboard")}</button>
           <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-8 py-8 space-y-8">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-slate-900">Recommendation Inbox</h1>
-          <p className="text-slate-500 mt-1">Review and respond to Brain recommendations for your learner</p>
+          <h1 className="text-3xl font-heading font-bold text-slate-900">{t("recommendation_inbox")}</h1>
+          <p className="text-slate-500 mt-1">{t("recommendation_desc")}</p>
         </div>
 
         {conflicts.length > 0 && (
           <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200">
-            <h3 className="font-heading font-bold text-amber-800 mb-2">Conflicts Detected</h3>
-            <p className="text-sm text-amber-700 mb-3">Multiple recommendations are pending in the same area. Review carefully.</p>
+            <h3 className="font-heading font-bold text-amber-800 mb-2">{t("conflicts_detected")}</h3>
+            <p className="text-sm text-amber-700 mb-3">{t("conflicts_desc")}</p>
             {conflicts.map((c, i) => (
               <div key={i} className="p-3 rounded-xl bg-amber-100/50 mb-2 text-sm text-amber-800">
                 <span className="font-bold">{c.domain}:</span> {c.description}
@@ -134,11 +137,11 @@ export default function RecommendationsPage() {
         <div className="flex gap-2 border-b border-slate-200 pb-1">
           <button onClick={() => setActiveTab("pending")}
             className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === "pending" ? "bg-white border border-b-white text-primary -mb-[1px]" : "text-slate-400 hover:text-slate-600"}`}>
-            Pending ({pendingRecs.length})
+            {t("pending_count", { count: pendingRecs.length })}
           </button>
           <button onClick={() => setActiveTab("history")}
             className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === "history" ? "bg-white border border-b-white text-primary -mb-[1px]" : "text-slate-400 hover:text-slate-600"}`}>
-            History ({resolvedRecs.length})
+            {t("history_count", { count: resolvedRecs.length })}
           </button>
         </div>
 
@@ -147,7 +150,7 @@ export default function RecommendationsPage() {
             {pendingRecs.length === 0 ? (
               <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
                 <div className="text-5xl mb-3">✅</div>
-                <p className="text-slate-500 font-semibold">No pending recommendations. All caught up!</p>
+                <p className="text-slate-500 font-semibold">{t("no_pending")}</p>
               </div>
             ) : (
               pendingRecs.map(rec => (
@@ -166,31 +169,31 @@ export default function RecommendationsPage() {
                   {respondingTo === rec.id ? (
                     <div className="space-y-3 mt-3 p-3 rounded-xl bg-white/50">
                       <textarea value={responseNotes} onChange={(e) => setResponseNotes(e.target.value)}
-                        placeholder="Add notes (optional)..."
+                        placeholder={t("add_notes")}
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none text-sm font-body resize-none h-20" />
                       <div className="flex gap-2">
                         <button onClick={() => respondToRec(rec.id, "APPROVED")}
                           className="px-4 py-2 rounded-full bg-green-600 text-white font-bold text-sm hover:bg-green-700 transition">
-                          Approve
+                          {t("approve")}
                         </button>
                         <button onClick={() => respondToRec(rec.id, "ADJUSTED")}
                           className="px-4 py-2 rounded-full bg-amber-500 text-white font-bold text-sm hover:bg-amber-600 transition">
-                          Adjust
+                          {t("adjust")}
                         </button>
                         <button onClick={() => respondToRec(rec.id, "DECLINED")}
                           className="px-4 py-2 rounded-full bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition">
-                          Decline
+                          {t("decline")}
                         </button>
                         <button onClick={() => setRespondingTo(null)}
                           className="px-4 py-2 rounded-full bg-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-300 transition">
-                          Cancel
+                          {tCommon("cancel")}
                         </button>
                       </div>
                     </div>
                   ) : (
                     <button onClick={() => setRespondingTo(rec.id)}
                       className="px-5 py-2 rounded-full bg-primary text-white font-bold text-sm hover:bg-primary-dark transition">
-                      Respond
+                      {t("respond")}
                     </button>
                   )}
                 </div>
@@ -204,7 +207,7 @@ export default function RecommendationsPage() {
             {resolvedRecs.length === 0 ? (
               <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
                 <div className="text-5xl mb-3">📋</div>
-                <p className="text-slate-500 font-semibold">No resolved recommendations yet.</p>
+                <p className="text-slate-500 font-semibold">{t("no_resolved")}</p>
               </div>
             ) : (
               resolvedRecs.map(rec => (
@@ -212,7 +215,7 @@ export default function RecommendationsPage() {
                   <div>
                     <span className="text-xs text-slate-400 font-bold uppercase">{TYPE_LABELS[rec.type] || rec.type}</span>
                     <div className="font-heading font-bold text-slate-800">{rec.title}</div>
-                    {rec.parentNotes && <p className="text-xs text-slate-400 mt-1">Note: {rec.parentNotes}</p>}
+                    {rec.parentNotes && <p className="text-xs text-slate-400 mt-1">{t("note_label")}: {rec.parentNotes}</p>}
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`px-3 py-1 text-xs rounded-full font-bold ${

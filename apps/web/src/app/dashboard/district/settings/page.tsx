@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface Tenant {
   id: string;
@@ -12,6 +13,9 @@ interface Tenant {
 
 export default function DistrictSettingsPage() {
   const { accessToken, user } = useAuth();
+  const t = useTranslations("settings");
+  const tc = useTranslations("common");
+  const tda = useTranslations("districtAdmin");
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +46,7 @@ export default function DistrictSettingsPage() {
   return (
     <div className="p-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">District Settings</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("general")}</h1>
         <p className="text-sm text-slate-500 mt-1">Configure your district organization and preferences.</p>
       </header>
 

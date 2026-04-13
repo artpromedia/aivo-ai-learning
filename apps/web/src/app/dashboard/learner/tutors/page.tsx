@@ -5,10 +5,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
+import { useTranslations } from "next-intl";
 
 export default function LearnerTutorsPage() {
   const { user, accessToken, loading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("learner");
+  const tTutor = useTranslations("tutor");
+  const tCommon = useTranslations("common");
   const [activeTutors, setActiveTutors] = useState<string[]>([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
   const [filter, setFilter] = useState<"all" | "active" | "locked">("all");
@@ -45,9 +49,9 @@ export default function LearnerTutorsPage() {
       <div className="max-w-5xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <Link href="/dashboard/learner" className="text-sm text-primary hover:underline font-semibold mb-2 inline-block">← Back to Dashboard</Link>
-            <h1 className="text-3xl font-heading font-bold text-slate-900">My Tutors</h1>
-            <p className="text-sm text-slate-500 mt-1">Your AI-powered learning companions</p>
+            <Link href="/dashboard/learner" className="text-sm text-primary hover:underline font-semibold mb-2 inline-block">← {tCommon("back")}</Link>
+            <h1 className="text-3xl font-heading font-bold text-slate-900">{t("my_tutors")}</h1>
+            <p className="text-sm text-slate-500 mt-1">{t("tutors_description")}</p>
           </div>
           <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
             {(["all", "active", "locked"] as const).map(f => (
@@ -61,7 +65,7 @@ export default function LearnerTutorsPage() {
 
         {loadingTutors ? (
           <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-            <div className="animate-pulse text-slate-400">Loading tutors...</div>
+            <div className="animate-pulse text-slate-400">{tCommon("loading")}</div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

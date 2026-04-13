@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import BrainVisualization from "@/components/BrainVisualization";
+import { useTranslations } from "next-intl";
 
 interface ConnectedLearner {
   id: string;
@@ -24,6 +25,9 @@ interface TherapyGoal {
 
 export default function TherapistDashboard() {
   const { user, accessToken, logout, loading } = useAuth();
+  const t = useTranslations("caregiver");
+  const tc = useTranslations("common");
+  const td = useTranslations("dashboard");
   const router = useRouter();
   const [learners, setLearners] = useState<ConnectedLearner[]>([]);
   const [therapyGoals, setTherapyGoals] = useState<TherapyGoal[]>([]);
@@ -83,7 +87,7 @@ export default function TherapistDashboard() {
 
       <div className="max-w-7xl mx-auto px-8 py-6">
         <div className="flex items-center gap-6 mb-8">
-          <h1 className="text-3xl font-heading font-bold text-slate-900">Therapist Dashboard</h1>
+          <h1 className="text-3xl font-heading font-bold text-slate-900">{t("dashboard")}</h1>
           <div className="flex gap-1 bg-slate-100 rounded-xl p-1 ml-auto">
             {(["caseload", "goals", "settings"] as const).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
@@ -194,7 +198,7 @@ export default function TherapistDashboard() {
         {activeTab === "goals" && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">All Therapy Goals</h2>
+              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("iep_goals")}</h2>
               {therapyGoals.length === 0 ? (
                 <p className="text-sm text-slate-400">No therapy goals recorded yet. Goals will appear as they are added to learner IEP profiles.</p>
               ) : (
@@ -246,7 +250,7 @@ export default function TherapistDashboard() {
         {activeTab === "settings" && (
           <div className="max-w-2xl space-y-6">
             <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Profile</h2>
+              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{td("overview")}</h2>
               <div className="space-y-3">
                 <div>
                   <label className="text-xs text-slate-400 font-semibold uppercase">Name</label>
@@ -264,7 +268,7 @@ export default function TherapistDashboard() {
             </div>
 
             <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Notification Preferences</h2>
+              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{tc("details")}</h2>
               <div className="space-y-4">
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>

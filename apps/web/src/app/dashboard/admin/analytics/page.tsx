@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface EngagementMetrics {
   totalSessions: number;
@@ -20,6 +21,9 @@ interface Cohort {
 
 export default function AdminAnalyticsPage() {
   const { accessToken } = useAuth();
+  const t = useTranslations("platformAdmin");
+  const tc = useTranslations("common");
+  const td = useTranslations("dashboard");
   const [engagement, setEngagement] = useState<EngagementMetrics | null>(null);
   const [mastery, setMastery] = useState<MasteryMetrics | null>(null);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
@@ -73,7 +77,7 @@ export default function AdminAnalyticsPage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Analytics & Research</h1>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">{td("analytics")}</h1>
           <p className="text-sm text-slate-500 mt-1">Platform-wide engagement metrics, mastery growth, and research data.</p>
         </div>
         <button
@@ -111,7 +115,7 @@ export default function AdminAnalyticsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Functioning Level Distribution</h2>
+              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{tc("total")}</h2>
               {cohorts.length > 0 ? (
                 <div className="space-y-4">
                   {cohorts.map((c) => {
@@ -136,7 +140,7 @@ export default function AdminAnalyticsPage() {
             </div>
 
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Mastery by Subject</h2>
+              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{td("analytics")}</h2>
               {mastery?.subjects && mastery.subjects.length > 0 ? (
                 <div className="space-y-4">
                   {mastery.subjects.map((s) => (
@@ -161,7 +165,7 @@ export default function AdminAnalyticsPage() {
           </div>
 
           <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-6 text-white">
-            <h2 className="font-heading font-bold text-lg mb-2">Research Data Export</h2>
+            <h2 className="font-heading font-bold text-lg mb-2">{tc("download")}</h2>
             <p className="text-sm text-slate-400 mb-4">Export anonymized learner data for research purposes. All data is de-identified per FERPA/COPPA requirements.</p>
             <div className="grid grid-cols-3 gap-4">
               <div className="p-4 rounded-xl bg-white/5 border border-white/10">

@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
+import { useTranslations } from "next-intl";
 
 interface TutorCatalogItem {
   key: string;
@@ -31,6 +32,8 @@ export default function TutorStorePage() {
   const { user, accessToken, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("parent");
+  const tc = useTranslations("common");
   const highlightTutor = searchParams.get("tutor");
   const [catalog, setCatalog] = useState<TutorCatalogItem[]>([]);
   const [bundles, setBundles] = useState<Record<string, Bundle>>({});
@@ -125,21 +128,21 @@ export default function TutorStorePage() {
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button onClick={() => router.push("/dashboard/parent")} className="text-sm text-slate-500 hover:text-primary font-semibold">
-            Back to Dashboard
+            {t("back_to_dashboard")}
           </button>
           <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         </div>
         <div className="flex items-center gap-3">
           <span className="px-3 py-1 text-sm rounded-full bg-green-100 text-green-700 font-bold">
-            {activeCount} Active Tutors
+            {t("active_tutors_count", { count: activeCount })}
           </span>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-8 py-8 space-y-10">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-heading font-bold text-slate-900">Tutor Store</h1>
-          <p className="text-slate-500 font-semibold">Choose individual tutors or save with a bundle</p>
+          <h1 className="text-3xl font-heading font-bold text-slate-900">{t("tutor_store")}</h1>
+          <p className="text-slate-500 font-semibold">{t("choose_tutors_or_bundles")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -148,7 +151,7 @@ export default function TutorStorePage() {
               onClick={() => setSelectedBundle(selectedBundle === key ? null : key)}
               className={`p-6 rounded-2xl border-2 text-left transition ${selectedBundle === key ? "border-primary bg-purple-50 shadow-lg" : "border-slate-200 bg-white hover:border-purple-200"}`}>
               <h3 className="font-heading font-bold text-lg text-slate-900">{bundle.name}</h3>
-              <p className="text-sm text-slate-500 mt-1">{bundle.tutors.length} tutors included</p>
+              <p className="text-sm text-slate-500 mt-1">{t("tutors_included", { count: bundle.tutors.length })}</p>
               <div className="mt-3 flex items-baseline gap-1">
                 <span className="text-2xl font-bold text-primary">${(bundle.price / 100).toFixed(2)}</span>
                 <span className="text-sm text-slate-400">/month</span>
@@ -167,7 +170,7 @@ export default function TutorStorePage() {
                 <button onClick={(e) => { e.stopPropagation(); subscribeBundle(key); }}
                   disabled={subscribing === key}
                   className="mt-4 w-full px-4 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition disabled:opacity-50">
-                  {subscribing === key ? "Activating..." : "Subscribe to Bundle"}
+                  {subscribing === key ? t("activating") : t("subscribe_to_bundle")}
                 </button>
               )}
             </button>
@@ -175,7 +178,7 @@ export default function TutorStorePage() {
         </div>
 
         <div>
-          <h2 className="text-xl font-heading font-bold text-slate-900 mb-4">Core Tutors</h2>
+          <h2 className="text-xl font-heading font-bold text-slate-900 mb-4">{t("core_tutors")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {coreTutors.map(t => {
               const active = isActive(t.sku);
@@ -192,7 +195,7 @@ export default function TutorStorePage() {
                   </div>
                   {active ? (
                     <div className="px-4 py-2 text-center rounded-full bg-green-50 text-green-700 font-bold text-sm">
-                      Active
+                      {tc("active")}
                     </div>
                   ) : (
                     <button onClick={() => subscribe(t.sku)} disabled={subscribing === t.sku}
@@ -208,8 +211,8 @@ export default function TutorStorePage() {
 
         {expansionTutors.length > 0 && (
           <div>
-            <h2 className="text-xl font-heading font-bold text-slate-900 mb-1">Expansion Tutors</h2>
-            <p className="text-sm text-slate-400 mb-4">Specialist tutors for deeper learning</p>
+            <h2 className="text-xl font-heading font-bold text-slate-900 mb-1">{t("expansion_tutors")}</h2>
+            <p className="text-sm text-slate-400 mb-4">{t("expansion_tutors_desc")}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {expansionTutors.map(t => {
                 const active = isActive(t.sku);
@@ -222,12 +225,12 @@ export default function TutorStorePage() {
                       <div>
                         <h3 className="font-heading font-bold" style={{ color: t.color }}>{t.name}</h3>
                         <p className="text-xs text-slate-500">{t.domain}</p>
-                        <span className="inline-block mt-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-50 text-amber-600">NEW</span>
+                        <span className="inline-block mt-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-50 text-amber-600">{tc("more").toUpperCase()}</span>
                       </div>
                     </div>
                     {active ? (
                       <div className="px-4 py-2 text-center rounded-full bg-green-50 text-green-700 font-bold text-sm">
-                        Active
+                        {tc("active")}
                       </div>
                     ) : (
                       <button onClick={() => subscribe(t.sku)} disabled={subscribing === t.sku}

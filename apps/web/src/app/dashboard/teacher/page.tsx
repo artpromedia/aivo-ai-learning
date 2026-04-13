@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import BrainVisualization from "@/components/BrainVisualization";
+import { useTranslations } from "next-intl";
 
 interface ConnectedLearner {
   id: string;
@@ -22,6 +23,9 @@ interface ClassroomGroup {
 
 export default function TeacherDashboard() {
   const { user, accessToken, logout, loading } = useAuth();
+  const t = useTranslations("teacher");
+  const tc = useTranslations("common");
+  const td = useTranslations("dashboard");
   const router = useRouter();
   const [learners, setLearners] = useState<ConnectedLearner[]>([]);
   const [loadingLearners, setLoadingLearners] = useState(true);
@@ -86,7 +90,7 @@ export default function TeacherDashboard() {
 
       <div className="max-w-7xl mx-auto px-8 py-6">
         <div className="flex items-center gap-6 mb-8">
-          <h1 className="text-3xl font-heading font-bold text-slate-900">Teacher Dashboard</h1>
+          <h1 className="text-3xl font-heading font-bold text-slate-900">{t("my_classes")}</h1>
           <div className="flex gap-1 bg-slate-100 rounded-xl p-1 ml-auto">
             {(["overview", "reports", "settings"] as const).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
@@ -189,7 +193,7 @@ export default function TeacherDashboard() {
         {activeTab === "reports" && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Reports & Analytics</h2>
+              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("progress_reports")}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-5 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-sm transition">
                   <div className="flex items-center gap-3 mb-2">
@@ -235,7 +239,7 @@ export default function TeacherDashboard() {
             </div>
 
             <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Learner Summary</h2>
+              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("student_overview")}</h2>
               {learners.length === 0 ? (
                 <p className="text-sm text-slate-400">No learners connected. Reports will appear once parents invite you to their learner teams.</p>
               ) : (
@@ -275,7 +279,7 @@ export default function TeacherDashboard() {
         {activeTab === "settings" && (
           <div className="max-w-2xl space-y-6">
             <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Profile</h2>
+              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{td("overview")}</h2>
               <div className="space-y-3">
                 <div>
                   <label className="text-xs text-slate-400 font-semibold uppercase">Name</label>
@@ -293,7 +297,7 @@ export default function TeacherDashboard() {
             </div>
 
             <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Notification Preferences</h2>
+              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{tc("details")}</h2>
               <div className="space-y-4">
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>

@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 interface AdminStats {
   totalUsers: number;
@@ -42,6 +43,9 @@ const ROLE_COLORS: Record<string, string> = {
 
 export default function AdminOverview() {
   const { user, accessToken } = useAuth();
+  const t = useTranslations("platformAdmin");
+  const tc = useTranslations("common");
+  const td = useTranslations("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [statusOverview, setStatusOverview] = useState<StatusOverview | null>(null);
   const [uptime, setUptime] = useState<any>(null);
@@ -69,10 +73,10 @@ export default function AdminOverview() {
   const platformStatus = statusOverview?.overall ?? "checking";
 
   const statCards = [
-    { title: "Total Users", value: stats?.totalUsers ?? "—", icon: "👤", bg: "from-purple-500 to-purple-600", link: "/dashboard/admin/users" },
-    { title: "Active Learners", value: stats?.totalLearners ?? "—", icon: "🎓", bg: "from-cyan-500 to-cyan-600", link: "/dashboard/admin/learners" },
-    { title: "Tenants", value: stats?.totalTenants ?? "—", icon: "🏢", bg: "from-amber-500 to-amber-600", link: "/dashboard/admin/tenants" },
-    { title: "Services", value: totalServices > 0 ? `${healthyCount}/${totalServices}` : "—", icon: "⚡", bg: "from-green-500 to-green-600", link: "/dashboard/admin/services" },
+    { title: t("total_users"), value: stats?.totalUsers ?? "—", icon: "👤", bg: "from-purple-500 to-purple-600", link: "/dashboard/admin/users" },
+    { title: td("total_learners"), value: stats?.totalLearners ?? "—", icon: "🎓", bg: "from-cyan-500 to-cyan-600", link: "/dashboard/admin/learners" },
+    { title: t("tenants"), value: stats?.totalTenants ?? "—", icon: "🏢", bg: "from-amber-500 to-amber-600", link: "/dashboard/admin/tenants" },
+    { title: t("services"), value: totalServices > 0 ? `${healthyCount}/${totalServices}` : "—", icon: "⚡", bg: "from-green-500 to-green-600", link: "/dashboard/admin/services" },
   ];
 
   const quickActions = [
@@ -88,8 +92,8 @@ export default function AdminOverview() {
     <div className="p-8 space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Platform Overview</h1>
-          <p className="text-sm text-slate-500 mt-1">Welcome back, {user?.name}. Here&apos;s what&apos;s happening across the platform.</p>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">{td("overview")}</h1>
+          <p className="text-sm text-slate-500 mt-1">{td("welcome_message", { name: user?.name ?? "" })}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
@@ -154,7 +158,7 @@ export default function AdminOverview() {
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-          <h2 className="font-heading font-bold text-lg text-slate-900 mb-5">Quick Actions</h2>
+          <h2 className="font-heading font-bold text-lg text-slate-900 mb-5">{td("quick_actions")}</h2>
           <div className="grid grid-cols-2 gap-2">
             {quickActions.map((a) => (
               <Link key={a.label} href={a.href}
@@ -170,7 +174,7 @@ export default function AdminOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="font-heading font-bold text-lg text-slate-900">Service Health</h2>
+            <h2 className="font-heading font-bold text-lg text-slate-900">{t("system_health")}</h2>
             <Link href="/dashboard/admin/services" className="text-xs text-primary font-semibold hover:underline">Details →</Link>
           </div>
           <div className="space-y-2">

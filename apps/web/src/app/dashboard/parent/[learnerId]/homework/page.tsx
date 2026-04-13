@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 interface ChildHomework {
   learnerId: string;
@@ -38,6 +39,7 @@ export default function ParentHomeworkPage() {
   const router = useRouter();
   const params = useParams();
   const learnerId = params.learnerId as string;
+  const t = useTranslations("parent");
 
   const [data, setData] = useState<ChildHomework | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,14 +78,14 @@ export default function ParentHomeworkPage() {
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
         <button onClick={() => router.push("/dashboard/parent")} className="text-sm text-slate-500 hover:text-purple-600 font-semibold">
-          Back to Dashboard
+          {t("back_to_dashboard")}
         </button>
       </header>
 
       <main className="max-w-4xl mx-auto px-8 py-12 space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-heading font-bold text-slate-900">Homework History</h1>
-          <p className="text-slate-500">View your child's homework activity and progress</p>
+          <h1 className="text-3xl font-heading font-bold text-slate-900">{t("homework_history")}</h1>
+          <p className="text-slate-500">{t("homework_desc")}</p>
         </div>
 
         {loading ? (
@@ -93,7 +95,7 @@ export default function ParentHomeworkPage() {
         ) : !data || data.assignments.length === 0 ? (
           <div className="text-center py-12 text-slate-400">
             <div className="text-5xl mb-4">📚</div>
-            <p className="font-semibold">No homework assignments yet</p>
+            <p className="font-semibold">{t("no_homework")}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -109,9 +111,9 @@ export default function ParentHomeworkPage() {
                     {SUBJECT_ICONS[subjectLower] || SUBJECT_ICONS.other}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-800 capitalize">{subjectLower} Homework</p>
+                    <p className="font-bold text-slate-800 capitalize">{subjectLower} {t("homework_label")}</p>
                     <p className="text-sm text-slate-400">
-                      {hw.problemCount} problem{hw.problemCount !== 1 ? "s" : ""} &middot;{" "}
+                      {t("problems_count", { count: hw.problemCount })} &middot;{" "}
                       {new Date(hw.createdAt).toLocaleDateString()}
                     </p>
                   </div>

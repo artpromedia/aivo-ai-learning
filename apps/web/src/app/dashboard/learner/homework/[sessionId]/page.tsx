@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 
 interface AdaptedProblem {
   problem_number: number;
@@ -33,6 +34,8 @@ export default function HomeworkSessionPage() {
   const { user, accessToken, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
+  const t = useTranslations("homework");
+  const tCommon = useTranslations("common");
   const sessionId = params.sessionId as string;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -165,7 +168,7 @@ export default function HomeworkSessionPage() {
         <div className="bg-white rounded-2xl p-8 shadow-lg text-center space-y-4">
           <p className="text-red-600 font-bold text-lg">{error}</p>
           <button onClick={() => router.push("/dashboard/learner/homework")} className="px-6 py-2 bg-purple-600 text-white rounded-full font-bold">
-            Back to Homework
+            {tCommon("back")}
           </button>
         </div>
       </div>
@@ -179,7 +182,7 @@ export default function HomeworkSessionPage() {
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push("/dashboard/learner/homework")} className="text-slate-400 hover:text-slate-600 font-bold text-sm">
-            ← Back
+            ← {tCommon("back")}
           </button>
           <span className="text-2xl">{SUBJECT_ICONS[subjectLower] || "📝"}</span>
           <span className="font-heading font-bold text-slate-800 capitalize">{subjectLower} Homework</span>
@@ -192,14 +195,14 @@ export default function HomeworkSessionPage() {
         <div className="flex items-center gap-3">
           {adaptedProblems.length > 0 && (
             <button onClick={() => setShowProblems(!showProblems)} className="text-xs text-purple-600 font-bold hover:underline">
-              {showProblems ? "Hide Problems" : "Show Problems"}
+              {showProblems ? tCommon("hide") : tCommon("show_all")}
             </button>
           )}
           <button
             onClick={completeSession}
             className="px-4 py-1.5 bg-green-500 text-white rounded-full text-sm font-bold hover:bg-green-600 transition"
           >
-            Finish
+            {tCommon("done")}
           </button>
         </div>
       </header>
@@ -230,13 +233,13 @@ export default function HomeworkSessionPage() {
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isDone ? "bg-green-500 text-white" : "bg-purple-100 text-purple-700"}`}>
                       {isDone ? "✓" : p.problem_number}
                     </span>
-                    <span className="font-bold text-slate-700 text-xs">{isDone ? "Complete" : "Problem " + p.problem_number}</span>
+                    <span className="font-bold text-slate-700 text-xs">{isDone ? tCommon("done") : `#${p.problem_number}`}</span>
                     {!isDone && (
                       <button
                         onClick={(e) => { e.stopPropagation(); markProblemDone(p.problem_number); }}
                         className="ml-auto text-xs text-green-600 hover:underline"
                       >
-                        Mark done
+                        {tCommon("done")}
                       </button>
                     )}
                   </div>
@@ -288,7 +291,7 @@ export default function HomeworkSessionPage() {
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask for help or share your answer..."
+                placeholder={t("ask_help_placeholder")}
                 className="flex-1 rounded-full border border-slate-200 px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
                 disabled={sending}
               />
@@ -297,7 +300,7 @@ export default function HomeworkSessionPage() {
                 disabled={sending || !input.trim()}
                 className="px-6 py-3 bg-purple-600 text-white rounded-full font-bold text-sm hover:bg-purple-700 transition disabled:opacity-50"
               >
-                Send
+                {tCommon("submit")}
               </button>
             </form>
           </div>

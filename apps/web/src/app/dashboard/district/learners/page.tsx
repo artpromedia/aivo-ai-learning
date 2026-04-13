@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Pagination from "@/components/Pagination";
+import { useTranslations } from "next-intl";
 
 interface Learner {
   id: string;
@@ -22,6 +23,8 @@ const FL_COLORS: Record<string, string> = {
 
 export default function DistrictLearnersPage() {
   const { accessToken } = useAuth();
+  const t = useTranslations("districtAdmin");
+  const tc = useTranslations("common");
   const [learners, setLearners] = useState<Learner[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -49,14 +52,14 @@ export default function DistrictLearnersPage() {
   return (
     <div className="p-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Learners</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("learners")}</h1>
         <p className="text-sm text-slate-500 mt-1">Browse enrolled learners, view progress, and manage accommodations.</p>
       </header>
 
       <div className="flex items-center gap-4">
         <input
           type="text"
-          placeholder="Search learners..."
+          placeholder={tc("search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="px-4 py-2 rounded-xl border border-slate-200 text-sm w-80 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none"
@@ -74,7 +77,7 @@ export default function DistrictLearnersPage() {
             <thead>
               <tr className="text-left text-slate-400 bg-slate-50/50 border-b border-slate-100">
                 <th className="px-5 py-3 font-semibold">Learner</th>
-                <th className="px-5 py-3 font-semibold">Grade</th>
+                <th className="px-5 py-3 font-semibold">{tc("type")}</th>
                 <th className="px-5 py-3 font-semibold">Functioning Level</th>
                 <th className="px-5 py-3 font-semibold">Curriculum</th>
                 <th className="px-5 py-3 font-semibold">Enrolled</th>

@@ -2,8 +2,10 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 function useParallax() {
   const [scrollY, setScrollY] = useState(0);
@@ -228,6 +230,7 @@ const TUTORS = [
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("landing");
   const scrollY = useParallax();
   const [activeTutor, setActiveTutor] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -301,11 +304,12 @@ export default function Home() {
       <header className="flex items-center justify-between px-8 py-4 border-b border-slate-100">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={140} height={42} priority />
         <nav className="flex items-center gap-4">
+          <LanguageSwitcher compact />
           <Link href="/login" className="px-5 py-2 rounded-lg text-slate-600 font-semibold hover:text-primary transition">
-            Sign In
+            {t("nav_login")}
           </Link>
           <Link href="/signup" className="px-5 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200">
-            Get Started
+            {t("nav_signup")}
           </Link>
         </nav>
       </header>

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import BrainVisualization from "@/components/BrainVisualization";
+import { useTranslations } from "next-intl";
 
 interface LearnerDetail {
   id: string;
@@ -21,6 +22,8 @@ export default function ParentLearnerOverviewPage() {
   const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
+  const t = useTranslations("parent");
+  const tc = useTranslations("common");
   const [learner, setLearner] = useState<LearnerDetail | null>(null);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -45,16 +48,16 @@ export default function ParentLearnerOverviewPage() {
   if (loading || !user) return null;
 
   const navLinks = [
-    { href: `/dashboard/parent/learner/${learnerId}/overview`, label: "Overview", active: true },
-    { href: `/dashboard/parent/learner/${learnerId}/brain`, label: "Brain Profile" },
-    { href: `/dashboard/parent/learner/${learnerId}/assessment`, label: "Assessments" },
-    { href: `/dashboard/parent/learner/${learnerId}/gradebook`, label: "Gradebook" },
-    { href: `/dashboard/parent/learner/${learnerId}/iep`, label: "IEP" },
-    { href: `/dashboard/parent/learner/${learnerId}/collaboration`, label: "Team" },
-    { href: `/dashboard/parent/learner/${learnerId}/recommendations`, label: "Recommendations" },
-    { href: `/dashboard/parent/learner/${learnerId}/sensory`, label: "Sensory" },
-    { href: `/dashboard/parent/learner/${learnerId}/tutors`, label: "Tutors" },
-    { href: `/dashboard/parent/learner/${learnerId}/settings`, label: "Settings" },
+    { href: `/dashboard/parent/learner/${learnerId}/overview`, label: t("overview"), active: true },
+    { href: `/dashboard/parent/learner/${learnerId}/brain`, label: t("brain_profile") },
+    { href: `/dashboard/parent/learner/${learnerId}/assessment`, label: t("assessments") },
+    { href: `/dashboard/parent/learner/${learnerId}/gradebook`, label: t("gradebook") },
+    { href: `/dashboard/parent/learner/${learnerId}/iep`, label: t("iep_goals") },
+    { href: `/dashboard/parent/learner/${learnerId}/collaboration`, label: t("learning_team") },
+    { href: `/dashboard/parent/learner/${learnerId}/recommendations`, label: t("recommendations") },
+    { href: `/dashboard/parent/learner/${learnerId}/sensory`, label: t("sensory_profile") },
+    { href: `/dashboard/parent/learner/${learnerId}/tutors`, label: t("tutors") },
+    { href: `/dashboard/parent/learner/${learnerId}/settings`, label: t("settings") },
   ];
 
   return (
@@ -62,19 +65,19 @@ export default function ParentLearnerOverviewPage() {
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline">Dashboard</Link>
+          <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline">{t("dashboard")}</Link>
           <span className="text-sm font-semibold text-slate-600">{user.name}</span>
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-8 py-6">
-        <Link href="/dashboard/parent" className="text-sm text-primary hover:underline font-semibold mb-4 inline-block">← Back to Dashboard</Link>
+        <Link href="/dashboard/parent" className="text-sm text-primary hover:underline font-semibold mb-4 inline-block">← {t("back_to_dashboard")}</Link>
 
         {loadingData ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 animate-pulse text-slate-400">Loading...</div>
+          <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 animate-pulse text-slate-400">{tc("loading")}</div>
         ) : !learner ? (
           <div className="bg-white rounded-2xl p-12 text-center border border-red-100">
-            <p className="text-red-600 font-semibold">Learner not found</p>
+            <p className="text-red-600 font-semibold">{t("learner_not_found")}</p>
           </div>
         ) : (
           <>
@@ -82,7 +85,7 @@ export default function ParentLearnerOverviewPage() {
               <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl">🧑‍🎓</div>
               <div>
                 <h1 className="text-2xl font-heading font-bold text-slate-900">{learner.name}</h1>
-                <p className="text-sm text-slate-500">Grade {learner.gradeLevel || "—"} · {learner.functioningLevel || "Pending"}</p>
+                <p className="text-sm text-slate-500">{t("grade_label", { grade: learner.gradeLevel || "—" })} · {learner.functioningLevel || tc("pending")}</p>
               </div>
             </div>
 
@@ -98,48 +101,48 @@ export default function ParentLearnerOverviewPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                  <p className="text-xs text-slate-400 font-semibold uppercase mb-1">Functioning Level</p>
-                  <p className="text-xl font-bold text-primary">{learner.functioningLevel || "Pending Assessment"}</p>
+                  <p className="text-xs text-slate-400 font-semibold uppercase mb-1">{t("functioning_level")}</p>
+                  <p className="text-xl font-bold text-primary">{learner.functioningLevel || t("pending_assessment")}</p>
                 </div>
                 <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                  <p className="text-xs text-slate-400 font-semibold uppercase mb-1">Grade Level</p>
+                  <p className="text-xs text-slate-400 font-semibold uppercase mb-1">{t("grade")}</p>
                   <p className="text-xl font-bold text-slate-900">{learner.gradeLevel || "—"}</p>
                 </div>
                 <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                  <p className="text-xs text-slate-400 font-semibold uppercase mb-1">Member Since</p>
+                  <p className="text-xs text-slate-400 font-semibold uppercase mb-1">{t("member_since")}</p>
                   <p className="text-xl font-bold text-slate-900">{new Date(learner.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
 
               <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Brain Profile Preview</h2>
+                <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("brain_preview")}</h2>
                 {accessToken && (
                   <BrainVisualization learnerId={learnerId} learnerName={learner.name} accessToken={accessToken} compact />
                 )}
                 <Link href={`/dashboard/parent/learner/${learnerId}/brain`}
-                  className="mt-4 text-sm text-primary font-semibold hover:underline inline-block">View full brain profile →</Link>
+                  className="mt-4 text-sm text-primary font-semibold hover:underline inline-block">{t("view_full_brain")}</Link>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Link href={`/dashboard/parent/learner/${learnerId}/assessment`}
                   className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-primary/30 transition text-center">
                   <span className="text-2xl">📋</span>
-                  <p className="text-sm font-semibold text-slate-700 mt-2">Assessments</p>
+                  <p className="text-sm font-semibold text-slate-700 mt-2">{t("assessments")}</p>
                 </Link>
                 <Link href={`/dashboard/parent/learner/${learnerId}/gradebook`}
                   className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-primary/30 transition text-center">
                   <span className="text-2xl">📊</span>
-                  <p className="text-sm font-semibold text-slate-700 mt-2">Gradebook</p>
+                  <p className="text-sm font-semibold text-slate-700 mt-2">{t("gradebook")}</p>
                 </Link>
                 <Link href={`/dashboard/parent/learner/${learnerId}/iep`}
                   className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-primary/30 transition text-center">
                   <span className="text-2xl">🎯</span>
-                  <p className="text-sm font-semibold text-slate-700 mt-2">IEP Goals</p>
+                  <p className="text-sm font-semibold text-slate-700 mt-2">{t("iep_goals")}</p>
                 </Link>
                 <Link href={`/dashboard/parent/learner/${learnerId}/recommendations`}
                   className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-primary/30 transition text-center">
                   <span className="text-2xl">💡</span>
-                  <p className="text-sm font-semibold text-slate-700 mt-2">Recommendations</p>
+                  <p className="text-sm font-semibold text-slate-700 mt-2">{t("recommendations")}</p>
                 </Link>
               </div>
             </div>

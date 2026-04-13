@@ -1,9 +1,12 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export default function CustomerCareDashboard() {
   const { accessToken } = useAuth();
+  const t = useTranslations("dashboard");
+  const tc = useTranslations("common");
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
@@ -47,7 +50,7 @@ export default function CustomerCareDashboard() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Customer Care Dashboard</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("overview")}</h1>
         <p className="text-sm text-slate-500 mt-1">Ticket management, customer satisfaction, and response metrics.</p>
       </div>
 
@@ -87,7 +90,7 @@ export default function CustomerCareDashboard() {
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="font-heading font-bold text-lg text-slate-900">Recent Tickets</h2>
+          <h2 className="font-heading font-bold text-lg text-slate-900">{tc("details")}</h2>
           <span className="text-xs text-slate-400">{recentTickets.length} showing</span>
         </div>
         <table className="w-full text-sm">
@@ -98,7 +101,7 @@ export default function CustomerCareDashboard() {
               <th className="px-5 py-3 font-semibold">User</th>
               <th className="px-5 py-3 font-semibold">Category</th>
               <th className="px-5 py-3 font-semibold">Priority</th>
-              <th className="px-5 py-3 font-semibold">Status</th>
+              <th className="px-5 py-3 font-semibold">{tc("status")}</th>
               <th className="px-5 py-3 font-semibold">Age</th>
             </tr>
           </thead>

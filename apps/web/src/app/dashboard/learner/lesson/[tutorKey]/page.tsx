@@ -4,6 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
+import { useTranslations } from "next-intl";
 import { StageLayout } from "@/components/stage/StageLayout";
 import { CelebrationOverlay } from "@/components/stage/CelebrationOverlay";
 import { useSensoryAdapter } from "@/components/stage/useSensoryAdapter";
@@ -164,6 +165,9 @@ export default function LessonPage() {
   const params = useParams();
   const tutorKey = params.tutorKey as TutorKey;
   const tutor = TUTORS[tutorKey];
+  const tTutor = useTranslations("tutor");
+  const tLearner = useTranslations("learner");
+  const tCommon = useTranslations("common");
 
   const [functioningLevel, setFunctioningLevel] = useState<FunctioningLevel>("STANDARD");
   const [learnerName, setLearnerName] = useState("");
@@ -329,7 +333,7 @@ export default function LessonPage() {
   }, [cleanup, router]);
 
   if (loading || !user) return null;
-  if (!tutor) return <div className="min-h-screen flex items-center justify-center text-slate-500 font-heading">Tutor not found</div>;
+  if (!tutor) return <div className="min-h-screen flex items-center justify-center text-slate-500 font-heading">{tTutor("not_found")}</div>;
 
   const theme = TUTOR_THEMES[tutorKey];
 
@@ -368,14 +372,14 @@ export default function LessonPage() {
             className="px-12 py-4 rounded-full text-white font-heading font-bold text-xl shadow-2xl transition-all hover:scale-110 active:scale-95 animate-pulse-gentle"
             style={{ backgroundColor: tutor.color, boxShadow: `0 0 40px ${tutor.color}60` }}
           >
-            Start Learning
+            {tLearner("start_learning")}
           </button>
 
           <button
             onClick={() => router.push("/dashboard/learner")}
             className="text-white/40 text-sm font-body hover:text-white/60 transition"
           >
-            Back to Dashboard
+            {tCommon("back")}
           </button>
         </div>
       </div>
@@ -403,8 +407,8 @@ export default function LessonPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
           <div className="bg-white/95 backdrop-blur rounded-3xl p-8 max-w-sm w-full mx-4 text-center space-y-6 animate-scale-in">
             <div className="text-5xl">☁️</div>
-            <h2 className="text-2xl font-heading font-bold text-slate-900">Taking a Break</h2>
-            <p className="text-slate-500 font-body">It's okay to rest. Take a deep breath.</p>
+            <h2 className="text-2xl font-heading font-bold text-slate-900">{tLearner("taking_break")}</h2>
+            <p className="text-slate-500 font-body">{tLearner("take_breath")}</p>
 
             <div className="flex items-center justify-center gap-4 py-4">
               <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-3xl animate-breathe">
@@ -418,13 +422,13 @@ export default function LessonPage() {
                 className="flex-1 py-3 rounded-xl font-heading font-bold text-white transition hover:scale-105"
                 style={{ backgroundColor: tutor.color }}
               >
-                Resume
+                {tLearner("resume")}
               </button>
               <button
                 onClick={() => { cleanup(); router.push("/dashboard/learner"); }}
                 className="flex-1 py-3 rounded-xl font-heading font-bold text-slate-600 bg-slate-100 transition hover:bg-slate-200"
               >
-                Exit
+                {tLearner("log_out")}
               </button>
             </div>
           </div>

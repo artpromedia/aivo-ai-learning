@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 interface AvatarItem {
   id: string;
@@ -40,6 +41,9 @@ const RARITY_COLORS: Record<string, string> = {
 export default function ShopPage() {
   const { user, accessToken, logout, loading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("gamification");
+  const tCommon = useTranslations("common");
+  const tLearner = useTranslations("learner");
   const [items, setItems] = useState<AvatarItem[]>([]);
   const [owned, setOwned] = useState<string[]>([]);
   const [balance, setBalance] = useState<CurrencyBalance>({ coins: 0, gems: 0 });
@@ -98,15 +102,15 @@ export default function ShopPage() {
           <span className="font-bold text-amber-600">{balance.coins} coins</span>
           <span className="font-bold text-purple-600">{balance.gems} gems</span>
           <button onClick={() => router.push("/dashboard/learner")}
-            className="text-sm text-primary font-semibold hover:underline">Back</button>
-          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">Exit</button>
+            className="text-sm text-primary font-semibold hover:underline">{tCommon("back")}</button>
+          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">{tLearner("log_out")}</button>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-8 py-12 space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-heading font-bold text-slate-900">🛒 Avatar Shop</h1>
-          <p className="text-slate-500 font-semibold mt-2">Customize your avatar with coins and gems!</p>
+          <h1 className="text-4xl font-heading font-bold text-slate-900">🛒 {t("shop")}</h1>
+          <p className="text-slate-500 font-semibold mt-2">{tLearner("shop_description")}</p>
         </div>
 
         <div className="flex gap-2 justify-center flex-wrap">
@@ -126,7 +130,7 @@ export default function ShopPage() {
         {filtered.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
             <div className="text-4xl mb-4">🏪</div>
-            <p className="text-slate-500 font-semibold">No items available yet. Check back soon!</p>
+            <p className="text-slate-500 font-semibold">{tLearner("no_items")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

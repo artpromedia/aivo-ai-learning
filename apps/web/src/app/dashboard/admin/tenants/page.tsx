@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Pagination from "@/components/Pagination";
+import { useTranslations } from "next-intl";
 
 interface Tenant {
   id: string;
@@ -19,6 +20,8 @@ const TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }
 
 export default function AdminTenantsPage() {
   const { user, accessToken } = useAuth();
+  const t = useTranslations("platformAdmin");
+  const tc = useTranslations("common");
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -88,7 +91,7 @@ export default function AdminTenantsPage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Tenants & Districts</h1>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("tenants")}</h1>
           <p className="text-sm text-slate-500 mt-1">Manage organizations, schools, and family accounts.</p>
         </div>
         {isPlatformAdmin && (
@@ -187,7 +190,7 @@ export default function AdminTenantsPage() {
               <thead>
                 <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
                   <th className="px-5 py-3 font-semibold">Organization</th>
-                  <th className="px-5 py-3 font-semibold">Type</th>
+                  <th className="px-5 py-3 font-semibold">{tc("type")}</th>
                   <th className="px-5 py-3 font-semibold">Created</th>
                 </tr>
               </thead>

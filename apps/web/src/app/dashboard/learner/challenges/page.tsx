@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 interface Challenge {
   id: string;
@@ -17,6 +18,8 @@ interface Challenge {
 export default function ChallengesPage() {
   const { user, accessToken, logout, loading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("learner");
+  const tCommon = useTranslations("common");
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [joinCode, setJoinCode] = useState("");
   const [showCreate, setShowCreate] = useState(false);
@@ -78,33 +81,33 @@ export default function ChallengesPage() {
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
         <div className="flex items-center gap-4">
           <button onClick={() => router.push("/dashboard/learner")}
-            className="text-sm text-primary font-semibold hover:underline">Back to Dashboard</button>
-          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">Exit</button>
+            className="text-sm text-primary font-semibold hover:underline">{tCommon("back")}</button>
+          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">{t("log_out")}</button>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-8 py-12 space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-heading font-bold text-slate-900">⚔️ Challenges</h1>
-          <p className="text-slate-500 font-semibold mt-2">Challenge your friends to quiz battles!</p>
+          <h1 className="text-4xl font-heading font-bold text-slate-900">⚔️ {t("challenges")}</h1>
+          <p className="text-slate-500 font-semibold mt-2">{t("challenge_friends")}</p>
         </div>
 
         <div className="flex gap-4 justify-center flex-wrap">
           <button onClick={() => setShowCreate(!showCreate)}
             className="px-6 py-3 rounded-full bg-red-600 text-white font-bold hover:bg-red-700 transition">
-            Create Challenge
+            {t("create_challenge")}
           </button>
           <div className="flex items-center gap-2">
             <input
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              placeholder="Enter invite code"
+              placeholder={t("enter_invite_code")}
               className="px-4 py-3 rounded-full border border-slate-200 text-sm font-semibold w-44"
               maxLength={8}
             />
             <button onClick={joinChallenge}
               className="px-6 py-3 rounded-full bg-orange-500 text-white font-bold hover:bg-orange-600 transition">
-              Join
+              {t("join")}
             </button>
           </div>
         </div>
@@ -114,7 +117,7 @@ export default function ChallengesPage() {
             <input
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Challenge title"
+              placeholder={t("challenge_title")}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold"
             />
             <select
@@ -130,7 +133,7 @@ export default function ChallengesPage() {
             </select>
             <button onClick={createChallenge}
               className="w-full px-6 py-3 rounded-full bg-red-600 text-white font-bold hover:bg-red-700 transition">
-              Create
+              {tCommon("add")}
             </button>
           </div>
         )}
@@ -139,7 +142,7 @@ export default function ChallengesPage() {
           {challenges.length === 0 ? (
             <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
               <div className="text-4xl mb-4">⚔️</div>
-              <p className="text-slate-500 font-semibold">No challenges yet. Create one or join with a code!</p>
+              <p className="text-slate-500 font-semibold">{t("no_challenges")}</p>
             </div>
           ) : (
             challenges.map((c) => (

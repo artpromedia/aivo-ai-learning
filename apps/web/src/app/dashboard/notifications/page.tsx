@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 interface Notification {
   id: string;
@@ -33,6 +34,8 @@ const TYPE_COLORS: Record<string, string> = {
 
 export default function NotificationsPage() {
   const { user, accessToken, loading } = useAuth();
+  const t = useTranslations("common");
+  const td = useTranslations("dashboard");
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifs, setLoadingNotifs] = useState(true);
@@ -99,7 +102,7 @@ export default function NotificationsPage() {
       <div className="max-w-3xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-heading font-bold text-slate-900">Notifications</h1>
+            <h1 className="text-2xl font-heading font-bold text-slate-900">{td("overview")}</h1>
             {unreadCount > 0 && (
               <p className="text-sm text-slate-500 mt-1">{unreadCount} unread</p>
             )}

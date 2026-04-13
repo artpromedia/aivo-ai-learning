@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import BrainVisualization from "@/components/BrainVisualization";
+import { useTranslations } from "next-intl";
 
 interface ConnectedLearner {
   id: string;
@@ -23,6 +24,9 @@ interface IepGoal {
 
 export default function CaregiverDashboard() {
   const { user, accessToken, logout, loading } = useAuth();
+  const t = useTranslations("caregiver");
+  const tc = useTranslations("common");
+  const td = useTranslations("dashboard");
   const router = useRouter();
   const [learners, setLearners] = useState<ConnectedLearner[]>([]);
   const [iepGoals, setIepGoals] = useState<IepGoal[]>([]);
@@ -74,7 +78,7 @@ export default function CaregiverDashboard() {
 
       <div className="max-w-7xl mx-auto px-8 py-6">
         <div className="flex items-center gap-6 mb-8 flex-wrap">
-          <h1 className="text-3xl font-heading font-bold text-slate-900">Caregiver Dashboard</h1>
+          <h1 className="text-3xl font-heading font-bold text-slate-900">{t("dashboard")}</h1>
           {learners.length > 1 && (
             <select value={selectedLearner || ""} onChange={e => setSelectedLearner(e.target.value)}
               className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold bg-white shadow-sm">
@@ -135,7 +139,7 @@ export default function CaregiverDashboard() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                    <h3 className="font-heading font-bold text-lg text-slate-900 mb-4">Brain Profile Overview</h3>
+                    <h3 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("progress_tracking")}</h3>
                     {accessToken && (
                       <BrainVisualization learnerId={activeLearner.id} learnerName={activeLearner.name} accessToken={accessToken} compact />
                     )}
@@ -144,7 +148,7 @@ export default function CaregiverDashboard() {
                   </div>
 
                   <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                    <h3 className="font-heading font-bold text-lg text-slate-900 mb-4">IEP Goal Progress</h3>
+                    <h3 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("iep_goals")}</h3>
                     {learnerGoals.length === 0 ? (
                       <p className="text-sm text-slate-400">No IEP goals recorded for this learner.</p>
                     ) : (
@@ -171,7 +175,7 @@ export default function CaregiverDashboard() {
 
                 {learners.length > 1 && (
                   <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                    <h3 className="font-heading font-bold text-lg text-slate-900 mb-4">All Connected Learners</h3>
+                    <h3 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("my_learners")}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {learners.map(l => (
                         <div key={l.id}
@@ -190,7 +194,7 @@ export default function CaregiverDashboard() {
             {activeTab === "brain" && activeLearner && accessToken && (
               <div className="space-y-6">
                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                  <h2 className="font-heading font-bold text-lg text-slate-900 mb-2">Brain Profile — {activeLearner.name}</h2>
+                  <h2 className="font-heading font-bold text-lg text-slate-900 mb-2">{t("progress_tracking")} — {activeLearner.name}</h2>
                   <p className="text-sm text-slate-500 mb-6">The Brain Clone captures learning patterns, strengths, sensory preferences, and communication style.</p>
                   <BrainVisualization learnerId={activeLearner.id} learnerName={activeLearner.name} accessToken={accessToken} />
                 </div>
@@ -200,7 +204,7 @@ export default function CaregiverDashboard() {
             {activeTab === "iep" && activeLearner && (
               <div className="space-y-6">
                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                  <h2 className="font-heading font-bold text-lg text-slate-900 mb-2">IEP Goals — {activeLearner.name}</h2>
+                  <h2 className="font-heading font-bold text-lg text-slate-900 mb-2">{t("iep_goals")} — {activeLearner.name}</h2>
                   <p className="text-sm text-slate-500 mb-6">Track progress on individualized education plan goals.</p>
                   {learnerGoals.length === 0 ? (
                     <div className="text-center py-8">

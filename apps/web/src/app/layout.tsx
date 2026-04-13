@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Fredoka, Nunito } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/providers/auth-provider";
+import { I18nProvider } from "@/providers/i18n-provider";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import enMessages from "@/i18n/messages/en.json";
 
 const fredoka = Fredoka({
   subsets: ["latin"],
@@ -26,12 +28,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fredoka.variable} ${nunito.variable}`}>
+    <html lang="en" className={`${fredoka.variable} ${nunito.variable}`} suppressHydrationWarning>
       <body className="font-body antialiased bg-white text-slate-800">
-        <AuthProvider>
-          <ImpersonationBanner />
-          {children}
-        </AuthProvider>
+        <I18nProvider initialMessages={enMessages}>
+          <AuthProvider>
+            <ImpersonationBanner />
+            {children}
+          </AuthProvider>
+        </I18nProvider>
       </body>
     </html>
   );

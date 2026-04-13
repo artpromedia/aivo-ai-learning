@@ -5,12 +5,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
+import { useTranslations } from "next-intl";
 
 export default function ParentLearnerTutorsPage() {
   const { user, accessToken, loading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
+  const t = useTranslations("parent");
+  const tc = useTranslations("common");
   const [learnerName, setLearnerName] = useState("Learner");
   const [activeTutors, setActiveTutors] = useState<string[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -50,20 +53,20 @@ export default function ParentLearnerTutorsPage() {
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline">Dashboard</Link>
+          <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline">{t("dashboard")}</Link>
           <span className="text-sm font-semibold text-slate-600">{user.name}</span>
         </div>
       </header>
 
       <div className="max-w-5xl mx-auto px-8 py-6">
         <Link href={`/dashboard/parent/learner/${learnerId}/overview`}
-          className="text-sm text-primary hover:underline font-semibold mb-4 inline-block">← Back to {learnerName}</Link>
+          className="text-sm text-primary hover:underline font-semibold mb-4 inline-block">← {learnerName}</Link>
 
-        <h1 className="text-2xl font-heading font-bold text-slate-900 mb-2">Tutors — {learnerName}</h1>
-        <p className="text-sm text-slate-500 mb-6">Manage which AI tutors are available for this learner. Visit the <Link href="/dashboard/parent/store" className="text-primary hover:underline font-semibold">Tutor Store</Link> to add more.</p>
+        <h1 className="text-2xl font-heading font-bold text-slate-900 mb-2">{t("tutors_title", { name: learnerName })}</h1>
+        <p className="text-sm text-slate-500 mb-6">{t("tutors_manage_desc")} {t("visit_store")} <Link href="/dashboard/parent/store" className="text-primary hover:underline font-semibold">{t("tutor_store_link")}</Link> {t("to_add_more")}</p>
 
         {loadingData ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 animate-pulse text-slate-400">Loading tutors...</div>
+          <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 animate-pulse text-slate-400">{t("loading_tutors")}</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {tutorEntries.map(([key, tutor]) => {
@@ -83,9 +86,9 @@ export default function ParentLearnerTutorsPage() {
                         {tutor.tier}
                       </span>
                       {active ? (
-                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-semibold">Active</span>
+                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-semibold">{tc("active")}</span>
                       ) : (
-                        <span className="px-3 py-1 text-xs rounded-full bg-slate-200 text-slate-500 font-semibold">Not Subscribed</span>
+                        <span className="px-3 py-1 text-xs rounded-full bg-slate-200 text-slate-500 font-semibold">{t("not_subscribed")}</span>
                       )}
                     </div>
                   </div>
@@ -98,11 +101,11 @@ export default function ParentLearnerTutorsPage() {
 
         <div className="mt-8 p-5 rounded-2xl bg-purple-50 border border-purple-100">
           <p className="text-sm text-slate-700">
-            <span className="font-semibold">Want to add more tutors?</span> Visit the{" "}
-            <Link href="/dashboard/parent/store" className="text-primary font-bold hover:underline">Tutor Store</Link>{" "}
-            or the{" "}
-            <Link href="/dashboard/parent/billing" className="text-primary font-bold hover:underline">Billing page</Link>{" "}
-            to manage add-on tutors ($4.99/mo each) or upgrade your plan.
+            <span className="font-semibold">{t("want_more_tutors")}</span> {t("visit_store")}{" "}
+            <Link href="/dashboard/parent/store" className="text-primary font-bold hover:underline">{t("tutor_store_link")}</Link>{" "}
+            {tc("or")}{" "}
+            <Link href="/dashboard/parent/billing" className="text-primary font-bold hover:underline">{t("billing_link")}</Link>{" "}
+            {t("manage_addons_desc")}
           </p>
         </div>
       </div>

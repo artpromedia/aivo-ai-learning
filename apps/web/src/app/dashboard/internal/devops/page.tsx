@@ -1,9 +1,12 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export default function DevOpsDashboard() {
   const { accessToken } = useAuth();
+  const t = useTranslations("dashboard");
+  const tc = useTranslations("common");
   const [statusOverview, setStatusOverview] = useState<any>(null);
   const [uptime, setUptime] = useState<any>(null);
 
@@ -66,7 +69,7 @@ export default function DevOpsDashboard() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">DevOps Dashboard</h1>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("overview")}</h1>
           <p className="text-sm text-slate-500 mt-1">Infrastructure monitoring, deployments, and system performance.</p>
         </div>
         <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${

@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 interface TenantInfo {
   id: string;
@@ -37,6 +38,9 @@ function getRoleCount(roleCounts: RoleCount[], role: string): number {
 
 export default function DistrictDashboardPage() {
   const { user, accessToken } = useAuth();
+  const t = useTranslations("districtAdmin");
+  const tc = useTranslations("common");
+  const td = useTranslations("dashboard");
   const [tenant, setTenant] = useState<TenantInfo | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [learners, setLearners] = useState<Learner[]>([]);
@@ -92,7 +96,7 @@ export default function DistrictDashboardPage() {
       <header className="space-y-1">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-heading font-bold bg-gradient-to-r from-violet-600 to-violet-500 bg-clip-text text-transparent">
-            District Dashboard
+            {t("dashboard")}
           </h1>
           {tenant && (
             <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-violet-100 text-violet-700">
@@ -122,7 +126,7 @@ export default function DistrictDashboardPage() {
 
       {tenant && (
         <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <h2 className="text-lg font-heading font-semibold text-slate-900">District Info</h2>
+          <h2 className="text-lg font-heading font-semibold text-slate-900">{t("dashboard")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <InfoRow label="Organization" value={tenant.name} />
             <InfoRow label="Type" value={tenant.type} />
@@ -135,7 +139,7 @@ export default function DistrictDashboardPage() {
       {learners.length > 0 && (
         <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-lg font-heading font-semibold text-slate-900">Recent Learners</h2>
+            <h2 className="text-lg font-heading font-semibold text-slate-900">{t("learners")}</h2>
             <Link href="/dashboard/district/learners" className="text-sm text-violet-600 font-medium hover:underline">View all</Link>
           </div>
           <table className="w-full text-sm">

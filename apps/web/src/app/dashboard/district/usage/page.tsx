@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface RoleCount {
   role: string;
@@ -16,6 +17,8 @@ interface Stats {
 
 export default function DistrictUsagePage() {
   const { accessToken } = useAuth();
+  const t = useTranslations("districtAdmin");
+  const tc = useTranslations("common");
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,7 +43,7 @@ export default function DistrictUsagePage() {
   return (
     <div className="p-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Usage & Limits</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("usage")}</h1>
         <p className="text-sm text-slate-500 mt-1">Monitor your district&apos;s platform usage against your subscription limits.</p>
       </header>
 
@@ -52,7 +55,7 @@ export default function DistrictUsagePage() {
           icon="👥"
         />
         <UsageCard
-          label="Active Learners"
+          label={t("total_learners")}
           used={stats?.totalLearners ?? 0}
           limit={200}
           icon="🎓"

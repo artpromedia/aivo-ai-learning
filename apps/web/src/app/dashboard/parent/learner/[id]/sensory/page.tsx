@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 const MODALITIES = [
   {
@@ -52,6 +53,8 @@ export default function SensoryProfilePage() {
   const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
+  const t = useTranslations("parent");
+  const tc = useTranslations("common");
 
   const [profile, setProfile] = useState<Record<string, string>>({
     visual: "typical",
@@ -120,20 +123,19 @@ export default function SensoryProfilePage() {
     <div className="min-h-screen bg-surface">
       <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between">
         <Link href="/dashboard/parent" className="text-primary font-heading font-bold text-lg">
-          &larr; Back to Dashboard
+          &larr; {t("back_to_dashboard")}
         </Link>
-        <h1 className="text-xl font-heading font-bold text-slate-900">Sensory Profile</h1>
+        <h1 className="text-xl font-heading font-bold text-slate-900">{t("sensory_profile")}</h1>
         <div />
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-6">
         <div className="bg-purple-50 rounded-xl p-6 border border-purple-100">
           <h2 className="text-lg font-heading font-bold text-purple-800 mb-2">
-            Understanding Your Child's Sensory Needs
+            {t("sensory_needs_title")}
           </h2>
           <p className="text-sm text-purple-600">
-            This information helps AIVO adapt all generated content — adjusting colors, animations,
-            sound levels, visual complexity, and text density based on your child's sensory profile.
+            {t("sensory_needs_desc")}
           </p>
         </div>
 
@@ -149,9 +151,9 @@ export default function SensoryProfilePage() {
 
             <div className="grid grid-cols-3 gap-3 mt-4">
               {[
-                { value: "hyper", label: "Hyper-sensitive", desc: mod.hyperDesc, color: "border-red-300 bg-red-50" },
-                { value: "typical", label: "Typical", desc: "Responds as expected for age", color: "border-green-300 bg-green-50" },
-                { value: "hypo", label: "Hypo-sensitive", desc: mod.hypoDesc, color: "border-blue-300 bg-blue-50" },
+                { value: "hyper", label: t("hyper_sensitive"), desc: mod.hyperDesc, color: "border-red-300 bg-red-50" },
+                { value: "typical", label: t("typical"), desc: t("typical_desc"), color: "border-green-300 bg-green-50" },
+                { value: "hypo", label: t("hypo_sensitive"), desc: mod.hypoDesc, color: "border-blue-300 bg-blue-50" },
               ].map((opt) => (
                 <button
                   key={opt.value}
@@ -171,11 +173,11 @@ export default function SensoryProfilePage() {
         ))}
 
         <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-          <h3 className="font-heading font-bold text-slate-900 mb-3">Additional Notes</h3>
+          <h3 className="font-heading font-bold text-slate-900 mb-3">{t("additional_notes")}</h3>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Any additional sensory observations or therapist recommendations..."
+            placeholder={t("notes_placeholder")}
             className="w-full h-24 p-3 border border-slate-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-primary focus:border-primary"
           />
         </div>
@@ -185,14 +187,14 @@ export default function SensoryProfilePage() {
             href={`/dashboard/parent/learner/${learnerId}/assessment`}
             className="text-sm text-slate-500 hover:text-primary"
           >
-            Skip for now
+            {t("skip_for_now")}
           </Link>
           <button
             onClick={handleSave}
             disabled={saving}
             className="px-8 py-3 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition disabled:opacity-50"
           >
-            {saving ? "Saving..." : saved ? "Saved!" : existingProfile ? "Update Profile" : "Save Profile"}
+            {saving ? tc("saving") : saved ? t("saved") : existingProfile ? t("update_profile") : t("save_profile")}
           </button>
         </div>
       </main>

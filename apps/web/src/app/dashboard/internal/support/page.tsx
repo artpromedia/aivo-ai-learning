@@ -1,9 +1,12 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export default function SupportDashboard() {
   const { accessToken } = useAuth();
+  const t = useTranslations("dashboard");
+  const tc = useTranslations("common");
   const [statusOverview, setStatusOverview] = useState<any>(null);
 
   useEffect(() => {
@@ -43,7 +46,7 @@ export default function SupportDashboard() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Technical Support Dashboard</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("overview")}</h1>
         <p className="text-sm text-slate-500 mt-1">Escalation management, knowledge base, and system diagnostics.</p>
       </div>
 
@@ -77,7 +80,7 @@ export default function SupportDashboard() {
               <th className="px-5 py-3 font-semibold">Issue</th>
               <th className="px-5 py-3 font-semibold">Severity</th>
               <th className="px-5 py-3 font-semibold">Assignee</th>
-              <th className="px-5 py-3 font-semibold">Status</th>
+              <th className="px-5 py-3 font-semibold">{tc("status")}</th>
               <th className="px-5 py-3 font-semibold">Affected</th>
               <th className="px-5 py-3 font-semibold">Age</th>
             </tr>

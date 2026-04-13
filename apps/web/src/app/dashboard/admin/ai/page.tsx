@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
+import { useTranslations } from "next-intl";
 
 interface BrainOverview {
   total: number;
@@ -34,6 +35,9 @@ const AI_PROVIDERS = [
 
 export default function AdminAIPage() {
   const { accessToken } = useAuth();
+  const t = useTranslations("platformAdmin");
+  const tc = useTranslations("common");
+  const td = useTranslations("dashboard");
   const [brainOverview, setBrainOverview] = useState<BrainOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedTutor, setExpandedTutor] = useState<TutorKey | null>(null);
@@ -60,12 +64,12 @@ export default function AdminAIPage() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">AI & Brain Model Management</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("ai_usage")}</h1>
         <p className="text-sm text-slate-500 mt-1">Monitor brain clones, AI model performance, and content generation across the platform.</p>
       </div>
 
       <div className="bg-gradient-to-r from-purple-600 to-purple-800 rounded-2xl p-6 text-white">
-        <h2 className="font-heading font-bold text-lg mb-4">Brain Clone Architecture</h2>
+        <h2 className="font-heading font-bold text-lg mb-4">{t("ai_usage")}</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div>
             <p className="text-3xl font-bold">{brainOverview?.total ?? "—"}</p>
@@ -88,7 +92,7 @@ export default function AdminAIPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-          <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">LLM Provider Configuration</h2>
+          <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("services")}</h2>
           <p className="text-xs text-slate-400 mb-4">Priority: Claude Sonnet → Gemini Flash → GPT-4o Mini</p>
           <div className="space-y-3">
             {AI_PROVIDERS.map((p) => (
@@ -111,7 +115,7 @@ export default function AdminAIPage() {
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-          <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Brain Clone Pipeline</h2>
+          <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{td("overview")}</h2>
           <div className="space-y-4">
             {[
               { step: "1", label: "Baseline Assessment", desc: "6-domain Discovery Adventure", status: "active" },
@@ -139,7 +143,7 @@ export default function AdminAIPage() {
       </div>
 
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">RAI (Responsible AI) Compliance</h2>
+        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("audit_logs")}</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {[
             { label: "COPPA Consent Gate", status: true, detail: "Parental consent required before data collection" },
@@ -162,7 +166,7 @@ export default function AdminAIPage() {
 
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-heading font-bold text-lg text-slate-900">AI Tutors</h2>
+          <h2 className="font-heading font-bold text-lg text-slate-900">{t("ai_usage")}</h2>
           <div className="flex items-center gap-3 text-xs text-slate-400">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400" /> 7 Core</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> 7 Expansion</span>

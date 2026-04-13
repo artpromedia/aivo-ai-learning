@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 interface GradebookEntry {
   id: string;
@@ -49,6 +50,7 @@ export default function GradebookPage() {
   const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
+  const t = useTranslations("parent");
 
   const [gradebook, setGradebook] = useState<GradebookEntry[]>([]);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
@@ -88,7 +90,7 @@ export default function GradebookPage() {
         <div className="flex items-center gap-4">
           <button onClick={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
             className="text-sm text-slate-500 hover:text-primary font-semibold">
-            Back to Profile
+            {t("back_to_profile")}
           </button>
           <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         </div>
@@ -96,15 +98,15 @@ export default function GradebookPage() {
 
       <main className="max-w-5xl mx-auto px-8 py-8 space-y-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-heading font-bold text-slate-900">Progress & Gradebook</h1>
+          <h1 className="text-3xl font-heading font-bold text-slate-900">{t("progress_gradebook")}</h1>
           <div className="flex gap-4">
             <div className="text-center px-4 py-2 rounded-xl bg-purple-50">
               <div className="text-2xl font-bold text-primary">{totalXP}</div>
-              <div className="text-xs text-slate-500 font-semibold">Total XP</div>
+              <div className="text-xs text-slate-500 font-semibold">{t("total_xp")}</div>
             </div>
             <div className="text-center px-4 py-2 rounded-xl bg-green-50">
               <div className="text-2xl font-bold text-green-600">{completedSessions}</div>
-              <div className="text-xs text-slate-500 font-semibold">Sessions</div>
+              <div className="text-xs text-slate-500 font-semibold">{t("sessions")}</div>
             </div>
           </div>
         </div>
@@ -113,7 +115,7 @@ export default function GradebookPage() {
           {(["gradebook", "sessions", "paths"] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === tab ? "bg-white border border-b-white text-primary -mb-[1px]" : "text-slate-400 hover:text-slate-600"}`}>
-              {tab === "gradebook" ? "Mastery" : tab === "sessions" ? "Sessions" : "Learning Paths"}
+              {tab === "gradebook" ? t("mastery") : tab === "sessions" ? t("sessions") : t("learning_paths")}
             </button>
           ))}
         </div>
@@ -123,7 +125,7 @@ export default function GradebookPage() {
             {Object.keys(subjectGroups).length === 0 ? (
               <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
                 <div className="text-4xl mb-3">📊</div>
-                <p className="text-slate-500 font-semibold">No mastery data yet. Complete some lessons to see progress!</p>
+                <p className="text-slate-500 font-semibold">{t("no_mastery_data")}</p>
               </div>
             ) : (
               Object.entries(subjectGroups).map(([subject, entries]) => (
@@ -150,7 +152,7 @@ export default function GradebookPage() {
                           entry.trend === "declining" ? "bg-red-100 text-red-700" :
                           "bg-slate-100 text-slate-500"
                         }`}>
-                          {entry.trend === "improving" ? "Up" : entry.trend === "declining" ? "Down" : "Steady"}
+                          {entry.trend === "improving" ? t("trend_up") : entry.trend === "declining" ? t("trend_down") : t("trend_steady")}
                         </span>
                       </div>
                     ))}
@@ -166,7 +168,7 @@ export default function GradebookPage() {
             {sessions.length === 0 ? (
               <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
                 <div className="text-4xl mb-3">🎮</div>
-                <p className="text-slate-500 font-semibold">No sessions yet. Start a lesson to begin!</p>
+                <p className="text-slate-500 font-semibold">{t("no_sessions")}</p>
               </div>
             ) : (
               sessions.map(s => (
@@ -195,7 +197,7 @@ export default function GradebookPage() {
             {paths.length === 0 ? (
               <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
                 <div className="text-4xl mb-3">🗺</div>
-                <p className="text-slate-500 font-semibold">Learning paths are generated as your learner progresses through lessons.</p>
+                <p className="text-slate-500 font-semibold">{t("learning_paths_desc")}</p>
               </div>
             ) : (
               paths.map(path => {
@@ -209,7 +211,7 @@ export default function GradebookPage() {
                         {path.subject}
                       </h3>
                       <span className="text-sm font-bold" style={{ color: SUBJECT_COLORS[path.subject] || "#6C5CE7" }}>
-                        {completed}/{total} topics
+                        {completed}/{total} {t("topics")}
                       </span>
                     </div>
                     <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-4">

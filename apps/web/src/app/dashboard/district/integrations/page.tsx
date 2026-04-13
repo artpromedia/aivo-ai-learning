@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface Connector {
   id: string;
@@ -71,6 +72,8 @@ const SYNC_STATUS_STYLES: Record<string, string> = {
 
 export default function IntegrationsPage() {
   const { user, accessToken } = useAuth();
+  const t = useTranslations("districtAdmin");
+  const tc = useTranslations("common");
   const searchParams = useSearchParams();
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -326,7 +329,7 @@ export default function IntegrationsPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Integrations</h1>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("integrations")}</h1>
           <p className="text-sm text-slate-500 mt-1">
             Connect your district's learning tools to automatically sync rosters, classes, and student data.
           </p>

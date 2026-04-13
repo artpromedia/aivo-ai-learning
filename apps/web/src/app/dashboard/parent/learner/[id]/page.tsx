@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
 import BrainVisualization from "@/components/BrainVisualization";
+import { useTranslations } from "next-intl";
 
 interface Learner {
   id: string;
@@ -30,6 +31,7 @@ export default function LearnerProfilePage() {
   const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
+  const t = useTranslations("parent");
 
   const [learner, setLearner] = useState<Learner | null>(null);
   const [loadingLearner, setLoadingLearner] = useState(true);
@@ -65,18 +67,18 @@ export default function LearnerProfilePage() {
   if (loading || !user) return null;
 
   const NAV_ITEMS = [
-    { label: "Overview", href: `/dashboard/parent/learner/${learnerId}/overview`, emoji: "📊" },
-    { label: "Brain Review", href: `/dashboard/parent/learner/${learnerId}/brain-review`, emoji: "🔍" },
-    { label: "Brain Profile", href: `/dashboard/parent/learner/${learnerId}/brain`, emoji: "🧠" },
-    { label: "Gradebook", href: `/dashboard/parent/learner/${learnerId}/gradebook`, emoji: "📓" },
-    { label: "Assessment", href: `/dashboard/parent/learner/${learnerId}/assessment`, emoji: "📝" },
-    { label: "Sensory Profile", href: `/dashboard/parent/learner/${learnerId}/sensory`, emoji: "🎨" },
-    { label: "IEP Goals", href: `/dashboard/parent/learner/${learnerId}/iep`, emoji: "🎯" },
-    { label: "Tutors", href: `/dashboard/parent/learner/${learnerId}/tutors`, emoji: "👩‍🏫" },
-    { label: "Learning Team", href: `/dashboard/parent/learner/${learnerId}/collaboration`, emoji: "🤝" },
-    { label: "Recommendations", href: `/dashboard/parent/learner/${learnerId}/recommendations`, emoji: "💡" },
-    { label: "Homework", href: `/dashboard/parent/${learnerId}/homework`, emoji: "📸" },
-    { label: "Settings", href: `/dashboard/parent/learner/${learnerId}/settings`, emoji: "⚙️" },
+    { label: t("overview"), href: `/dashboard/parent/learner/${learnerId}/overview`, emoji: "📊" },
+    { label: t("brain_review"), href: `/dashboard/parent/learner/${learnerId}/brain-review`, emoji: "🔍" },
+    { label: t("brain_profile"), href: `/dashboard/parent/learner/${learnerId}/brain`, emoji: "🧠" },
+    { label: t("gradebook"), href: `/dashboard/parent/learner/${learnerId}/gradebook`, emoji: "📓" },
+    { label: t("assessment"), href: `/dashboard/parent/learner/${learnerId}/assessment`, emoji: "📝" },
+    { label: t("sensory_profile"), href: `/dashboard/parent/learner/${learnerId}/sensory`, emoji: "🎨" },
+    { label: t("iep_goals"), href: `/dashboard/parent/learner/${learnerId}/iep`, emoji: "🎯" },
+    { label: t("tutors"), href: `/dashboard/parent/learner/${learnerId}/tutors`, emoji: "👩‍🏫" },
+    { label: t("learning_team"), href: `/dashboard/parent/learner/${learnerId}/collaboration`, emoji: "🤝" },
+    { label: t("recommendations"), href: `/dashboard/parent/learner/${learnerId}/recommendations`, emoji: "💡" },
+    { label: t("homework_label"), href: `/dashboard/parent/${learnerId}/homework`, emoji: "📸" },
+    { label: t("settings"), href: `/dashboard/parent/learner/${learnerId}/settings`, emoji: "⚙️" },
   ];
 
   return (
@@ -84,19 +86,19 @@ export default function LearnerProfilePage() {
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline">Dashboard</Link>
+          <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline">{t("dashboard")}</Link>
           <span className="text-sm font-semibold text-slate-600">{user.name}</span>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-8">
         {loadingLearner ? (
-          <div className="text-center py-20 text-slate-400 animate-pulse">Loading learner profile...</div>
+          <div className="text-center py-20 text-slate-400 animate-pulse">{t("loading_learner")}</div>
         ) : !learner ? (
           <div className="text-center py-20">
             <div className="text-4xl mb-3">🔍</div>
-            <p className="text-slate-500 font-semibold">Learner not found</p>
-            <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline mt-2 inline-block">Back to Dashboard</Link>
+            <p className="text-slate-500 font-semibold">{t("learner_not_found")}</p>
+            <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline mt-2 inline-block">{t("back_to_dashboard")}</Link>
           </div>
         ) : (
           <div className="space-y-8">
@@ -108,7 +110,7 @@ export default function LearnerProfilePage() {
                 <h1 className="text-2xl font-heading font-bold text-slate-900">{learner.name}</h1>
                 <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start mt-2">
                   {learner.gradeLevel && (
-                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-sm font-semibold">Grade {learner.gradeLevel}</span>
+                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-sm font-semibold">{t("grade_label", { grade: learner.gradeLevel })}</span>
                   )}
                   {learner.functioningLevel && (
                     <span className={`px-3 py-1 rounded-full text-sm font-semibold ${LEVEL_COLORS[learner.functioningLevel] || "bg-slate-100 text-slate-600"}`}>
@@ -142,7 +144,7 @@ export default function LearnerProfilePage() {
             </div>
 
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Subscribed Tutors</h2>
+              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("subscribed_tutors")}</h2>
               <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
                 {Object.entries(TUTORS).slice(0, 7).map(([key, tutor]) => (
                   <Link key={key} href={`/dashboard/learner/lesson/${key}`}

@@ -1,9 +1,12 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export default function SalesDashboard() {
   const { accessToken } = useAuth();
+  const t = useTranslations("dashboard");
+  const tc = useTranslations("common");
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
@@ -34,7 +37,7 @@ export default function SalesDashboard() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Sales Dashboard</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("overview")}</h1>
         <p className="text-sm text-slate-500 mt-1">Pipeline management, deal tracking, and revenue forecasting.</p>
       </div>
 
@@ -57,7 +60,7 @@ export default function SalesDashboard() {
       </div>
 
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Pipeline Overview</h2>
+        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("overview")}</h2>
         <div className="space-y-3">
           {pipeline.map((stage) => {
             const maxCount = Math.max(...pipeline.map((s) => s.count));

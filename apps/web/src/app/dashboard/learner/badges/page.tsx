@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 interface Badge {
   id: string;
@@ -44,6 +45,9 @@ const SAMPLE_BADGES: Badge[] = [
 export default function BadgesPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("learner");
+  const tGamification = useTranslations("gamification");
+  const tCommon = useTranslations("common");
   const [filter, setFilter] = useState<"all" | "earned" | "locked">("all");
 
   useEffect(() => { if (!loading && !user) router.push("/login"); }, [user, loading, router]);
@@ -58,9 +62,9 @@ export default function BadgesPage() {
       <div className="max-w-5xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <Link href="/dashboard/learner" className="text-sm text-primary hover:underline font-semibold mb-2 inline-block">← Back to Dashboard</Link>
-            <h1 className="text-3xl font-heading font-bold text-slate-900">My Badges</h1>
-            <p className="text-sm text-slate-500 mt-1">{earned.length} of {SAMPLE_BADGES.length} earned</p>
+            <Link href="/dashboard/learner" className="text-sm text-primary hover:underline font-semibold mb-2 inline-block">← {tCommon("back")}</Link>
+            <h1 className="text-3xl font-heading font-bold text-slate-900">{t("my_badges")}</h1>
+            <p className="text-sm text-slate-500 mt-1">{earned.length} {tCommon("of")} {SAMPLE_BADGES.length}</p>
           </div>
           <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
             {(["all", "earned", "locked"] as const).map(f => (

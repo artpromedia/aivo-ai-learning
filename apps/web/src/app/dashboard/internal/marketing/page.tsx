@@ -1,9 +1,12 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export default function MarketingDashboard() {
   const { accessToken } = useAuth();
+  const t = useTranslations("dashboard");
+  const tc = useTranslations("common");
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
@@ -34,7 +37,7 @@ export default function MarketingDashboard() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Marketing Dashboard</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("overview")}</h1>
         <p className="text-sm text-slate-500 mt-1">User acquisition, campaign performance, and content analytics.</p>
       </div>
 
@@ -85,7 +88,7 @@ export default function MarketingDashboard() {
           <thead>
             <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
               <th className="px-5 py-3 font-semibold">Campaign</th>
-              <th className="px-5 py-3 font-semibold">Status</th>
+              <th className="px-5 py-3 font-semibold">{tc("status")}</th>
               <th className="px-5 py-3 font-semibold">Leads</th>
               <th className="px-5 py-3 font-semibold">Spend</th>
               <th className="px-5 py-3 font-semibold">Cost/Lead</th>

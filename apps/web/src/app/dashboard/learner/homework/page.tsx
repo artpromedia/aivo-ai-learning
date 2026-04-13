@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 interface HomeworkAssignment {
   id: string;
@@ -44,6 +45,8 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 export default function HomeworkPage() {
   const { user, accessToken, loading: authLoading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("homework");
+  const tCommon = useTranslations("common");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [assignments, setAssignments] = useState<HomeworkAssignment[]>([]);
@@ -158,15 +161,15 @@ export default function HomeworkPage() {
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
         <div className="flex items-center gap-4">
           <button onClick={() => router.push("/dashboard/learner")} className="text-sm text-slate-500 hover:text-purple-600 font-semibold">
-            Back to Dashboard
+            {tCommon("back")}
           </button>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-8 py-12 space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-heading font-bold text-slate-900">Homework Helper</h1>
-          <p className="text-slate-500 font-semibold text-lg">Upload your homework and get personalized help!</p>
+          <h1 className="text-4xl font-heading font-bold text-slate-900">{t("title")}</h1>
+          <p className="text-slate-500 font-semibold text-lg">{t("upload_description")}</p>
         </div>
 
         {error && (
@@ -177,7 +180,7 @@ export default function HomeworkPage() {
 
         {lockedInfo && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center space-y-3">
-            <p className="text-amber-800 font-bold text-lg">Subscription Required</p>
+            <p className="text-amber-800 font-bold text-lg">{t("subscription_required")}</p>
             <p className="text-amber-700">
               This homework is {lockedInfo.detectedSubject.toLowerCase()} — you need a {lockedInfo.detectedSubject.toLowerCase()} tutor subscription to get help.
             </p>
@@ -185,7 +188,7 @@ export default function HomeworkPage() {
               onClick={() => router.push("/dashboard/parent/store")}
               className="px-6 py-2 bg-purple-600 text-white rounded-full font-bold hover:bg-purple-700 transition"
             >
-              Visit Tutor Store
+              {t("visit_tutor_store")}
             </button>
           </div>
         )}
@@ -204,20 +207,20 @@ export default function HomeworkPage() {
             {uploading ? (
               <>
                 <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
-                <p className="text-purple-600 font-bold">Processing your homework...</p>
+                <p className="text-purple-600 font-bold">{t("processing")}</p>
               </>
             ) : (
               <>
                 <div className="text-5xl">📸</div>
-                <p className="text-slate-700 font-bold text-lg">Upload a Photo</p>
-                <p className="text-slate-400 text-sm">Drag & drop or click to browse</p>
-                <p className="text-slate-300 text-xs">Supports JPG, PNG, WebP, PDF</p>
+                <p className="text-slate-700 font-bold text-lg">{t("upload_photo")}</p>
+                <p className="text-slate-400 text-sm">{t("drag_drop")}</p>
+                <p className="text-slate-300 text-xs">{t("supported_formats")}</p>
               </>
             )}
           </div>
 
           <div className="bg-white rounded-2xl p-8 border-2 border-slate-200 flex flex-col min-h-[200px] space-y-4">
-            <p className="text-slate-700 font-bold text-lg text-center">✍️ Paste Text</p>
+            <p className="text-slate-700 font-bold text-lg text-center">✍️ {t("paste_text")}</p>
             <textarea
               value={pastedText}
               onChange={(e) => setPastedText(e.target.value)}
@@ -229,7 +232,7 @@ export default function HomeworkPage() {
               disabled={uploading || !pastedText.trim()}
               className="px-6 py-3 bg-purple-600 text-white rounded-full font-bold hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {uploading ? "Processing..." : "Get Help"}
+              {uploading ? t("processing") : t("get_help")}
             </button>
           </div>
         </div>
@@ -241,12 +244,12 @@ export default function HomeworkPage() {
         ) : assignments.length === 0 ? (
           <div className="text-center py-12 text-slate-400">
             <div className="text-6xl mb-4">📚</div>
-            <p className="font-semibold text-lg">No homework yet!</p>
-            <p className="text-sm">Upload a photo or paste text to get started.</p>
+            <p className="font-semibold text-lg">{t("no_homework")}</p>
+            <p className="text-sm">{t("upload_to_start")}</p>
           </div>
         ) : (
           <div className="space-y-4">
-            <h2 className="text-xl font-heading font-bold text-slate-800">Your Homework</h2>
+            <h2 className="text-xl font-heading font-bold text-slate-800">{t("your_homework")}</h2>
             {assignments.map((hw) => {
               const subjectLower = hw.subject?.toLowerCase() || "other";
               const status = STATUS_LABELS[hw.status] || STATUS_LABELS.PROCESSING;

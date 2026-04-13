@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface User {
   id: string;
@@ -20,6 +21,8 @@ const ROLE_COLORS: Record<string, string> = {
 
 export default function DistrictStaffPage() {
   const { accessToken } = useAuth();
+  const t = useTranslations("districtAdmin");
+  const tc = useTranslations("common");
   const [staff, setStaff] = useState<User[]>([]);
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [search, setSearch] = useState("");
@@ -58,7 +61,7 @@ export default function DistrictStaffPage() {
   return (
     <div className="p-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Staff & Teachers</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("staff")}</h1>
         <p className="text-sm text-slate-500 mt-1">Manage teachers, therapists, and caregivers across your district.</p>
       </header>
 
@@ -99,9 +102,9 @@ export default function DistrictStaffPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-slate-400 bg-slate-50/50 border-b border-slate-100">
-                <th className="px-5 py-3 font-semibold">Name</th>
-                <th className="px-5 py-3 font-semibold">Email</th>
-                <th className="px-5 py-3 font-semibold">Role</th>
+                <th className="px-5 py-3 font-semibold">{tc("name")}</th>
+                <th className="px-5 py-3 font-semibold">{tc("email")}</th>
+                <th className="px-5 py-3 font-semibold">{tc("role")}</th>
                 <th className="px-5 py-3 font-semibold">Joined</th>
               </tr>
             </thead>

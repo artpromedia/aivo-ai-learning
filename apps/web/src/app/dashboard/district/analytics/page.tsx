@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface RoleCount {
   role: string;
@@ -37,6 +38,8 @@ const FL_LABELS: Record<string, string> = {
 
 export default function DistrictAnalyticsPage() {
   const { accessToken } = useAuth();
+  const t = useTranslations("districtAdmin");
+  const tc = useTranslations("common");
   const [stats, setStats] = useState<Stats | null>(null);
   const [learners, setLearners] = useState<Learner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +71,7 @@ export default function DistrictAnalyticsPage() {
   return (
     <div className="p-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Analytics & Reports</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("analytics")}</h1>
         <p className="text-sm text-slate-500 mt-1">District-wide performance metrics, functioning level distribution, and role breakdown.</p>
       </header>
 
@@ -88,7 +91,7 @@ export default function DistrictAnalyticsPage() {
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <h2 className="text-lg font-heading font-semibold text-slate-900 mb-4">Functioning Level Distribution</h2>
+            <h2 className="text-lg font-heading font-semibold text-slate-900 mb-4">{tc("total")}</h2>
             <div className="flex items-end gap-4 h-48">
               {flDistribution.map((d) => (
                 <div key={d.level} className="flex-1 flex flex-col items-center gap-2">

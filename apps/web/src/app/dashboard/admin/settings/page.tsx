@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface PlatformConfig {
   featureFlags: Record<string, boolean>;
@@ -9,6 +10,9 @@ interface PlatformConfig {
 
 export default function AdminSettingsPage() {
   const { user, accessToken } = useAuth();
+  const t = useTranslations("settings");
+  const tc = useTranslations("common");
+  const tp = useTranslations("platformAdmin");
   const [config, setConfig] = useState<PlatformConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -130,7 +134,7 @@ export default function AdminSettingsPage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Platform Settings</h1>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("general")}</h1>
           <p className="text-sm text-slate-500 mt-1">Configure feature flags, system limits, and global platform settings.</p>
         </div>
         {isPlatformAdmin && (

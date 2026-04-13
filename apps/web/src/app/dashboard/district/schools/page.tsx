@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface Tenant {
   id: string;
@@ -12,6 +13,8 @@ interface Tenant {
 
 export default function DistrictSchoolsPage() {
   const { accessToken, user } = useAuth();
+  const t = useTranslations("districtAdmin");
+  const tc = useTranslations("common");
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +37,7 @@ export default function DistrictSchoolsPage() {
   return (
     <div className="p-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Schools</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("schools")}</h1>
         <p className="text-sm text-slate-500 mt-1">Manage schools and campuses within your district.</p>
       </header>
 

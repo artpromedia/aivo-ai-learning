@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface ServiceStatus {
   name: string;
@@ -38,6 +39,8 @@ const ALL_SERVICES = [
 
 export default function AdminServicesPage() {
   const { accessToken, user } = useAuth();
+  const t = useTranslations("platformAdmin");
+  const tc = useTranslations("common");
   const [serviceStatuses, setServiceStatuses] = useState<ServiceStatus[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [uptime, setUptime] = useState<any>(null);
@@ -107,7 +110,7 @@ export default function AdminServicesPage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Services & Infrastructure</h1>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("system_health")}</h1>
           <p className="text-sm text-slate-500 mt-1">Real-time health monitoring across all {ALL_SERVICES.length} microservices.</p>
         </div>
         <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${

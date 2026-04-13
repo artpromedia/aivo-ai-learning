@@ -1,9 +1,13 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export default function AdminBillingPage() {
   const { accessToken } = useAuth();
+  const t = useTranslations("billing");
+  const tc = useTranslations("common");
+  const tp = useTranslations("platformAdmin");
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -51,7 +55,7 @@ export default function AdminBillingPage() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Billing & Licensing</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{tp("services")}</h1>
         <p className="text-sm text-slate-500 mt-1">Manage subscription plans, payment gateways, and licensing.</p>
       </div>
 

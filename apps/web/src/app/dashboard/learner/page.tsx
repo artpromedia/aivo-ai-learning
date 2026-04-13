@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { TUTORS } from "@aivo/brand";
+import { useTranslations } from "next-intl";
 
 interface EngagementProfile {
   totalXp: number;
@@ -46,6 +47,11 @@ function isLowFunctioning(level?: FunctioningLevel): boolean {
 export default function LearnerDashboard() {
   const { user, accessToken, logout, loading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("learner");
+  const tCommon = useTranslations("common");
+  const tGamification = useTranslations("gamification");
+  const tHomework = useTranslations("homework");
+  const tTutor = useTranslations("tutor");
   const [profile, setProfile] = useState<EngagementProfile | null>(null);
   const [showSelCheckin, setShowSelCheckin] = useState(false);
   const [selExercise, setSelExercise] = useState<SelExercise | null>(null);
@@ -139,23 +145,22 @@ export default function LearnerDashboard() {
       <div className="min-h-screen bg-gradient-to-br from-purple-950 via-indigo-950 to-slate-950 flex flex-col items-center justify-center px-6">
         <div className="max-w-md text-center">
           <div className="text-7xl mb-6 animate-pulse">🧠</div>
-          <h1 className="text-3xl font-heading font-bold text-white mb-3">Your Brain is Ready!</h1>
+          <h1 className="text-3xl font-heading font-bold text-white mb-3">{t("brain_ready_title")}</h1>
           <p className="text-white/60 font-body leading-relaxed mb-6">
-            Your parent or guardian is reviewing your learning profile.
-            Once they approve it, your personalized adventure will begin!
+            {t("brain_ready_description")}
           </p>
           <div className="bg-white/10 backdrop-blur rounded-2xl p-6 mb-6">
             <div className="flex items-center justify-center gap-3 mb-3">
               <div className="w-3 h-3 rounded-full bg-amber-400 animate-pulse" />
-              <p className="text-amber-300 font-heading font-bold text-sm">Waiting for Parent Approval</p>
+              <p className="text-amber-300 font-heading font-bold text-sm">{t("waiting_parent_approval")}</p>
             </div>
-            <p className="text-white/40 text-xs">Ask your parent to check their dashboard</p>
+            <p className="text-white/40 text-xs">{t("ask_parent_check")}</p>
           </div>
           <button
             onClick={logout}
             className="px-6 py-3 bg-white/10 backdrop-blur text-white/60 font-heading font-bold rounded-xl hover:bg-white/20 transition text-sm"
           >
-            Log Out
+            {t("log_out")}
           </button>
         </div>
       </div>
@@ -174,13 +179,13 @@ export default function LearnerDashboard() {
           <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
           <div className="flex items-center gap-4">
             <span className="text-lg font-heading font-bold text-primary">{user.name}</span>
-            <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">Exit</button>
+            <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">{t("log_out")}</button>
           </div>
         </header>
         <main className="max-w-3xl mx-auto px-8 py-12 text-center space-y-8">
           <div className="text-6xl">⭐</div>
-          <h1 className="text-3xl font-heading font-bold text-slate-900">Welcome, {user.name}!</h1>
-          <p className="text-lg text-slate-500 font-semibold">Parent-managed learning — progress shown on the parent dashboard.</p>
+          <h1 className="text-3xl font-heading font-bold text-slate-900">{tCommon("welcome")}, {user.name}!</h1>
+          <p className="text-lg text-slate-500 font-semibold">{t("parent_managed_learning")}</p>
           {profile && (
             <div className="bg-white rounded-3xl p-8 border border-yellow-200 shadow-sm">
               <div className="text-5xl mb-3">⭐</div>
@@ -226,8 +231,8 @@ export default function LearnerDashboard() {
               <span className="font-bold text-purple-600">{profile.currency.gems} gems</span>
             </div>
           )}
-          <span className="text-lg font-heading font-bold text-primary">Hi, {user.name}!</span>
-          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">Exit</button>
+          <span className="text-lg font-heading font-bold text-primary">{t("hi_name", { name: user.name })}!</span>
+          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">{t("log_out")}</button>
         </div>
       </header>
 
@@ -249,7 +254,7 @@ export default function LearnerDashboard() {
                   <div className="mt-2 bg-slate-100 rounded-full h-3 overflow-hidden">
                     <div className="bg-gradient-to-r from-purple-500 to-cyan-500 h-full rounded-full transition-all" style={{ width: `${xpPercent}%` }} />
                   </div>
-                  <div className="text-xs text-slate-400 mt-1 font-semibold">{profile.totalXp} XP total</div>
+                  <div className="text-xs text-slate-400 mt-1 font-semibold">{profile.totalXp} {tGamification("xp")} {tCommon("total").toLowerCase()}</div>
                 </>
               )}
             </div>
@@ -269,7 +274,7 @@ export default function LearnerDashboard() {
                 <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm text-center">
                   <div className="text-3xl">🏆</div>
                   <div className="text-xl font-heading font-bold text-slate-900">{profile.badges.length}</div>
-                  <div className="text-xs text-slate-400 font-semibold">Badges earned</div>
+                  <div className="text-xs text-slate-400 font-semibold">{tGamification("badges")}</div>
                 </div>
 
                 <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col items-center justify-center gap-2">
@@ -277,7 +282,7 @@ export default function LearnerDashboard() {
                     onClick={() => setShowSelCheckin(!showSelCheckin)}
                     className="px-4 py-2 rounded-full bg-pink-50 text-pink-700 font-bold text-sm hover:bg-pink-100 transition"
                   >
-                    How are you feeling?
+                    {t("how_feeling")}
                   </button>
                   {showSelCheckin && (
                     <div className="flex gap-2 flex-wrap justify-center">
@@ -298,7 +303,7 @@ export default function LearnerDashboard() {
                   onClick={() => setShowSelCheckin(!showSelCheckin)}
                   className="px-6 py-3 rounded-full bg-pink-50 text-pink-700 font-bold text-lg hover:bg-pink-100 transition"
                 >
-                  How do I feel?
+                  {t("how_feeling")}
                 </button>
                 {showSelCheckin && (
                   <div className="flex gap-3 flex-wrap justify-center">
@@ -336,23 +341,23 @@ export default function LearnerDashboard() {
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <button onClick={() => router.push("/dashboard/learner/homework")}
               className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-purple-100 text-purple-700 font-bold text-sm hover:bg-purple-200 transition">
-              <span>📸</span> Homework Helper
+              <span>📸</span> {tHomework("title")}
             </button>
             <button onClick={() => router.push("/dashboard/learner/quests")}
               className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-cyan-100 text-cyan-700 font-bold text-sm hover:bg-cyan-200 transition">
-              <span>🗺️</span> Quests
+              <span>🗺️</span> {t("quests")}
             </button>
             <button onClick={() => router.push("/dashboard/learner/challenges")}
               className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-red-100 text-red-700 font-bold text-sm hover:bg-red-200 transition">
-              <span>⚔️</span> Challenges
+              <span>⚔️</span> {t("challenges")}
             </button>
             <button onClick={() => router.push("/dashboard/learner/shop")}
               className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-green-100 text-green-700 font-bold text-sm hover:bg-green-200 transition">
-              <span>🛒</span> Shop
+              <span>🛒</span> {tGamification("shop")}
             </button>
             <button onClick={() => router.push("/dashboard/learner/leaderboard")}
               className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-amber-100 text-amber-600 font-bold text-sm hover:bg-amber-200 transition">
-              <span>🏆</span> Leaderboard
+              <span>🏆</span> {t("leaderboard")}
             </button>
           </div>
         )}
@@ -361,11 +366,11 @@ export default function LearnerDashboard() {
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <button onClick={() => router.push("/dashboard/learner/quests")}
               className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-cyan-100 text-cyan-700 font-bold text-lg hover:bg-cyan-200 transition shadow-sm">
-              <span className="text-2xl">🗺️</span> Adventures
+              <span className="text-2xl">🗺️</span> {t("adventures")}
             </button>
             <button onClick={() => router.push("/dashboard/learner/shop")}
               className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-green-100 text-green-700 font-bold text-lg hover:bg-green-200 transition shadow-sm">
-              <span className="text-2xl">🎁</span> Rewards
+              <span className="text-2xl">🎁</span> {tGamification("rewards")}
             </button>
           </div>
         )}
@@ -375,7 +380,7 @@ export default function LearnerDashboard() {
             <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-200 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xl">🎯</span>
-                <h3 className="font-heading font-bold text-amber-800">Daily Missions</h3>
+                <h3 className="font-heading font-bold text-amber-800">{t("daily_missions")}</h3>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 bg-white/70 rounded-xl px-4 py-3">
@@ -406,7 +411,7 @@ export default function LearnerDashboard() {
             <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-5 border border-purple-200 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xl">🗺️</span>
-                <h3 className="font-heading font-bold text-purple-800">Quest Worlds</h3>
+                <h3 className="font-heading font-bold text-purple-800">{t("quest_worlds")}</h3>
               </div>
               <div className="space-y-2">
                 {[
@@ -419,7 +424,7 @@ export default function LearnerDashboard() {
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ backgroundColor: `${world.color}15` }}>{world.emoji}</div>
                     <div className="flex-1">
                       <p className="text-sm font-bold text-slate-700 group-hover:text-primary transition">{world.name}</p>
-                      <p className="text-xs text-slate-400">Explore & complete quests</p>
+                      <p className="text-xs text-slate-400">{t("explore_quests")}</p>
                     </div>
                     <span className="text-slate-300 group-hover:text-primary transition">→</span>
                   </button>
@@ -431,7 +436,7 @@ export default function LearnerDashboard() {
 
         <div>
           <h2 className={`font-heading font-bold text-slate-900 text-center mb-6 ${isLow ? "text-3xl" : "text-2xl"}`}>
-            {isLow ? "Pick a Friend!" : "Start Learning"}
+            {isLow ? t("pick_friend") : t("start_learning")}
           </h2>
           <div className={`grid ${isLow ? "grid-cols-2 md:grid-cols-3 gap-8" : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"}`}>
             {(isLow ? allTutors.slice(0, 6) : allTutors).map(([key, tutor]) => (
@@ -451,7 +456,7 @@ export default function LearnerDashboard() {
                   {!isLow && <div className="text-xs text-slate-400 font-semibold mt-0.5">{tutor.domain}</div>}
                   {!isLow && (
                     <div className="mt-2 text-xs font-bold text-white px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity inline-block" style={{ backgroundColor: tutor.color }}>
-                      Start Learning →
+                      {t("start_learning")} →
                     </div>
                   )}
                 </div>
@@ -462,7 +467,7 @@ export default function LearnerDashboard() {
 
         {!isLow && profile && profile.badges.length > 0 && (
           <div>
-            <h2 className="text-2xl font-heading font-bold text-slate-900 text-center mb-4">Badge Cabinet</h2>
+            <h2 className="text-2xl font-heading font-bold text-slate-900 text-center mb-4">{t("badge_cabinet")}</h2>
             <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
               {profile.badges.map((b) => (
                 <div key={b.id} className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">

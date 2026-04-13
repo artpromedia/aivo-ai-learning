@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 interface QuestWorld {
   key: string;
@@ -32,6 +33,8 @@ const WORLD_COLORS: Record<string, string> = {
 export default function QuestsPage() {
   const { user, accessToken, logout, loading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("learner");
+  const tCommon = useTranslations("common");
   const [worlds, setWorlds] = useState<QuestWorld[]>([]);
 
   useEffect(() => {
@@ -56,15 +59,15 @@ export default function QuestsPage() {
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
         <div className="flex items-center gap-4">
           <button onClick={() => router.push("/dashboard/learner")}
-            className="text-sm text-primary font-semibold hover:underline">Back to Dashboard</button>
-          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">Exit</button>
+            className="text-sm text-primary font-semibold hover:underline">{tCommon("back")}</button>
+          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">{t("log_out")}</button>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-8 py-12 space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-heading font-bold text-slate-900">🗺️ Quest Worlds</h1>
-          <p className="text-slate-500 font-semibold mt-2">Embark on learning adventures with your tutors!</p>
+          <h1 className="text-4xl font-heading font-bold text-slate-900">🗺️ {t("quest_worlds")}</h1>
+          <p className="text-slate-500 font-semibold mt-2">{t("quest_worlds_desc")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -88,7 +91,7 @@ export default function QuestsPage() {
               <div className="mt-3 flex items-center justify-between">
                 <span className="text-xs text-slate-400 font-semibold">{world.chapters} chapters</span>
                 <span className="text-sm font-bold group-hover:translate-x-1 transition-transform" style={{ color: WORLD_COLORS[world.key] }}>
-                  Enter →
+                  {t("enter")} →
                 </span>
               </div>
             </div>

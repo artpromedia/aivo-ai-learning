@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 interface LearnerProfile {
   id: string;
@@ -24,6 +25,9 @@ interface LearnerProfile {
 export default function LearnerProfilePage() {
   const { user, accessToken, loading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("learner");
+  const tCommon = useTranslations("common");
+  const tGamification = useTranslations("gamification");
   const [profile, setProfile] = useState<LearnerProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
@@ -67,15 +71,15 @@ export default function LearnerProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-purple-50">
       <div className="max-w-4xl mx-auto px-6 py-8">
-        <Link href="/dashboard/learner" className="text-sm text-primary hover:underline font-semibold mb-4 inline-block">← Back to Dashboard</Link>
+        <Link href="/dashboard/learner" className="text-sm text-primary hover:underline font-semibold mb-4 inline-block">← {tCommon("back")}</Link>
 
         {loadingProfile ? (
           <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-            <div className="animate-pulse text-slate-400">Loading profile...</div>
+            <div className="animate-pulse text-slate-400">{tCommon("loading")}</div>
           </div>
         ) : !profile ? (
           <div className="bg-white rounded-2xl p-12 text-center border border-red-100">
-            <p className="text-red-600 font-semibold">Unable to load profile</p>
+            <p className="text-red-600 font-semibold">{t("unable_load_profile")}</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -88,18 +92,18 @@ export default function LearnerProfilePage() {
                   </div>
                   <div>
                     <h1 className="text-3xl font-heading font-bold">{profile.name}</h1>
-                    <p className="text-white/70 mt-1">Level {profile.level} Learner</p>
+                    <p className="text-white/70 mt-1">{tGamification("level")} {profile.level}</p>
                     {profile.gradeLevel && <p className="text-white/60 text-sm">Grade {profile.gradeLevel}</p>}
                   </div>
                   <div className="ml-auto text-right">
                     <p className="text-4xl font-bold">{profile.xp.toLocaleString()}</p>
-                    <p className="text-white/70 text-sm">Total XP</p>
+                    <p className="text-white/70 text-sm">{tGamification("xp")} {tCommon("total").toLowerCase()}</p>
                   </div>
                 </div>
                 <div className="mt-6">
                   <div className="flex items-center justify-between text-sm mb-1">
-                    <span>Level {profile.level}</span>
-                    <span>Level {profile.level + 1}</span>
+                    <span>{tGamification("level")} {profile.level}</span>
+                    <span>{tGamification("level")} {profile.level + 1}</span>
                   </div>
                   <div className="w-full bg-white/20 rounded-full h-3">
                     <div className="h-3 rounded-full bg-white/80 transition-all" style={{ width: `${xpProgress}%` }} />
@@ -111,26 +115,26 @@ export default function LearnerProfilePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm text-center">
                 <p className="text-3xl font-bold text-orange-500">🔥 {profile.streakDays}</p>
-                <p className="text-xs text-slate-400 font-semibold uppercase mt-1">Day Streak</p>
+                <p className="text-xs text-slate-400 font-semibold uppercase mt-1">{tGamification("streak")}</p>
               </div>
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm text-center">
                 <p className="text-3xl font-bold text-blue-600">{profile.totalSessions}</p>
-                <p className="text-xs text-slate-400 font-semibold uppercase mt-1">Sessions</p>
+                <p className="text-xs text-slate-400 font-semibold uppercase mt-1">{t("sessions")}</p>
               </div>
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm text-center">
                 <p className="text-3xl font-bold text-amber-500">🏅 {profile.badgesEarned}</p>
-                <p className="text-xs text-slate-400 font-semibold uppercase mt-1">Badges</p>
+                <p className="text-xs text-slate-400 font-semibold uppercase mt-1">{tGamification("badges")}</p>
               </div>
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm text-center">
                 <p className="text-3xl font-bold text-green-600">{profile.questsCompleted}</p>
-                <p className="text-xs text-slate-400 font-semibold uppercase mt-1">Quests Done</p>
+                <p className="text-xs text-slate-400 font-semibold uppercase mt-1">{t("quests_done")}</p>
               </div>
             </div>
 
             <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Subject Mastery</h2>
+              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("subject_mastery")}</h2>
               {profile.subjects.length === 0 ? (
-                <p className="text-sm text-slate-400">Start learning to see your mastery progress here!</p>
+                <p className="text-sm text-slate-400">{t("start_mastery_desc")}</p>
               ) : (
                 <div className="space-y-4">
                   {profile.subjects.map((s, i) => (
@@ -149,23 +153,23 @@ export default function LearnerProfilePage() {
             </div>
 
             <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-3">Quick Links</h2>
+              <h2 className="font-heading font-bold text-lg text-slate-900 mb-3">{t("quick_links")}</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Link href="/dashboard/learner/badges" className="p-4 rounded-xl border border-slate-200 hover:border-primary hover:shadow-sm transition text-center">
                   <span className="text-2xl">🏅</span>
-                  <p className="text-sm font-semibold text-slate-700 mt-1">Badges</p>
+                  <p className="text-sm font-semibold text-slate-700 mt-1">{tGamification("badges")}</p>
                 </Link>
                 <Link href="/dashboard/learner/quests" className="p-4 rounded-xl border border-slate-200 hover:border-primary hover:shadow-sm transition text-center">
                   <span className="text-2xl">🗺️</span>
-                  <p className="text-sm font-semibold text-slate-700 mt-1">Quests</p>
+                  <p className="text-sm font-semibold text-slate-700 mt-1">{t("quests")}</p>
                 </Link>
                 <Link href="/dashboard/learner/shop" className="p-4 rounded-xl border border-slate-200 hover:border-primary hover:shadow-sm transition text-center">
                   <span className="text-2xl">🛍️</span>
-                  <p className="text-sm font-semibold text-slate-700 mt-1">Shop</p>
+                  <p className="text-sm font-semibold text-slate-700 mt-1">{tGamification("shop")}</p>
                 </Link>
                 <Link href="/dashboard/learner/settings" className="p-4 rounded-xl border border-slate-200 hover:border-primary hover:shadow-sm transition text-center">
                   <span className="text-2xl">⚙️</span>
-                  <p className="text-sm font-semibold text-slate-700 mt-1">Settings</p>
+                  <p className="text-sm font-semibold text-slate-700 mt-1">{t("settings")}</p>
                 </Link>
               </div>
             </div>

@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Pagination from "@/components/Pagination";
+import { useTranslations } from "next-intl";
 
 interface User {
   id: string;
@@ -272,6 +273,8 @@ function CreateUserModal({
 
 export default function AdminUsersPage() {
   const { user: currentUser, accessToken, impersonate } = useAuth();
+  const t = useTranslations("platformAdmin");
+  const tc = useTranslations("common");
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [roleFilter, setRoleFilter] = useState("ALL");
@@ -348,7 +351,7 @@ export default function AdminUsersPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Users & Roles</h1>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("users")}</h1>
           <p className="text-sm text-slate-500 mt-1">Manage all platform users, roles, and access controls.</p>
         </div>
         {canCreate && (
@@ -384,7 +387,7 @@ export default function AdminUsersPage() {
           <div className="flex items-center gap-3 w-full md:w-auto">
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder={tc("search")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="px-4 py-2 rounded-lg border border-slate-200 text-sm w-full md:w-80 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none"
@@ -410,10 +413,10 @@ export default function AdminUsersPage() {
             <thead>
               <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
                 <th className="px-5 py-3 font-semibold">User</th>
-                <th className="px-5 py-3 font-semibold">Email</th>
-                <th className="px-5 py-3 font-semibold">Role</th>
+                <th className="px-5 py-3 font-semibold">{tc("email")}</th>
+                <th className="px-5 py-3 font-semibold">{tc("role")}</th>
                 <th className="px-5 py-3 font-semibold">Joined</th>
-                <th className="px-5 py-3 font-semibold">Actions</th>
+                <th className="px-5 py-3 font-semibold">{tc("actions")}</th>
               </tr>
             </thead>
             <tbody>

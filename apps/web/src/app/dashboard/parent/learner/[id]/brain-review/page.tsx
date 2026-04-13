@@ -7,6 +7,7 @@ import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
 import BrainSphere from "@/components/brain/BrainSphere";
 import BrainBuildingSequence from "@/components/brain/BrainBuildingSequence";
+import { useTranslations } from "next-intl";
 
 interface MasteryDecision {
   domain: string;
@@ -116,6 +117,9 @@ export default function BrainReviewPage() {
   const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
+  const t = useTranslations("parent");
+  const tBrain = useTranslations("brain");
+  const tCommon = useTranslations("common");
 
   const [review, setReview] = useState<BrainReview | null>(null);
   const [loadingReview, setLoadingReview] = useState(true);
@@ -167,7 +171,7 @@ export default function BrainReviewPage() {
       if (res.ok) {
         setActionResult({
           type: "approved",
-          message: `${review?.learner_name || "Your child"}'s Brain is active. Their first learning session is ready.`,
+          message: t("brain_approve_msg", { name: review?.learner_name || "Your child" }),
         });
         setReview((prev) => prev ? { ...prev, approval_status: "approved" } : prev);
       }
@@ -194,7 +198,7 @@ export default function BrainReviewPage() {
       if (res.ok) {
         setActionResult({
           type: "rebuilt",
-          message: `${review?.learner_name || "Your child"}'s Brain has been rebuilt with your additional context. The updated profile is now active.`,
+          message: t("brain_rebuilt_msg", { name: review?.learner_name || "Your child" }),
         });
         setReview((prev) => prev ? { ...prev, approval_status: "amended" } : prev);
         setShowContextForm(false);
@@ -215,7 +219,7 @@ export default function BrainReviewPage() {
       if (res.ok) {
         setActionResult({
           type: "start_over",
-          message: `${review?.learner_name || "Your child"} can now retake the Baseline Assessment. The previous results have been archived for reference.`,
+          message: t("brain_startover_msg", { name: review?.learner_name || "Your child" }),
         });
       }
     } catch {}
@@ -229,7 +233,7 @@ export default function BrainReviewPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-5xl mb-4 animate-pulse">🧠</div>
-          <p className="text-slate-500 font-heading font-bold">Loading Brain Clone Review...</p>
+          <p className="text-slate-500 font-heading font-bold">{t("loading_brain_review")}</p>
         </div>
       </div>
     );
@@ -240,8 +244,8 @@ export default function BrainReviewPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-5xl mb-4">🔍</div>
-          <p className="text-slate-500 font-heading font-bold">No brain clone found for this learner</p>
-          <Link href={`/dashboard/parent/learner/${learnerId}`} className="text-primary font-semibold hover:underline mt-4 inline-block">Back to Profile</Link>
+          <p className="text-slate-500 font-heading font-bold">{t("no_brain_found")}</p>
+          <Link href={`/dashboard/parent/learner/${learnerId}`} className="text-primary font-semibold hover:underline mt-4 inline-block">{t("back_to_profile")}</Link>
         </div>
       </div>
     );
@@ -255,7 +259,7 @@ export default function BrainReviewPage() {
             {actionResult.type === "approved" ? "✅" : actionResult.type === "rebuilt" ? "🔄" : "🔃"}
           </div>
           <h2 className="text-2xl font-heading font-bold text-slate-900 mb-3">
-            {actionResult.type === "approved" ? "Brain Approved!" : actionResult.type === "rebuilt" ? "Brain Rebuilt with Context" : "Starting Over"}
+            {actionResult.type === "approved" ? t("brain_approved") : actionResult.type === "rebuilt" ? t("brain_rebuilt") : t("starting_over")}
           </h2>
           <p className="text-slate-600 font-body mb-6">{actionResult.message}</p>
           <Link
@@ -264,7 +268,7 @@ export default function BrainReviewPage() {
               : `/dashboard/parent/learner/${learnerId}`}
             className="inline-block px-6 py-3 bg-gradient-to-r from-primary to-purple-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition"
           >
-            {actionResult.type === "start_over" ? "Start Baseline Assessment" : "View Learner Dashboard"}
+            {actionResult.type === "start_over" ? t("start_baseline_assessment") : t("view_learner_dashboard")}
           </Link>
         </div>
       </div>
@@ -290,12 +294,12 @@ export default function BrainReviewPage() {
   const isAlreadyResolved = review.approval_status !== "pending_parent_review";
 
   const TABS = [
-    { key: "overview" as const, label: "Overview", emoji: "🧠" },
-    { key: "mastery" as const, label: "Learning Levels", emoji: "📊" },
-    { key: "accommodations" as const, label: "Supports", emoji: "🛡️" },
-    { key: "tutors" as const, label: "AI Tutors", emoji: "👩‍🏫" },
-    { key: "signals" as const, label: "Learner Profile", emoji: "📋" },
-    { key: "rai" as const, label: "AI Safety", emoji: "🔒" },
+    { key: "overview" as const, label: tBrain("overview"), emoji: "🧠" },
+    { key: "mastery" as const, label: tBrain("learning_levels"), emoji: "📊" },
+    { key: "accommodations" as const, label: tBrain("supports"), emoji: "🛡️" },
+    { key: "tutors" as const, label: tBrain("ai_tutors"), emoji: "👩‍🏫" },
+    { key: "signals" as const, label: tBrain("learner_profile"), emoji: "📋" },
+    { key: "rai" as const, label: tBrain("ai_safety"), emoji: "🔒" },
   ];
 
   return (
@@ -303,7 +307,7 @@ export default function BrainReviewPage() {
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         <div className="flex items-center gap-4">
-          <Link href={`/dashboard/parent/learner/${learnerId}`} className="text-sm text-primary font-semibold hover:underline">Back to Profile</Link>
+          <Link href={`/dashboard/parent/learner/${learnerId}`} className="text-sm text-primary font-semibold hover:underline">{t("back_to_profile")}</Link>
           <span className="text-sm font-semibold text-slate-600">{user.name}</span>
         </div>
       </header>
@@ -314,10 +318,10 @@ export default function BrainReviewPage() {
             <BrainSphere visualIdentity={review.visual_identity} size={64} />
             <div className="flex-1">
               <h1 className="text-2xl font-heading font-bold text-slate-900">
-                {review.learner_name}&apos;s Brain
+                {review.learner_name}&apos;s {tBrain("title")}
               </h1>
               <p className="text-slate-500 font-body">
-                Review your child&apos;s personalized learning profile before activation
+                {t("review_brain_desc")}
               </p>
             </div>
             {isAlreadyResolved && (
@@ -339,21 +343,21 @@ export default function BrainReviewPage() {
                 {strengths.length > 0 && (
                   <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
                     <p className="text-sm font-semibold text-emerald-700 mb-1">
-                      {review.learner_name} showed strong engagement with {strengths.map(s => s.display_label.toLowerCase()).join(" and ")}
+                      {t("strong_engagement", { name: review.learner_name, subjects: strengths.map(s => s.display_label.toLowerCase()).join(" and ") })}
                     </p>
                   </div>
                 )}
                 {growth.length > 0 && (
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                     <p className="text-sm text-amber-700">
-                      {review.learner_name} may benefit from more time with {growth.map(g => g.display_label.toLowerCase()).join(" and ")} — framed as growth opportunities, not limitations
+                      {t("growth_opportunities", { name: review.learner_name, subjects: growth.map(g => g.display_label.toLowerCase()).join(" and ") })}
                     </p>
                   </div>
                 )}
                 {review.functioning_level && review.functioning_level !== "STANDARD" && (
                   <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
                     <p className="text-sm text-purple-700">
-                      {review.learner_name} learns best through personalized content. Their Brain will create activities designed for how {review.learner_name} explores the world.
+                      {t("personalized_content_desc", { name: review.learner_name })}
                     </p>
                   </div>
                 )}
@@ -384,7 +388,7 @@ export default function BrainReviewPage() {
             <>
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                 <h2 className="font-heading font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">📊</span> Mastery Snapshot
+                  <span className="text-2xl">📊</span> {t("mastery_snapshot")}
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {xai?.mastery_decisions?.map((m) => (
@@ -415,7 +419,7 @@ export default function BrainReviewPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                   <h3 className="font-heading font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    <span className="text-xl">👩‍🏫</span> Active Tutors
+                    <span className="text-xl">👩‍🏫</span> {t("active_tutors")}
                   </h3>
                   <div className="flex flex-wrap gap-3">
                     {review.active_tutors?.map((key) => {
@@ -435,7 +439,7 @@ export default function BrainReviewPage() {
 
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                   <h3 className="font-heading font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    <span className="text-xl">🛡️</span> Active Supports
+                    <span className="text-xl">🛡️</span> {t("active_supports")}
                   </h3>
                   {review.active_accommodations?.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
@@ -446,7 +450,7 @@ export default function BrainReviewPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-400">No additional accommodations needed</p>
+                    <p className="text-sm text-slate-400">{t("no_accommodations")}</p>
                   )}
                 </div>
               </div>
@@ -454,7 +458,7 @@ export default function BrainReviewPage() {
               {xai?.signal_decisions?.length > 0 && (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                   <h3 className="font-heading font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    <span className="text-xl">📋</span> Learner Signals
+                    <span className="text-xl">📋</span> {t("learner_signals")}
                   </h3>
                   <div className="grid md:grid-cols-2 gap-3">
                     {xai.signal_decisions.map((s) => (
@@ -472,9 +476,9 @@ export default function BrainReviewPage() {
           {activeTab === "mastery" && (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
               <h2 className="font-heading font-bold text-lg text-slate-900 mb-2 flex items-center gap-2">
-                <span className="text-2xl">📊</span> Mastery Levels Explained
+                <span className="text-2xl">📊</span> {t("mastery_levels_explained")}
               </h2>
-              <p className="text-sm text-slate-500 mb-6">Each mastery score shows where your child is starting. Here&apos;s how each one was determined.</p>
+              <p className="text-sm text-slate-500 mb-6">{t("mastery_levels_desc")}</p>
               <div className="space-y-4">
                 {xai?.mastery_decisions?.map((m) => (
                   <div key={m.domain} className="border border-slate-100 rounded-xl p-4 hover:bg-slate-50 transition">
@@ -484,7 +488,7 @@ export default function BrainReviewPage() {
                         <div>
                           <p className="font-heading font-bold text-slate-900">{m.display_label}</p>
                           {m.raw_score && (
-                            <p className="text-xs text-slate-400">Raw: {m.raw_score} on {m.difficulty} difficulty</p>
+                            <p className="text-xs text-slate-400">{t("raw_score", { score: m.raw_score, difficulty: m.difficulty || "" })}</p>
                           )}
                         </div>
                       </div>
@@ -502,7 +506,7 @@ export default function BrainReviewPage() {
                       />
                     </div>
                     <p className="text-sm text-slate-600 bg-slate-50 rounded-lg p-3 leading-relaxed">
-                      <span className="font-semibold text-slate-700">Why this score: </span>
+                      <span className="font-semibold text-slate-700">{t("why_this_score")}</span>
                       {m.reasoning}
                     </p>
                   </div>
@@ -514,9 +518,9 @@ export default function BrainReviewPage() {
           {activeTab === "accommodations" && (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
               <h2 className="font-heading font-bold text-lg text-slate-900 mb-2 flex items-center gap-2">
-                <span className="text-2xl">🛡️</span> Learning Supports & Accommodations
+                <span className="text-2xl">🛡️</span> {t("learning_supports")}
               </h2>
-              <p className="text-sm text-slate-500 mb-6">These supports help personalize the learning experience. Each was selected based on evidence.</p>
+              <p className="text-sm text-slate-500 mb-6">{t("supports_desc")}</p>
               {xai?.accommodation_decisions?.length > 0 ? (
                 <div className="space-y-3">
                   {xai.accommodation_decisions.map((a) => (
@@ -534,7 +538,7 @@ export default function BrainReviewPage() {
               ) : (
                 <div className="text-center py-8">
                   <div className="text-4xl mb-3">✨</div>
-                  <p className="text-slate-500 font-semibold">No additional accommodations were recommended for this level.</p>
+                  <p className="text-slate-500 font-semibold">{t("no_accommodations_recommended")}</p>
                 </div>
               )}
             </div>
@@ -543,14 +547,14 @@ export default function BrainReviewPage() {
           {activeTab === "tutors" && (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
               <h2 className="font-heading font-bold text-lg text-slate-900 mb-2 flex items-center gap-2">
-                <span className="text-2xl">👩‍🏫</span> Assigned AI Tutors
+                <span className="text-2xl">👩‍🏫</span> {t("assigned_tutors")}
               </h2>
-              <p className="text-sm text-slate-500 mb-6">These tutors were selected to match your child&apos;s learning level and curriculum needs.</p>
+              <p className="text-sm text-slate-500 mb-6">{t("assigned_tutors_desc")}</p>
               <div className="space-y-3">
-                {xai?.tutor_decisions?.map((t) => {
-                  const tutor = TUTORS[t.tutor_key as TutorKey];
+                {xai?.tutor_decisions?.map((td) => {
+                  const tutor = TUTORS[td.tutor_key as TutorKey];
                   return (
-                    <div key={t.tutor_key} className="border border-slate-100 rounded-xl p-4 hover:bg-purple-50/50 transition flex items-center gap-4">
+                    <div key={td.tutor_key} className="border border-slate-100 rounded-xl p-4 hover:bg-purple-50/50 transition flex items-center gap-4">
                       {tutor ? (
                         <div className="w-14 h-14 rounded-full overflow-hidden border-3 shadow-md flex-shrink-0" style={{ borderColor: tutor.color }}>
                           <Image src={tutor.avatar} alt={tutor.name} width={56} height={56} className="object-cover" />
@@ -560,12 +564,12 @@ export default function BrainReviewPage() {
                       )}
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <p className="font-heading font-bold text-slate-900">{tutor?.name || t.tutor_key}</p>
+                          <p className="font-heading font-bold text-slate-900">{tutor?.name || td.tutor_key}</p>
                           {tutor?.domain && (
                             <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">{tutor.domain}</span>
                           )}
                         </div>
-                        <p className="text-sm text-slate-600">{t.reasoning}</p>
+                        <p className="text-sm text-slate-600">{td.reasoning}</p>
                       </div>
                     </div>
                   );
@@ -577,9 +581,9 @@ export default function BrainReviewPage() {
           {activeTab === "signals" && (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
               <h2 className="font-heading font-bold text-lg text-slate-900 mb-2 flex items-center gap-2">
-                <span className="text-2xl">📋</span> Learner Profile Signals
+                <span className="text-2xl">📋</span> {t("signals_title")}
               </h2>
-              <p className="text-sm text-slate-500 mb-6">These signals help the AI understand your child&apos;s unique needs without making limiting assumptions.</p>
+              <p className="text-sm text-slate-500 mb-6">{t("signals_desc")}</p>
               {xai?.signal_decisions?.length > 0 ? (
                 <div className="space-y-3">
                   {xai.signal_decisions.map((s) => (
@@ -595,8 +599,8 @@ export default function BrainReviewPage() {
               ) : (
                 <div className="text-center py-8">
                   <div className="text-4xl mb-3">✅</div>
-                  <p className="text-slate-500 font-semibold">No additional signals were detected from the assessments.</p>
-                  <p className="text-xs text-slate-400 mt-1">Standard settings will be used for all interactions.</p>
+                  <p className="text-slate-500 font-semibold">{t("no_signals")}</p>
+                  <p className="text-xs text-slate-400 mt-1">{t("no_signals_standard")}</p>
                 </div>
               )}
             </div>
@@ -606,20 +610,20 @@ export default function BrainReviewPage() {
             <div className="space-y-4">
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                 <h2 className="font-heading font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">🔒</span> Responsible AI Compliance
+                  <span className="text-2xl">🔒</span> {t("rai_compliance")}
                 </h2>
                 <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4">
-                  <p className="text-sm font-semibold text-emerald-700 mb-1">Transparency Statement</p>
+                  <p className="text-sm font-semibold text-emerald-700 mb-1">{t("transparency_statement")}</p>
                   <p className="text-sm text-emerald-600">{xai?.rai_compliance?.transparency}</p>
                 </div>
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                  <p className="text-sm font-semibold text-blue-700 mb-1">Human Oversight</p>
+                  <p className="text-sm font-semibold text-blue-700 mb-1">{t("human_oversight_label")}</p>
                   <p className="text-sm text-blue-600">{xai?.rai_compliance?.human_oversight}</p>
                 </div>
               </div>
 
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                <h3 className="font-heading font-bold text-slate-900 mb-3">Data Sources Used</h3>
+                <h3 className="font-heading font-bold text-slate-900 mb-3">{t("data_sources")}</h3>
                 <div className="space-y-2">
                   {xai?.rai_compliance?.data_sources?.map((src, i) => (
                     <div key={i} className="flex items-center gap-3 bg-slate-50 rounded-xl px-4 py-3">
@@ -631,7 +635,7 @@ export default function BrainReviewPage() {
               </div>
 
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                <h3 className="font-heading font-bold text-slate-900 mb-3">Bias Mitigations</h3>
+                <h3 className="font-heading font-bold text-slate-900 mb-3">{t("bias_mitigations_label")}</h3>
                 <div className="space-y-2">
                   {xai?.rai_compliance?.bias_mitigations?.map((mit, i) => (
                     <div key={i} className="flex items-start gap-3 bg-emerald-50 rounded-xl px-4 py-3">
@@ -647,21 +651,21 @@ export default function BrainReviewPage() {
 
         {!isAlreadyResolved && (
           <div className="bg-white rounded-2xl shadow-xl border border-purple-100 p-6 sticky bottom-4">
-            <h3 className="font-heading font-bold text-lg text-slate-900 mb-2">Your Decision</h3>
+            <h3 className="font-heading font-bold text-lg text-slate-900 mb-2">{t("your_decision")}</h3>
             <p className="text-sm text-slate-500 font-body mb-4">
-              You are the final authority on {review.learner_name}&apos;s Brain. Choose what happens next.
+              {t("final_authority", { name: review.learner_name })}
             </p>
 
             {showContextForm ? (
               <div className="space-y-4">
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-2">
-                  <p className="text-sm font-semibold text-blue-700 mb-1">Add Context & Rebuild</p>
-                  <p className="text-xs text-blue-600">Share information the assessment couldn&apos;t capture. The Brain will be rebuilt with your insights incorporated.</p>
+                  <p className="text-sm font-semibold text-blue-700 mb-1">{t("add_context_rebuild")}</p>
+                  <p className="text-xs text-blue-600">{t("add_context_rebuild_desc")}</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    Learning Context
+                    {t("learning_context_label")}
                   </label>
                   <textarea
                     value={learningContext}
@@ -673,7 +677,7 @@ export default function BrainReviewPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    Clinical Context
+                    {t("clinical_context_label")}
                   </label>
                   <textarea
                     value={clinicalContext}
@@ -685,7 +689,7 @@ export default function BrainReviewPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    Assessment Concerns
+                    {t("assessment_concerns_label")}
                   </label>
                   <textarea
                     value={assessmentConcerns}
@@ -697,7 +701,7 @@ export default function BrainReviewPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    Missing Information
+                    {t("missing_information_label")}
                   </label>
                   <textarea
                     value={missingInfo}
@@ -713,7 +717,7 @@ export default function BrainReviewPage() {
                     disabled={submitting || (!learningContext.trim() && !clinicalContext.trim() && !assessmentConcerns.trim() && !missingInfo.trim())}
                     className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
                   >
-                    {submitting ? "Rebuilding Brain..." : "Submit Context & Rebuild"}
+                    {submitting ? t("rebuilding_brain") : t("submit_context_rebuild")}
                   </button>
                   <button
                     onClick={() => {
@@ -725,21 +729,21 @@ export default function BrainReviewPage() {
                     }}
                     className="px-6 py-3 border border-slate-200 text-slate-600 font-heading font-bold rounded-xl hover:bg-slate-50 transition"
                   >
-                    Cancel
+                    {tCommon("cancel")}
                   </button>
                 </div>
               </div>
             ) : showStartOverConfirm ? (
               <div className="space-y-4">
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                  <p className="text-sm font-semibold text-slate-700 mb-1">Start Over</p>
+                  <p className="text-sm font-semibold text-slate-700 mb-1">{t("start_over_label")}</p>
                   <p className="text-sm text-slate-500">
-                    This will ask {review.learner_name} to complete the Baseline Assessment again. The previous results will be saved but not used. Are you sure?
+                    {t("start_over_confirm_desc", { name: review.learner_name })}
                   </p>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    Reason (optional)
+                    {t("reason_optional")}
                   </label>
                   <textarea
                     value={startOverReason}
@@ -754,13 +758,13 @@ export default function BrainReviewPage() {
                     disabled={submitting}
                     className="flex-1 px-6 py-3 bg-slate-500 text-white font-heading font-bold rounded-xl hover:bg-slate-600 transition disabled:opacity-50"
                   >
-                    {submitting ? "Processing..." : "Confirm Start Over"}
+                    {submitting ? t("processing") : t("confirm_start_over")}
                   </button>
                   <button
                     onClick={() => { setShowStartOverConfirm(false); setStartOverReason(""); }}
                     className="px-6 py-3 border border-slate-200 text-slate-600 font-heading font-bold rounded-xl hover:bg-slate-50 transition"
                   >
-                    Cancel
+                    {tCommon("cancel")}
                   </button>
                 </div>
               </div>
@@ -771,21 +775,21 @@ export default function BrainReviewPage() {
                   disabled={submitting}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
                 >
-                  {submitting ? "Approving..." : "Approve Brain"}
+                  {submitting ? t("approving") : t("approve_brain_label")}
                 </button>
                 <button
                   onClick={() => setShowContextForm(true)}
                   disabled={submitting}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
                 >
-                  Add Context & Rebuild
+                  {t("add_context_rebuild")}
                 </button>
                 <button
                   onClick={() => setShowStartOverConfirm(true)}
                   disabled={submitting}
                   className="px-6 py-3 bg-slate-100 text-slate-600 font-heading font-bold rounded-xl hover:bg-slate-200 transition disabled:opacity-50 border border-slate-200"
                 >
-                  Start Over
+                  {t("start_over_label")}
                 </button>
               </div>
             )}

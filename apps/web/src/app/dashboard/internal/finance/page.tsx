@@ -1,9 +1,12 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export default function FinanceDashboard() {
   const { accessToken } = useAuth();
+  const t = useTranslations("dashboard");
+  const tc = useTranslations("common");
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
@@ -58,7 +61,7 @@ export default function FinanceDashboard() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Finance Dashboard</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("overview")}</h1>
         <p className="text-sm text-slate-500 mt-1">Revenue tracking, subscription analytics, and financial health.</p>
       </div>
 
@@ -142,7 +145,7 @@ export default function FinanceDashboard() {
               <th className="px-5 py-3 font-semibold">Description</th>
               <th className="px-5 py-3 font-semibold">Amount</th>
               <th className="px-5 py-3 font-semibold">Method</th>
-              <th className="px-5 py-3 font-semibold">Status</th>
+              <th className="px-5 py-3 font-semibold">{tc("status")}</th>
             </tr>
           </thead>
           <tbody>

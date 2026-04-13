@@ -4,12 +4,15 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 export default function ParentLearnerSettingsPage() {
   const { user, accessToken, loading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
+  const t = useTranslations("parent");
+  const tc = useTranslations("common");
   const [learnerName, setLearnerName] = useState("Learner");
   const [loadingData, setLoadingData] = useState(true);
 
@@ -56,46 +59,46 @@ export default function ParentLearnerSettingsPage() {
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline">Dashboard</Link>
+          <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline">{t("dashboard")}</Link>
           <span className="text-sm font-semibold text-slate-600">{user.name}</span>
         </div>
       </header>
 
       <div className="max-w-2xl mx-auto px-8 py-6">
         <Link href={`/dashboard/parent/learner/${learnerId}/overview`}
-          className="text-sm text-primary hover:underline font-semibold mb-4 inline-block">← Back to {learnerName}</Link>
+          className="text-sm text-primary hover:underline font-semibold mb-4 inline-block">← {learnerName}</Link>
 
-        <h1 className="text-2xl font-heading font-bold text-slate-900 mb-6">Settings — {learnerName}</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900 mb-6">{t("settings_title", { name: learnerName })}</h1>
 
         <div className="space-y-6">
           <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Accessibility & Accommodations</h2>
+            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("accessibility_accommodations")}</h2>
             <div className="space-y-4">
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Read Aloud</p>
-                  <p className="text-xs text-slate-400">AI tutors will read content aloud by default</p>
+                  <p className="text-sm font-semibold text-slate-900">{t("read_aloud")}</p>
+                  <p className="text-xs text-slate-400">{t("read_aloud_desc")}</p>
                 </div>
                 <Toggle value={readAloud} onChange={setReadAloud} />
               </label>
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Simplified UI</p>
-                  <p className="text-xs text-slate-400">Reduce visual complexity for less distraction</p>
+                  <p className="text-sm font-semibold text-slate-900">{t("simplified_ui")}</p>
+                  <p className="text-xs text-slate-400">{t("simplified_ui_desc")}</p>
                 </div>
                 <Toggle value={simplifiedUI} onChange={setSimplifiedUI} />
               </label>
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Extended Time</p>
-                  <p className="text-xs text-slate-400">Give 1.5x time on assessments and quizzes</p>
+                  <p className="text-sm font-semibold text-slate-900">{t("extended_time")}</p>
+                  <p className="text-xs text-slate-400">{t("extended_time_desc")}</p>
                 </div>
                 <Toggle value={extendedTime} onChange={setExtendedTime} />
               </label>
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Break Reminders</p>
-                  <p className="text-xs text-slate-400">Prompt breaks every 20 minutes of activity</p>
+                  <p className="text-sm font-semibold text-slate-900">{t("break_reminders")}</p>
+                  <p className="text-xs text-slate-400">{t("break_reminders_desc")}</p>
                 </div>
                 <Toggle value={breakReminders} onChange={setBreakReminders} />
               </label>
@@ -103,43 +106,43 @@ export default function ParentLearnerSettingsPage() {
           </div>
 
           <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Learning Goals</h2>
+            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("learning_goals")}</h2>
             <div>
-              <label className="text-xs text-slate-400 font-semibold uppercase">Daily Learning Goal (minutes)</label>
+              <label className="text-xs text-slate-400 font-semibold uppercase">{t("daily_goal_label")}</label>
               <div className="flex items-center gap-4 mt-2">
                 <input type="range" min={10} max={120} step={5} value={dailyGoalMinutes}
                   onChange={e => setDailyGoalMinutes(Number(e.target.value))}
                   className="flex-1 accent-primary" />
                 <span className="text-lg font-bold text-primary w-16 text-right">{dailyGoalMinutes}m</span>
               </div>
-              <p className="text-xs text-slate-400 mt-1">Recommended: 20–45 minutes per day</p>
+              <p className="text-xs text-slate-400 mt-1">{t("daily_goal_recommended")}</p>
             </div>
           </div>
 
           <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Parent Notifications for {learnerName}</h2>
+            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("notifications_for", { name: learnerName })}</h2>
             <div className="space-y-4">
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Milestone Notifications</p>
-                  <p className="text-xs text-slate-400">Get notified when {learnerName} earns badges or completes quests</p>
+                  <p className="text-sm font-semibold text-slate-900">{t("milestone_notifications")}</p>
+                  <p className="text-xs text-slate-400">{t("milestone_desc", { name: learnerName })}</p>
                 </div>
                 <Toggle value={notifyOnMilestone} onChange={setNotifyOnMilestone} />
               </label>
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Struggle Alerts</p>
-                  <p className="text-xs text-slate-400">Get notified when {learnerName} struggles repeatedly with a topic</p>
+                  <p className="text-sm font-semibold text-slate-900">{t("struggle_alerts")}</p>
+                  <p className="text-xs text-slate-400">{t("struggle_desc", { name: learnerName })}</p>
                 </div>
                 <Toggle value={notifyOnStruggle} onChange={setNotifyOnStruggle} />
               </label>
             </div>
           </div>
 
-          {saved && <p className="text-sm text-green-600 bg-green-50 p-3 rounded-lg font-medium">Settings saved for {learnerName}!</p>}
+          {saved && <p className="text-sm text-green-600 bg-green-50 p-3 rounded-lg font-medium">{t("settings_saved", { name: learnerName })}</p>}
           <button onClick={handleSave}
             className="w-full py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark transition">
-            Save Settings
+            {t("save_settings")}
           </button>
         </div>
       </div>

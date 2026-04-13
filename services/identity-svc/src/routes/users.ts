@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { users, learners, consentRecords } from "@aivo/db";
+import { users, learners, consentRecords, languageProfiles } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { eq } from "drizzle-orm";
 import { lookupCurriculum } from "../services/curriculum-lookup";
@@ -58,6 +58,7 @@ export async function registerUserRoutes(app: FastifyInstance) {
           zipCode: { type: "string" },
           country: { type: "string" },
           region: { type: "string" },
+          preferredLanguage: { type: "string" },
         },
       },
     },
@@ -99,6 +100,14 @@ export async function registerUserRoutes(app: FastifyInstance) {
       curriculumFramework: curriculum.curriculumFramework,
       curriculumAlignment: curriculum.curriculumAlignment,
     }).returning();
+
+    if (body.preferredLanguage) {
+      await db.insert(languageProfiles).values({
+        learnerId: learner.id,
+        primaryLanguage: body.preferredLanguage,
+        preferredInstructionLanguage: body.preferredLanguage,
+      }).catch(() => {});
+    }
 
     await db.insert(consentRecords).values({
       parentId: user.sub,

@@ -1,64 +1,66 @@
 import { FastifyInstance } from "fastify";
+import { en } from "../translations/en.js";
+import { es } from "../translations/es.js";
 
-  const SUPPORTED_LOCALES = ["en", "es", "fr", "de", "pt", "zh", "ja", "ko", "ar", "hi"];
+const SUPPORTED_LOCALES = ["en", "es", "fr", "de", "pt", "zh", "ja", "ko", "ar", "hi"];
 
-  const DEFAULT_TRANSLATIONS: Record<string, Record<string, string>> = {
-    en: {
-      "app.title": "AIVO Learning",
-      "nav.home": "Home",
-      "nav.dashboard": "Dashboard",
-      "nav.login": "Sign In",
-      "nav.signup": "Get Started",
-      "tutor.start": "Start Session",
-      "tutor.end": "End Session",
-      "assessment.begin": "Begin Assessment",
-      "brain.title": "Brain Profile",
-      "learner.level": "Functioning Level",
-    },
-    es: {
-      "app.title": "AIVO Aprendizaje",
-      "nav.home": "Inicio",
-      "nav.dashboard": "Panel",
-      "nav.login": "Iniciar Sesión",
-      "nav.signup": "Comenzar",
-      "tutor.start": "Iniciar Sesión",
-      "tutor.end": "Terminar Sesión",
-      "assessment.begin": "Comenzar Evaluación",
-      "brain.title": "Perfil Cerebral",
-      "learner.level": "Nivel de Funcionamiento",
-    },
-  };
+const TRANSLATIONS: Record<string, Record<string, string>> = { en, es };
 
-  export function registerTranslationRoutes(app: FastifyInstance, db: any) {
-    app.get("/api/i18n/locales", async () => {
-      return { locales: SUPPORTED_LOCALES, default: "en" };
-    });
+export function registerTranslationRoutes(app: FastifyInstance, db: any) {
+  app.get("/api/i18n/locales", async () => {
+    return {
+      locales: SUPPORTED_LOCALES,
+      default: "en",
+      available: SUPPORTED_LOCALES,
+      serverTranslations: Object.keys(TRANSLATIONS),
+      note: "All 10 locales are available via frontend JSON files. Server-side translations available for: " + Object.keys(TRANSLATIONS).join(", "),
+      names: {
+        en: "English", es: "Español", fr: "Français", de: "Deutsch",
+        pt: "Português", zh: "中文", ja: "日本語", ko: "한국어",
+        ar: "العربية", hi: "हिन्दी",
+      },
+    };
+  });
 
-    app.get("/api/i18n/translations/:locale", async (request, reply) => {
-      const { locale } = request.params as any;
-      if (!SUPPORTED_LOCALES.includes(locale)) {
-        return reply.code(404).send({ error: "Locale not supported", supported: SUPPORTED_LOCALES });
-      }
-      return { locale, translations: DEFAULT_TRANSLATIONS[locale] || DEFAULT_TRANSLATIONS.en };
-    });
+  app.get("/api/i18n/translations/:locale", async (request, reply) => {
+    const { locale } = request.params as any;
+    if (!SUPPORTED_LOCALES.includes(locale)) {
+      return reply.code(404).send({ error: "Locale not supported", supported: SUPPORTED_LOCALES });
+    }
+    return { locale, translations: TRANSLATIONS[locale] || TRANSLATIONS.en, fallback: !TRANSLATIONS[locale] };
+  });
 
-    app.get("/api/i18n/translations/:locale/:namespace", async (request, reply) => {
-      const { locale, namespace } = request.params as any;
-      const all = DEFAULT_TRANSLATIONS[locale] || DEFAULT_TRANSLATIONS.en;
-      const filtered: Record<string, string> = {};
-      for (const [key, val] of Object.entries(all)) {
-        if (key.startsWith(namespace + ".")) filtered[key] = val;
-      }
-      return { locale, namespace, translations: filtered };
-    });
+  app.get("/api/i18n/translations/:locale/:namespace", async (request, reply) => {
+    const { locale, namespace } = request.params as any;
+    const all = TRANSLATIONS[locale] || TRANSLATIONS.en;
+    const filtered: Record<string, string> = {};
+    for (const [key, val] of Object.entries(all)) {
+      if (key.startsWith(namespace + ".")) filtered[key] = val;
+    }
+    return { locale, namespace, translations: filtered };
+  });
 
-    app.post("/api/i18n/detect", async (request) => {
-      const { text } = request.body as any;
-      return { detected: "en", confidence: 0.95, alternatives: [{ locale: "es", confidence: 0.03 }] };
-    });
+  app.get("/api/i18n/detect", async (request) => {
+    const acceptLang = (request.headers["accept-language"] || "en") as string;
+    const parsed = acceptLang.split(",").map((part) => {
+      const [lang, q] = part.trim().split(";q=");
+      return { locale: lang.split("-")[0].toLowerCase(), quality: q ? parseFloat(q) : 1.0 };
+    }).sort((a, b) => b.quality - a.quality);
 
-    app.get("/api/i18n/content/:contentId/:locale", async (request, reply) => {
-      const { contentId, locale } = request.params as any;
-      return { contentId, locale, status: "original", content: null };
-    });
-  }
+    const detected = parsed.find((p) => SUPPORTED_LOCALES.includes(p.locale));
+    return {
+      detected: detected?.locale || "en",
+      confidence: detected ? detected.quality : 0.5,
+      source: "accept-language",
+      alternatives: parsed
+        .filter((p) => SUPPORTED_LOCALES.includes(p.locale) && p.locale !== detected?.locale)
+        .slice(0, 3)
+        .map((p) => ({ locale: p.locale, confidence: p.quality })),
+    };
+  });
+
+  app.get("/api/i18n/content/:contentId/:locale", async (request, reply) => {
+    const { contentId, locale } = request.params as any;
+    return { contentId, locale, status: "original", content: null };
+  });
+}
