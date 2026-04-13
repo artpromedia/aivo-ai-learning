@@ -18,7 +18,6 @@ permissions:
 env:
   IMAGE_PREFIX: ghcr.io/artpromedia
   NODE_VERSION: "22"
-  PNPM_VERSION: "10.6.5"
 
 jobs:
   build-push:
