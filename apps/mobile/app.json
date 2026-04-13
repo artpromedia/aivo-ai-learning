@@ -9,6 +9,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
+      "image": "./assets/images/splash-icon.png",
       "backgroundColor": "#7C3AED",
       "resizeMode": "contain"
     },
@@ -17,23 +18,47 @@
       "bundleIdentifier": "com.artpromedia.aivo",
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "splash": {
+        "image": "./assets/images/splash-icon.png",
+        "backgroundColor": "#7C3AED",
+        "resizeMode": "contain"
       }
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#7C3AED"
       },
-      "package": "com.artpromedia.aivo"
+      "package": "com.artpromedia.aivo",
+      "splash": {
+        "image": "./assets/images/splash-icon.png",
+        "backgroundColor": "#7C3AED",
+        "resizeMode": "contain"
+      }
     },
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/icon.png",
+      "splash": {
+        "image": "./assets/images/splash-icon.png",
+        "backgroundColor": "#7C3AED",
+        "resizeMode": "contain"
+      }
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "backgroundColor": "#7C3AED",
+          "imageWidth": 200
+        }
+      ],
       [
         "expo-camera",
         {

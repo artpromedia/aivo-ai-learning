@@ -132,3 +132,9 @@ id = "80ypvbJlrnjI9Z7htDgzE"
 uri = "file://apps/web/public/images/tutors/muse.png"
 type = "image"
 title = "Muse art tutor avatar"
+
+[[generated]]
+id = "z3pFl-MJvbU0b_DwQI4Qf"
+uri = "file://apps/mobile/assets/images/splash-icon.png"
+type = "image"
+title = "AIVO splash screen logo"
