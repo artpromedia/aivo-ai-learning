@@ -26,17 +26,21 @@ args = "Brain Service"
 task = "workflow.run"
 args = "Identity Service"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Web App"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
 
 [workflows.workflow.metadata]
-outputType = "webview"
+outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd apps/mobile && EXPO_ROUTER_APP_ROOT=app npx expo start --web --port 5000 --host lan"
-waitForPort = 5000
+args = "cd apps/mobile && EXPO_ROUTER_APP_ROOT=app npx expo start --web --port 8080 --host lan"
+waitForPort = 8080
 
 [[workflows.workflow]]
 name = "Brain Service"
@@ -61,6 +65,18 @@ waitForPort = 3001
 
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow]]
+name = "Web App"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd apps/web && npx next dev --port 5000 --turbopack --hostname 0.0.0.0"
+waitForPort = 5000
 
 [[ports]]
 localPort = 3001
