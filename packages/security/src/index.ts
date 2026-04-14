@@ -6,6 +6,7 @@ export interface JWTPayload {
   role: string;
   email?: string;
   name?: string;
+  impersonatedBy?: string;
 }
 
 let privateKey: jose.CryptoKey | Uint8Array;

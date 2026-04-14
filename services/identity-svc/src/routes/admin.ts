@@ -148,7 +148,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     },
   }, async (req, reply) => {
     const { userId } = req.body as any;
-    const adminUser = req.user as any;
+    const adminUser = (req as any).user;
 
     if (userId === adminUser.sub) {
       return reply.status(400).send({ error: "Cannot impersonate yourself" });

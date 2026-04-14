@@ -88,7 +88,10 @@ async function verifyGoogleToken(idToken: string): Promise<{ email: string; name
   try {
     const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
     if (!response.ok) return null;
-    const payload = await response.json();
+    const payload = await response.json() as {
+      aud?: string; iss?: string; email?: string; email_verified?: string;
+      exp?: string; name?: string; sub?: string;
+    };
     if (payload.aud !== clientId) return null;
     if (payload.iss !== "accounts.google.com" && payload.iss !== "https://accounts.google.com") return null;
     if (!payload.email || payload.email_verified !== "true") return null;
@@ -96,7 +99,7 @@ async function verifyGoogleToken(idToken: string): Promise<{ email: string; name
     return {
       email: payload.email,
       name: payload.name || payload.email.split("@")[0],
-      googleId: payload.sub,
+      googleId: payload.sub || "",
     };
   } catch {
     return null;
