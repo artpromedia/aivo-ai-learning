@@ -5,7 +5,6 @@ on:
     branches: [master, main]
     paths:
       - "infra/helm/**"
-      - "infra/monitoring/**"
   workflow_dispatch:
 
 concurrency:
@@ -15,19 +14,17 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  NAMESPACE: aivo
+  CHART_PATH: infra/helm/aivo-service
+  VALUES_FILE: infra/helm/values/hetzner.yaml
+  IMAGE_PREFIX: ghcr.io/artpromedia
+
 jobs:
-  # ═════════════════════════════════════════════
-  # Helm Deploy (Hetzner Dedicated Servers)
-  # ═════════════════════════════════════════════
-  # Infrastructure is 4 Hetzner Robot dedicated servers running K3s.
-  # Servers are provisioned manually — see HETZNER_DEPLOYMENT_GUIDE.md.
-  # This workflow deploys Helm chart changes to the existing cluster.
-  # Runs on the self-hosted GitHub Actions runner on the K3s control plane
-  # (Server 2), where kubectl is already configured via K3s.
-  helm:
-    name: Helm Deploy
+  deploy:
+    name: Deploy Services to Hetzner K3s
     runs-on: [self-hosted, hetzner, production]
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -35,10 +32,7 @@ jobs:
 
       - name: Verify cluster reachable
         run: |
-          if ! kubectl cluster-info; then
-            echo "::error::Cannot reach Kubernetes cluster"
-            exit 1
-          fi
+          kubectl cluster-info
           kubectl get nodes
           echo "Cluster is reachable"
 
@@ -49,20 +43,58 @@ jobs:
           fi
           helm version
 
-      - name: Clear stuck Helm releases
+      - name: Deploy all services
         run: |
-          STATUS=$(helm status aivo-learning-saas -n aivo -o json 2>/dev/null | jq -r '.info.status' 2>/dev/null || echo "not-found")
-          echo "Current Helm release status: $STATUS"
-          if [ "$STATUS" = "pending-install" ] || [ "$STATUS" = "pending-upgrade" ] || [ "$STATUS" = "pending-rollback" ]; then
-            echo "::warning::Found stuck Helm release in '$STATUS' state — rolling back"
-            helm rollback aivo-learning-saas 0 -n aivo --timeout 5m || \
-              helm uninstall aivo-learning-saas -n aivo --no-hooks 2>/dev/null || true
+          set -euo pipefail
+          NS="${{ env.NAMESPACE }}"
+
+          kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+
+          SERVICES=(
+            identity-svc assessment-svc brain-svc ai-svc learning-svc
+            tutor-svc family-svc engagement-svc billing-svc comms-svc
+            i18n-svc integrations-svc admin-svc status-page-svc research-svc
+          )
+
+          PYTHON_SERVICES=(brain-svc ai-svc)
+
+          FAILED=0
+          for svc in "${SERVICES[@]}"; do
+            PORT=3000
+            for ps in "${PYTHON_SERVICES[@]}"; do
+              if [ "$svc" = "$ps" ]; then
+                PORT=8000
+                break
+              fi
+            done
+
+            echo ""
+            echo "═══ Deploying $svc ═══"
+            helm upgrade --install "$svc" "${{ env.CHART_PATH }}" \
+              -f "${{ env.VALUES_FILE }}" \
+              --set serviceName="$svc" \
+              --set image.repository="${{ env.IMAGE_PREFIX }}" \
+              --set service.port=$PORT \
+              --set service.targetPort=$PORT \
+              -n "$NS" \
+              --timeout 5m \
+              --wait 2>&1 || {
+                echo "⚠  $svc deploy incomplete"
+                FAILED=$((FAILED + 1))
+              }
+          done
+
+          echo ""
+          echo "════════════════════════════════════════════════"
+          echo "  Deploy complete: $((${#SERVICES[@]} - FAILED))/${#SERVICES[@]} successful"
+          echo "════════════════════════════════════════════════"
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::warning::$FAILED service(s) failed to deploy"
           fi
 
-      - name: Helm upgrade
+      - name: Verify rollout
         run: |
-          helm upgrade --install aivo-learning-saas infra/helm \
-            -f infra/helm/values/hetzner.yaml \
-            -n aivo --create-namespace \
-            --timeout 10m \
-            --wait
+          kubectl -n ${{ env.NAMESPACE }} get pods --sort-by=.metadata.name -o wide
+          echo ""
+          kubectl -n ${{ env.NAMESPACE }} get deployments

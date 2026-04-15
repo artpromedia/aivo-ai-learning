@@ -1,0 +1,46 @@
+image:
+  repository: ghcr.io/artpromedia
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+resources:
+  limits:
+    cpu: "1"
+    memory: "1Gi"
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+nodeSelector:
+  role: app
+
+env:
+  NODE_ENV: production
+  LOG_LEVEL: info
+  LOG_FORMAT: json
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: aivo-prod
+      ports:
+        - protocol: TCP
+          port: 3000

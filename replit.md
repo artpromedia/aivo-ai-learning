@@ -266,6 +266,21 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **API**: `GET /api/brain/:learnerId` (JWT-protected via brain-svc auth)
 - **Connected Learners API**: `GET /api/family/collaboration/connected-learners` (returns learners linked to authenticated teacher/caregiver/therapist)
 
+### Deployment Infrastructure
+- **Target**: 4 Hetzner dedicated servers running K3s in HEL1
+- **Helm Chart**: `infra/helm/aivo-service/` — generic per-service chart (deployment, service, HPA, PDB, configmap, service monitor)
+- **Values**: `infra/helm/values/hetzner.yaml` (production), `infra/helm/values/staging.yaml`
+- **Image Registry**: GHCR (`ghcr.io/artpromedia/<service-name>:<tag>`)
+- **CI Workflows** (`.github/workflows/`):
+  - `infra-deploy.yml` — Deploy on infra changes (self-hosted runner)
+  - `deploy-production.yml` — Production deploy on release or manual trigger
+  - `deploy-staging.yml` — Staging deploy on push to develop
+  - `rollback.yml` — Manual per-service or all-services rollback
+- **Self-Hosted Runner**: Registered on Hetzner Server 2 (K3s control plane), labels: `self-hosted, hetzner, production`
+- **Namespaces**: `aivo` (production), `aivo-staging` (staging)
+- **15 Services deployed**: identity-svc, assessment-svc, brain-svc, ai-svc, learning-svc, tutor-svc, family-svc, engagement-svc, billing-svc, comms-svc, i18n-svc, integrations-svc, admin-svc, status-page-svc, research-svc
+- **Python services** (port 8000): brain-svc, ai-svc. All others: port 3000.
+
 ### GitHub Repository
 - **New repo**: `artpromedia/aivo-ai-learning` (pushed Phase 0+1 — 125 files, 17,627 lines)
 - **Branch**: `main`

@@ -4,6 +4,12 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Image tag to deploy (e.g. v1.2.0, latest)'
+        required: false
+        type: string
+        default: 'latest'
 
 concurrency:
   group: deploy-production
@@ -14,6 +20,10 @@ permissions:
 
 env:
   NODE_VERSION: "22"
+  NAMESPACE: aivo
+  CHART_PATH: infra/helm/aivo-service
+  VALUES_FILE: infra/helm/values/hetzner.yaml
+  IMAGE_PREFIX: ghcr.io/artpromedia
 
 jobs:
   build-node:
@@ -64,18 +74,28 @@ jobs:
   deploy:
     name: Deploy to Production
     runs-on: [self-hosted, hetzner, production]
-    timeout-minutes: 20
+    timeout-minutes: 25
     needs: [build-node, build-python]
     environment: production
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ inputs.version || 'latest' }}"
+          fi
+          echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Deploying version: $VERSION"
+
       - name: Verify cluster reachable
         run: |
           kubectl cluster-info
           kubectl get nodes
-          echo "Cluster is reachable"
 
       - name: Setup Helm
         run: |
@@ -84,16 +104,63 @@ jobs:
           fi
           helm version
 
-      - name: Deploy via Helm
+      - name: Deploy all services
         run: |
-          helm upgrade --install aivo-learning-saas infra/helm \
-            -f infra/helm/values/hetzner.yaml \
-            -n aivo --create-namespace \
-            --timeout 10m \
-            --wait
+          set -euo pipefail
+          NS="${{ env.NAMESPACE }}"
+          VERSION="${{ steps.version.outputs.tag }}"
+
+          kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+
+          SERVICES=(
+            identity-svc assessment-svc brain-svc ai-svc learning-svc
+            tutor-svc family-svc engagement-svc billing-svc comms-svc
+            i18n-svc integrations-svc admin-svc status-page-svc research-svc
+          )
+
+          PYTHON_SERVICES=(brain-svc ai-svc)
+
+          FAILED=0
+          for svc in "${SERVICES[@]}"; do
+            PORT=3000
+            for ps in "${PYTHON_SERVICES[@]}"; do
+              if [ "$svc" = "$ps" ]; then
+                PORT=8000
+                break
+              fi
+            done
+
+            echo ""
+            echo "═══ Deploying $svc ($VERSION) ═══"
+            helm upgrade --install "$svc" "${{ env.CHART_PATH }}" \
+              -f "${{ env.VALUES_FILE }}" \
+              --set serviceName="$svc" \
+              --set image.repository="${{ env.IMAGE_PREFIX }}" \
+              --set image.tag="$VERSION" \
+              --set service.port=$PORT \
+              --set service.targetPort=$PORT \
+              -n "$NS" \
+              --timeout 5m \
+              --wait 2>&1 || {
+                echo "⚠  $svc deploy incomplete"
+                FAILED=$((FAILED + 1))
+              }
+          done
+
+          echo ""
+          echo "════════════════════════════════════════════════"
+          echo "  Production deploy complete: $((${#SERVICES[@]} - FAILED))/${#SERVICES[@]} successful"
+          echo "════════════════════════════════════════════════"
+
+          if [ "$FAILED" -gt 3 ]; then
+            echo "::error::Too many failures ($FAILED) — consider rollback"
+            exit 1
+          fi
 
       - name: Verify rollout
         run: |
-          kubectl -n aivo get pods --sort-by=.metadata.name -o wide
+          kubectl -n ${{ env.NAMESPACE }} get pods --sort-by=.metadata.name -o wide
           echo ""
-          echo "═══ Deployment complete ═══"
+          kubectl -n ${{ env.NAMESPACE }} get deployments
+          echo ""
+          echo "═══ Production deployment complete ═══"

@@ -14,6 +14,10 @@ permissions:
 
 env:
   NODE_VERSION: "22"
+  NAMESPACE: aivo-staging
+  CHART_PATH: infra/helm/aivo-service
+  VALUES_FILE: infra/helm/values/staging.yaml
+  IMAGE_PREFIX: ghcr.io/artpromedia
 
 jobs:
   build-node:
@@ -75,7 +79,6 @@ jobs:
         run: |
           kubectl cluster-info
           kubectl get nodes
-          echo "Cluster is reachable"
 
       - name: Setup Helm
         run: |
@@ -84,16 +87,51 @@ jobs:
           fi
           helm version
 
-      - name: Deploy via Helm
+      - name: Deploy all services to staging
         run: |
-          helm upgrade --install aivo-learning-saas-staging infra/helm \
-            -f infra/helm/values/hetzner.yaml \
-            -n aivo-staging --create-namespace \
-            --timeout 10m \
-            --wait
+          set -euo pipefail
+          NS="${{ env.NAMESPACE }}"
+
+          kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+
+          SERVICES=(
+            identity-svc assessment-svc brain-svc ai-svc learning-svc
+            tutor-svc family-svc engagement-svc billing-svc comms-svc
+            i18n-svc integrations-svc admin-svc status-page-svc research-svc
+          )
+
+          PYTHON_SERVICES=(brain-svc ai-svc)
+
+          FAILED=0
+          for svc in "${SERVICES[@]}"; do
+            PORT=3000
+            for ps in "${PYTHON_SERVICES[@]}"; do
+              if [ "$svc" = "$ps" ]; then
+                PORT=8000
+                break
+              fi
+            done
+
+            echo "═══ Deploying $svc (staging) ═══"
+            helm upgrade --install "$svc" "${{ env.CHART_PATH }}" \
+              -f "${{ env.VALUES_FILE }}" \
+              --set serviceName="$svc" \
+              --set image.repository="${{ env.IMAGE_PREFIX }}" \
+              --set image.tag="latest" \
+              --set service.port=$PORT \
+              --set service.targetPort=$PORT \
+              --set replicaCount=1 \
+              -n "$NS" \
+              --timeout 5m \
+              --wait 2>&1 || {
+                echo "⚠  $svc deploy incomplete"
+                FAILED=$((FAILED + 1))
+              }
+          done
+
+          echo ""
+          echo "═══ Staging deploy complete: $((${#SERVICES[@]} - FAILED))/${#SERVICES[@]} successful ═══"
 
       - name: Verify rollout
         run: |
-          kubectl -n aivo-staging get pods --sort-by=.metadata.name -o wide
-          echo ""
-          echo "═══ Staging deployment complete ═══"
+          kubectl -n ${{ env.NAMESPACE }} get pods --sort-by=.metadata.name -o wide

@@ -3,12 +3,12 @@ name: Manual Rollback
 on:
   workflow_dispatch:
     inputs:
-      target_version:
-        description: "Version to rollback to (e.g. v1.2.3) — leave empty to rollback to previous Helm revision"
+      services:
+        description: "Comma-separated service names to rollback (leave empty for all services)"
         required: false
         type: string
       helm_revision:
-        description: "Specific Helm revision number to rollback to (e.g. 5) — overrides target_version"
+        description: "Specific Helm revision number to rollback to (e.g. 5) — leave empty for previous revision"
         required: false
         type: string
       environment:
@@ -28,9 +28,7 @@ permissions:
   contents: read
 
 env:
-  RELEASE_NAME: aivo-learning-saas
-  NAMESPACE: aivo
-  IMAGE_PREFIX: ghcr.io/artpromedia
+  CHART_PATH: infra/helm/aivo-service
 
 jobs:
   approval:
@@ -45,8 +43,8 @@ jobs:
         run: |
           echo "Production rollback approved"
           echo "Initiated by: ${{ github.actor }}"
-          echo "Target version: ${{ inputs.target_version || 'previous revision' }}"
-          echo "Helm revision: ${{ inputs.helm_revision || 'auto' }}"
+          echo "Services: ${{ inputs.services || 'ALL' }}"
+          echo "Helm revision: ${{ inputs.helm_revision || 'previous' }}"
 
   rollback:
     name: "Rollback ${{ inputs.environment }}"
@@ -73,96 +71,74 @@ jobs:
           fi
           helm version
 
-      - name: Show current state
+      - name: Determine services and namespace
+        id: config
         run: |
-          echo "=== Current Helm Release ==="
-          helm history ${{ env.RELEASE_NAME }} -n ${{ env.NAMESPACE }} --max 5 2>/dev/null || echo "No release found"
-          echo ""
-          echo "=== Current Pod Status ==="
-          kubectl get pods -n ${{ env.NAMESPACE }} --no-headers 2>/dev/null | head -20
-
-      - name: Rollback via Helm revision
-        if: inputs.helm_revision != ''
-        run: |
-          echo "Rolling back to Helm revision ${{ inputs.helm_revision }}..."
-          helm rollback ${{ env.RELEASE_NAME }} ${{ inputs.helm_revision }} \
-            -n ${{ env.NAMESPACE }} \
-            --timeout 10m \
-            --wait
-          echo "Rollback to revision ${{ inputs.helm_revision }} complete"
-
-      - name: Rollback via version tag
-        if: inputs.helm_revision == '' && inputs.target_version != ''
-        run: |
-          VERSION="${{ inputs.target_version }}"
-          [[ ! "$VERSION" =~ ^v ]] && VERSION="v${VERSION}"
-
-          echo "Rolling back to version $VERSION..."
-
-          VALUES_FILE="infra/helm/values/hetzner.yaml"
           if [ "${{ inputs.environment }}" = "production" ]; then
-            VALUES_FILE="infra/helm/values/hetzner-production.yaml"
+            NS="aivo"
+          else
+            NS="aivo-staging"
+          fi
+          echo "namespace=$NS" >> "$GITHUB_OUTPUT"
+
+          if [ -n "${{ inputs.services }}" ]; then
+            echo "services=${{ inputs.services }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "services=identity-svc,assessment-svc,brain-svc,ai-svc,learning-svc,tutor-svc,family-svc,engagement-svc,billing-svc,comms-svc,i18n-svc,integrations-svc,admin-svc,status-page-svc,research-svc" >> "$GITHUB_OUTPUT"
           fi
 
-          SERVICES=(
-            identity-svc billing-svc family-svc integrations-svc admin-svc
-            learning-svc engagement-svc comms-svc i18n-svc tutor-svc
-            status-page-svc research-svc assessment-svc ai-svc brain-svc
-            web marketing
-          )
+      - name: Show current state
+        run: |
+          NS="${{ steps.config.outputs.namespace }}"
+          IFS=',' read -ra SERVICES <<< "${{ steps.config.outputs.services }}"
 
-          IMAGE_TAGS=""
+          echo "=== Current Helm Releases ==="
           for svc in "${SERVICES[@]}"; do
-            IMAGE_TAGS="$IMAGE_TAGS --set ${svc}.image.repository=${{ env.IMAGE_PREFIX }}/${svc} --set ${svc}.image.tag=${VERSION}"
+            svc=$(echo "$svc" | xargs)
+            echo "--- $svc ---"
+            helm history "$svc" -n "$NS" --max 3 2>/dev/null || echo "  No release found"
           done
 
-          helm dependency build infra/helm
-          eval helm upgrade --install ${{ env.RELEASE_NAME }} infra/helm \
-            -f "$VALUES_FILE" \
-            $IMAGE_TAGS \
-            -n ${{ env.NAMESPACE }} \
-            --atomic \
-            --timeout 15m \
-            --wait
-
-          echo "Rollback to version $VERSION complete"
-
-      - name: Rollback to previous revision
-        if: inputs.helm_revision == '' && inputs.target_version == ''
-        run: |
-          echo "Rolling back to previous Helm revision..."
-          helm rollback ${{ env.RELEASE_NAME }} 0 \
-            -n ${{ env.NAMESPACE }} \
-            --timeout 10m \
-            --wait
-          echo "Rollback to previous revision complete"
-
-      - name: Verify rollback
-        run: |
-          echo "=== Post-Rollback Status ==="
-          helm status ${{ env.RELEASE_NAME }} -n ${{ env.NAMESPACE }}
           echo ""
+          echo "=== Current Pod Status ==="
+          kubectl get pods -n "$NS" --no-headers 2>/dev/null | head -30
 
-          SERVICES=(
-            identity-svc billing-svc family-svc integrations-svc admin-svc
-            learning-svc engagement-svc comms-svc i18n-svc tutor-svc
-            status-page-svc research-svc assessment-svc
-            ai-svc brain-svc web marketing
-          )
+      - name: Rollback services
+        run: |
+          set -euo pipefail
+          NS="${{ steps.config.outputs.namespace }}"
+          REVISION="${{ inputs.helm_revision || '0' }}"
+          IFS=',' read -ra SERVICES <<< "${{ steps.config.outputs.services }}"
 
-          FAIL=0
+          FAILED=0
           for svc in "${SERVICES[@]}"; do
-            if kubectl rollout status deployment/"$svc" -n ${{ env.NAMESPACE }} --timeout=120s 2>/dev/null; then
-              echo "OK: $svc"
+            svc=$(echo "$svc" | xargs)
+            echo ""
+            echo "═══ Rolling back $svc (revision: ${REVISION:-previous}) ═══"
+            if helm rollback "$svc" "$REVISION" -n "$NS" --timeout 5m --wait 2>/dev/null; then
+              echo "  ✅ $svc rolled back"
             else
-              echo "WARN: $svc rollout not complete"
-              FAIL=$((FAIL + 1))
+              echo "  ⚠  $svc rollback failed or no previous revision"
+              FAILED=$((FAILED + 1))
             fi
           done
 
-          if [ "$FAIL" -gt 0 ]; then
-            echo "::warning::$FAIL service(s) may not have fully rolled out"
+          echo ""
+          echo "════════════════════════════════════════════════"
+          echo "  Rollback complete: $((${#SERVICES[@]} - FAILED))/${#SERVICES[@]} successful"
+          echo "════════════════════════════════════════════════"
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo "::warning::$FAILED service(s) failed to rollback"
           fi
+
+      - name: Verify rollback
+        run: |
+          NS="${{ steps.config.outputs.namespace }}"
+          echo "=== Post-Rollback Pod Status ==="
+          kubectl get pods -n "$NS" --sort-by=.metadata.name -o wide
+          echo ""
+          kubectl get deployments -n "$NS"
 
       - name: Summary
         if: always()
@@ -170,7 +146,7 @@ jobs:
           echo "## Manual Rollback — ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Initiated by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Target version:** \`${{ inputs.target_version || 'previous revision' }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Helm revision:** \`${{ inputs.helm_revision || 'auto' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Services:** \`${{ steps.config.outputs.services }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Helm revision:** \`${{ inputs.helm_revision || 'previous' }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
