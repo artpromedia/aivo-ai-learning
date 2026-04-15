@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import DashboardHeader from "@/components/DashboardHeader";
+import CommandPalette from "@/components/CommandPalette";
 import { SkipLink } from "@/components/a11y/SkipLink";
 
 const NAV_SECTIONS = [
@@ -12,6 +13,7 @@ const NAV_SECTIONS = [
     label: "Platform",
     items: [
       { href: "/dashboard/admin", label: "Overview", icon: "📊" },
+      { href: "/dashboard/admin/activity", label: "Activity Feed", icon: "🔔" },
       { href: "/dashboard/admin/services", label: "Services & Health", icon: "⚡" },
       { href: "/dashboard/admin/analytics", label: "Analytics & Research", icon: "📈" },
     ],
@@ -28,14 +30,23 @@ const NAV_SECTIONS = [
     label: "AI & Learning",
     items: [
       { href: "/dashboard/admin/ai", label: "AI & Brain Models", icon: "🧠" },
+      { href: "/dashboard/admin/ai/playground", label: "Prompt Playground", icon: "🎮" },
+      { href: "/dashboard/admin/ai/moderation", label: "Content Moderation", icon: "🔍" },
     ],
   },
   {
     label: "Operations",
     items: [
       { href: "/dashboard/admin/billing", label: "Billing & Licensing", icon: "💳" },
+      { href: "/dashboard/admin/billing/revenue", label: "Revenue", icon: "💰" },
+      { href: "/dashboard/admin/billing/invoices", label: "Invoices", icon: "🧾" },
       { href: "/dashboard/admin/compliance", label: "Compliance & Audit", icon: "🛡️" },
+      { href: "/dashboard/admin/compliance/audit-log", label: "Audit Log", icon: "📜" },
+      { href: "/dashboard/admin/compliance/data-requests", label: "Data Requests", icon: "📋" },
       { href: "/dashboard/admin/settings", label: "Platform Settings", icon: "⚙️" },
+      { href: "/dashboard/admin/settings/emails", label: "Email Templates", icon: "📧" },
+      { href: "/dashboard/admin/settings/webhooks", label: "Webhooks", icon: "🔗" },
+      { href: "/dashboard/admin/settings/api-keys", label: "API Keys", icon: "🔑" },
     ],
   },
 ];
@@ -133,6 +144,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </div>
       </main>
+      <CommandPalette />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Pagination from "@/components/Pagination";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 interface Learner {
   id: string;
@@ -126,7 +127,9 @@ export default function AdminLearnersPage() {
                   const lc = LEVEL_CONFIG[l.functioningLevel || ""] || { label: "N/A", color: "text-slate-500", bg: "bg-slate-100" };
                   return (
                     <tr key={l.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
-                      <td className="px-5 py-3 font-medium text-slate-900">{l.name}</td>
+                      <td className="px-5 py-3 font-medium">
+                        <Link href={`/dashboard/admin/learners/${l.id}`} className="text-purple-600 hover:text-purple-700">{l.name}</Link>
+                      </td>
                       <td className="px-5 py-3">
                         <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${lc.bg} ${lc.color}`}>{lc.label}</span>
                       </td>

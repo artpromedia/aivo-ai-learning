@@ -86,6 +86,10 @@ services/research-svc  — Fastify analytics/research (port 3015)
 
 ### Database
 - Schema managed by Drizzle ORM in `packages/db/src/schema/`
+- Schema files: enums, tenants, users, learners, assessments, brain, engagement, billing, audit, learning, homework, collaboration, integrations, admin
+- Admin tables (in `admin.ts`): admin_audit_log, platform_config, data_requests, ai_usage_log, content_moderation_queue, email_templates, webhooks, webhook_deliveries, api_keys
+- Users table additions: deactivatedAt, lastLoginAt, lastLoginIp
+- Tenants table additions: status, suspendedAt, suspensionReason
 - Migrations in `packages/db/drizzle/`
 - Seed: `pnpm --filter @aivo/db exec tsx src/seed.ts`
 
@@ -157,11 +161,24 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `GET /api/engagement/lesson-plans/:planId` — Lesson plan detail
 - `PUT /api/engagement/lesson-plans/:planId` — Update lesson plan
 - `GET /api/admin/stats` — Admin dashboard stats (users, learners, tenants, role counts)
-- `GET /api/admin/users` — Admin user listing
-- `GET /api/admin/tenants` — Admin tenant listing
-- `GET /api/admin/learners` — Admin learner listing
+- `GET /api/admin/users?page=&pageSize=&search=&role=&sort=&order=` — Admin user listing with server-side pagination/search/sort
+- `GET /api/admin/users/:id` — Full user profile (tenant, learners, active sessions)
+- `PUT /api/admin/users/:id` — Update user (name, email, role, tenantId, avatarUrl)
+- `DELETE /api/admin/users/:id` — Soft-deactivate user (sets deactivatedAt)
+- `POST /api/admin/users/:id/reactivate` — Reactivate deactivated user
+- `POST /api/admin/users/:id/reset-password` — Reset password (returns temp password)
+- `GET /api/admin/learners?page=&pageSize=&search=&sort=&order=` — Learner listing with pagination
+- `GET /api/admin/learners/:id` — Full learner profile (parent, sensory profile, tenant)
+- `GET /api/admin/tenants?page=&pageSize=&search=&sort=&order=` — Tenant listing with pagination
+- `GET /api/admin/tenants/:id` — Full tenant profile (users, learners, counts)
+- `PUT /api/admin/tenants/:id` — Update tenant (name, settings, status, suspension)
 - `POST /api/admin/create-team-member` — Create user with any role (platform admin only, all 13 roles supported; non-internal roles require valid tenantId)
 - `POST /api/admin/impersonate` — Login as another user (platform admin only, returns impersonated JWT + user data)
+- `GET /api/admin-svc/audit-log?action=&actorId=&resourceType=&from=&to=&page=&pageSize=&search=` — Paginated audit log with filters
+- `GET /api/admin-svc/activity` — Recent 20 audit entries for activity feed
+- `GET /api/admin-svc/search?q=` — Cross-entity search (users, learners, tenants)
+- `GET /api/admin-svc/config` — Platform config (loads from platform_config table)
+- `PUT /api/admin-svc/config` — Update platform config (persists to platform_config, logs audit event)
 - `POST /api/family/collaboration/accept-invite` — Accept pending collaboration invites by email
 - `GET /api/family/collaboration/pending-invites` — List pending invites for current user
 - `POST /api/iep/parse` — AI-powered IEP document text parsing via ai-svc
@@ -215,15 +232,28 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `/dashboard/parent/learner/[id]/tutors` — Parent manage learner tutors
 - `/dashboard/parent/learner/[id]/settings` — Parent per-learner settings
 - `/dashboard/admin` — Platform admin overview (stat cards, role distribution, service health, recent users, 30-day uptime)
-- `/dashboard/admin/users` — User management with role filtering, search, role count badges
+- `/dashboard/admin/activity` — Activity feed (timeline of recent 20 audit entries)
+- `/dashboard/admin/users` — User management with server-side pagination, search, role filtering, deactivation badges
+- `/dashboard/admin/users/[id]` — User detail page (full profile, edit, deactivate/reactivate, reset password, impersonate, linked learners, sessions)
 - `/dashboard/admin/learners` — Learner management with functioning level distribution cards and filtering
+- `/dashboard/admin/learners/[id]` — Learner detail page (demographics, clinical info, sensory profile, curriculum, parent/tenant links)
 - `/dashboard/admin/tenants` — Tenant/district management with type breakdown, district creation form
+- `/dashboard/admin/tenants/[id]` — Tenant detail page (settings, suspension management, users/learners tables, edit modal)
 - `/dashboard/admin/services` — Real-time service health for all 15 microservices, uptime, incident reporting
 - `/dashboard/admin/ai` — AI & Brain model management (LLM providers, brain pipeline, RAI compliance, 14 tutors)
+- `/dashboard/admin/ai/playground` — AI Prompt Playground (test tutor prompts with model/temperature/token controls, chat UI)
+- `/dashboard/admin/ai/moderation` — Content moderation queue (review AI-flagged content, approve/reject, confidence scores)
 - `/dashboard/admin/compliance` — COPPA/FERPA/GDPR/SOC2 compliance dashboards, security controls, consent mgmt
+- `/dashboard/admin/compliance/audit-log` — Full audit log viewer (filterable by action, actor, resource, date range, with expandable JSON details)
+- `/dashboard/admin/compliance/data-requests` — DSAR/GDPR/FERPA data requests with SLA tracking and status management
 - `/dashboard/admin/billing` — Subscription plans (Free/Family/Family Plus/Enterprise), payment gateways, usage metering
+- `/dashboard/admin/billing/revenue` — Revenue dashboard (MRR trend chart, subscriber growth, churn metrics, monthly breakdown table)
+- `/dashboard/admin/billing/invoices` — Invoice management (status filtering, payment tracking, tenant/plan details)
 - `/dashboard/admin/analytics` — Research analytics (engagement metrics, mastery by subject, cohort distribution, anonymized export)
-- `/dashboard/admin/settings` — Feature flags (10 toggles), system limits, platform info
+- `/dashboard/admin/settings` — Feature flags (10 toggles), system limits, platform info, links to sub-pages
+- `/dashboard/admin/settings/emails` — Email template management (preview, edit HTML, variable management)
+- `/dashboard/admin/settings/webhooks` — Webhook endpoint configuration (event selection, delivery status)
+- `/dashboard/admin/settings/api-keys` — API key management (generate, revoke, scope configuration)
 - `/dashboard/internal/sales` — Sales dashboard (pipeline, deals, revenue, MRR/ACV)
 - `/dashboard/internal/marketing` — Marketing dashboard (acquisition channels, campaigns, audience, content)
 - `/dashboard/internal/customer-care` — Customer Care dashboard (tickets, CSAT, NPS, categories)

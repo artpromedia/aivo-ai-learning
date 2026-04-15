@@ -11,3 +11,4 @@ export * from "./learning";
 export * from "./homework";
 export * from "./collaboration";
 export * from "./integrations";
+export * from "./admin";

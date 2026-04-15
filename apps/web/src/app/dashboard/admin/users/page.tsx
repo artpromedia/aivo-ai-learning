@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import Pagination from "@/components/Pagination";
 import { useTranslations } from "next-intl";
 
@@ -11,6 +12,8 @@ interface User {
   email: string | null;
   role: string;
   tenantId: string | null;
+  deactivatedAt: string | null;
+  lastLoginAt: string | null;
   createdAt: string;
 }
 
@@ -290,30 +293,36 @@ export default function AdminUsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
 
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [searchDebounce, setSearchDebounce] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchDebounce(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const loadUsers = () => {
     if (!accessToken) return;
     setLoading(true);
-    const params = roleFilter !== "ALL" ? `?role=${roleFilter}&limit=200` : "?limit=200";
-    fetch(`/api/admin/users${params}`, { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then((r) => r.ok ? r.json() : [])
-      .then((data) => setUsers(Array.isArray(data) ? data : []))
-      .catch(() => setUsers([]))
+    const params = new URLSearchParams({ page: String(currentPage), pageSize: String(PAGE_SIZE) });
+    if (roleFilter !== "ALL") params.set("role", roleFilter);
+    if (searchDebounce) params.set("search", searchDebounce);
+    fetch(`/api/admin/users?${params}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then((r) => r.ok ? r.json() : { users: [], total: 0 })
+      .then((data) => {
+        setUsers(data.users || []);
+        setTotalUsers(data.total || 0);
+      })
+      .catch(() => { setUsers([]); setTotalUsers(0); })
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadUsers(); }, [accessToken, roleFilter]);
+  useEffect(() => { loadUsers(); }, [accessToken, roleFilter, currentPage, searchDebounce]);
 
-  const filtered = search
-    ? users.filter((u) =>
-        u.name?.toLowerCase().includes(search.toLowerCase()) ||
-        u.email?.toLowerCase().includes(search.toLowerCase())
-      )
-    : users;
+  const totalPages = Math.ceil(totalUsers / PAGE_SIZE);
+  const paginatedUsers = users;
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginatedUsers = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  useEffect(() => { setCurrentPage(1); }, [search, roleFilter]);
+  useEffect(() => { setCurrentPage(1); }, [searchDebounce, roleFilter]);
 
   const roleCounts = ROLES.slice(1).reduce((acc, role) => {
     acc[role] = users.filter((u) => u.role === role).length;
@@ -406,7 +415,7 @@ export default function AdminUsersPage() {
               ))}
             </select>
           </div>
-          <p className="text-sm text-slate-400">{filtered.length} users</p>
+          <p className="text-sm text-slate-400">{totalUsers} users</p>
         </div>
 
         {loading ? (
@@ -427,12 +436,13 @@ export default function AdminUsersPage() {
               {paginatedUsers.map((u) => (
                 <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
                   <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
+                    <Link href={`/dashboard/admin/users/${u.id}`} className="flex items-center gap-3 group">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                         {u.name?.charAt(0) || "?"}
                       </div>
-                      <span className="font-medium text-slate-900">{u.name}</span>
-                    </div>
+                      <span className="font-medium text-slate-900 group-hover:text-purple-600 transition">{u.name}</span>
+                      {u.deactivatedAt && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">Deactivated</span>}
+                    </Link>
                   </td>
                   <td className="px-5 py-3 text-slate-500">{u.email || "—"}</td>
                   <td className="px-5 py-3">
@@ -465,7 +475,7 @@ export default function AdminUsersPage() {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
-            totalItems={filtered.length}
+            totalItems={totalUsers}
             pageSize={PAGE_SIZE}
           />
           </>

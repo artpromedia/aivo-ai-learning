@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, boolean, text } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, boolean, text, inet } from "drizzle-orm/pg-core";
 import { userRoleEnum } from "./enums";
 import { tenants } from "./tenants";
 
@@ -14,6 +14,9 @@ export const users = pgTable("users", {
   avatarUrl: text("avatar_url"),
   googleId: varchar("google_id", { length: 255 }),
   appleId: varchar("apple_id", { length: 255 }),
+  deactivatedAt: timestamp("deactivated_at"),
+  lastLoginAt: timestamp("last_login_at"),
+  lastLoginIp: varchar("last_login_ip", { length: 45 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

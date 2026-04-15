@@ -1,7 +1,8 @@
 import { FastifyInstance } from "fastify";
-import { users, learners, tenants } from "@aivo/db";
+import { users, learners, tenants, platformConfig } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
-import { sql, eq, count } from "drizzle-orm";
+import { sql, eq, count, desc } from "drizzle-orm";
+import { logAuditEvent } from "./audit.js";
 
 async function requireAdmin(req: any, reply: any) {
   const auth = req.headers.authorization;
@@ -53,6 +54,10 @@ export function registerPlatformRoutes(app: FastifyInstance, db: any) {
   });
 
   app.get("/api/admin-svc/config", { preHandler: requireAdmin }, async () => {
+    const rows = await db.select().from(platformConfig).orderBy(desc(platformConfig.createdAt)).limit(1);
+    if (rows.length > 0) {
+      return rows[0].config;
+    }
     return {
       features: {
         coLearning: true,
@@ -71,7 +76,24 @@ export function registerPlatformRoutes(app: FastifyInstance, db: any) {
   });
 
   app.put("/api/admin-svc/config", { preHandler: requireAdmin }, async (request) => {
-    const config = request.body as any;
+    const { config, changeDescription } = request.body as any;
+    const user = (request as any).user;
+
+    await db.insert(platformConfig).values({
+      config,
+      changedBy: user.sub,
+      changeDescription: changeDescription || null,
+    });
+
+    await logAuditEvent(db, {
+      action: "CONFIG_UPDATED",
+      actorId: user.sub,
+      actorEmail: user.email || "",
+      actorRole: user.role || "",
+      resourceType: "platform_config",
+      details: { config, changeDescription },
+    });
+
     return { status: "updated", config };
   });
 }

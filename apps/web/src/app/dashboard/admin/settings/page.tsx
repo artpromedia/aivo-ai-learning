@@ -207,6 +207,20 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          { href: "/dashboard/admin/settings/emails", label: "Email Templates", desc: "Manage transactional email templates", icon: "📧" },
+          { href: "/dashboard/admin/settings/webhooks", label: "Webhooks", desc: "Configure webhook endpoints for events", icon: "🔗" },
+          { href: "/dashboard/admin/settings/api-keys", label: "API Keys", desc: "Manage programmatic API access", icon: "🔑" },
+        ].map((item) => (
+          <a key={item.href} href={item.href} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:border-purple-300 hover:shadow-md transition group">
+            <span className="text-2xl">{item.icon}</span>
+            <h3 className="font-heading font-bold text-slate-900 mt-2 group-hover:text-purple-600 transition">{item.label}</h3>
+            <p className="text-sm text-slate-500 mt-1">{item.desc}</p>
+          </a>
+        ))}
+      </div>
+
       <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
         <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Platform Information</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

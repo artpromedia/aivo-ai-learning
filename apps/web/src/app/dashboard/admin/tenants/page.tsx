@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Pagination from "@/components/Pagination";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 interface Tenant {
   id: string;
@@ -202,7 +203,7 @@ export default function AdminTenantsPage() {
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
                           <span className="text-xl">{tc.icon}</span>
-                          <span className="font-medium text-slate-900">{t.name}</span>
+                          <Link href={`/dashboard/admin/tenants/${t.id}`} className="font-medium text-purple-600 hover:text-purple-700">{t.name}</Link>
                         </div>
                       </td>
                       <td className="px-5 py-3">
