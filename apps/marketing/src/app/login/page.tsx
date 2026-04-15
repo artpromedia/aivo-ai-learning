@@ -1,13 +1,19 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 const WEB_APP_URL = process.env.NEXT_PUBLIC_WEB_APP_URL || "https://app.aivolearning.com";
 
 export default function LoginRedirectPage() {
+  const [loginUrl, setLoginUrl] = useState(`${WEB_APP_URL}/login`);
+  const [signupUrl, setSignupUrl] = useState(`${WEB_APP_URL}/signup`);
+
   useEffect(() => {
-    window.location.href = `${WEB_APP_URL}/login`;
+    const qs = window.location.search;
+    setLoginUrl(`${WEB_APP_URL}/login${qs}`);
+    setSignupUrl(`${WEB_APP_URL}/signup${qs}`);
+    window.location.href = `${WEB_APP_URL}/login${qs}`;
   }, []);
 
   return (
@@ -27,7 +33,7 @@ export default function LoginRedirectPage() {
           Redirecting you to the sign in page...
         </p>
         <a
-          href={`${WEB_APP_URL}/login`}
+          href={loginUrl}
           className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-violet-600 text-white font-bold hover:bg-violet-700 transition shadow-lg shadow-violet-200"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -37,7 +43,7 @@ export default function LoginRedirectPage() {
         </a>
         <p className="text-sm text-slate-400 font-body mt-6">
           Don&apos;t have an account?{" "}
-          <a href={`${WEB_APP_URL}/signup`} className="text-violet-600 font-semibold hover:text-violet-800 transition">
+          <a href={signupUrl} className="text-violet-600 font-semibold hover:text-violet-800 transition">
             Sign Up
           </a>
         </p>
