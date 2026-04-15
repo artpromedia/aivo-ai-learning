@@ -50,7 +50,7 @@ jobs:
 
   rollback:
     name: "Rollback ${{ inputs.environment }}"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, hetzner, production]
     timeout-minutes: 15
     needs: [approval]
     if: |
@@ -61,16 +61,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: "3.16.3"
-
-      - name: Configure kubectl
+      - name: Verify cluster reachable
         run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
-          chmod 600 ~/.kube/config
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Setup Helm
+        run: |
+          if ! command -v helm &>/dev/null; then
+            curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          fi
+          helm version
 
       - name: Show current state
         run: |

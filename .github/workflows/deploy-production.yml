@@ -63,31 +63,37 @@ jobs:
 
   deploy:
     name: Deploy to Production
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: [self-hosted, hetzner, production]
+    timeout-minutes: 20
     needs: [build-node, build-python]
     environment: production
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - name: Verify cluster reachable
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+          echo "Cluster is reachable"
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
+      - name: Setup Helm
+        run: |
+          if ! command -v helm &>/dev/null; then
+            curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          fi
+          helm version
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Deploy via Helm
+        run: |
+          helm upgrade --install aivo-learning-saas infra/helm \
+            -f infra/helm/values/hetzner.yaml \
+            -n aivo --create-namespace \
+            --timeout 10m \
+            --wait
 
-      - name: Push database schema
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: pnpm db:push --force || true
-
-      - name: Build for production
-        run: pnpm build
-
-      - name: Deploy services
-        run: echo "Add deployment steps for your hosting provider (Hetzner, AWS, etc.)"
+      - name: Verify rollout
+        run: |
+          kubectl -n aivo get pods --sort-by=.metadata.name -o wide
+          echo ""
+          echo "═══ Deployment complete ═══"

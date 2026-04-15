@@ -22,29 +22,16 @@ jobs:
   # Infrastructure is 4 Hetzner Robot dedicated servers running K3s.
   # Servers are provisioned manually — see HETZNER_DEPLOYMENT_GUIDE.md.
   # This workflow deploys Helm chart changes to the existing cluster.
+  # Runs on the self-hosted GitHub Actions runner on the K3s control plane
+  # (Server 2), where kubectl is already configured via K3s.
   helm:
     name: Helm Deploy
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, hetzner, production]
     timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: "3.16.3"
-
-      - name: Configure kubectl
-        run: |
-          if [ -z "${{ secrets.KUBE_CONFIG }}" ]; then
-            echo "::error::KUBE_CONFIG secret is not set"
-            exit 1
-          fi
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
-          chmod 600 ~/.kube/config
 
       - name: Verify cluster reachable
         run: |
@@ -55,9 +42,15 @@ jobs:
           kubectl get nodes
           echo "Cluster is reachable"
 
+      - name: Setup Helm
+        run: |
+          if ! command -v helm &>/dev/null; then
+            curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          fi
+          helm version
+
       - name: Clear stuck Helm releases
         run: |
-          # Check if there's a pending/stuck release and roll back if needed
           STATUS=$(helm status aivo-learning-saas -n aivo -o json 2>/dev/null | jq -r '.info.status' 2>/dev/null || echo "not-found")
           echo "Current Helm release status: $STATUS"
           if [ "$STATUS" = "pending-install" ] || [ "$STATUS" = "pending-upgrade" ] || [ "$STATUS" = "pending-rollback" ]; then
