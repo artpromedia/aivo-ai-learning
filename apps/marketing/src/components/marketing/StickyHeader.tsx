@@ -21,23 +21,19 @@ export function StickyHeader({ scrollY }: { scrollY: number }) {
       }`}
     >
       <div className="max-w-6xl mx-auto px-6 md:px-8 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center relative">
+        <Link href="/" className="flex items-center relative w-[130px] h-[52px]">
           <Image
             src="/images/aivo-logo-purple.png"
             alt="AIVO"
-            width={130}
-            height={40}
+            fill
             priority
-            className={`transition-opacity duration-300 ${isScrolled ? "opacity-100" : "opacity-0"}`}
-            style={{ width: "auto", height: "auto" }}
+            className={`object-contain transition-opacity duration-300 ${isScrolled ? "opacity-100" : "opacity-0"}`}
           />
           <Image
             src="/images/aivo-logo-white.png"
             alt="AIVO"
-            width={130}
-            height={40}
-            className={`absolute inset-0 transition-opacity duration-300 ${isScrolled ? "opacity-0" : "opacity-100"}`}
-            style={{ width: "auto", height: "auto" }}
+            fill
+            className={`object-contain transition-opacity duration-300 ${isScrolled ? "opacity-0" : "opacity-100"}`}
           />
         </Link>
 
