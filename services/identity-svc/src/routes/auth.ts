@@ -202,10 +202,93 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.status(401).send({ error: "Invalid credentials" });
     }
 
+    if (user.deactivatedAt) {
+      return reply.status(403).send({ error: "Account has been deactivated. Contact support." });
+    }
+
     const valid = await verifyPassword(user.passwordHash, password);
     if (!valid) {
       return reply.status(401).send({ error: "Invalid credentials" });
     }
+
+    const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
+    await db.update(users).set({
+      lastLoginAt: new Date(),
+      lastLoginIp: clientIp,
+    }).where(eq(users.id, user.id));
+
+    const accessToken = await signJWT({
+      sub: user.id,
+      tenantId: user.tenantId,
+      role: user.role,
+      email: user.email!,
+      name: user.name,
+    });
+
+    const rawRefreshToken = crypto.randomUUID();
+    await db.insert(sessions).values({
+      userId: user.id,
+      refreshToken: hashRefreshToken(rawRefreshToken),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    reply.setCookie("refreshToken", rawRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60,
+    });
+
+    return {
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
+      accessToken,
+    };
+  });
+
+  const ADMIN_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
+
+  app.post("/api/auth/admin-login", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["email", "password"],
+        properties: {
+          email: { type: "string", format: "email" },
+          password: { type: "string" },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { email, password } = req.body as any;
+    const db = (app as any).db;
+
+    const genericError = "Invalid credentials";
+
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (!user || !user.passwordHash) {
+      return reply.status(401).send({ error: genericError });
+    }
+
+    const validPw = await verifyPassword(user.passwordHash, password);
+    if (!validPw) {
+      return reply.status(401).send({ error: genericError });
+    }
+
+    if (!ADMIN_ROLES.includes(user.role)) {
+      return reply.status(401).send({ error: genericError });
+    }
+
+    if (user.deactivatedAt) {
+      return reply.status(401).send({ error: genericError });
+    }
+
+    const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
+    await db.update(users).set({
+      lastLoginAt: new Date(),
+      lastLoginIp: clientIp,
+    }).where(eq(users.id, user.id));
 
     const accessToken = await signJWT({
       sub: user.id,
@@ -412,6 +495,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       .limit(1);
 
     if (!user) return reply.status(401).send({ error: "User not found" });
+
+    if (user.deactivatedAt) {
+      await db.delete(sessions).where(eq(sessions.userId, user.id));
+      reply.clearCookie("refreshToken", { path: "/" });
+      return reply.status(401).send({ error: "Account has been deactivated" });
+    }
 
     const accessToken = await signJWT({
       sub: user.id,
