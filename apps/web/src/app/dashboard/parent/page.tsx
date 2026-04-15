@@ -6,18 +6,16 @@ import { useTranslations } from "next-intl";
 import { useLocale } from "@/providers/i18n-provider";
 import Image from "next/image";
 import { TUTORS } from "@aivo/brand";
-import BrainVisualization from "@/components/BrainVisualization";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { SkipLink } from "@/components/a11y/SkipLink";
+import { WelcomeHero } from "./components/WelcomeHero";
+import { LearnerSummaryCard } from "./components/LearnerSummaryCard";
+import { QuickActions } from "./components/QuickActions";
+import { WhileYouWereAway } from "./components/WhileYouWereAway";
 
 interface Learner {
   id: string;
   name: string;
   functioningLevel: string;
   gradeLevel: string;
-  zipCode?: string;
-  country?: string;
-  districtName?: string;
   curriculumFramework?: string;
 }
 
@@ -54,19 +52,19 @@ const COUNTRIES = [
 
 const LEARNING_LANGUAGES = [
   { code: "en", label: "English" },
-  { code: "es", label: "Español (Spanish)" },
-  { code: "fr", label: "Français (French)" },
-  { code: "de", label: "Deutsch (German)" },
-  { code: "pt", label: "Português (Portuguese)" },
-  { code: "zh", label: "中文 (Chinese)" },
-  { code: "ja", label: "日本語 (Japanese)" },
-  { code: "ko", label: "한국어 (Korean)" },
-  { code: "ar", label: "العربية (Arabic)" },
-  { code: "hi", label: "हिन्दी (Hindi)" },
+  { code: "es", label: "Español" },
+  { code: "fr", label: "Français" },
+  { code: "de", label: "Deutsch" },
+  { code: "pt", label: "Português" },
+  { code: "zh", label: "中文" },
+  { code: "ja", label: "日本語" },
+  { code: "ko", label: "한국어" },
+  { code: "ar", label: "العربية" },
+  { code: "hi", label: "हिन्दी" },
 ];
 
 export default function ParentDashboard() {
-  const { user, accessToken, logout, loading } = useAuth();
+  const { user, accessToken, loading } = useAuth();
   const router = useRouter();
   const t = useTranslations();
   const { locale: currentLocale } = useLocale();
@@ -80,48 +78,59 @@ export default function ParentDashboard() {
   const [pendingReviews, setPendingReviews] = useState<Record<string, boolean>>({});
   const [hasBrain, setHasBrain] = useState<Record<string, boolean>>({});
   const [baselineCompleted, setBaselineCompleted] = useState<Record<string, boolean>>({});
+  const [familySummary, setFamilySummary] = useState<any>(null);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     setNewLearner((prev) => ({ ...prev, preferredLanguage: currentLocale }));
   }, [currentLocale]);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
-    if (!loading && user && user.role !== "PARENT" && user.role !== "PLATFORM_ADMIN") router.push("/");
-  }, [user, loading, router]);
+    if (!accessToken || !user) return;
 
-  useEffect(() => {
-    if (accessToken) {
-      fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } })
-        .then((r) => r.ok ? r.json() : [])
-        .then((data) => {
-          const list: Learner[] = Array.isArray(data) ? data : [];
-          setLearners(list);
-          list.forEach((l) => {
-            fetch(`/api/brain/${l.id}/review`, { headers: { Authorization: `Bearer ${accessToken}` } })
-              .then((r) => r.ok ? r.json() : null)
-              .then((brain) => {
-                if (brain) {
-                  setHasBrain((prev) => ({ ...prev, [l.id]: true }));
-                  if (brain.approval_status === "pending_parent_review") {
-                    setPendingReviews((prev) => ({ ...prev, [l.id]: true }));
-                  }
+    fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => {
+        const list: Learner[] = Array.isArray(data) ? data : [];
+        setLearners(list);
+        list.forEach((l) => {
+          fetch(`/api/brain/${l.id}/review`, { headers: { Authorization: `Bearer ${accessToken}` } })
+            .then((r) => r.ok ? r.json() : null)
+            .then((brain) => {
+              if (brain) {
+                setHasBrain((prev) => ({ ...prev, [l.id]: true }));
+                if (brain.approval_status === "pending_parent_review") {
+                  setPendingReviews((prev) => ({ ...prev, [l.id]: true }));
                 }
-              })
-              .catch(() => {});
-            fetch(`/api/assessments/learner/discovery/${l.id}/status`, { headers: { Authorization: `Bearer ${accessToken}` } })
-              .then((r) => r.ok ? r.json() : null)
-              .then((status) => {
-                if (status?.baselineCompleted) {
-                  setBaselineCompleted((prev) => ({ ...prev, [l.id]: true }));
-                }
-              })
-              .catch(() => {});
-          });
-        })
-        .catch(() => {});
-    }
-  }, [accessToken]);
+              }
+            })
+            .catch(() => {});
+          fetch(`/api/assessments/learner/discovery/${l.id}/status`, { headers: { Authorization: `Bearer ${accessToken}` } })
+            .then((r) => r.ok ? r.json() : null)
+            .then((status) => {
+              if (status?.baselineCompleted) setBaselineCompleted((prev) => ({ ...prev, [l.id]: true }));
+            })
+            .catch(() => {});
+        });
+      })
+      .catch(() => {});
+
+    fetch(`/api/family/summary/${user.id}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setFamilySummary(data); })
+      .catch(() => {});
+
+    fetch(`/api/family/activity-feed/${user.id}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.ok ? r.json() : { activities: [] })
+      .then(data => setActivities(data.activities || []))
+      .catch(() => {});
+
+    fetch(`/api/family/inbox/${user.id}?filter=unread&limit=1`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.ok ? r.json() : { unreadCount: 0 })
+      .then(data => setUnreadCount(data.unreadCount || 0))
+      .catch(() => {});
+  }, [accessToken, user]);
 
   const lookupCurriculum = useCallback(async (zipCode: string, country: string) => {
     if (!zipCode && country === "US") return;
@@ -131,13 +140,8 @@ export default function ParentDashboard() {
       if (zipCode) params.set("zipCode", zipCode);
       if (country) params.set("country", country);
       const res = await fetch(`/api/curriculum/lookup?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setCurriculumInfo(data);
-      }
-    } catch {
-      setCurriculumInfo(null);
-    }
+      if (res.ok) setCurriculumInfo(await res.json());
+    } catch { setCurriculumInfo(null); }
     setCurriculumLoading(false);
   }, []);
 
@@ -145,9 +149,7 @@ export default function ParentDashboard() {
     const timer = setTimeout(() => {
       if (newLearner.zipCode.length >= 3 || newLearner.country !== "US") {
         lookupCurriculum(newLearner.zipCode, newLearner.country);
-      } else {
-        setCurriculumInfo(null);
-      }
+      } else { setCurriculumInfo(null); }
     }, 400);
     return () => clearTimeout(timer);
   }, [newLearner.zipCode, newLearner.country, lookupCurriculum]);
@@ -170,290 +172,179 @@ export default function ParentDashboard() {
 
   if (loading || !user) return null;
 
+  const getLearnerSummary = (learnerId: string) => {
+    if (!familySummary?.learners) return {};
+    const ls = familySummary.learners.find((l: any) => l.id === learnerId);
+    return ls || {};
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
-      <SkipLink />
-      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between" role="navigation" aria-label="Parent dashboard navigation">
-        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-semibold text-slate-600">{t("dashboard.welcome_message", { name: user.name })}</span>
-          <LanguageSwitcher compact />
-          <button onClick={() => router.push("/dashboard/parent/billing")} aria-label={t("settings.billing")} className="text-sm text-slate-500 font-semibold hover:text-primary transition">{t("settings.billing")}</button>
-          <button onClick={() => router.push("/dashboard/parent/settings")} aria-label={t("dashboard.settings")} className="text-sm text-slate-500 font-semibold hover:text-primary transition">{t("dashboard.settings")}</button>
-          <button onClick={logout} aria-label={t("nav.logout")} className="text-sm text-slate-500 hover:text-red-500 font-semibold transition">{t("nav.logout")}</button>
-        </div>
-      </header>
+    <div className="max-w-5xl mx-auto px-4 lg:px-6 py-6 space-y-6">
+      <WelcomeHero
+        userName={user.name}
+        unreadCount={unreadCount}
+        lastVisit={familySummary?.parent?.lastDashboardVisit || null}
+      />
 
-      <main id="main-content" tabIndex={-1} className="max-w-6xl mx-auto px-8 py-8 space-y-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-heading font-bold text-slate-900">{t("onboarding.add_learner_title").replace("Add a New Learner", t("dashboard.learners"))}</h1>
-          <button onClick={() => setShowAddForm(!showAddForm)}
-            className="px-6 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200">
-            + {t("dashboard.add_learner")}
-          </button>
-        </div>
+      <WhileYouWereAway
+        activities={activities}
+        lastVisit={familySummary?.parent?.lastDashboardVisit || null}
+      />
 
-        {showAddForm && (
-          <form onSubmit={addLearner} className="bg-white rounded-2xl p-8 shadow-md border border-slate-100 space-y-6">
-            <h3 className="font-heading font-bold text-xl text-slate-900">{t("onboarding.add_learner_title")}</h3>
+      <QuickActions
+        learners={learners}
+        pendingReviews={pendingReviews}
+        hasBrain={hasBrain}
+        baselineCompleted={baselineCompleted}
+      />
 
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-heading font-bold text-slate-900">Your Children</h2>
+        <button onClick={() => setShowAddForm(!showAddForm)}
+          className="px-5 py-2.5 rounded-full bg-purple-600 text-white font-bold text-sm hover:bg-purple-700 transition shadow-lg shadow-purple-200"
+          style={{ minHeight: 44 }}>
+          + Add a Child
+        </button>
+      </div>
+
+      {showAddForm && (
+        <form onSubmit={addLearner} className="bg-white rounded-2xl p-6 lg:p-8 shadow-md border border-slate-100 space-y-6">
+          <h3 className="font-heading font-bold text-xl text-slate-900">{t("onboarding.add_learner_title")}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label htmlFor="learner-name" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.learner_name")}</label>
+              <input id="learner-name" type="text" value={newLearner.name} onChange={(e) => setNewLearner({...newLearner, name: e.target.value})} required
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none" />
+            </div>
+            <div>
+              <label htmlFor="learner-grade" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.grade_level")}</label>
+              <input id="learner-grade" type="text" value={newLearner.gradeLevel} onChange={(e) => setNewLearner({...newLearner, gradeLevel: e.target.value})}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none" placeholder={t("onboarding.grade_level_placeholder")} />
+            </div>
+            <div>
+              <label htmlFor="learner-pin" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.pin")}</label>
+              <input id="learner-pin" type="text" value={newLearner.pin} onChange={(e) => setNewLearner({...newLearner, pin: e.target.value})} maxLength={6}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none" placeholder={t("onboarding.pin_placeholder")} />
+            </div>
+          </div>
+
+          <div className="border-t border-slate-100 pt-6">
+            <h4 className="font-heading font-bold text-lg text-slate-800 mb-4">{t("onboarding.location")}</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label htmlFor="learner-name" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.learner_name")}</label>
-                <input id="learner-name" type="text" value={newLearner.name} onChange={(e) => setNewLearner({...newLearner, name: e.target.value})} required
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body" />
+                <label htmlFor="learner-country" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.country")}</label>
+                <select id="learner-country" value={newLearner.country} onChange={(e) => setNewLearner({...newLearner, country: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none bg-white">
+                  {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
+                </select>
               </div>
-              <div>
-                <label htmlFor="learner-grade" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.grade_level")}</label>
-                <input id="learner-grade" type="text" value={newLearner.gradeLevel} onChange={(e) => setNewLearner({...newLearner, gradeLevel: e.target.value})}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body" placeholder={t("onboarding.grade_level_placeholder")} />
-              </div>
-              <div>
-                <label htmlFor="learner-pin" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.pin")}</label>
-                <input id="learner-pin" type="text" value={newLearner.pin} onChange={(e) => setNewLearner({...newLearner, pin: e.target.value})} maxLength={6}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body" placeholder={t("onboarding.pin_placeholder")} />
-              </div>
-            </div>
-
-            <div className="border-t border-slate-100 pt-6">
-              <h4 className="font-heading font-bold text-lg text-slate-800 mb-4">{t("onboarding.location")}</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {newLearner.country === "US" ? (
                 <div>
-                  <label htmlFor="learner-country" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.country")}</label>
-                  <select id="learner-country" value={newLearner.country} onChange={(e) => setNewLearner({...newLearner, country: e.target.value})}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body bg-white">
-                    {COUNTRIES.map((c) => (
-                      <option key={c.code} value={c.code}>{c.label}</option>
-                    ))}
-                  </select>
+                  <label htmlFor="learner-zip" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.zip_code")}</label>
+                  <input id="learner-zip" type="text" value={newLearner.zipCode} onChange={(e) => setNewLearner({...newLearner, zipCode: e.target.value})}
+                    maxLength={5} placeholder={t("onboarding.zip_placeholder")}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none" />
                 </div>
-                {newLearner.country === "US" && (
-                  <div>
-                    <label htmlFor="learner-zip" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.zip_code")}</label>
-                    <input id="learner-zip" type="text" value={newLearner.zipCode} onChange={(e) => setNewLearner({...newLearner, zipCode: e.target.value})}
-                      maxLength={5} placeholder={t("onboarding.zip_placeholder")}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body" />
-                  </div>
-                )}
-                {newLearner.country !== "US" && (
-                  <div>
-                    <label htmlFor="learner-region" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.region")}</label>
-                    <input id="learner-region" type="text" value={newLearner.region} onChange={(e) => setNewLearner({...newLearner, region: e.target.value})}
-                      placeholder={t("onboarding.region_placeholder")}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body" />
-                  </div>
-                )}
-                <div className="flex items-end">
-                  {curriculumLoading && (
-                    <div className="px-4 py-2.5 text-sm text-slate-400 font-semibold">{t("common.loading")}</div>
-                  )}
-                </div>
-              </div>
-
-              {curriculumInfo && (
-                <div className="mt-4 p-4 rounded-xl bg-green-50 border border-green-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-green-600 text-lg">&#10003;</span>
-                    <span className="font-heading font-bold text-green-800">Curriculum Detected</span>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                    <div><span className="font-bold text-green-700">Framework:</span> <span className="text-green-900">{curriculumInfo.curriculumFramework}</span></div>
-                    <div><span className="font-bold text-green-700">Standards:</span> <span className="text-green-900">{curriculumInfo.standards}</span></div>
-                    {curriculumInfo.state && (
-                      <div><span className="font-bold text-green-700">State:</span> <span className="text-green-900">{curriculumInfo.state}</span></div>
-                    )}
-                    {curriculumInfo.districtName && (
-                      <div><span className="font-bold text-green-700">District:</span> <span className="text-green-900">{curriculumInfo.districtName}</span></div>
-                    )}
-                  </div>
+              ) : (
+                <div>
+                  <label htmlFor="learner-region" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.region")}</label>
+                  <input id="learner-region" type="text" value={newLearner.region} onChange={(e) => setNewLearner({...newLearner, region: e.target.value})}
+                    placeholder={t("onboarding.region_placeholder")}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none" />
                 </div>
               )}
-            </div>
-
-            <div className="border-t border-slate-100 pt-6">
-              <h4 className="font-heading font-bold text-lg text-slate-800 mb-1">{t("onboarding.preferred_language")}</h4>
-              <p className="text-sm text-slate-500 mb-4">{t("onboarding.language_description")}</p>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {LEARNING_LANGUAGES.map((lang) => (
-                  <button
-                    key={lang.code}
-                    type="button"
-                    onClick={() => setNewLearner({...newLearner, preferredLanguage: lang.code})}
-                    className={`px-4 py-3 rounded-xl border-2 text-sm font-semibold transition text-left ${
-                      newLearner.preferredLanguage === lang.code
-                        ? "border-primary bg-purple-50 text-primary"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                    }`}
-                  >
-                    {lang.label}
-                  </button>
-                ))}
+              <div className="flex items-end">
+                {curriculumLoading && <div className="px-4 py-3 text-sm text-slate-400 font-semibold">{t("common.loading")}</div>}
               </div>
-              <p className="text-xs text-slate-400 mt-2">{t("onboarding.you_can_change_later")}</p>
             </div>
-
-            <button type="submit" className="px-8 py-3 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200">
-              {t("common.submit")}
-            </button>
-          </form>
-        )}
-
-        {learners.length === 0 && !showAddForm ? (
-          <div className="bg-white rounded-2xl p-16 text-center border border-slate-100 shadow-sm">
-            <div className="text-5xl mb-4" aria-hidden="true">🎮</div>
-            <p className="text-slate-500 text-lg font-semibold">{t("dashboard.no_activity")}</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {learners.map((l) => (
-              <div key={l.id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-lg transition">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-heading font-bold text-slate-900">{l.name}</h3>
-                  <span className={`px-3 py-1 text-xs rounded-full font-bold ${l.functioningLevel ? "bg-purple-100 text-primary" : "bg-slate-100 text-slate-500"}`}>
-                    {l.functioningLevel ? l.functioningLevel.replace(/_/g, " ") : t("assessment.begin")}
-                  </span>
+            {curriculumInfo && (
+              <div className="mt-4 p-4 rounded-xl bg-green-50 border border-green-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-green-600 text-lg">✓</span>
+                  <span className="font-heading font-bold text-green-800">Curriculum Detected</span>
                 </div>
-                {l.gradeLevel && <p className="text-sm text-slate-500 font-semibold">{t("onboarding.grade_level")}: {l.gradeLevel}</p>}
-                {l.curriculumFramework && (
-                  <p className="text-sm text-cyan-600 mt-1 font-semibold">{l.curriculumFramework}</p>
-                )}
-                {l.districtName && (
-                  <p className="text-xs text-slate-400 mt-0.5">{l.districtName}</p>
-                )}
-                {accessToken && (
-                  <div className="mt-4">
-                    <BrainVisualization
-                      learnerId={l.id}
-                      learnerName={l.name}
-                      accessToken={accessToken}
-                      compact
-                      baselineCompleted={!!baselineCompleted[l.id]}
-                    />
-                  </div>
-                )}
-                {pendingReviews[l.id] ? (
-                  <button
-                    onClick={() => router.push(`/dashboard/parent/learner/${l.id}/brain-review`)}
-                    className="mt-4 w-full text-left bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4 cursor-pointer hover:shadow-md transition"
-                    aria-label={`${t("brain.pending_review")} - ${l.name}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-xl" aria-hidden="true">🧠</div>
-                      <div className="flex-1">
-                        <p className="text-sm font-heading font-bold text-amber-800">{t("brain.pending_review")}</p>
-                        <p className="text-xs text-amber-600">{t("brain.review_title")}</p>
-                      </div>
-                      <div className="w-3 h-3 rounded-full bg-amber-400 animate-pulse" />
-                    </div>
-                  </button>
-                ) : baselineCompleted[l.id] && !hasBrain[l.id] ? (
-                  <button
-                    onClick={() => router.push(`/dashboard/parent/learner/${l.id}`)}
-                    className="mt-4 w-full text-left bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-4 cursor-pointer hover:shadow-md transition"
-                    aria-label={`${t("assessment.complete")} - ${l.name}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-xl" aria-hidden="true">&#10003;</div>
-                      <div className="flex-1">
-                        <p className="text-sm font-heading font-bold text-emerald-800">{t("assessment.complete")}</p>
-                        <p className="text-xs text-emerald-600">{t("learner.my_progress")}</p>
-                      </div>
-                    </div>
-                  </button>
-                ) : null}
-                <div className="mt-4 flex gap-2 flex-wrap">
-                  <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}`)}
-                    className="px-4 py-2 text-sm rounded-full bg-purple-50 text-primary font-bold hover:bg-purple-100 transition">
-                    {t("learner.profile")}
-                  </button>
-                  {pendingReviews[l.id] ? (
-                    <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/brain-review`)}
-                      className="px-4 py-2 text-sm rounded-full bg-amber-50 text-amber-700 font-bold hover:bg-amber-100 transition border border-amber-200">
-                      {t("brain.review_title")}
-                    </button>
-                  ) : hasBrain[l.id] ? (
-                    <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/brain`)}
-                      className="px-4 py-2 text-sm rounded-full bg-green-50 text-green-700 font-bold hover:bg-green-100 transition">
-                      {t("brain.title")}
-                    </button>
-                  ) : baselineCompleted[l.id] ? (
-                    <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}`)}
-                      className="px-4 py-2 text-sm rounded-full bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 transition border border-emerald-200">
-                      {t("learner.my_progress")}
-                    </button>
-                  ) : l.functioningLevel ? (
-                    <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/assessment`)}
-                      className="px-4 py-2 text-sm rounded-full bg-cyan-50 text-cyan-600 font-bold hover:bg-cyan-100 transition border border-cyan-200">
-                      {t("assessment.begin")}
-                    </button>
-                  ) : (
-                    <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/assessment`)}
-                      className="px-4 py-2 text-sm rounded-full bg-cyan-50 text-secondary font-bold hover:bg-cyan-100 transition">
-                      {t("assessment.begin")}
-                    </button>
-                  )}
-                  <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/sensory`)}
-                    className="px-4 py-2 text-sm rounded-full bg-violet-50 text-violet-700 font-bold hover:bg-violet-100 transition">
-                    {t("brain.supports")}
-                  </button>
-                  <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/gradebook`)}
-                    className="px-4 py-2 text-sm rounded-full bg-green-50 text-green-700 font-bold hover:bg-green-100 transition">
-                    {t("teacher.grade_book")}
-                  </button>
-                  <button onClick={() => router.push(`/dashboard/parent/${l.id}/homework`)}
-                    className="px-4 py-2 text-sm rounded-full bg-amber-50 text-amber-700 font-bold hover:bg-amber-100 transition">
-                    {t("homework.title")}
-                  </button>
-                  <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/collaboration`)}
-                    className="px-4 py-2 text-sm rounded-full bg-blue-50 text-blue-700 font-bold hover:bg-blue-100 transition">
-                    {t("caregiver.communication_log")}
-                  </button>
-                  <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/recommendations`)}
-                    className="px-4 py-2 text-sm rounded-full bg-pink-50 text-pink-700 font-bold hover:bg-pink-100 transition">
-                    {t("caregiver.daily_summary")}
-                  </button>
-                  <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}/iep`)}
-                    className="px-4 py-2 text-sm rounded-full bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100 transition">
-                    {t("caregiver.iep_goals")}
-                  </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                  <div><span className="font-bold text-green-700">Framework:</span> <span className="text-green-900">{curriculumInfo.curriculumFramework}</span></div>
+                  <div><span className="font-bold text-green-700">Standards:</span> <span className="text-green-900">{curriculumInfo.standards}</span></div>
+                  {curriculumInfo.state && <div><span className="font-bold text-green-700">State:</span> <span className="text-green-900">{curriculumInfo.state}</span></div>}
+                  {curriculumInfo.districtName && <div><span className="font-bold text-green-700">District:</span> <span className="text-green-900">{curriculumInfo.districtName}</span></div>}
                 </div>
               </div>
-            ))}
+            )}
           </div>
-        )}
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-heading font-bold text-slate-900">{t("tutor.meet_tutors")}</h2>
-            <button onClick={() => router.push("/dashboard/parent/store")}
-              className="px-4 py-2 text-sm rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition">
-              {t("gamification.shop")}
-            </button>
+          <div className="border-t border-slate-100 pt-6">
+            <h4 className="font-heading font-bold text-lg text-slate-800 mb-1">{t("onboarding.preferred_language")}</h4>
+            <p className="text-sm text-slate-500 mb-4">{t("onboarding.language_description")}</p>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {LEARNING_LANGUAGES.map((lang) => (
+                <button key={lang.code} type="button" onClick={() => setNewLearner({...newLearner, preferredLanguage: lang.code})}
+                  className={`px-4 py-3 rounded-xl border-2 text-sm font-semibold transition text-left ${
+                    newLearner.preferredLanguage === lang.code ? "border-purple-500 bg-purple-50 text-purple-700" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  }`}>
+                  {lang.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <p className="text-sm text-slate-500 mb-6">7 core tutors + 7 expansion specialists</p>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-4">
-            {Object.entries(TUTORS).map(([key, tutor]) => (
-              <button key={key} onClick={() => router.push(`/dashboard/parent/store?tutor=${key}`)}
-                className="text-center p-3 rounded-2xl hover:bg-slate-50 transition cursor-pointer group">
-                <div className="relative w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden border-2 group-hover:scale-110 transition-transform shadow-md" style={{ borderColor: tutor.color }}>
-                  <Image
-                    src={tutor.avatar}
-                    alt={`${tutor.name} - ${tutor.domain}`}
-                    fill
-                    className="object-cover object-top"
-                    sizes="64px"
-                  />
-                </div>
-                <div className="font-heading font-bold text-sm" style={{ color: tutor.color }}>{tutor.name}</div>
-                <div className="text-xs text-slate-500 mt-0.5 leading-tight">{tutor.domain}</div>
-                {tutor.tier === "expansion" && (
-                  <span className="inline-block mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-50 text-amber-600">NEW</span>
-                )}
-              </button>
-            ))}
-          </div>
+
+          <button type="submit" className="px-8 py-3 rounded-full bg-purple-600 text-white font-bold hover:bg-purple-700 transition shadow-lg shadow-purple-200" style={{ minHeight: 48 }}>
+            {t("common.submit")}
+          </button>
+        </form>
+      )}
+
+      {learners.length === 0 && !showAddForm ? (
+        <div className="bg-white rounded-2xl p-12 lg:p-16 text-center border border-slate-100 shadow-sm">
+          <div className="text-5xl mb-4">🎮</div>
+          <h3 className="text-lg font-heading font-bold text-slate-700 mb-2">Welcome to AIVO!</h3>
+          <p className="text-slate-500 mb-6">Add your first child to get started with personalized learning.</p>
+          <button onClick={() => setShowAddForm(true)}
+            className="px-6 py-3 rounded-full bg-purple-600 text-white font-bold hover:bg-purple-700 transition" style={{ minHeight: 48 }}>
+            + Add Your First Child
+          </button>
         </div>
-      </main>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {learners.map((l) => {
+            const summary = getLearnerSummary(l.id);
+            return (
+              <LearnerSummaryCard
+                key={l.id}
+                learner={l}
+                streak={summary.streak}
+                badgeCount={summary.badgeCount}
+                hasBrain={!!hasBrain[l.id]}
+                pendingReview={!!pendingReviews[l.id]}
+                baselineCompleted={!!baselineCompleted[l.id]}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-heading font-bold text-slate-900">{t("tutor.meet_tutors")}</h2>
+          <button onClick={() => router.push("/dashboard/parent/store")}
+            className="px-4 py-2 text-sm rounded-full bg-purple-600 text-white font-bold hover:bg-purple-700 transition" style={{ minHeight: 44 }}>
+            {t("gamification.shop")}
+          </button>
+        </div>
+        <p className="text-sm text-slate-500 mb-6">7 core tutors + 7 expansion specialists</p>
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-3">
+          {Object.entries(TUTORS).map(([key, tutor]) => (
+            <button key={key} onClick={() => router.push(`/dashboard/parent/store?tutor=${key}`)}
+              className="text-center p-2 rounded-2xl hover:bg-slate-50 transition cursor-pointer group">
+              <div className="relative w-14 h-14 mx-auto mb-1.5 rounded-full overflow-hidden border-2 group-hover:scale-110 transition-transform shadow-md" style={{ borderColor: tutor.color }}>
+                <Image src={tutor.avatar} alt={`${tutor.name} - ${tutor.domain}`} fill className="object-cover object-top" sizes="56px" />
+              </div>
+              <div className="font-heading font-bold text-xs" style={{ color: tutor.color }}>{tutor.name}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5 leading-tight">{tutor.domain}</div>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

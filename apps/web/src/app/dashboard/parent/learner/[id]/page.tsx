@@ -13,20 +13,10 @@ interface Learner {
   name: string;
   gradeLevel?: string;
   functioningLevel?: string;
-  dateOfBirth?: string;
-  zipCode?: string;
   curriculumFramework?: string;
 }
 
-const LEVEL_COLORS: Record<string, string> = {
-  STANDARD: "bg-green-100 text-green-700",
-  SUPPORTED: "bg-blue-100 text-blue-700",
-  LOW_VERBAL: "bg-amber-100 text-amber-700",
-  NON_VERBAL: "bg-orange-100 text-orange-700",
-  PRE_SYMBOLIC: "bg-red-100 text-red-700",
-};
-
-export default function LearnerProfilePage() {
+export default function LearnerHubPage() {
   const { user, accessToken, loading } = useAuth();
   const router = useRouter();
   const params = useParams();
@@ -36,130 +26,214 @@ export default function LearnerProfilePage() {
   const [learner, setLearner] = useState<Learner | null>(null);
   const [loadingLearner, setLoadingLearner] = useState(true);
   const [baselineCompleted, setBaselineCompleted] = useState(false);
-
-  useEffect(() => {
-    if (!loading && !user) router.push("/login");
-  }, [user, loading, router]);
+  const [hasBrain, setHasBrain] = useState(false);
+  const [pendingReview, setPendingReview] = useState(false);
+  const [streak, setStreak] = useState<any>(null);
 
   useEffect(() => {
     if (!accessToken || !user) return;
-    fetch("/api/users/learners", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((learners: Learner[]) => {
-        const found = learners.find((l) => l.id === learnerId);
+
+    fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        const found = (Array.isArray(data) ? data : []).find((l: Learner) => l.id === learnerId);
         if (found) setLearner(found);
       })
       .catch(() => {})
       .finally(() => setLoadingLearner(false));
 
-    fetch(`/api/assessments/learner/discovery/${learnerId}/status`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((r) => r.ok ? r.json() : null)
-      .then((status) => {
-        if (status?.baselineCompleted) setBaselineCompleted(true);
+    fetch(`/api/assessments/learner/discovery/${learnerId}/status`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(status => { if (status?.baselineCompleted) setBaselineCompleted(true); })
+      .catch(() => {});
+
+    fetch(`/api/brain/${learnerId}/review`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(brain => {
+        if (brain) {
+          setHasBrain(true);
+          if (brain.approval_status === "pending_parent_review") setPendingReview(true);
+        }
       })
+      .catch(() => {});
+
+    fetch(`/api/family/streaks/${learnerId}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setStreak(data); })
       .catch(() => {});
   }, [accessToken, user, learnerId]);
 
   if (loading || !user) return null;
 
-  const NAV_ITEMS = [
-    { label: t("overview"), href: `/dashboard/parent/learner/${learnerId}/overview`, emoji: "📊" },
-    { label: t("brain_review"), href: `/dashboard/parent/learner/${learnerId}/brain-review`, emoji: "🔍" },
-    { label: t("brain_profile"), href: `/dashboard/parent/learner/${learnerId}/brain`, emoji: "🧠" },
-    { label: t("gradebook"), href: `/dashboard/parent/learner/${learnerId}/gradebook`, emoji: "📓" },
-    { label: t("assessment"), href: `/dashboard/parent/learner/${learnerId}/assessment`, emoji: "📝" },
-    { label: t("sensory_profile"), href: `/dashboard/parent/learner/${learnerId}/sensory`, emoji: "🎨" },
-    { label: t("iep_goals"), href: `/dashboard/parent/learner/${learnerId}/iep`, emoji: "🎯" },
-    { label: t("tutors"), href: `/dashboard/parent/learner/${learnerId}/tutors`, emoji: "👩‍🏫" },
-    { label: t("learning_team"), href: `/dashboard/parent/learner/${learnerId}/collaboration`, emoji: "🤝" },
-    { label: t("recommendations"), href: `/dashboard/parent/learner/${learnerId}/recommendations`, emoji: "💡" },
-    { label: t("homework_label"), href: `/dashboard/parent/${learnerId}/homework`, emoji: "📸" },
-    { label: t("settings"), href: `/dashboard/parent/learner/${learnerId}/settings`, emoji: "⚙️" },
-  ];
+  if (loadingLearner) {
+    return <div className="text-center py-20 text-slate-400 animate-pulse">{t("loading_learner")}</div>;
+  }
+
+  if (!learner) {
+    return (
+      <div className="text-center py-20">
+        <div className="text-4xl mb-3">🔍</div>
+        <p className="text-slate-500 font-semibold">{t("learner_not_found")}</p>
+        <Link href="/dashboard/parent" className="text-sm text-purple-600 font-semibold hover:underline mt-2 inline-block">{t("back_to_dashboard")}</Link>
+      </div>
+    );
+  }
+
+  const RIGHT_NOW_CARDS = [];
+  if (pendingReview) {
+    RIGHT_NOW_CARDS.push({
+      icon: "🧠", label: `Review ${learner.name}'s Brain Profile`, description: "AIVO updated the brain profile based on recent sessions.",
+      href: `/dashboard/parent/learner/${learnerId}/brain-review`, color: "bg-amber-50 border-amber-200 text-amber-800",
+    });
+  }
+  if (!baselineCompleted && !hasBrain) {
+    RIGHT_NOW_CARDS.push({
+      icon: "📝", label: "Complete the Assessment", description: "Help AIVO understand your child's learning needs (10 min).",
+      href: `/dashboard/parent/learner/${learnerId}/assessment`, color: "bg-cyan-50 border-cyan-200 text-cyan-800",
+    });
+  }
+  if (RIGHT_NOW_CARDS.length === 0) {
+    RIGHT_NOW_CARDS.push({
+      icon: "🎉", label: `${learner.name} is on track!`, description: "Everything's looking great. Keep it up!",
+      href: "", color: "bg-green-50 border-green-200 text-green-800",
+    });
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
-      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
-        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-slate-100">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline">{t("dashboard")}</Link>
-          <span className="text-sm font-semibold text-slate-600">{user.name}</span>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-6 py-8">
-        {loadingLearner ? (
-          <div className="text-center py-20 text-slate-400 animate-pulse">{t("loading_learner")}</div>
-        ) : !learner ? (
-          <div className="text-center py-20">
-            <div className="text-4xl mb-3">🔍</div>
-            <p className="text-slate-500 font-semibold">{t("learner_not_found")}</p>
-            <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline mt-2 inline-block">{t("back_to_dashboard")}</Link>
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-2xl text-white font-bold shadow-lg flex-shrink-0">
+            {learner.name.charAt(0)}
           </div>
-        ) : (
-          <div className="space-y-8">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-6">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center text-3xl text-white font-heading font-bold shadow-lg">
-                {learner.name.charAt(0)}
-              </div>
-              <div className="flex-1 text-center md:text-left">
-                <h1 className="text-2xl font-heading font-bold text-slate-900">{learner.name}</h1>
-                <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start mt-2">
-                  {learner.gradeLevel && (
-                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-sm font-semibold">{t("grade_label", { grade: learner.gradeLevel })}</span>
-                  )}
-                  {learner.functioningLevel && (
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${LEVEL_COLORS[learner.functioningLevel] || "bg-slate-100 text-slate-600"}`}>
-                      {learner.functioningLevel.replace(/_/g, " ")}
-                    </span>
-                  )}
-                  {learner.curriculumFramework && (
-                    <span className="px-3 py-1 rounded-full bg-cyan-50 text-cyan-700 text-sm font-semibold">{learner.curriculumFramework}</span>
-                  )}
-                </div>
-              </div>
-              {accessToken && (
-                <div className="flex-shrink-0 w-full md:w-80">
-                  <BrainVisualization learnerId={learnerId} learnerName={learner.name} accessToken={accessToken} compact baselineCompleted={baselineCompleted} />
-                </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl lg:text-2xl font-heading font-bold text-slate-900">{learner.name}</h1>
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              {streak && streak.currentStreak > 0 && (
+                <span className="text-sm text-orange-600 font-semibold">🔥 {streak.currentStreak}-day streak</span>
               )}
             </div>
+          </div>
+        </div>
+      </div>
 
-            {accessToken && (
-              <BrainVisualization learnerId={learnerId} learnerName={learner.name} accessToken={accessToken} baselineCompleted={baselineCompleted} />
-            )}
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {NAV_ITEMS.map((item) => (
-                <Link key={item.href} href={item.href}
-                  className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-purple-200 transition text-center group">
-                  <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{item.emoji}</div>
-                  <p className="text-sm font-heading font-bold text-slate-700 group-hover:text-primary transition">{item.label}</p>
-                </Link>
-              ))}
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("subscribed_tutors")}</h2>
-              <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
-                {Object.entries(TUTORS).slice(0, 7).map(([key, tutor]) => (
-                  <Link key={key} href={`/dashboard/learner/lesson/${key}`}
-                    className="flex flex-col items-center gap-2 group">
-                    <div className="w-14 h-14 rounded-full overflow-hidden border-2 group-hover:scale-110 transition-transform shadow" style={{ borderColor: tutor.color }}>
-                      <Image src={tutor.avatar} alt={tutor.name} width={56} height={56} className="object-cover" />
-                    </div>
-                    <span className="text-xs font-heading font-bold text-slate-600 group-hover:text-primary transition">{tutor.name}</span>
-                  </Link>
-                ))}
+      <div className="space-y-3">
+        <h2 className="text-lg font-heading font-bold text-slate-900">Right Now</h2>
+        {RIGHT_NOW_CARDS.map((card, i) => (
+          card.href ? (
+            <Link key={i} href={card.href} className={`block rounded-xl p-4 border ${card.color} hover:shadow-md transition`}>
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{card.icon}</span>
+                <div>
+                  <p className="text-sm font-bold">{card.label}</p>
+                  <p className="text-xs opacity-80 mt-0.5">{card.description}</p>
+                </div>
+              </div>
+            </Link>
+          ) : (
+            <div key={i} className={`rounded-xl p-4 border ${card.color}`}>
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{card.icon}</span>
+                <div>
+                  <p className="text-sm font-bold">{card.label}</p>
+                  <p className="text-xs opacity-80 mt-0.5">{card.description}</p>
+                </div>
               </div>
             </div>
+          )
+        ))}
+      </div>
+
+      {accessToken && hasBrain && (
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-heading font-bold text-slate-900">Brain Profile</h2>
+            <Link href={`/dashboard/parent/learner/${learnerId}/brain`} className="text-sm text-purple-600 font-semibold hover:underline">
+              View Full Profile →
+            </Link>
           </div>
-        )}
-      </main>
+          <BrainVisualization learnerId={learnerId} learnerName={learner.name} accessToken={accessToken} compact baselineCompleted={baselineCompleted} />
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-heading font-bold text-slate-900">Active Tutors</h2>
+          <Link href="/dashboard/parent/store" className="text-sm text-purple-600 font-semibold hover:underline">
+            Visit Store →
+          </Link>
+        </div>
+        <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
+          {Object.entries(TUTORS).slice(0, 7).map(([key, tutor]) => (
+            <button key={key} onClick={() => router.push(`/dashboard/parent/store?tutor=${key}`)}
+              className="flex flex-col items-center gap-1.5 group">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 group-hover:scale-110 transition-transform shadow" style={{ borderColor: tutor.color }}>
+                <Image src={tutor.avatar} alt={tutor.name} width={48} height={48} className="object-cover" />
+              </div>
+              <span className="text-[10px] font-heading font-bold text-slate-600 group-hover:text-purple-600 transition">{tutor.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <h2 className="text-lg font-heading font-bold text-slate-900 mb-4">Explore</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">📚 Learning & Assessment</h3>
+            <div className="space-y-1">
+              <Link href={`/dashboard/parent/learner/${learnerId}/progress`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+                Progress & Grades
+              </Link>
+              <Link href={`/dashboard/parent/learner/${learnerId}/assessment`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+                Assessments
+              </Link>
+              <Link href={`/dashboard/parent/learner/${learnerId}/homework`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+                Homework History
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">🧠 Brain & Accommodations</h3>
+            <div className="space-y-1">
+              <Link href={`/dashboard/parent/learner/${learnerId}/brain`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+                Brain Profile
+              </Link>
+              <Link href={`/dashboard/parent/learner/${learnerId}/sensory`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+                Sensory Needs
+              </Link>
+              <Link href={`/dashboard/parent/learner/${learnerId}/settings`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+                Settings & Accommodations
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">🎯 IEP & Support</h3>
+            <div className="space-y-1">
+              <Link href={`/dashboard/parent/learner/${learnerId}/iep`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+                IEP Goals
+              </Link>
+              <Link href={`/dashboard/parent/learner/${learnerId}/recommendations`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+                Recommendations
+              </Link>
+              <Link href={`/dashboard/parent/learner/${learnerId}/team`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+                Learning Team
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">🏆 Achievements</h3>
+            <div className="space-y-1">
+              <Link href={`/dashboard/parent/learner/${learnerId}/milestones`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+                Milestones & Badges
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

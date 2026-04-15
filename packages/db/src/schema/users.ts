@@ -18,6 +18,7 @@ export const users = pgTable("users", {
   lastLoginAt: timestamp("last_login_at"),
   lastLoginIp: varchar("last_login_ip", { length: 45 }),
   schoolId: uuid("school_id"),
+  lastDashboardVisit: timestamp("last_dashboard_visit"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

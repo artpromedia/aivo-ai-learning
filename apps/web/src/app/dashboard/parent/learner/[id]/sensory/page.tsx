@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -50,7 +50,6 @@ const MODALITIES = [
 
 export default function SensoryProfilePage() {
   const { user, accessToken, loading } = useAuth();
-  const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
   const t = useTranslations("parent");
@@ -67,10 +66,6 @@ export default function SensoryProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [existingProfile, setExistingProfile] = useState(false);
-
-  useEffect(() => {
-    if (!loading && !user) router.push("/login");
-  }, [user, loading, router]);
 
   useEffect(() => {
     if (!accessToken || !learnerId) return;
@@ -120,84 +115,74 @@ export default function SensoryProfilePage() {
   if (loading || !user) return null;
 
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between">
-        <Link href="/dashboard/parent" className="text-primary font-heading font-bold text-lg">
-          &larr; {t("back_to_dashboard")}
-        </Link>
-        <h1 className="text-xl font-heading font-bold text-slate-900">{t("sensory_profile")}</h1>
-        <div />
-      </header>
+    <div className="space-y-6">
+      <div className="bg-purple-50 rounded-xl p-6 border border-purple-100">
+        <h2 className="text-lg font-heading font-bold text-purple-800 mb-2">
+          {t("sensory_needs_title")}
+        </h2>
+        <p className="text-sm text-purple-600">
+          {t("sensory_needs_desc")}
+        </p>
+      </div>
 
-      <main className="max-w-3xl mx-auto px-6 py-8 space-y-6">
-        <div className="bg-purple-50 rounded-xl p-6 border border-purple-100">
-          <h2 className="text-lg font-heading font-bold text-purple-800 mb-2">
-            {t("sensory_needs_title")}
-          </h2>
-          <p className="text-sm text-purple-600">
-            {t("sensory_needs_desc")}
-          </p>
-        </div>
-
-        {MODALITIES.map((mod) => (
-          <div key={mod.key} className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-2xl">{mod.icon}</span>
-              <div>
-                <h3 className="font-heading font-bold text-slate-900">{mod.label}</h3>
-                <p className="text-sm text-slate-500">{mod.description}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 mt-4">
-              {[
-                { value: "hyper", label: t("hyper_sensitive"), desc: mod.hyperDesc, color: "border-red-300 bg-red-50" },
-                { value: "typical", label: t("typical"), desc: t("typical_desc"), color: "border-green-300 bg-green-50" },
-                { value: "hypo", label: t("hypo_sensitive"), desc: mod.hypoDesc, color: "border-blue-300 bg-blue-50" },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setProfile((p) => ({ ...p, [mod.key]: opt.value }))}
-                  className={`p-4 rounded-lg border-2 text-left transition ${
-                    profile[mod.key] === opt.value
-                      ? `${opt.color} ring-2 ring-primary`
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <div className="font-semibold text-sm text-slate-900">{opt.label}</div>
-                  <div className="text-xs text-slate-500 mt-1">{opt.desc}</div>
-                </button>
-              ))}
+      {MODALITIES.map((mod) => (
+        <div key={mod.key} className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-2xl">{mod.icon}</span>
+            <div>
+              <h3 className="font-heading font-bold text-slate-900">{mod.label}</h3>
+              <p className="text-sm text-slate-500">{mod.description}</p>
             </div>
           </div>
-        ))}
 
-        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-          <h3 className="font-heading font-bold text-slate-900 mb-3">{t("additional_notes")}</h3>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder={t("notes_placeholder")}
-            className="w-full h-24 p-3 border border-slate-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-primary focus:border-primary"
-          />
+          <div className="grid grid-cols-3 gap-3 mt-4">
+            {[
+              { value: "hyper", label: t("hyper_sensitive"), desc: mod.hyperDesc, color: "border-red-300 bg-red-50" },
+              { value: "typical", label: t("typical"), desc: t("typical_desc"), color: "border-green-300 bg-green-50" },
+              { value: "hypo", label: t("hypo_sensitive"), desc: mod.hypoDesc, color: "border-blue-300 bg-blue-50" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setProfile((p) => ({ ...p, [mod.key]: opt.value }))}
+                className={`p-4 rounded-lg border-2 text-left transition ${
+                  profile[mod.key] === opt.value
+                    ? `${opt.color} ring-2 ring-purple-400`
+                    : "border-slate-200 bg-white hover:border-slate-300"
+                }`}
+              >
+                <div className="font-semibold text-sm text-slate-900">{opt.label}</div>
+                <div className="text-xs text-slate-500 mt-1">{opt.desc}</div>
+              </button>
+            ))}
+          </div>
         </div>
+      ))}
 
-        <div className="flex items-center justify-between">
-          <Link
-            href={`/dashboard/parent/learner/${learnerId}/assessment`}
-            className="text-sm text-slate-500 hover:text-primary"
-          >
-            {t("skip_for_now")}
-          </Link>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-8 py-3 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition disabled:opacity-50"
-          >
-            {saving ? tc("saving") : saved ? t("saved") : existingProfile ? t("update_profile") : t("save_profile")}
-          </button>
-        </div>
-      </main>
+      <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+        <h3 className="font-heading font-bold text-slate-900 mb-3">{t("additional_notes")}</h3>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder={t("notes_placeholder")}
+          className="w-full h-24 p-3 border border-slate-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400"
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <Link
+          href={`/dashboard/parent/learner/${learnerId}/assessment`}
+          className="text-sm text-slate-500 hover:text-purple-600"
+        >
+          {t("skip_for_now")}
+        </Link>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-8 py-3 rounded-full bg-purple-600 text-white font-bold hover:bg-purple-700 transition disabled:opacity-50"
+        >
+          {saving ? tc("saving") : saved ? t("saved") : existingProfile ? t("update_profile") : t("save_profile")}
+        </button>
+      </div>
     </div>
   );
 }

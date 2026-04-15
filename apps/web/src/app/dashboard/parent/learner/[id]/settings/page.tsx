@@ -1,151 +1,290 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import { useParams } from "next/navigation";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
+
+interface Settings {
+  accommodations: {
+    readAloud: boolean;
+    simplifiedUI: boolean;
+    extendedTime: boolean;
+    breakReminders: boolean;
+    visualSupports: boolean;
+    reducedAnimations: boolean;
+    highContrast: boolean;
+    fontSize: "normal" | "large" | "extra_large";
+  };
+  learningGoals: {
+    dailyGoalMinutes: number;
+    weeklySessionTarget: number;
+    preferredSessionTime: "morning" | "afternoon" | "evening";
+  };
+  notifications: {
+    milestoneAlerts: boolean;
+    struggleAlerts: boolean;
+    weeklyDigest: boolean;
+    sessionReminders: boolean;
+    iepReminders: boolean;
+  };
+  tutorPreferences: {
+    preferredTutorKey: string | null;
+    sessionLengthPreference: "short" | "medium" | "long";
+    musicDuringSessions: boolean;
+    celebrationAnimations: boolean;
+  };
+}
+
+const DEFAULT_SETTINGS: Settings = {
+  accommodations: { readAloud: true, simplifiedUI: false, extendedTime: false, breakReminders: true, visualSupports: false, reducedAnimations: false, highContrast: false, fontSize: "normal" },
+  learningGoals: { dailyGoalMinutes: 30, weeklySessionTarget: 5, preferredSessionTime: "afternoon" },
+  notifications: { milestoneAlerts: true, struggleAlerts: true, weeklyDigest: true, sessionReminders: false, iepReminders: true },
+  tutorPreferences: { preferredTutorKey: null, sessionLengthPreference: "medium", musicDuringSessions: false, celebrationAnimations: true },
+};
 
 export default function ParentLearnerSettingsPage() {
   const { user, accessToken, loading } = useAuth();
-  const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
   const t = useTranslations("parent");
-  const tc = useTranslations("common");
+
   const [learnerName, setLearnerName] = useState("Learner");
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loadingData, setLoadingData] = useState(true);
-
-  const [readAloud, setReadAloud] = useState(true);
-  const [simplifiedUI, setSimplifiedUI] = useState(false);
-  const [extendedTime, setExtendedTime] = useState(false);
-  const [breakReminders, setBreakReminders] = useState(true);
-  const [dailyGoalMinutes, setDailyGoalMinutes] = useState(30);
-  const [notifyOnMilestone, setNotifyOnMilestone] = useState(true);
-  const [notifyOnStruggle, setNotifyOnStruggle] = useState(true);
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    if (!loading && !user) router.push("/login");
-    if (!loading && user && user.role !== "PARENT") router.push("/");
-  }, [user, loading, router]);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const debounceRef = useRef<any>(null);
 
   useEffect(() => {
     if (!accessToken || !learnerId) return;
-    fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then(r => r.ok ? r.json() : [])
-      .then(data => {
-        const list = Array.isArray(data) ? data : [];
-        const found = list.find((l: any) => l.id === learnerId);
-        if (found) setLearnerName(found.name);
-      })
-      .catch(() => {})
-      .finally(() => setLoadingData(false));
+
+    Promise.all([
+      fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } })
+        .then(r => r.ok ? r.json() : [])
+        .then(data => {
+          const found = (Array.isArray(data) ? data : []).find((l: any) => l.id === learnerId);
+          if (found) setLearnerName(found.name);
+        }),
+      fetch(`/api/family/learner-settings/${learnerId}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data) {
+            setSettings({
+              accommodations: { ...DEFAULT_SETTINGS.accommodations, ...(data.accommodations || {}) },
+              learningGoals: { ...DEFAULT_SETTINGS.learningGoals, ...(data.learningGoals || {}) },
+              notifications: { ...DEFAULT_SETTINGS.notifications, ...(data.notifications || {}) },
+              tutorPreferences: { ...DEFAULT_SETTINGS.tutorPreferences, ...(data.tutorPreferences || {}) },
+            });
+          }
+        }),
+    ]).finally(() => setLoadingData(false));
   }, [accessToken, learnerId]);
+
+  const saveSettings = useCallback(async (newSettings: Settings) => {
+    if (!accessToken) return;
+    setSaveStatus("saving");
+    try {
+      const res = await fetch(`/api/family/learner-settings/${learnerId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify(newSettings),
+      });
+      if (res.ok) {
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      } else {
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
+    } catch {
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    }
+  }, [accessToken, learnerId]);
+
+  const updateSettings = useCallback((newSettings: Settings) => {
+    setSettings(newSettings);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => saveSettings(newSettings), 300);
+  }, [saveSettings]);
+
+  const updateAccommodation = (key: keyof Settings["accommodations"], value: any) => {
+    updateSettings({ ...settings, accommodations: { ...settings.accommodations, [key]: value } });
+  };
+
+  const updateGoals = (key: keyof Settings["learningGoals"], value: any) => {
+    updateSettings({ ...settings, learningGoals: { ...settings.learningGoals, [key]: value } });
+  };
+
+  const updateNotifications = (key: keyof Settings["notifications"], value: any) => {
+    updateSettings({ ...settings, notifications: { ...settings.notifications, [key]: value } });
+  };
+
+  const updateTutor = (key: keyof Settings["tutorPreferences"], value: any) => {
+    updateSettings({ ...settings, tutorPreferences: { ...settings.tutorPreferences, [key]: value } });
+  };
 
   if (loading || !user) return null;
 
-  const Toggle = ({ value, onChange, color = "bg-primary" }: { value: boolean; onChange: (v: boolean) => void; color?: string }) => (
-    <button onClick={() => onChange(!value)}
-      className={`w-11 h-6 rounded-full transition relative ${value ? color : "bg-slate-200"}`}>
+  const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
+    <button onClick={() => onChange(!value)} aria-pressed={value}
+      className={`w-11 h-6 rounded-full transition relative flex-shrink-0 ${value ? "bg-purple-500" : "bg-slate-200"}`}
+      style={{ minWidth: 44, minHeight: 24 }}>
       <span className={`absolute w-5 h-5 rounded-full bg-white shadow top-0.5 transition ${value ? "left-[22px]" : "left-0.5"}`} />
     </button>
   );
 
-  const handleSave = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+  const SettingRow = ({ label, description, children }: { label: string; description: string; children: React.ReactNode }) => (
+    <div className="flex items-center justify-between gap-4 py-1">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-900">{label}</p>
+        <p className="text-xs text-slate-400 leading-relaxed">{description}</p>
+      </div>
+      {children}
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
-      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
-        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline">{t("dashboard")}</Link>
-          <span className="text-sm font-semibold text-slate-600">{user.name}</span>
-        </div>
-      </header>
-
-      <div className="max-w-2xl mx-auto px-8 py-6">
-        <Link href={`/dashboard/parent/learner/${learnerId}/overview`}
-          className="text-sm text-primary hover:underline font-semibold mb-4 inline-block">← {learnerName}</Link>
-
-        <h1 className="text-2xl font-heading font-bold text-slate-900 mb-6">{t("settings_title", { name: learnerName })}</h1>
-
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("accessibility_accommodations")}</h2>
-            <div className="space-y-4">
-              <label className="flex items-center justify-between cursor-pointer">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{t("read_aloud")}</p>
-                  <p className="text-xs text-slate-400">{t("read_aloud_desc")}</p>
-                </div>
-                <Toggle value={readAloud} onChange={setReadAloud} />
-              </label>
-              <label className="flex items-center justify-between cursor-pointer">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{t("simplified_ui")}</p>
-                  <p className="text-xs text-slate-400">{t("simplified_ui_desc")}</p>
-                </div>
-                <Toggle value={simplifiedUI} onChange={setSimplifiedUI} />
-              </label>
-              <label className="flex items-center justify-between cursor-pointer">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{t("extended_time")}</p>
-                  <p className="text-xs text-slate-400">{t("extended_time_desc")}</p>
-                </div>
-                <Toggle value={extendedTime} onChange={setExtendedTime} />
-              </label>
-              <label className="flex items-center justify-between cursor-pointer">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{t("break_reminders")}</p>
-                  <p className="text-xs text-slate-400">{t("break_reminders_desc")}</p>
-                </div>
-                <Toggle value={breakReminders} onChange={setBreakReminders} />
-              </label>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("learning_goals")}</h2>
-            <div>
-              <label htmlFor="daily-goal-range" className="text-xs text-slate-400 font-semibold uppercase">{t("daily_goal_label")}</label>
-              <div className="flex items-center gap-4 mt-2">
-                <input id="daily-goal-range" type="range" min={10} max={120} step={5} value={dailyGoalMinutes}
-                  onChange={e => setDailyGoalMinutes(Number(e.target.value))}
-                  className="flex-1 accent-primary" />
-                <span className="text-lg font-bold text-primary w-16 text-right">{dailyGoalMinutes}m</span>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">{t("daily_goal_recommended")}</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("notifications_for", { name: learnerName })}</h2>
-            <div className="space-y-4">
-              <label className="flex items-center justify-between cursor-pointer">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{t("milestone_notifications")}</p>
-                  <p className="text-xs text-slate-400">{t("milestone_desc", { name: learnerName })}</p>
-                </div>
-                <Toggle value={notifyOnMilestone} onChange={setNotifyOnMilestone} />
-              </label>
-              <label className="flex items-center justify-between cursor-pointer">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{t("struggle_alerts")}</p>
-                  <p className="text-xs text-slate-400">{t("struggle_desc", { name: learnerName })}</p>
-                </div>
-                <Toggle value={notifyOnStruggle} onChange={setNotifyOnStruggle} />
-              </label>
-            </div>
-          </div>
-
-          {saved && <p className="text-sm text-green-600 bg-green-50 p-3 rounded-lg font-medium">{t("settings_saved", { name: learnerName })}</p>}
-          <button onClick={handleSave}
-            className="w-full py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark transition">
-            {t("save_settings")}
-          </button>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("settings_title", { name: learnerName })}</h1>
+        {saveStatus === "saving" && <span className="text-xs text-slate-400 animate-pulse">Saving...</span>}
+        {saveStatus === "saved" && <span className="text-xs text-green-600 font-semibold">✓ Saved</span>}
+        {saveStatus === "error" && <span className="text-xs text-red-500 font-semibold">Save failed — try again</span>}
       </div>
+
+      {loadingData ? (
+        <div className="text-center py-16 text-slate-400 animate-pulse">Loading settings...</div>
+      ) : (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl p-5 lg:p-6 border border-slate-100 shadow-sm">
+            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Accessibility & Accommodations</h2>
+            <div className="space-y-4">
+              <SettingRow label={t("read_aloud")} description={t("read_aloud_desc")}>
+                <Toggle value={settings.accommodations.readAloud} onChange={v => updateAccommodation("readAloud", v)} />
+              </SettingRow>
+              <SettingRow label={t("simplified_ui")} description={t("simplified_ui_desc")}>
+                <Toggle value={settings.accommodations.simplifiedUI} onChange={v => updateAccommodation("simplifiedUI", v)} />
+              </SettingRow>
+              <SettingRow label={t("extended_time")} description={t("extended_time_desc")}>
+                <Toggle value={settings.accommodations.extendedTime} onChange={v => updateAccommodation("extendedTime", v)} />
+              </SettingRow>
+              <SettingRow label={t("break_reminders")} description={t("break_reminders_desc")}>
+                <Toggle value={settings.accommodations.breakReminders} onChange={v => updateAccommodation("breakReminders", v)} />
+              </SettingRow>
+              <SettingRow label="Visual Supports" description="Show picture symbols alongside text in tutor sessions">
+                <Toggle value={settings.accommodations.visualSupports} onChange={v => updateAccommodation("visualSupports", v)} />
+              </SettingRow>
+              <SettingRow label="Reduced Animations" description="Minimize motion in UI and tutor sessions for sensory sensitivity">
+                <Toggle value={settings.accommodations.reducedAnimations} onChange={v => updateAccommodation("reducedAnimations", v)} />
+              </SettingRow>
+              <SettingRow label="High Contrast" description="Increase contrast ratios for better visual processing">
+                <Toggle value={settings.accommodations.highContrast} onChange={v => updateAccommodation("highContrast", v)} />
+              </SettingRow>
+              <div className="flex items-center justify-between gap-4 py-1">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Font Size</p>
+                  <p className="text-xs text-slate-400">Adjust text size for better readability</p>
+                </div>
+                <div className="flex gap-1">
+                  {(["normal", "large", "extra_large"] as const).map(size => (
+                    <button key={size} onClick={() => updateAccommodation("fontSize", size)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${settings.accommodations.fontSize === size ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                      style={{ minHeight: 32 }}>
+                      {size === "normal" ? "A" : size === "large" ? "A+" : "A++"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 lg:p-6 border border-slate-100 shadow-sm">
+            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Learning Goals</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-slate-900">{t("daily_goal_label")}</label>
+                <div className="flex items-center gap-4 mt-2">
+                  <input type="range" min={10} max={120} step={5} value={settings.learningGoals.dailyGoalMinutes}
+                    onChange={e => updateGoals("dailyGoalMinutes", Number(e.target.value))}
+                    className="flex-1 accent-purple-500" />
+                  <span className="text-lg font-bold text-purple-600 w-16 text-right">{settings.learningGoals.dailyGoalMinutes}m</span>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">{t("daily_goal_recommended")}</p>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-900">Weekly Session Target</label>
+                <div className="flex items-center gap-4 mt-2">
+                  <input type="range" min={1} max={14} step={1} value={settings.learningGoals.weeklySessionTarget}
+                    onChange={e => updateGoals("weeklySessionTarget", Number(e.target.value))}
+                    className="flex-1 accent-purple-500" />
+                  <span className="text-lg font-bold text-purple-600 w-20 text-right">{settings.learningGoals.weeklySessionTarget}/week</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-900">Preferred Time</label>
+                <div className="flex gap-2 mt-2">
+                  {(["morning", "afternoon", "evening"] as const).map(time => (
+                    <button key={time} onClick={() => updateGoals("preferredSessionTime", time)}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition capitalize ${settings.learningGoals.preferredSessionTime === time ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                      style={{ minHeight: 44 }}>
+                      {time === "morning" ? "☀️ " : time === "afternoon" ? "🌤️ " : "🌙 "}{time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 lg:p-6 border border-slate-100 shadow-sm">
+            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Notifications</h2>
+            <div className="space-y-4">
+              <SettingRow label={t("milestone_notifications")} description={t("milestone_desc", { name: learnerName })}>
+                <Toggle value={settings.notifications.milestoneAlerts} onChange={v => updateNotifications("milestoneAlerts", v)} />
+              </SettingRow>
+              <SettingRow label={t("struggle_alerts")} description={t("struggle_desc", { name: learnerName })}>
+                <Toggle value={settings.notifications.struggleAlerts} onChange={v => updateNotifications("struggleAlerts", v)} />
+              </SettingRow>
+              <SettingRow label="Weekly Digest" description="Get a weekly summary of progress and achievements">
+                <Toggle value={settings.notifications.weeklyDigest} onChange={v => updateNotifications("weeklyDigest", v)} />
+              </SettingRow>
+              <SettingRow label="Session Reminders" description="Gentle reminders when it's time for a learning session">
+                <Toggle value={settings.notifications.sessionReminders} onChange={v => updateNotifications("sessionReminders", v)} />
+              </SettingRow>
+              <SettingRow label="IEP Reminders" description="Alerts before IEP review dates">
+                <Toggle value={settings.notifications.iepReminders} onChange={v => updateNotifications("iepReminders", v)} />
+              </SettingRow>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 lg:p-6 border border-slate-100 shadow-sm">
+            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Tutor Session Preferences</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-slate-900">Session Length</label>
+                <div className="flex gap-2 mt-2">
+                  {([
+                    { key: "short" as const, label: "Short (10 min)" },
+                    { key: "medium" as const, label: "Medium (20 min)" },
+                    { key: "long" as const, label: "Long (30 min)" },
+                  ]).map(opt => (
+                    <button key={opt.key} onClick={() => updateTutor("sessionLengthPreference", opt.key)}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${settings.tutorPreferences.sessionLengthPreference === opt.key ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                      style={{ minHeight: 44 }}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <SettingRow label="Music During Sessions" description="Background music while tutoring (can be distracting for some children)">
+                <Toggle value={settings.tutorPreferences.musicDuringSessions} onChange={v => updateTutor("musicDuringSessions", v)} />
+              </SettingRow>
+              <SettingRow label="Celebration Animations" description="Confetti and celebration effects on achievements (can be overstimulating)">
+                <Toggle value={settings.tutorPreferences.celebrationAnimations} onChange={v => updateTutor("celebrationAnimations", v)} />
+              </SettingRow>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,8 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 interface GoalProgress {
@@ -65,7 +64,6 @@ interface IepReport {
 
 export default function IepDashboardPage() {
   const { user, accessToken, loading } = useAuth();
-  const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
   const t = useTranslations("parent");
@@ -75,10 +73,6 @@ export default function IepDashboardPage() {
   const [report, setReport] = useState<IepReport | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
   const [activeTab, setActiveTab] = useState<"goals" | "documents" | "report">("goals");
-
-  useEffect(() => {
-    if (!loading && !user) router.push("/login");
-  }, [user, loading, router]);
 
   useEffect(() => {
     if (!accessToken || !learnerId) return;
@@ -116,210 +110,200 @@ export default function IepDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
-      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/dashboard/parent")}
-            className="text-sm text-slate-500 hover:text-primary font-semibold">{t("back_to_dashboard")}</button>
-          <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("iep_tracking")}</h1>
+          <p className="text-slate-500 mt-1">{t("iep_tracking_desc")}</p>
         </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-8 py-8 space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-heading font-bold text-slate-900">{t("iep_tracking")}</h1>
-            <p className="text-slate-500 mt-1">{t("iep_tracking_desc")}</p>
-          </div>
-          <div className="flex gap-3">
-            {progress && (
-              <div className="text-center px-4 py-2 rounded-xl bg-purple-50">
-                <div className="text-2xl font-bold text-primary">{progress.activeGoals}</div>
-                <div className="text-xs text-slate-500 font-semibold">{t("active_goals")}</div>
-              </div>
-            )}
-            <button onClick={generateReport} disabled={generatingReport}
-              className="px-5 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition disabled:opacity-50 text-sm">
-              {generatingReport ? t("generating") : t("generate_report")}
-            </button>
-          </div>
+        <div className="flex gap-3">
+          {progress && (
+            <div className="text-center px-4 py-2 rounded-xl bg-purple-50">
+              <div className="text-2xl font-bold text-purple-600">{progress.activeGoals}</div>
+              <div className="text-xs text-slate-500 font-semibold">{t("active_goals")}</div>
+            </div>
+          )}
+          <button onClick={generateReport} disabled={generatingReport}
+            className="px-5 py-2.5 rounded-full bg-purple-600 text-white font-bold hover:bg-purple-700 transition disabled:opacity-50 text-sm">
+            {generatingReport ? t("generating") : t("generate_report")}
+          </button>
         </div>
+      </div>
 
-        <div className="flex gap-2 border-b border-slate-200 pb-1">
-          {(["goals", "documents", "report"] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === tab ? "bg-white border border-b-white text-primary -mb-[1px]" : "text-slate-400 hover:text-slate-600"}`}>
-              {tab === "goals" ? t("goals") : tab === "documents" ? t("documents") : t("report")}
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-2 border-b border-slate-200 pb-1">
+        {(["goals", "documents", "report"] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === tab ? "bg-white border border-b-white text-purple-600 -mb-[1px]" : "text-slate-400 hover:text-slate-600"}`}>
+            {tab === "goals" ? t("goals") : tab === "documents" ? t("documents") : t("report")}
+          </button>
+        ))}
+      </div>
 
-        {activeTab === "goals" && (
-          <div className="space-y-4">
-            {!progress || progress.goals.length === 0 ? (
-              <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-                <div className="text-5xl mb-3">🎯</div>
-                <p className="text-slate-500 font-semibold">{t("no_iep_goals")}</p>
-              </div>
-            ) : (
-              progress.goals.map(goal => (
-                <div key={goal.goalId} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        {goal.domain && (
-                          <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-primary font-bold">{goal.domain}</span>
-                        )}
-                        <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
-                          goal.status === "active" ? "bg-blue-100 text-blue-700" :
-                          goal.status === "met" ? "bg-green-100 text-green-700" :
-                          "bg-slate-100 text-slate-500"
-                        }`}>{goal.status}</span>
-                      </div>
-                      <p className="text-sm text-slate-700 font-semibold leading-relaxed">{goal.goalText}</p>
+      {activeTab === "goals" && (
+        <div className="space-y-4">
+          {!progress || progress.goals.length === 0 ? (
+            <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
+              <div className="text-5xl mb-3">🎯</div>
+              <p className="text-slate-500 font-semibold">{t("no_iep_goals")}</p>
+            </div>
+          ) : (
+            progress.goals.map(goal => (
+              <div key={goal.goalId} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      {goal.domain && (
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-600 font-bold">{goal.domain}</span>
+                      )}
+                      <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
+                        goal.status === "active" ? "bg-blue-100 text-blue-700" :
+                        goal.status === "met" ? "bg-green-100 text-green-700" :
+                        "bg-slate-100 text-slate-500"
+                      }`}>{goal.status}</span>
                     </div>
-                    <div className={`flex items-center gap-1 ml-4 ${TREND_COLORS[goal.trend]}`}>
-                      <span>{TREND_ICONS[goal.trend]}</span>
-                      <span className="text-sm font-bold capitalize">{goal.trend}</span>
-                    </div>
+                    <p className="text-sm text-slate-700 font-semibold leading-relaxed">{goal.goalText}</p>
                   </div>
-
-                  <div className="grid grid-cols-3 gap-4 mb-3 text-sm">
-                    <div className="p-2 rounded-lg bg-slate-50">
-                      <div className="text-xs text-slate-400 font-semibold">{t("baseline")}</div>
-                      <div className="font-bold text-slate-700">{goal.baseline || t("na")}</div>
-                    </div>
-                    <div className="p-2 rounded-lg bg-slate-50">
-                      <div className="text-xs text-slate-400 font-semibold">{t("current_label") || "Current"}</div>
-                      <div className="font-bold text-primary">{goal.currentValue}%</div>
-                    </div>
-                    <div className="p-2 rounded-lg bg-slate-50">
-                      <div className="text-xs text-slate-400 font-semibold">{t("target")}</div>
-                      <div className="font-bold text-green-600">{goal.targetCriteria || t("na")}</div>
-                    </div>
+                  <div className={`flex items-center gap-1 ml-4 ${TREND_COLORS[goal.trend]}`}>
+                    <span>{TREND_ICONS[goal.trend]}</span>
+                    <span className="text-sm font-bold capitalize">{goal.trend}</span>
                   </div>
+                </div>
 
-                  <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${goal.progressPercent}%`,
-                        backgroundColor: goal.trend === "declining" ? "#EF4444" : goal.progressPercent >= 80 ? "#10B981" : "#6C5CE7",
-                      }} />
+                <div className="grid grid-cols-3 gap-4 mb-3 text-sm">
+                  <div className="p-2 rounded-lg bg-slate-50">
+                    <div className="text-xs text-slate-400 font-semibold">{t("baseline")}</div>
+                    <div className="font-bold text-slate-700">{goal.baseline || t("na")}</div>
                   </div>
-                  <div className="text-right text-xs font-bold mt-1"
+                  <div className="p-2 rounded-lg bg-slate-50">
+                    <div className="text-xs text-slate-400 font-semibold">{t("current_label") || "Current"}</div>
+                    <div className="font-bold text-purple-600">{goal.currentValue}%</div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50">
+                    <div className="text-xs text-slate-400 font-semibold">{t("target")}</div>
+                    <div className="font-bold text-green-600">{goal.targetCriteria || t("na")}</div>
+                  </div>
+                </div>
+
+                <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-700"
                     style={{
-                      color: goal.trend === "declining" ? "#EF4444" : goal.progressPercent >= 80 ? "#10B981" : "#6C5CE7",
-                    }}>
-                    {goal.progressPercent}%
-                  </div>
+                      width: `${goal.progressPercent}%`,
+                      backgroundColor: goal.trend === "declining" ? "#EF4444" : goal.progressPercent >= 80 ? "#10B981" : "#6C5CE7",
+                    }} />
                 </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {activeTab === "documents" && (
-          <div className="space-y-3">
-            {documents.length === 0 ? (
-              <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-                <div className="text-5xl mb-3">📄</div>
-                <p className="text-slate-500 font-semibold">{t("no_iep_documents")}</p>
-              </div>
-            ) : (
-              documents.map(doc => (
-                <div key={doc.id} className="bg-white rounded-xl p-4 border border-slate-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm">
-                      IEP
-                    </div>
-                    <div>
-                      <div className="font-bold text-slate-800">{doc.fileName}</div>
-                      <div className="text-xs text-slate-400">{new Date(doc.uploadedAt).toLocaleDateString()}</div>
-                    </div>
-                  </div>
-                  <span className={`px-3 py-1 text-xs rounded-full font-bold ${
-                    doc.status === "parsed" ? "bg-green-100 text-green-700" :
-                    doc.status === "uploaded" ? "bg-blue-100 text-blue-700" :
-                    "bg-slate-100 text-slate-500"
-                  }`}>{doc.status}</span>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {activeTab === "report" && (
-          <div className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm">
-            {!report ? (
-              <div className="text-center py-12">
-                <div className="text-5xl mb-3">📊</div>
-                <p className="text-slate-500 font-semibold">{t("generate_report_prompt")}</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="border-b border-slate-200 pb-4">
-                  <h2 className="text-2xl font-heading font-bold text-slate-900">{report.title}</h2>
-                  <p className="text-sm text-slate-400 mt-1">{t("generated_at", { date: new Date(report.generatedAt).toLocaleString() })}</p>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-3 rounded-xl bg-purple-50 text-center">
-                    <div className="text-2xl font-bold text-primary">{report.summary.totalGoals}</div>
-                    <div className="text-xs text-slate-500 font-semibold">{t("total_goals_label")}</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-blue-50 text-center">
-                    <div className="text-2xl font-bold text-blue-600">{report.summary.activeGoals}</div>
-                    <div className="text-xs text-slate-500 font-semibold">{t("active_tab_label")}</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-green-50 text-center">
-                    <div className="text-2xl font-bold text-green-600">{report.summary.metGoals}</div>
-                    <div className="text-xs text-slate-500 font-semibold">{t("met_label")}</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-amber-50 text-center">
-                    <div className="text-2xl font-bold text-amber-600">{report.summary.averageProgress}%</div>
-                    <div className="text-xs text-slate-500 font-semibold">{t("avg_progress")}</div>
-                  </div>
-                </div>
-
-                {report.learner && (
-                  <div className="p-4 rounded-xl bg-slate-50">
-                    <h3 className="font-heading font-bold text-slate-800 mb-2">{t("learner_profile_title")}</h3>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div><span className="font-bold text-slate-500">{t("full_name")}:</span> {report.learner.name}</div>
-                      <div><span className="font-bold text-slate-500">{t("grade")}:</span> {report.learner.gradeLevel || t("na")}</div>
-                      <div><span className="font-bold text-slate-500">{t("functioning_level")}:</span> {report.learner.functioningLevel || t("na")}</div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <h3 className="font-heading font-bold text-lg text-slate-800">{t("goal_analysis")}</h3>
-                  {report.goals.map((g: ReportGoal, i: number) => (
-                    <div key={i} className="p-4 rounded-xl border border-slate-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        {g.domain && <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-primary font-bold">{g.domain}</span>}
-                        <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
-                          g.status === "active" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
-                        }`}>{g.status}</span>
-                      </div>
-                      <p className="text-sm text-slate-700 font-semibold mb-2">{g.goalText}</p>
-                      <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-2">
-                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${g.progressPercent}%` }} />
-                      </div>
-                      <div className="flex justify-between text-xs text-slate-500">
-                        <span>{t("baseline")}: {g.baseline || t("na")}</span>
-                        <span className="font-bold text-primary">{g.progressPercent}%</span>
-                        <span>{t("target")}: {g.target || t("na")}</span>
-                      </div>
-                      {g.evidence && <p className="text-xs text-slate-400 mt-2 italic">{g.evidence}</p>}
-                    </div>
-                  ))}
+                <div className="text-right text-xs font-bold mt-1"
+                  style={{
+                    color: goal.trend === "declining" ? "#EF4444" : goal.progressPercent >= 80 ? "#10B981" : "#6C5CE7",
+                  }}>
+                  {goal.progressPercent}%
                 </div>
               </div>
-            )}
-          </div>
-        )}
-      </main>
+            ))
+          )}
+        </div>
+      )}
+
+      {activeTab === "documents" && (
+        <div className="space-y-3">
+          {documents.length === 0 ? (
+            <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
+              <div className="text-5xl mb-3">📄</div>
+              <p className="text-slate-500 font-semibold">{t("no_iep_documents")}</p>
+            </div>
+          ) : (
+            documents.map(doc => (
+              <div key={doc.id} className="bg-white rounded-xl p-4 border border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm">
+                    IEP
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-800">{doc.fileName}</div>
+                    <div className="text-xs text-slate-400">{new Date(doc.uploadedAt).toLocaleDateString()}</div>
+                  </div>
+                </div>
+                <span className={`px-3 py-1 text-xs rounded-full font-bold ${
+                  doc.status === "parsed" ? "bg-green-100 text-green-700" :
+                  doc.status === "uploaded" ? "bg-blue-100 text-blue-700" :
+                  "bg-slate-100 text-slate-500"
+                }`}>{doc.status}</span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {activeTab === "report" && (
+        <div className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm">
+          {!report ? (
+            <div className="text-center py-12">
+              <div className="text-5xl mb-3">📊</div>
+              <p className="text-slate-500 font-semibold">{t("generate_report_prompt")}</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="border-b border-slate-200 pb-4">
+                <h2 className="text-2xl font-heading font-bold text-slate-900">{report.title}</h2>
+                <p className="text-sm text-slate-400 mt-1">{t("generated_at", { date: new Date(report.generatedAt).toLocaleString() })}</p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-3 rounded-xl bg-purple-50 text-center">
+                  <div className="text-2xl font-bold text-purple-600">{report.summary.totalGoals}</div>
+                  <div className="text-xs text-slate-500 font-semibold">{t("total_goals_label")}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-blue-50 text-center">
+                  <div className="text-2xl font-bold text-blue-600">{report.summary.activeGoals}</div>
+                  <div className="text-xs text-slate-500 font-semibold">{t("active_tab_label")}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-green-50 text-center">
+                  <div className="text-2xl font-bold text-green-600">{report.summary.metGoals}</div>
+                  <div className="text-xs text-slate-500 font-semibold">{t("met_label")}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-amber-50 text-center">
+                  <div className="text-2xl font-bold text-amber-600">{report.summary.averageProgress}%</div>
+                  <div className="text-xs text-slate-500 font-semibold">{t("avg_progress")}</div>
+                </div>
+              </div>
+
+              {report.learner && (
+                <div className="p-4 rounded-xl bg-slate-50">
+                  <h3 className="font-heading font-bold text-slate-800 mb-2">{t("learner_profile_title")}</h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="font-bold text-slate-500">{t("full_name")}:</span> {report.learner.name}</div>
+                    <div><span className="font-bold text-slate-500">{t("grade")}:</span> {report.learner.gradeLevel || t("na")}</div>
+                    <div><span className="font-bold text-slate-500">{t("functioning_level")}:</span> {report.learner.functioningLevel || t("na")}</div>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <h3 className="font-heading font-bold text-lg text-slate-800">{t("goal_analysis")}</h3>
+                {report.goals.map((g: ReportGoal, i: number) => (
+                  <div key={i} className="p-4 rounded-xl border border-slate-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      {g.domain && <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-600 font-bold">{g.domain}</span>}
+                      <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
+                        g.status === "active" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+                      }`}>{g.status}</span>
+                    </div>
+                    <p className="text-sm text-slate-700 font-semibold mb-2">{g.goalText}</p>
+                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-2">
+                      <div className="h-full rounded-full bg-purple-500 transition-all" style={{ width: `${g.progressPercent}%` }} />
+                    </div>
+                    <div className="flex justify-between text-xs text-slate-500">
+                      <span>{t("baseline")}: {g.baseline || t("na")}</span>
+                      <span className="font-bold text-purple-600">{g.progressPercent}%</span>
+                      <span>{t("target")}: {g.target || t("na")}</span>
+                    </div>
+                    {g.evidence && <p className="text-xs text-slate-400 mt-2 italic">{g.evidence}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
