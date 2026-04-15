@@ -9,7 +9,15 @@ const monorepoRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
-config.watchFolders = [monorepoRoot];
+config.watchFolders = [
+  path.resolve(monorepoRoot, 'packages/brand'),
+  path.resolve(monorepoRoot, 'packages/mobile-ui'),
+  path.resolve(monorepoRoot, 'packages/db'),
+  path.resolve(monorepoRoot, 'packages/events'),
+  path.resolve(monorepoRoot, 'packages/observability'),
+  path.resolve(monorepoRoot, 'packages/security'),
+  path.resolve(monorepoRoot, 'packages/ui'),
+];
 
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
