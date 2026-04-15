@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const webAppUrl = process.env.NEXT_PUBLIC_WEB_APP_URL || "https://app.aivolearning.com";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   reactStrictMode: true,
   allowedDevOrigins: [
     "*.replit.dev",
