@@ -108,9 +108,9 @@ export default function ParentLearnerSettingsPage() {
           <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
             <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("learning_goals")}</h2>
             <div>
-              <label className="text-xs text-slate-400 font-semibold uppercase">{t("daily_goal_label")}</label>
+              <label htmlFor="daily-goal-range" className="text-xs text-slate-400 font-semibold uppercase">{t("daily_goal_label")}</label>
               <div className="flex items-center gap-4 mt-2">
-                <input type="range" min={10} max={120} step={5} value={dailyGoalMinutes}
+                <input id="daily-goal-range" type="range" min={10} max={120} step={5} value={dailyGoalMinutes}
                   onChange={e => setDailyGoalMinutes(Number(e.target.value))}
                   className="flex-1 accent-primary" />
                 <span className="text-lg font-bold text-primary w-16 text-right">{dailyGoalMinutes}m</span>

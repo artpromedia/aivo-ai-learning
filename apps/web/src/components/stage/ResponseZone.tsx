@@ -123,6 +123,7 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
             {interaction.dragItems.filter(d => !droppedItems[d.id]).map((item) => (
               <div
                 key={item.id}
+                role="listitem"
                 draggable
                 onDragStart={() => handleDragStart(item.id)}
                 onTouchStart={() => handleDragStart(item.id)}
@@ -140,6 +141,7 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
             {interaction.dragZones.map((zone) => (
               <div
                 key={zone.id}
+                role="listitem"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => handleDrop(zone.id)}
                 onTouchEnd={() => handleDrop(zone.id)}

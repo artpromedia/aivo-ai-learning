@@ -134,6 +134,9 @@ export default function NotificationsPage() {
           <div className="space-y-3">
             {filtered.map(n => (
               <div key={n.id}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") markAsRead(n.id); }}
                 onClick={() => markAsRead(n.id)}
                 className={`rounded-xl border-2 p-4 cursor-pointer transition hover:shadow-sm ${n.read ? "bg-white border-slate-100 opacity-70" : TYPE_COLORS[n.type]}`}>
                 <div className="flex items-start gap-3">

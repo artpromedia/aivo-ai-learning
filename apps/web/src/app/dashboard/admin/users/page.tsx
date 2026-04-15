@@ -143,7 +143,7 @@ function CreateUserModal({
 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40" role="presentation" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
         <div className="p-6 border-b border-slate-100">
           <h2 className="text-lg font-heading font-bold text-slate-900">Create New User</h2>
@@ -182,8 +182,9 @@ function CreateUserModal({
             )}
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+              <label htmlFor="user-fullname" className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
               <input
+                id="user-fullname"
                 type="text"
                 required
                 value={name}
@@ -194,8 +195,9 @@ function CreateUserModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <label htmlFor="user-email" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
               <input
+                id="user-email"
                 type="email"
                 required
                 value={email}
@@ -206,8 +208,9 @@ function CreateUserModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+              <label htmlFor="user-role" className="block text-sm font-medium text-slate-700 mb-1">Role</label>
               <select
+                id="user-role"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
@@ -226,10 +229,11 @@ function CreateUserModal({
 
             {needsTenant && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="user-tenant" className="block text-sm font-medium text-slate-700 mb-1">
                   Tenant / Organization <span className="text-red-500">*</span>
                 </label>
                 <select
+                  id="user-tenant"
                   value={tenantId}
                   onChange={(e) => setTenantId(e.target.value)}
                   required

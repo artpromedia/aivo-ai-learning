@@ -148,20 +148,20 @@ export default function AdminTenantsPage() {
 
           <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">District Name</label>
-              <input type="text" value={districtName} onChange={(e) => setDistrictName(e.target.value)} required
+              <label htmlFor="district-name" className="block text-sm font-medium text-slate-700 mb-1">District Name</label>
+              <input id="district-name" type="text" value={districtName} onChange={(e) => setDistrictName(e.target.value)} required
                 placeholder="e.g. Fairfax County Public Schools"
                 className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Admin Name</label>
-              <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} required
+              <label htmlFor="admin-name" className="block text-sm font-medium text-slate-700 mb-1">Admin Name</label>
+              <input id="admin-name" type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} required
                 placeholder="e.g. Dr. Jane Smith"
                 className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Admin Email</label>
-              <input type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} required
+              <label htmlFor="admin-email" className="block text-sm font-medium text-slate-700 mb-1">Admin Email</label>
+              <input id="admin-email" type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} required
                 placeholder="e.g. admin@district.edu"
                 className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none text-sm" />
             </div>

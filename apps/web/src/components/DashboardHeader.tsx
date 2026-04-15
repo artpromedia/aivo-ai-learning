@@ -87,7 +87,7 @@ export default function DashboardHeader({ userName, userRole, userEmail, accent 
 
           {showNotifications && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+              <div className="fixed inset-0 z-40" role="presentation" onClick={() => setShowNotifications(false)} />
               <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50">
                 <div className="p-3 border-b border-slate-100 flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-900">Notifications</span>

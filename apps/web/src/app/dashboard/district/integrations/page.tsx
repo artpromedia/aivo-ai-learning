@@ -582,8 +582,9 @@ export default function IntegrationsPage() {
 
             {showApiKeyModal === "canvas_lms" && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Canvas Instance URL</label>
+                <label htmlFor="canvas-url" className="block text-sm font-medium text-slate-700 mb-1">Canvas Instance URL</label>
                 <input
+                  id="canvas-url"
                   type="url"
                   value={canvasUrlInput}
                   onChange={(e) => setCanvasUrlInput(e.target.value)}
@@ -594,8 +595,9 @@ export default function IntegrationsPage() {
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-1">API Access Token</label>
+              <label htmlFor="api-token" className="block text-sm font-medium text-slate-700 mb-1">API Access Token</label>
               <input
+                id="api-token"
                 type="password"
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}

@@ -218,13 +218,13 @@ export default function AdminServicesPage() {
         {showIncidentForm && (
           <form onSubmit={handleCreateIncident} className="p-5 border-b border-slate-100 flex gap-3 items-end bg-slate-50">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Title</label>
-              <input type="text" value={incidentTitle} onChange={(e) => setIncidentTitle(e.target.value)} required
+              <label htmlFor="incident-title" className="block text-xs font-medium text-slate-600 mb-1">Title</label>
+              <input id="incident-title" type="text" value={incidentTitle} onChange={(e) => setIncidentTitle(e.target.value)} required
                 className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm" placeholder="Describe the incident..." />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Severity</label>
-              <select value={incidentSeverity} onChange={(e) => setIncidentSeverity(e.target.value)}
+              <label htmlFor="incident-severity" className="block text-xs font-medium text-slate-600 mb-1">Severity</label>
+              <select id="incident-severity" value={incidentSeverity} onChange={(e) => setIncidentSeverity(e.target.value)}
                 className="px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white">
                 <option value="minor">Minor</option>
                 <option value="major">Major</option>

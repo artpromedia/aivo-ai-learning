@@ -195,6 +195,9 @@ export default function HomeworkPage() {
 
         <div className="grid md:grid-cols-2 gap-6">
           <div
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
             className={`bg-white rounded-2xl p-8 border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center min-h-[200px] space-y-4 ${
               isDragging ? "border-purple-500 bg-purple-50" : "border-slate-200 hover:border-purple-300"
             }`}

@@ -74,6 +74,9 @@ export default function QuestsPage() {
           {worlds.map((world) => (
             <div
               key={world.key}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") router.push(`/dashboard/learner/quests/${world.key}`); }}
               className="bg-white rounded-2xl p-6 border-2 shadow-sm hover:shadow-xl transition cursor-pointer group"
               style={{ borderColor: WORLD_COLORS[world.key] || "#7c3aed" }}
               onClick={() => router.push(`/dashboard/learner/quests/${world.key}`)}

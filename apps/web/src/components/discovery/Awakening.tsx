@@ -452,7 +452,6 @@ export default function Awakening({ learnerName, chapterResults, functioningLeve
 
     animFrameRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animFrameRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initOrbs, timing, isPreSymbolic]);
 
   useEffect(() => {
