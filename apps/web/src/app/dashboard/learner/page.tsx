@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { TUTORS } from "@aivo/brand";
 import { useTranslations } from "next-intl";
+import { SkipLink } from "@/components/a11y/SkipLink";
 
 interface EngagementProfile {
   totalXp: number;
@@ -143,8 +144,8 @@ export default function LearnerDashboard() {
   if (pendingApproval) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-950 via-indigo-950 to-slate-950 flex flex-col items-center justify-center px-6">
-        <div className="max-w-md text-center">
-          <div className="text-7xl mb-6 animate-pulse">🧠</div>
+        <main id="main-content" tabIndex={-1} className="max-w-md text-center">
+          <div className="text-7xl mb-6 animate-pulse" aria-hidden="true">🧠</div>
           <h1 className="text-3xl font-heading font-bold text-white mb-3">{t("brain_ready_title")}</h1>
           <p className="text-white/60 font-body leading-relaxed mb-6">
             {t("brain_ready_description")}
@@ -158,11 +159,12 @@ export default function LearnerDashboard() {
           </div>
           <button
             onClick={logout}
+            aria-label={t("log_out")}
             className="px-6 py-3 bg-white/10 backdrop-blur text-white/60 font-heading font-bold rounded-xl hover:bg-white/20 transition text-sm"
           >
             {t("log_out")}
           </button>
-        </div>
+        </main>
       </div>
     );
   }
@@ -175,15 +177,16 @@ export default function LearnerDashboard() {
   if (isPreSymbolic) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-pink-50">
-        <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+        <SkipLink />
+        <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between" role="navigation" aria-label="Learner navigation">
           <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
           <div className="flex items-center gap-4">
             <span className="text-lg font-heading font-bold text-primary">{user.name}</span>
-            <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">{t("log_out")}</button>
+            <button onClick={logout} aria-label={t("log_out")} className="text-sm text-slate-500 hover:text-red-500 font-semibold">{t("log_out")}</button>
           </div>
         </header>
-        <main className="max-w-3xl mx-auto px-8 py-12 text-center space-y-8">
-          <div className="text-6xl">⭐</div>
+        <main id="main-content" tabIndex={-1} className="max-w-3xl mx-auto px-8 py-12 text-center space-y-8">
+          <div className="text-6xl" aria-hidden="true">⭐</div>
           <h1 className="text-3xl font-heading font-bold text-slate-900">{tCommon("welcome")}, {user.name}!</h1>
           <p className="text-lg text-slate-500 font-semibold">{t("parent_managed_learning")}</p>
           {profile && (
@@ -216,13 +219,14 @@ export default function LearnerDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
+      <SkipLink />
       {showCelebration && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none" aria-hidden="true">
           <div className="text-8xl animate-bounce">🌟</div>
         </div>
       )}
 
-      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between" role="navigation" aria-label="Learner navigation">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
         <div className="flex items-center gap-4">
           {profile && (
@@ -232,11 +236,11 @@ export default function LearnerDashboard() {
             </div>
           )}
           <span className="text-lg font-heading font-bold text-primary">{t("hi_name", { name: user.name })}!</span>
-          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold">{t("log_out")}</button>
+          <button onClick={logout} aria-label={t("log_out")} className="text-sm text-slate-500 hover:text-red-500 font-semibold">{t("log_out")}</button>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-8 py-8 space-y-8">
+      <main id="main-content" tabIndex={-1} className="max-w-5xl mx-auto px-8 py-8 space-y-8">
         {profile && (
           <div className={`grid grid-cols-1 ${isLow ? "md:grid-cols-2" : "md:grid-cols-4"} gap-4`}>
             <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm text-center">
@@ -287,8 +291,8 @@ export default function LearnerDashboard() {
                   {showSelCheckin && (
                     <div className="flex gap-2 flex-wrap justify-center">
                       {EMOTIONS.map((e) => (
-                        <button key={e.value} onClick={() => handleSelCheckin(e.value)} className="text-2xl hover:scale-125 transition-transform" title={e.label}>
-                          {e.emoji}
+                        <button key={e.value} onClick={() => handleSelCheckin(e.value)} className="text-2xl hover:scale-125 transition-transform" title={e.label} aria-label={e.label}>
+                          <span aria-hidden="true">{e.emoji}</span>
                         </button>
                       ))}
                     </div>
@@ -308,8 +312,8 @@ export default function LearnerDashboard() {
                 {showSelCheckin && (
                   <div className="flex gap-3 flex-wrap justify-center">
                     {EMOTIONS.slice(0, 4).map((e) => (
-                      <button key={e.value} onClick={() => handleSelCheckin(e.value)} className="text-4xl hover:scale-125 transition-transform" title={e.label}>
-                        {e.emoji}
+                      <button key={e.value} onClick={() => handleSelCheckin(e.value)} className="text-4xl hover:scale-125 transition-transform" title={e.label} aria-label={e.label}>
+                        <span aria-hidden="true">{e.emoji}</span>
                       </button>
                     ))}
                   </div>

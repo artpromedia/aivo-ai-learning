@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import DashboardHeader from "@/components/DashboardHeader";
+import { SkipLink } from "@/components/a11y/SkipLink";
 
 const INTERNAL_ROLES = ["PLATFORM_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
 
@@ -72,17 +73,18 @@ export default function InternalLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      <aside className={`${collapsed ? "w-16" : "w-60"} bg-slate-900 text-white flex flex-col transition-all duration-200 flex-shrink-0`}>
+      <SkipLink />
+      <aside className={`${collapsed ? "w-16" : "w-60"} bg-slate-900 text-white flex flex-col transition-all duration-200 flex-shrink-0`} role="navigation" aria-label="Internal sidebar">
         <div className="p-4 border-b border-slate-700 flex items-center justify-between">
           {!collapsed && (
             <div className="flex items-center gap-2">
               <Image src="/images/aivo-logo-white.png" alt="AIVO" width={80} height={24} style={{ height: "auto" }} />
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${ROLE_COLORS[user.role] || "text-purple-400"}`}>
+              <span className={`text-xs font-bold uppercase tracking-wider ${ROLE_COLORS[user.role] || "text-purple-400"}`}>
                 {user.role.replace(/_/g, " ")}
               </span>
             </div>
           )}
-          <button onClick={() => setCollapsed(!collapsed)} className="text-slate-400 hover:text-white p-1">
+          <button onClick={() => setCollapsed(!collapsed)} className="text-slate-400 hover:text-white p-1" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
             {collapsed ? "→" : "←"}
           </button>
         </div>
@@ -90,29 +92,32 @@ export default function InternalLayout({ children }: { children: React.ReactNode
         <nav className="flex-1 overflow-y-auto py-3">
           {user.role === "PLATFORM_ADMIN" && (
             <div className="mb-4">
-              {!collapsed && <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Admin</p>}
+              {!collapsed && <p className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Admin</p>}
               <Link
                 href="/dashboard/admin"
+                aria-label="Platform Admin"
                 className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-white transition"
               >
-                <span className="text-base flex-shrink-0">🏠</span>
+                <span className="text-base flex-shrink-0" aria-hidden="true">🏠</span>
                 {!collapsed && <span>Platform Admin</span>}
               </Link>
             </div>
           )}
 
-          {!collapsed && <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Teams</p>}
+          {!collapsed && <p className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Teams</p>}
           {visibleNav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label}
+              aria-current={isActive(item.href) ? "page" : undefined}
               className={`flex items-center gap-3 px-4 py-2.5 text-sm transition ${
                 isActive(item.href)
                   ? "bg-purple-600/20 text-purple-300 border-r-2 border-purple-400 font-semibold"
                   : "text-slate-400 hover:bg-slate-800 hover:text-white"
               }`}
             >
-              <span className="text-base flex-shrink-0">{item.icon}</span>
+              <span className="text-base flex-shrink-0" aria-hidden="true">{item.icon}</span>
               {!collapsed && <span>{item.label}</span>}
             </Link>
           ))}
@@ -122,16 +127,16 @@ export default function InternalLayout({ children }: { children: React.ReactNode
           {!collapsed && (
             <div className="mb-3">
               <p className="text-sm font-semibold truncate">{user.name}</p>
-              <p className="text-xs text-slate-400">{user.role.replace(/_/g, " ")}</p>
+              <p className="text-xs text-slate-500">{user.role.replace(/_/g, " ")}</p>
             </div>
           )}
-          <button onClick={logout} className={`text-xs text-slate-400 hover:text-red-400 transition ${collapsed ? "w-full text-center" : ""}`}>
+          <button onClick={logout} aria-label="Sign out" className={`text-xs text-slate-400 hover:text-red-400 transition ${collapsed ? "w-full text-center" : ""}`}>
             {collapsed ? "🚪" : "Sign Out"}
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto flex flex-col">
+      <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto flex flex-col">
         <DashboardHeader
           userName={user.name || "Team Member"}
           userRole={user.role}

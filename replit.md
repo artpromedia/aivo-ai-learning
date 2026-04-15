@@ -270,6 +270,17 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **New repo**: `artpromedia/aivo-ai-learning` (pushed Phase 0+1 — 125 files, 17,627 lines)
 - **Branch**: `main`
 
+### Accessibility
+- **SkipLink**: `apps/web/src/components/a11y/SkipLink.tsx` — focus-visible skip-to-main-content link, used in all dashboard layouts + parent/learner pages
+- **AccessibleToggle**: `apps/web/src/components/a11y/AccessibleToggle.tsx` — accessible toggle switch component
+- **Dashboard layouts**: All 8 dashboards (admin, district, internal, teacher, therapist, caregiver, parent, learner) have `SkipLink`, `role="navigation"`, `aria-label`, `aria-current="page"`, `aria-hidden` on decorative emoji, `id="main-content"`, `tabIndex={-1}` on main
+- **Screen reader**: Login/signup error `role="alert"`, password toggle `aria-label`, submit `aria-busy`, ARIA live regions in `ResponseZone`, `BrainVisualization` `role="region"`
+- **Global CSS**: `focus-visible` ring styles, `prefers-reduced-motion` media query in `apps/web/src/app/globals.css`
+- **ESLint**: `eslint-plugin-jsx-a11y` installed in `apps/web` with `eslint.config.mjs` (flat config, recommended rules)
+- **Playwright**: a11y test infrastructure in `apps/web/tests/a11y/` with axe-core scans for login, signup, dashboard pages
+- **CI**: `.github/workflows/a11y-tests.yml` — runs eslint jsx-a11y + Playwright axe scans on PR
+- **Docs**: `docs/accessibility-guidelines.md`, `.github/PULL_REQUEST_TEMPLATE.md` (a11y checklist), `docs/launch-readiness.md`
+
 ### Security
 - Argon2id password hashing (via `argon2` npm package)
 - Refresh tokens stored as SHA-256 hashes in DB

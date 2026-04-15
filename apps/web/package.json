@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev --port 5000 --turbopack",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "eslint src/ --ext .ts,.tsx"
   },
   "dependencies": {
     "@aivo/brand": "workspace:*",
@@ -19,8 +20,11 @@
     "@tailwindcss/postcss": "^4.1.8",
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.5",
+    "eslint": "^10.2.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "postcss": "^8.5.4",
     "tailwindcss": "^4.1.8",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.58.2"
   }
 }

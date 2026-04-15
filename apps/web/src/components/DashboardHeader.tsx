@@ -7,7 +7,7 @@ interface DashboardHeaderProps {
   userName: string;
   userRole: string;
   userEmail?: string;
-  accent?: "purple" | "violet";
+  accent?: "purple" | "violet" | "blue" | "pink" | "green";
   basePath: string;
   baseLabel: string;
 }
@@ -37,18 +37,25 @@ export default function DashboardHeader({ userName, userRole, userEmail, accent 
   const [showNotifications, setShowNotifications] = useState(false);
   const crumbs = getBreadcrumbs(pathname, basePath, baseLabel);
   const unreadCount = NOTIFICATIONS.filter((n) => !n.read).length;
-  const accentColor = accent === "violet" ? "text-violet-600" : "text-purple-600";
-  const accentBg = accent === "violet" ? "bg-violet-50 border-violet-200" : "bg-purple-50 border-purple-200";
+  const accentMap: Record<string, { text: string; bg: string }> = {
+    purple: { text: "text-purple-600", bg: "bg-purple-50 border-purple-200" },
+    violet: { text: "text-violet-600", bg: "bg-violet-50 border-violet-200" },
+    blue: { text: "text-blue-600", bg: "bg-blue-50 border-blue-200" },
+    pink: { text: "text-pink-600", bg: "bg-pink-50 border-pink-200" },
+    green: { text: "text-green-600", bg: "bg-green-50 border-green-200" },
+  };
+  const accentColor = accentMap[accent]?.text || "text-purple-600";
+  const accentBg = accentMap[accent]?.bg || "bg-purple-50 border-purple-200";
 
   return (
     <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-30">
       <div className="flex items-center gap-6">
-        <nav className="flex items-center gap-1.5 text-sm">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm">
           {crumbs.map((crumb, i) => (
             <span key={crumb.href} className="flex items-center gap-1.5">
-              {i > 0 && <span className="text-slate-300">/</span>}
+              {i > 0 && <span className="text-slate-300" aria-hidden="true">/</span>}
               {i === crumbs.length - 1 ? (
-                <span className="font-semibold text-slate-900">{crumb.label}</span>
+                <span className="font-semibold text-slate-900" aria-current="page">{crumb.label}</span>
               ) : (
                 <Link href={crumb.href} className={`${accentColor} hover:underline font-medium`}>
                   {crumb.label}
@@ -64,6 +71,8 @@ export default function DashboardHeader({ userName, userRole, userEmail, accent 
           <button
             onClick={() => setShowNotifications(!showNotifications)}
             className="relative p-2 rounded-lg hover:bg-slate-100 transition text-slate-500 hover:text-slate-700"
+            aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+            aria-expanded={showNotifications}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -115,7 +124,7 @@ export default function DashboardHeader({ userName, userRole, userEmail, accent 
           </div>
           <div className="hidden md:block">
             <p className="text-sm font-medium text-slate-900 leading-tight">{userName}</p>
-            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">{userRole.replace(/_/g, " ")}</p>
+            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{userRole.replace(/_/g, " ")}</p>
           </div>
         </div>
       </div>

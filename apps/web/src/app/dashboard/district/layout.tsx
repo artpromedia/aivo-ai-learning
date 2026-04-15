@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import DashboardHeader from "@/components/DashboardHeader";
+import { SkipLink } from "@/components/a11y/SkipLink";
 
 const NAV_SECTIONS = [
   {
@@ -62,7 +63,8 @@ export default function DistrictLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      <aside className={`${collapsed ? "w-16" : "w-64"} bg-white border-r border-slate-200 flex flex-col transition-all duration-200 flex-shrink-0`}>
+      <SkipLink />
+      <aside className={`${collapsed ? "w-16" : "w-64"} bg-white border-r border-slate-200 flex flex-col transition-all duration-200 flex-shrink-0`} role="navigation" aria-label="District sidebar">
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           {!collapsed && (
             <Link href="/dashboard/district" className="flex items-center gap-3">
@@ -71,11 +73,11 @@ export default function DistrictLayout({ children }: { children: React.ReactNode
               </div>
               <div>
                 <p className="font-bold text-slate-900 text-sm">AIVO</p>
-                <p className="text-[10px] text-violet-600 font-semibold uppercase tracking-wider">District Admin</p>
+                <p className="text-xs text-violet-600 font-semibold uppercase tracking-wider">District Admin</p>
               </div>
             </Link>
           )}
-          <button onClick={() => setCollapsed(!collapsed)} className="text-slate-400 hover:text-slate-600 p-1 transition">
+          <button onClick={() => setCollapsed(!collapsed)} className="text-slate-400 hover:text-slate-600 p-1 transition" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
             {collapsed ? "→" : "←"}
           </button>
         </div>
@@ -84,19 +86,21 @@ export default function DistrictLayout({ children }: { children: React.ReactNode
           {NAV_SECTIONS.map((section) => (
             <div key={section.label} className="mb-3">
               {!collapsed && (
-                <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{section.label}</p>
+                <p className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{section.label}</p>
               )}
               {section.items.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-label={item.label}
+                  aria-current={isActive(item.href) ? "page" : undefined}
                   className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all mx-2 rounded-xl ${
                     isActive(item.href)
                       ? "bg-violet-100 text-violet-700 font-semibold shadow-sm"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
-                  <span className="text-base flex-shrink-0">{item.icon}</span>
+                  <span className="text-base flex-shrink-0" aria-hidden="true">{item.icon}</span>
                   {!collapsed && <span>{item.label}</span>}
                 </Link>
               ))}
@@ -109,21 +113,21 @@ export default function DistrictLayout({ children }: { children: React.ReactNode
             <>
               <div className="mb-3">
                 <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>
-                <p className="text-xs text-slate-400">{user.role.replace(/_/g, " ")}</p>
+                <p className="text-xs text-slate-500">{user.role.replace(/_/g, " ")}</p>
               </div>
               <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-3 mb-3">
-                <p className="text-[11px] font-medium text-violet-700">Need help?</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Contact your platform administrator for support.</p>
+                <p className="text-xs font-medium text-violet-700">Need help?</p>
+                <p className="text-xs text-slate-600 mt-0.5">Contact your platform administrator for support.</p>
               </div>
             </>
           )}
-          <button onClick={logout} className={`text-xs text-slate-400 hover:text-red-400 transition ${collapsed ? "w-full text-center" : ""}`}>
+          <button onClick={logout} aria-label="Sign out" className={`text-xs text-slate-400 hover:text-red-400 transition ${collapsed ? "w-full text-center" : ""}`}>
             {collapsed ? "🚪" : "Sign Out"}
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto flex flex-col">
+      <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto flex flex-col">
         <DashboardHeader
           userName={user.name || "District Admin"}
           userRole={user.role}

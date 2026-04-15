@@ -35,6 +35,11 @@ e2e/jwt-public.pem
 
 # Temporary scripts
 scripts/diag-*.mjs
+tmp_*.sql
+tmp_*.sh
+
+# Secret scan reports
+gitleaks-report.json
 
 # Temporary helm artifacts
 infra/helm/aivo-ingress.yaml

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { SkipLink } from "@/components/a11y/SkipLink";
 
 export default function SignupPage() {
   const { register } = useAuth();
@@ -72,7 +73,8 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700">
+      <SkipLink />
+      <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700" aria-hidden="true">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-32 -left-10 w-80 h-80 bg-white rounded-full blur-3xl" />
           <div className="absolute bottom-10 right-0 w-96 h-96 bg-indigo-300 rounded-full blur-3xl" />
@@ -129,7 +131,7 @@ export default function SignupPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col bg-gray-50 min-h-screen">
+      <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col bg-gray-50 min-h-screen">
         <div className="flex items-center justify-between p-6 lg:p-8">
           <Link href="/" className="lg:hidden">
             <Image
@@ -162,8 +164,8 @@ export default function SignupPage() {
             </div>
 
             {error && (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm font-medium mb-6">
-                <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div role="alert" aria-live="assertive" className="flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm font-medium mb-6">
+                <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
                 {error}
@@ -231,6 +233,7 @@ export default function SignupPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -249,6 +252,7 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={loading}
+                aria-busy={loading}
                 className="w-full py-3.5 rounded-xl bg-violet-600 text-white font-bold text-base hover:bg-violet-700 active:bg-violet-800 transition-all shadow-lg shadow-violet-600/25 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -288,7 +292,7 @@ export default function SignupPage() {
           <span className="w-1 h-1 rounded-full bg-gray-300" />
           <Link href="/coppa-compliance" className="hover:text-gray-600 transition">COPPA</Link>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -41,12 +41,14 @@ export function StageLayout({
       style={{
         filter: `saturate(${adaptations.colorSaturation}%)`,
       }}
+      role="application"
+      aria-label={`Learning session with ${tutor.name}`}
     >
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <StageBackground tutorKey={tutorKey} motionReduced={adaptations.motionReduced} />
       </div>
 
-      <header className="relative z-10 flex items-center justify-between px-4 py-2 bg-black/20 backdrop-blur-sm">
+      <header className="relative z-10 flex items-center justify-between px-4 py-2 bg-black/20 backdrop-blur-sm" role="banner">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/30">
             <Image src={tutor.avatar} alt={tutor.name} width={32} height={32} className="object-cover" />
@@ -67,7 +69,7 @@ export function StageLayout({
         <div className="flex items-center gap-3">
           {isParentWatching && (
             <div className="flex items-center gap-1 text-white/40 text-xs">
-              <span>👁</span>
+              <span aria-hidden="true">👁</span>
               <span className="hidden md:inline">Co-viewing</span>
             </div>
           )}

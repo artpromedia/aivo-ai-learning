@@ -227,13 +227,13 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
   }
 
   return (
-    <div className={`bg-white rounded-2xl border border-slate-200 overflow-hidden ${compact ? "" : "shadow-lg"}`}>
+    <div className={`bg-white rounded-2xl border border-slate-200 overflow-hidden ${compact ? "" : "shadow-lg"}`} role="region" aria-label={`${learnerName}'s Brain Clone visualization`}>
       <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-cyan-50">
         <div className="flex items-center gap-3">
-          <span className="text-xl">🧠</span>
+          <span className="text-xl" aria-hidden="true">🧠</span>
           <div>
             <h3 className="font-heading font-bold text-slate-900 text-sm">{learnerName}&apos;s Brain Clone</h3>
-            <span className="text-[10px] text-slate-400">v{brainState.version} &middot; Updated {new Date(brainState.updatedAt).toLocaleDateString()}</span>
+            <span className="text-xs text-slate-500">v{brainState.version} &middot; Updated {new Date(brainState.updatedAt).toLocaleDateString()}</span>
           </div>
         </div>
         <div className="flex items-center gap-1 bg-white rounded-full p-0.5 border border-slate-200">
@@ -309,7 +309,7 @@ function BrainNetworkView({
 
   return (
     <div>
-      <svg viewBox="0 0 400 360" className="w-full" style={{ maxHeight: `${svgHeight}px` }}>
+      <svg viewBox="0 0 400 360" className="w-full" style={{ maxHeight: `${svgHeight}px` }} role="img" aria-label="Brain Clone neural network showing mastery levels across learning domains">
         <defs>
           <radialGradient id="brain-glow" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.08" />

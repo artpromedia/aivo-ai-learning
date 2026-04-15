@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import DashboardHeader from "@/components/DashboardHeader";
+import { SkipLink } from "@/components/a11y/SkipLink";
 
 const NAV_SECTIONS = [
   {
@@ -66,15 +67,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      <aside className={`${sidebarCollapsed ? "w-16" : "w-64"} bg-slate-900 text-white flex flex-col transition-all duration-200 flex-shrink-0`}>
+      <SkipLink />
+      <aside className={`${sidebarCollapsed ? "w-16" : "w-64"} bg-slate-900 text-white flex flex-col transition-all duration-200 flex-shrink-0`} role="navigation" aria-label="Admin sidebar">
         <div className="p-4 border-b border-slate-700 flex items-center justify-between">
           {!sidebarCollapsed && (
             <div className="flex items-center gap-2">
               <Image src="/images/aivo-logo-white.png" alt="AIVO" width={80} height={24} style={{ height: "auto" }} />
-              <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Admin</span>
+              <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Admin</span>
             </div>
           )}
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-slate-400 hover:text-white p-1">
+          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="text-slate-400 hover:text-white p-1" aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
             {sidebarCollapsed ? "→" : "←"}
           </button>
         </div>
@@ -83,19 +85,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {NAV_SECTIONS.map((section) => (
             <div key={section.label} className="mb-4">
               {!sidebarCollapsed && (
-                <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{section.label}</p>
+                <p className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{section.label}</p>
               )}
               {section.items.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-label={item.label}
+                  aria-current={isActive(item.href) ? "page" : undefined}
                   className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all ${
                     isActive(item.href)
                       ? "bg-purple-600/20 text-purple-300 border-r-2 border-purple-400 font-semibold"
                       : "text-slate-400 hover:bg-slate-800 hover:text-white"
                   }`}
                 >
-                  <span className="text-base flex-shrink-0">{item.icon}</span>
+                  <span className="text-base flex-shrink-0" aria-hidden="true">{item.icon}</span>
                   {!sidebarCollapsed && <span>{item.label}</span>}
                 </Link>
               ))}
@@ -107,16 +111,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {!sidebarCollapsed && (
             <div className="mb-3">
               <p className="text-sm font-semibold truncate">{user.name}</p>
-              <p className="text-xs text-slate-400">{user.role.replace(/_/g, " ")}</p>
+              <p className="text-xs text-slate-500">{user.role.replace(/_/g, " ")}</p>
             </div>
           )}
-          <button onClick={logout} className={`text-xs text-slate-400 hover:text-red-400 transition ${sidebarCollapsed ? "w-full text-center" : ""}`}>
+          <button onClick={logout} aria-label="Sign out" className={`text-xs text-slate-400 hover:text-red-400 transition ${sidebarCollapsed ? "w-full text-center" : ""}`}>
             {sidebarCollapsed ? "🚪" : "Sign Out"}
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto flex flex-col">
+      <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto flex flex-col">
         <DashboardHeader
           userName={user.name || "Admin"}
           userRole={user.role}

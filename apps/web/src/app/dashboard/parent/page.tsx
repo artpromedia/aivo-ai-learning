@@ -8,6 +8,7 @@ import Image from "next/image";
 import { TUTORS } from "@aivo/brand";
 import BrainVisualization from "@/components/BrainVisualization";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { SkipLink } from "@/components/a11y/SkipLink";
 
 interface Learner {
   id: string;
@@ -171,18 +172,19 @@ export default function ParentDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
-      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+      <SkipLink />
+      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between" role="navigation" aria-label="Parent dashboard navigation">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         <div className="flex items-center gap-4">
           <span className="text-sm font-semibold text-slate-600">{t("dashboard.welcome_message", { name: user.name })}</span>
           <LanguageSwitcher compact />
-          <button onClick={() => router.push("/dashboard/parent/billing")} className="text-sm text-slate-500 font-semibold hover:text-primary transition">{t("settings.billing")}</button>
-          <button onClick={() => router.push("/dashboard/parent/settings")} className="text-sm text-slate-500 font-semibold hover:text-primary transition">{t("dashboard.settings")}</button>
-          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold transition">{t("nav.logout")}</button>
+          <button onClick={() => router.push("/dashboard/parent/billing")} aria-label={t("settings.billing")} className="text-sm text-slate-500 font-semibold hover:text-primary transition">{t("settings.billing")}</button>
+          <button onClick={() => router.push("/dashboard/parent/settings")} aria-label={t("dashboard.settings")} className="text-sm text-slate-500 font-semibold hover:text-primary transition">{t("dashboard.settings")}</button>
+          <button onClick={logout} aria-label={t("nav.logout")} className="text-sm text-slate-500 hover:text-red-500 font-semibold transition">{t("nav.logout")}</button>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-8 py-8 space-y-8">
+      <main id="main-content" tabIndex={-1} className="max-w-6xl mx-auto px-8 py-8 space-y-8">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-heading font-bold text-slate-900">{t("onboarding.add_learner_title").replace("Add a New Learner", t("dashboard.learners"))}</h1>
           <button onClick={() => setShowAddForm(!showAddForm)}
@@ -197,18 +199,18 @@ export default function ParentDashboard() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.learner_name")}</label>
-                <input type="text" value={newLearner.name} onChange={(e) => setNewLearner({...newLearner, name: e.target.value})} required
+                <label htmlFor="learner-name" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.learner_name")}</label>
+                <input id="learner-name" type="text" value={newLearner.name} onChange={(e) => setNewLearner({...newLearner, name: e.target.value})} required
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.grade_level")}</label>
-                <input type="text" value={newLearner.gradeLevel} onChange={(e) => setNewLearner({...newLearner, gradeLevel: e.target.value})}
+                <label htmlFor="learner-grade" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.grade_level")}</label>
+                <input id="learner-grade" type="text" value={newLearner.gradeLevel} onChange={(e) => setNewLearner({...newLearner, gradeLevel: e.target.value})}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body" placeholder={t("onboarding.grade_level_placeholder")} />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.pin")}</label>
-                <input type="text" value={newLearner.pin} onChange={(e) => setNewLearner({...newLearner, pin: e.target.value})} maxLength={6}
+                <label htmlFor="learner-pin" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.pin")}</label>
+                <input id="learner-pin" type="text" value={newLearner.pin} onChange={(e) => setNewLearner({...newLearner, pin: e.target.value})} maxLength={6}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body" placeholder={t("onboarding.pin_placeholder")} />
               </div>
             </div>
@@ -217,8 +219,8 @@ export default function ParentDashboard() {
               <h4 className="font-heading font-bold text-lg text-slate-800 mb-4">{t("onboarding.location")}</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.country")}</label>
-                  <select value={newLearner.country} onChange={(e) => setNewLearner({...newLearner, country: e.target.value})}
+                  <label htmlFor="learner-country" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.country")}</label>
+                  <select id="learner-country" value={newLearner.country} onChange={(e) => setNewLearner({...newLearner, country: e.target.value})}
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body bg-white">
                     {COUNTRIES.map((c) => (
                       <option key={c.code} value={c.code}>{c.label}</option>
@@ -227,16 +229,16 @@ export default function ParentDashboard() {
                 </div>
                 {newLearner.country === "US" && (
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.zip_code")}</label>
-                    <input type="text" value={newLearner.zipCode} onChange={(e) => setNewLearner({...newLearner, zipCode: e.target.value})}
+                    <label htmlFor="learner-zip" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.zip_code")}</label>
+                    <input id="learner-zip" type="text" value={newLearner.zipCode} onChange={(e) => setNewLearner({...newLearner, zipCode: e.target.value})}
                       maxLength={5} placeholder={t("onboarding.zip_placeholder")}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body" />
                   </div>
                 )}
                 {newLearner.country !== "US" && (
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.region")}</label>
-                    <input type="text" value={newLearner.region} onChange={(e) => setNewLearner({...newLearner, region: e.target.value})}
+                    <label htmlFor="learner-region" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.region")}</label>
+                    <input id="learner-region" type="text" value={newLearner.region} onChange={(e) => setNewLearner({...newLearner, region: e.target.value})}
                       placeholder={t("onboarding.region_placeholder")}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none font-body" />
                   </div>
@@ -298,7 +300,7 @@ export default function ParentDashboard() {
 
         {learners.length === 0 && !showAddForm ? (
           <div className="bg-white rounded-2xl p-16 text-center border border-slate-100 shadow-sm">
-            <div className="text-5xl mb-4">🎮</div>
+            <div className="text-5xl mb-4" aria-hidden="true">🎮</div>
             <p className="text-slate-500 text-lg font-semibold">{t("dashboard.no_activity")}</p>
           </div>
         ) : (
@@ -330,32 +332,34 @@ export default function ParentDashboard() {
                   </div>
                 )}
                 {pendingReviews[l.id] ? (
-                  <div
+                  <button
                     onClick={() => router.push(`/dashboard/parent/learner/${l.id}/brain-review`)}
-                    className="mt-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4 cursor-pointer hover:shadow-md transition"
+                    className="mt-4 w-full text-left bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4 cursor-pointer hover:shadow-md transition"
+                    aria-label={`${t("brain.pending_review")} - ${l.name}`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-xl">🧠</div>
+                      <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-xl" aria-hidden="true">🧠</div>
                       <div className="flex-1">
                         <p className="text-sm font-heading font-bold text-amber-800">{t("brain.pending_review")}</p>
                         <p className="text-xs text-amber-600">{t("brain.review_title")}</p>
                       </div>
                       <div className="w-3 h-3 rounded-full bg-amber-400 animate-pulse" />
                     </div>
-                  </div>
+                  </button>
                 ) : baselineCompleted[l.id] && !hasBrain[l.id] ? (
-                  <div
+                  <button
                     onClick={() => router.push(`/dashboard/parent/learner/${l.id}`)}
-                    className="mt-4 bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-4 cursor-pointer hover:shadow-md transition"
+                    className="mt-4 w-full text-left bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-4 cursor-pointer hover:shadow-md transition"
+                    aria-label={`${t("assessment.complete")} - ${l.name}`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-xl">&#10003;</div>
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-xl" aria-hidden="true">&#10003;</div>
                       <div className="flex-1">
                         <p className="text-sm font-heading font-bold text-emerald-800">{t("assessment.complete")}</p>
                         <p className="text-xs text-emerald-600">{t("learner.my_progress")}</p>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ) : null}
                 <div className="mt-4 flex gap-2 flex-wrap">
                   <button onClick={() => router.push(`/dashboard/parent/learner/${l.id}`)}

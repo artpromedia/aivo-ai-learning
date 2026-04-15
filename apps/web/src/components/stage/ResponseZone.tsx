@@ -67,11 +67,11 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
     const isLargeTarget = functioningLevel !== "STANDARD";
 
     return (
-      <div className="w-full px-4 md:px-12">
+      <div className="w-full px-4 md:px-12" role="group" aria-label="Answer choices">
         {interaction.prompt && (
-          <p className="text-white/80 text-center text-sm font-body mb-3">{interaction.prompt}</p>
+          <p className="text-white/80 text-center text-sm font-body mb-3" id="mc-prompt">{interaction.prompt}</p>
         )}
-        <div className={`grid gap-3 ${choices.length <= 2 ? "grid-cols-2" : choices.length === 3 ? "grid-cols-3" : "grid-cols-2 md:grid-cols-4"}`}>
+        <div className={`grid gap-3 ${choices.length <= 2 ? "grid-cols-2" : choices.length === 3 ? "grid-cols-3" : "grid-cols-2 md:grid-cols-4"}`} aria-describedby={interaction.prompt ? "mc-prompt" : undefined}>
           {choices.map((choice) => {
             const isSelected = selected === choice.id;
             const showCorrect = feedback === "correct" && isSelected;
@@ -82,6 +82,7 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
                 key={choice.id}
                 onClick={() => handleChoice(choice.id, choice.isCorrect)}
                 disabled={!!selected}
+                aria-label={`${choice.label}${showCorrect ? ", correct" : showIncorrect ? ", try again" : ""}`}
                 className={`relative rounded-2xl border-3 transition-all duration-300 font-heading font-bold text-center
                   ${isLargeTarget ? "py-6 px-4 text-lg" : "py-4 px-3 text-base"}
                   ${showCorrect ? "bg-green-500/30 border-green-400 scale-105 ring-4 ring-green-400/50" :
@@ -90,18 +91,22 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
                     "bg-white/10 border-white/20 hover:bg-white/20 hover:border-white/40 hover:scale-105 active:scale-95"
                   } backdrop-blur`}
               >
-                {choice.emoji && <span className="text-3xl block mb-1">{choice.emoji}</span>}
-                {choice.image && <span className="text-4xl block mb-1">{choice.image}</span>}
+                {choice.emoji && <span className="text-3xl block mb-1" aria-hidden="true">{choice.emoji}</span>}
+                {choice.image && <span className="text-4xl block mb-1" aria-hidden="true">{choice.image}</span>}
                 <span className="text-white drop-shadow">{choice.label}</span>
                 {showCorrect && (
-                  <span className="absolute -top-2 -right-2 text-2xl animate-bounce">⭐</span>
+                  <span className="absolute -top-2 -right-2 text-2xl animate-bounce" aria-hidden="true">⭐</span>
                 )}
                 {showIncorrect && (
-                  <span className="absolute -top-2 -right-2 text-xl">💭</span>
+                  <span className="absolute -top-2 -right-2 text-xl" aria-hidden="true">💭</span>
                 )}
               </button>
             );
           })}
+        </div>
+        <div aria-live="polite" className="sr-only">
+          {feedback === "correct" && "Correct answer!"}
+          {feedback === "incorrect" && "Not quite, try again!"}
         </div>
       </div>
     );
@@ -163,10 +168,11 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
           className="w-20 h-20 rounded-full flex items-center justify-center text-3xl bg-white/20 backdrop-blur border-3 border-white/30 hover:bg-white/30 hover:scale-110 active:scale-95 transition-all"
           style={{ boxShadow: `0 0 20px ${accentColor}40` }}
           onClick={() => onAnswer(true)}
+          aria-label="Tap to speak your answer"
         >
-          🎤
+          <span aria-hidden="true">🎤</span>
         </button>
-        <p className="text-white/40 text-xs font-body">Tap to speak your answer</p>
+        <p className="text-white/40 text-xs font-body" aria-hidden="true">Tap to speak your answer</p>
       </div>
     );
   }

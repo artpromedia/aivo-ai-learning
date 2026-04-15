@@ -1,4 +1,5 @@
 "use client";
+import { Suspense } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
@@ -28,7 +29,58 @@ interface ActiveSub {
   status: string;
 }
 
-export default function TutorStorePage() {
+function StoreLoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
+      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="h-4 w-32 bg-slate-200 rounded animate-pulse" />
+          <div className="h-9 w-28 bg-slate-200 rounded animate-pulse" />
+        </div>
+        <div className="h-7 w-24 bg-slate-200 rounded-full animate-pulse" />
+      </header>
+      <main className="max-w-6xl mx-auto px-8 py-8 space-y-10">
+        <div className="text-center space-y-2">
+          <div className="h-8 w-48 bg-slate-200 rounded animate-pulse mx-auto" />
+          <div className="h-4 w-64 bg-slate-200 rounded animate-pulse mx-auto" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="p-6 rounded-2xl border-2 border-slate-100 bg-white">
+              <div className="h-5 w-32 bg-slate-200 rounded animate-pulse mb-2" />
+              <div className="h-4 w-24 bg-slate-200 rounded animate-pulse mb-3" />
+              <div className="h-8 w-20 bg-slate-200 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+            <div key={i} className="bg-white rounded-2xl p-5 border-2 border-slate-100">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-14 h-14 rounded-full bg-slate-200 animate-pulse" />
+                <div>
+                  <div className="h-4 w-20 bg-slate-200 rounded animate-pulse mb-1" />
+                  <div className="h-3 w-16 bg-slate-200 rounded animate-pulse" />
+                </div>
+              </div>
+              <div className="h-9 w-full bg-slate-200 rounded-full animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function TutorStorePageWrapper() {
+  return (
+    <Suspense fallback={<StoreLoadingSkeleton />}>
+      <TutorStoreContent />
+    </Suspense>
+  );
+}
+
+function TutorStoreContent() {
   const { user, accessToken, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
