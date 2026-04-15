@@ -1,32 +1,28 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
 
-interface RoleCount {
-  role: string;
-  count: number;
-}
-
-interface Stats {
-  totalUsers: number;
-  totalLearners: number;
-  totalTenants: number;
-  roleCounts: RoleCount[];
+interface UsageData {
+  users: { used: number; limit: number };
+  learners: { used: number; limit: number };
+  teachers: { used: number; limit: number };
+  schools: { used: number; limit: number };
+  aiCalls: { used: number; limit: number; period: string };
+  tutorSessions: { used: number; limit: number; period: string };
+  storage: { usedMb: number; limitMb: number };
+  plan: string;
 }
 
 export default function DistrictUsagePage() {
   const { accessToken } = useAuth();
-  const t = useTranslations("districtAdmin");
-  const tc = useTranslations("common");
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!accessToken) return;
-    fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
+    fetch("/api/district/usage", { headers: { Authorization: `Bearer ${accessToken}` } })
       .then((r) => r.ok ? r.json() : null)
-      .then(setStats)
+      .then(setUsage)
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [accessToken]);
@@ -42,49 +38,40 @@ export default function DistrictUsagePage() {
 
   return (
     <div className="p-8 space-y-6">
-      <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("usage")}</h1>
-        <p className="text-sm text-slate-500 mt-1">Monitor your district&apos;s platform usage against your subscription limits.</p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">Usage & Limits</h1>
+          <p className="text-sm text-slate-500 mt-1">Monitor your district&apos;s platform usage against your subscription limits.</p>
+        </div>
+        {usage && (
+          <span className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-xs font-semibold">
+            {usage.plan} Plan
+          </span>
+        )}
       </header>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <UsageCard
-          label="User Accounts"
-          used={stats?.totalUsers ?? 0}
-          limit={500}
-          icon="👥"
-        />
-        <UsageCard
-          label={t("total_learners")}
-          used={stats?.totalLearners ?? 0}
-          limit={200}
-          icon="🎓"
-        />
-        <UsageCard
-          label="Teachers"
-          used={stats?.roleCounts?.find((r) => r.role === "TEACHER")?.count ?? 0}
-          limit={50}
-          icon="👩‍🏫"
-        />
-        <UsageCard
-          label="Tenants"
-          used={stats?.totalTenants ?? 0}
-          limit={10}
-          icon="🏢"
-        />
-      </div>
+      {usage && (
+        <>
+          <div className="grid gap-4 md:grid-cols-2">
+            <UsageCard label="User Accounts" used={usage.users.used} limit={usage.users.limit} icon="👥" />
+            <UsageCard label="Learners" used={usage.learners.used} limit={usage.learners.limit} icon="🎓" />
+            <UsageCard label="Teachers" used={usage.teachers.used} limit={usage.teachers.limit} icon="👩‍🏫" />
+            <UsageCard label="Schools" used={usage.schools.used} limit={usage.schools.limit} icon="🏫" />
+          </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-heading font-semibold text-slate-900">AI Usage</h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          <AiUsageStat label="Daily LLM Calls" value={0} limit={10000} />
-          <AiUsageStat label="Daily Tutor Turns" value={0} limit={5000} />
-          <AiUsageStat label="Sessions Planned" value={0} limit={1000} />
-        </div>
-        <p className="text-xs text-slate-400">
-          AI usage tracking will populate as learners interact with tutors. Limits are based on your subscription tier.
-        </p>
-      </div>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <h2 className="text-lg font-heading font-semibold text-slate-900">AI Usage</h2>
+            <div className="grid gap-4 md:grid-cols-3">
+              <AiUsageStat label="AI Calls" value={usage.aiCalls.used} limit={usage.aiCalls.limit} period={usage.aiCalls.period} />
+              <AiUsageStat label="Tutor Sessions" value={usage.tutorSessions.used} limit={usage.tutorSessions.limit} period={usage.tutorSessions.period} />
+              <AiUsageStat label="Storage" value={usage.storage.usedMb} limit={usage.storage.limitMb} unit="MB" />
+            </div>
+            <p className="text-xs text-slate-400">
+              AI usage tracking will populate as learners interact with tutors. Limits are based on your subscription tier.
+            </p>
+          </div>
+        </>
+      )}
 
       <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl border border-violet-200 p-6">
         <div className="flex items-start gap-3">
@@ -128,13 +115,13 @@ function UsageCard({ label, used, limit, icon }: { label: string; used: number; 
   );
 }
 
-function AiUsageStat({ label, value, limit }: { label: string; value: number; limit: number }) {
+function AiUsageStat({ label, value, limit, period, unit }: { label: string; value: number; limit: number; period?: string; unit?: string }) {
   const pct = limit > 0 ? Math.round((value / limit) * 100) : 0;
   return (
     <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
       <p className="text-xs text-slate-500 font-medium">{label}</p>
-      <p className="text-xl font-bold text-slate-900 mt-1">{value.toLocaleString()}</p>
-      <p className="text-xs text-slate-400 mt-0.5">{pct}% of {limit.toLocaleString()} limit</p>
+      <p className="text-xl font-bold text-slate-900 mt-1">{value.toLocaleString()} {unit || ""}</p>
+      <p className="text-xs text-slate-400 mt-0.5">{pct}% of {limit.toLocaleString()} {unit || ""} limit{period ? ` (${period})` : ""}</p>
     </div>
   );
 }

@@ -1,38 +1,76 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useEffect, useState, useCallback } from "react";
 
-interface Tenant {
-  id: string;
-  name: string;
-  type: string;
-  slug: string;
-  createdAt: string;
+interface DistrictSettingsData {
+  notificationPrefs: Record<string, boolean>;
+  ssoConfig: Record<string, any>;
+  branding: Record<string, any>;
+  featureOverrides: Record<string, boolean>;
 }
 
 export default function DistrictSettingsPage() {
   const { accessToken, user } = useAuth();
-  const t = useTranslations("settings");
-  const tc = useTranslations("common");
-  const tda = useTranslations("districtAdmin");
-  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [tenant, setTenant] = useState<any>(null);
+  const [settings, setSettings] = useState<DistrictSettingsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
 
   useEffect(() => {
     if (!accessToken) return;
-    fetch("/api/admin/tenants", { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then((r) => r.ok ? r.json() : [])
-      .then((data) => {
-        const all = Array.isArray(data) ? data : [];
-        const myTenant = user?.tenantId
-          ? all.find((t: Tenant) => t.id === user.tenantId)
-          : all[0];
-        setTenant(myTenant || null);
+    const headers = { Authorization: `Bearer ${accessToken}` };
+    Promise.all([
+      fetch("/api/district/tenant", { headers }).then((r) => r.ok ? r.json() : null),
+      fetch("/api/district/settings", { headers }).then((r) => r.ok ? r.json() : null),
+    ])
+      .then(([t, s]) => {
+        setTenant(t);
+        setSettings(s || { notificationPrefs: {}, ssoConfig: {}, branding: {}, featureOverrides: {} });
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [accessToken, user]);
+  }, [accessToken]);
+
+  const saveSettings = useCallback(async (updated: DistrictSettingsData) => {
+    if (!accessToken) return;
+    setSaving(true);
+    setSaveMsg("");
+    try {
+      const res = await fetch("/api/district/settings", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSettings(data);
+        setSaveMsg("Settings saved");
+        setTimeout(() => setSaveMsg(""), 2000);
+      }
+    } catch { }
+    finally { setSaving(false); }
+  }, [accessToken]);
+
+  const togglePref = (key: string) => {
+    if (!settings) return;
+    const updated = {
+      ...settings,
+      notificationPrefs: { ...settings.notificationPrefs, [key]: !settings.notificationPrefs[key] },
+    };
+    setSettings(updated);
+    saveSettings(updated);
+  };
+
+  const toggleFeature = (key: string) => {
+    if (!settings) return;
+    const updated = {
+      ...settings,
+      featureOverrides: { ...settings.featureOverrides, [key]: !settings.featureOverrides[key] },
+    };
+    setSettings(updated);
+    saveSettings(updated);
+  };
 
   if (loading) {
     return (
@@ -45,9 +83,12 @@ export default function DistrictSettingsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("general")}</h1>
-        <p className="text-sm text-slate-500 mt-1">Configure your district organization and preferences.</p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">District Settings</h1>
+          <p className="text-sm text-slate-500 mt-1">Configure your district organization and preferences.</p>
+        </div>
+        {saveMsg && <span className="text-sm text-emerald-600 font-medium">{saveMsg}</span>}
       </header>
 
       {tenant && (
@@ -73,12 +114,23 @@ export default function DistrictSettingsPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-        <h2 className="text-lg font-heading font-semibold text-slate-900">Preferences</h2>
+        <h2 className="text-lg font-heading font-semibold text-slate-900">Notification Preferences</h2>
         <div className="space-y-3">
-          <ToggleSetting label="Email notifications for new enrollments" defaultOn />
-          <ToggleSetting label="Weekly performance digest email" defaultOn />
-          <ToggleSetting label="Alert when usage exceeds 80% of limits" defaultOn />
-          <ToggleSetting label="Auto-approve teacher account requests" defaultOn={false} />
+          <ToggleSetting label="Email notifications for new enrollments" checked={settings?.notificationPrefs?.newEnrollments !== false} onChange={() => togglePref("newEnrollments")} />
+          <ToggleSetting label="Weekly performance digest email" checked={settings?.notificationPrefs?.weeklyDigest !== false} onChange={() => togglePref("weeklyDigest")} />
+          <ToggleSetting label="Alert when usage exceeds 80% of limits" checked={settings?.notificationPrefs?.usageAlerts !== false} onChange={() => togglePref("usageAlerts")} />
+          <ToggleSetting label="IEP review date reminders" checked={settings?.notificationPrefs?.iepReminders !== false} onChange={() => togglePref("iepReminders")} />
+          <ToggleSetting label="Auto-approve teacher account requests" checked={settings?.notificationPrefs?.autoApproveTeachers === true} onChange={() => togglePref("autoApproveTeachers")} />
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <h2 className="text-lg font-heading font-semibold text-slate-900">Feature Overrides</h2>
+        <div className="space-y-3">
+          <ToggleSetting label="Enable AI tutor for all learners" checked={settings?.featureOverrides?.aiTutor !== false} onChange={() => toggleFeature("aiTutor")} />
+          <ToggleSetting label="Enable sensory profiles" checked={settings?.featureOverrides?.sensoryProfiles !== false} onChange={() => toggleFeature("sensoryProfiles")} />
+          <ToggleSetting label="Enable parent portal access" checked={settings?.featureOverrides?.parentPortal !== false} onChange={() => toggleFeature("parentPortal")} />
+          <ToggleSetting label="Enable offline mode for mobile" checked={settings?.featureOverrides?.offlineMode !== false} onChange={() => toggleFeature("offlineMode")} />
         </div>
       </div>
 
@@ -88,7 +140,7 @@ export default function DistrictSettingsPage() {
           <div>
             <h3 className="font-semibold text-violet-900">Advanced Settings</h3>
             <p className="text-sm text-violet-700 mt-1">
-              For subscription changes, SSO configuration, or API access, contact your platform administrator.
+              For SSO configuration, branding customization, or API access, contact your platform administrator.
             </p>
           </div>
         </div>
@@ -108,16 +160,15 @@ function SettingsField({ label, value, mono }: { label: string; value: string; m
   );
 }
 
-function ToggleSetting({ label, defaultOn }: { label: string; defaultOn?: boolean }) {
-  const [on, setOn] = useState(defaultOn ?? false);
+function ToggleSetting({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
   return (
     <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 transition">
       <span className="text-sm text-slate-700">{label}</span>
       <button
-        onClick={() => setOn(!on)}
-        className={`w-10 h-6 rounded-full transition-colors relative ${on ? "bg-violet-500" : "bg-slate-300"}`}
+        onClick={onChange}
+        className={`w-10 h-6 rounded-full transition-colors relative ${checked ? "bg-violet-500" : "bg-slate-300"}`}
       >
-        <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-all ${on ? "left-5" : "left-1"}`} />
+        <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-all ${checked ? "left-5" : "left-1"}`} />
       </button>
     </div>
   );

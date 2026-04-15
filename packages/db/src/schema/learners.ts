@@ -21,6 +21,7 @@ export const learners = pgTable("learners", {
   districtName: varchar("district_name", { length: 255 }),
   curriculumFramework: varchar("curriculum_framework", { length: 100 }),
   curriculumAlignment: jsonb("curriculum_alignment").default({}),
+  schoolId: uuid("school_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

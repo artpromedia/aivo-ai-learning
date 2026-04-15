@@ -1,96 +1,100 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
+import Pagination from "@/components/Pagination";
 
-interface User {
+interface StaffMember {
   id: string;
   name: string;
   email: string | null;
   role: string;
   createdAt: string;
+  lastLoginAt?: string;
+  schoolAssignments: { schoolId: string; schoolName: string; roleAtSchool?: string }[];
 }
-
-const STAFF_ROLES = ["TEACHER", "THERAPIST", "CAREGIVER"];
 
 const ROLE_COLORS: Record<string, string> = {
   TEACHER: "bg-green-100 text-green-700",
   THERAPIST: "bg-amber-100 text-amber-700",
   CAREGIVER: "bg-blue-100 text-blue-700",
+  DISTRICT_ADMIN: "bg-violet-100 text-violet-700",
 };
+
+const PAGE_SIZE = 20;
 
 export default function DistrictStaffPage() {
   const { accessToken } = useAuth();
-  const t = useTranslations("districtAdmin");
-  const tc = useTranslations("common");
-  const [staff, setStaff] = useState<User[]>([]);
-  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [total, setTotal] = useState(0);
+  const [roleFilter, setRoleFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [showInvite, setShowInvite] = useState(false);
+  const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
+
+  const loadStaff = useCallback(() => {
+    if (!accessToken) return;
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(currentPage), pageSize: String(PAGE_SIZE) });
+    if (search) params.set("search", search);
+    if (roleFilter) params.set("role", roleFilter);
+
+    fetch(`/api/district/staff?${params}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then((r) => r.ok ? r.json() : { staff: [], total: 0 })
+      .then((data) => { setStaff(data.staff || []); setTotal(data.total || 0); })
+      .catch(() => { setStaff([]); setTotal(0); })
+      .finally(() => setLoading(false));
+  }, [accessToken, currentPage, search, roleFilter]);
+
+  useEffect(() => { loadStaff(); }, [loadStaff]);
+  useEffect(() => { setCurrentPage(1); }, [search, roleFilter]);
 
   useEffect(() => {
     if (!accessToken) return;
-    setLoading(true);
-
-    const fetches = STAFF_ROLES.map((role) =>
-      fetch(`/api/admin/users?role=${role}&limit=100`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }).then((r) => r.ok ? r.json() : [])
-    );
-
-    Promise.all(fetches)
-      .then((results) => {
-        const all = results.flat().filter(Array.isArray(results) ? Boolean : () => true);
-        setStaff(all);
-      })
-      .catch(() => setStaff([]))
-      .finally(() => setLoading(false));
+    fetch("/api/district/schools", { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then((r) => r.ok ? r.json() : { schools: [] })
+      .then((data) => setSchools(data.schools?.map((s: any) => ({ id: s.id, name: s.name })) || []));
   }, [accessToken]);
 
-  const filtered = staff
-    .filter((u) => roleFilter === "ALL" || u.role === roleFilter)
-    .filter((u) =>
-      !search || u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase())
-    );
-
-  const roleCounts = STAFF_ROLES.reduce((acc, role) => {
-    acc[role] = staff.filter((u) => u.role === role).length;
-    return acc;
-  }, {} as Record<string, number>);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="p-8 space-y-6">
-      <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("staff")}</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage teachers, therapists, and caregivers across your district.</p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">Staff & Teachers</h1>
+          <p className="text-sm text-slate-500 mt-1">Manage teachers, therapists, and caregivers across your district.</p>
+        </div>
+        <button
+          onClick={() => setShowInvite(true)}
+          className="px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition shadow-sm"
+        >
+          + Invite Staff
+        </button>
       </header>
 
-      <div className="grid grid-cols-3 gap-3">
-        {STAFF_ROLES.map((role) => (
-          <button
-            key={role}
-            onClick={() => setRoleFilter(roleFilter === role ? "ALL" : role)}
-            className={`p-4 rounded-xl border text-center transition ${
-              roleFilter === role
-                ? "border-violet-300 bg-violet-50 shadow-sm"
-                : "border-slate-200 bg-white hover:border-slate-300"
-            }`}
-          >
-            <p className="text-2xl font-bold text-slate-900">{roleCounts[role] ?? 0}</p>
-            <p className="text-xs font-semibold text-slate-500 mt-0.5">{role === "TEACHER" ? "Teachers" : role === "THERAPIST" ? "Therapists" : "Caregivers"}</p>
-          </button>
-        ))}
-      </div>
-
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <input
           type="text"
           placeholder="Search by name or email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-xl border border-slate-200 text-sm w-80 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none"
+          className="px-4 py-2 rounded-xl border border-slate-200 text-sm w-72 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none"
         />
-        <span className="text-sm text-slate-400">{filtered.length} staff</span>
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:border-violet-400 outline-none"
+        >
+          <option value="">All Roles</option>
+          <option value="TEACHER">Teachers</option>
+          <option value="THERAPIST">Therapists</option>
+          <option value="CAREGIVER">Caregivers</option>
+          <option value="DISTRICT_ADMIN">District Admins</option>
+        </select>
+        <span className="text-sm text-slate-400">{total} staff</span>
       </div>
 
       {loading ? (
@@ -102,22 +106,23 @@ export default function DistrictStaffPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-slate-400 bg-slate-50/50 border-b border-slate-100">
-                <th className="px-5 py-3 font-semibold">{tc("name")}</th>
-                <th className="px-5 py-3 font-semibold">{tc("email")}</th>
-                <th className="px-5 py-3 font-semibold">{tc("role")}</th>
-                <th className="px-5 py-3 font-semibold">Joined</th>
+                <th className="px-5 py-3 font-semibold">Name</th>
+                <th className="px-5 py-3 font-semibold">Email</th>
+                <th className="px-5 py-3 font-semibold">Role</th>
+                <th className="px-5 py-3 font-semibold">Schools</th>
+                <th className="px-5 py-3 font-semibold">Last Login</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((u) => (
-                <tr key={u.id} className="border-b border-slate-50 hover:bg-violet-50/30 transition">
+              {staff.map((u) => (
+                <tr key={u.id} className="border-b border-slate-50 hover:bg-violet-50/30 transition cursor-pointer">
                   <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
+                    <Link href={`/dashboard/district/staff/${u.id}`} className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white text-xs font-bold">
                         {u.name?.charAt(0) || "?"}
                       </div>
-                      <span className="font-medium text-slate-900">{u.name}</span>
-                    </div>
+                      <span className="font-medium text-slate-900 hover:text-violet-600">{u.name}</span>
+                    </Link>
                   </td>
                   <td className="px-5 py-3 text-slate-500">{u.email || "—"}</td>
                   <td className="px-5 py-3">
@@ -125,18 +130,122 @@ export default function DistrictStaffPage() {
                       {u.role.replace(/_/g, " ")}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-slate-400">{new Date(u.createdAt).toLocaleDateString()}</td>
+                  <td className="px-5 py-3 text-slate-500 text-xs">
+                    {u.schoolAssignments?.length ? u.schoolAssignments.map(a => a.schoolName).join(", ") : "—"}
+                  </td>
+                  <td className="px-5 py-3 text-slate-400 text-xs">
+                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : "Never"}
+                  </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-5 py-10 text-center text-slate-400">No staff found</td>
-                </tr>
+              {staff.length === 0 && (
+                <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-400">No staff found</td></tr>
               )}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={total} pageSize={PAGE_SIZE} />
+          )}
         </div>
       )}
+
+      {showInvite && (
+        <InviteStaffModal
+          accessToken={accessToken!}
+          schools={schools}
+          onClose={() => setShowInvite(false)}
+          onCreated={() => { setShowInvite(false); loadStaff(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function InviteStaffModal({ accessToken, schools, onClose, onCreated }: {
+  accessToken: string; schools: { id: string; name: string }[]; onClose: () => void; onCreated: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("TEACHER");
+  const [schoolId, setSchoolId] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<{ temporaryPassword: string } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim()) { setError("Name and email are required"); return; }
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/district/staff", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), role, schoolId: schoolId || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to invite staff");
+      setResult(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-heading font-semibold text-slate-900">Invite Staff Member</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+        </div>
+        {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+        {result ? (
+          <div className="space-y-3">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-emerald-800">Staff member invited successfully!</p>
+              <p className="text-xs text-emerald-600 mt-1">Share this temporary password with the new staff member:</p>
+              <p className="mt-2 font-mono text-sm bg-white rounded-lg px-3 py-2 border border-emerald-200 select-all">{result.temporaryPassword}</p>
+            </div>
+            <button onClick={onCreated} className="w-full px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700">Done</button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs text-slate-500 font-medium">Full Name *</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-slate-500 font-medium">Email *</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs text-slate-500 font-medium">Role *</label>
+                <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none">
+                  <option value="TEACHER">Teacher</option>
+                  <option value="THERAPIST">Therapist</option>
+                  <option value="CAREGIVER">Caregiver</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-slate-500 font-medium">Assign to School</label>
+                <select value={schoolId} onChange={(e) => setSchoolId(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none">
+                  <option value="">No assignment</option>
+                  {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
+              <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 disabled:opacity-50">
+                {saving ? "Inviting..." : "Send Invite"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

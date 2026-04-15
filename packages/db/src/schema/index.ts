@@ -12,3 +12,4 @@ export * from "./homework";
 export * from "./collaboration";
 export * from "./integrations";
 export * from "./admin";
+export * from "./district";

@@ -1,8 +1,8 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import Pagination from "@/components/Pagination";
-import { useTranslations } from "next-intl";
 
 interface Learner {
   id: string;
@@ -11,6 +11,8 @@ interface Learner {
   gradeLevel: string;
   curriculumFramework?: string;
   createdAt: string;
+  school?: { id: string; name: string } | null;
+  parent?: { id: string; name: string; email: string } | null;
 }
 
 const FL_COLORS: Record<string, string> = {
@@ -21,50 +23,64 @@ const FL_COLORS: Record<string, string> = {
   PRE_SYMBOLIC: "bg-red-100 text-red-700",
 };
 
+const PAGE_SIZE = 15;
+
 export default function DistrictLearnersPage() {
   const { accessToken } = useAuth();
-  const t = useTranslations("districtAdmin");
-  const tc = useTranslations("common");
   const [learners, setLearners] = useState<Learner[]>([]);
+  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [flFilter, setFlFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 15;
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadLearners = useCallback(() => {
     if (!accessToken) return;
-    fetch("/api/admin/learners", { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then((r) => r.ok ? r.json() : [])
-      .then((data) => setLearners(Array.isArray(data) ? data : []))
-      .catch(() => setLearners([]))
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(currentPage), pageSize: String(PAGE_SIZE) });
+    if (search) params.set("search", search);
+    if (flFilter) params.set("fl", flFilter);
+
+    fetch(`/api/district/learners?${params}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then((r) => r.ok ? r.json() : { learners: [], total: 0 })
+      .then((data) => { setLearners(data.learners || []); setTotal(data.total || 0); })
+      .catch(() => { setLearners([]); setTotal(0); })
       .finally(() => setLoading(false));
-  }, [accessToken]);
+  }, [accessToken, currentPage, search, flFilter]);
 
-  const filtered = search
-    ? learners.filter((l) => l.name.toLowerCase().includes(search.toLowerCase()))
-    : learners;
+  useEffect(() => { loadLearners(); }, [loadLearners]);
+  useEffect(() => { setCurrentPage(1); }, [search, flFilter]);
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginatedLearners = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  useEffect(() => { setCurrentPage(1); }, [search]);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="p-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("learners")}</h1>
+        <h1 className="text-2xl font-heading font-bold text-slate-900">Learners</h1>
         <p className="text-sm text-slate-500 mt-1">Browse enrolled learners, view progress, and manage accommodations.</p>
       </header>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <input
           type="text"
-          placeholder={tc("search")}
+          placeholder="Search by name..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-xl border border-slate-200 text-sm w-80 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none"
+          className="px-4 py-2 rounded-xl border border-slate-200 text-sm w-72 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none"
         />
-        <span className="text-sm text-slate-400">{filtered.length} learners</span>
+        <select
+          value={flFilter}
+          onChange={(e) => setFlFilter(e.target.value)}
+          className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:border-violet-400 outline-none"
+        >
+          <option value="">All Levels</option>
+          <option value="STANDARD">Standard</option>
+          <option value="SUPPORTED">Supported</option>
+          <option value="LOW_VERBAL">Low Verbal</option>
+          <option value="NON_VERBAL">Non-Verbal</option>
+          <option value="PRE_SYMBOLIC">Pre-Symbolic</option>
+        </select>
+        <span className="text-sm text-slate-400">{total} learners</span>
       </div>
 
       {loading ? (
@@ -77,47 +93,43 @@ export default function DistrictLearnersPage() {
             <thead>
               <tr className="text-left text-slate-400 bg-slate-50/50 border-b border-slate-100">
                 <th className="px-5 py-3 font-semibold">Learner</th>
-                <th className="px-5 py-3 font-semibold">{tc("type")}</th>
+                <th className="px-5 py-3 font-semibold">Grade</th>
                 <th className="px-5 py-3 font-semibold">Functioning Level</th>
-                <th className="px-5 py-3 font-semibold">Curriculum</th>
+                <th className="px-5 py-3 font-semibold">School</th>
+                <th className="px-5 py-3 font-semibold">Parent</th>
                 <th className="px-5 py-3 font-semibold">Enrolled</th>
               </tr>
             </thead>
             <tbody>
-              {paginatedLearners.map((l) => (
-                <tr key={l.id} className="border-b border-slate-50 hover:bg-violet-50/30 transition">
+              {learners.map((l) => (
+                <tr key={l.id} className="border-b border-slate-50 hover:bg-violet-50/30 transition cursor-pointer">
                   <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
+                    <Link href={`/dashboard/district/learners/${l.id}`} className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
                         {l.name.charAt(0)}
                       </div>
-                      <span className="font-medium text-slate-900">{l.name}</span>
-                    </div>
+                      <span className="font-medium text-slate-900 hover:text-violet-600">{l.name}</span>
+                    </Link>
                   </td>
                   <td className="px-5 py-3 text-slate-500">{l.gradeLevel || "—"}</td>
                   <td className="px-5 py-3">
                     <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${FL_COLORS[l.functioningLevel] || "bg-slate-100 text-slate-600"}`}>
-                      {l.functioningLevel.replace(/_/g, " ")}
+                      {l.functioningLevel?.replace(/_/g, " ") || "—"}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-slate-500 text-xs">{l.curriculumFramework || "—"}</td>
+                  <td className="px-5 py-3 text-slate-500 text-xs">{l.school?.name || "—"}</td>
+                  <td className="px-5 py-3 text-slate-500 text-xs">{l.parent?.name || "—"}</td>
                   <td className="px-5 py-3 text-slate-400">{new Date(l.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))}
-              {paginatedLearners.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-5 py-10 text-center text-slate-400">No learners found</td>
-                </tr>
+              {learners.length === 0 && (
+                <tr><td colSpan={6} className="px-5 py-10 text-center text-slate-400">No learners found</td></tr>
               )}
             </tbody>
           </table>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            totalItems={filtered.length}
-            pageSize={PAGE_SIZE}
-          />
+          {totalPages > 1 && (
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={total} pageSize={PAGE_SIZE} />
+          )}
         </div>
       )}
     </div>

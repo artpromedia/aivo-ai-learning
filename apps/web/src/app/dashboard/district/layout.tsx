@@ -13,6 +13,7 @@ const NAV_SECTIONS = [
     items: [
       { href: "/dashboard/district", label: "Dashboard", icon: "📊" },
       { href: "/dashboard/district/schools", label: "Schools", icon: "🏫" },
+      { href: "/dashboard/district/classrooms", label: "Classrooms", icon: "🏠" },
     ],
   },
   {
@@ -20,6 +21,14 @@ const NAV_SECTIONS = [
     items: [
       { href: "/dashboard/district/learners", label: "Learners", icon: "🎓" },
       { href: "/dashboard/district/staff", label: "Staff & Teachers", icon: "👩‍🏫" },
+      { href: "/dashboard/district/families", label: "Parents & Families", icon: "👨‍👩‍👧" },
+    ],
+  },
+  {
+    label: "Teaching & Learning",
+    items: [
+      { href: "/dashboard/district/iep", label: "IEP Management", icon: "📋" },
+      { href: "/dashboard/district/interventions", label: "Interventions", icon: "🎯" },
     ],
   },
   {
@@ -39,6 +48,7 @@ const NAV_SECTIONS = [
     label: "Admin",
     items: [
       { href: "/dashboard/district/settings", label: "District Settings", icon: "⚙️" },
+      { href: "/dashboard/district/activity", label: "Activity Log", icon: "📜" },
     ],
   },
 ];

@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, boolean, text, inet } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, boolean, text } from "drizzle-orm/pg-core";
 import { userRoleEnum } from "./enums";
 import { tenants } from "./tenants";
 
@@ -17,6 +17,7 @@ export const users = pgTable("users", {
   deactivatedAt: timestamp("deactivated_at"),
   lastLoginAt: timestamp("last_login_at"),
   lastLoginIp: varchar("last_login_ip", { length: 45 }),
+  schoolId: uuid("school_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
