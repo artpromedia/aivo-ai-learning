@@ -227,7 +227,7 @@ export function useAuthState(): AuthContextValue {
 
   const resendMfa = useCallback(async (mfaToken: string) => {
     try {
-      const response = await apiFetch(API.IDENTITY, '/api/auth/resend-mfa', {
+      const response = await apiFetch(API.IDENTITY, '/api/auth/mfa/resend', {
         method: 'POST',
         body: JSON.stringify({ mfaToken }),
         skipAuth: true,

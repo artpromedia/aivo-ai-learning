@@ -158,7 +158,7 @@ export default function AdminCompliancePage() {
           <div className="space-y-2">
             {securityControls.map((ctrl) => (
               <div key={ctrl.label} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-slate-50 transition">
-                <span className="text-green-500 font-bold flex-shrink-0">✓</span>
+                <span className={`font-bold flex-shrink-0 ${ctrl.status ? "text-green-500" : "text-red-400"}`}>{ctrl.status ? "✓" : "✗"}</span>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-slate-700">{ctrl.label}</p>
                 </div>

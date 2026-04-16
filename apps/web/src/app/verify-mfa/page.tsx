@@ -98,7 +98,7 @@ export default function VerifyMfaPage() {
     setResendMsg("");
     setError("");
     try {
-      const res = await fetch("/api/auth/resend-mfa", {
+      const res = await fetch("/api/auth/mfa/resend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mfaToken }),

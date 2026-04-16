@@ -124,13 +124,15 @@ async function createAndSendMfaCode(db: any, userId: string, email: string, name
     expiresAt: new Date(Date.now() + 10 * 60 * 1000),
   }).returning();
 
-  try {
-    await fetch(`${COMMS_URL}/api/comms/internal/mfa-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
-      body: JSON.stringify({ to: email, code, name }),
-    });
-  } catch {}
+  const commsRes = await fetch(`${COMMS_URL}/api/comms/internal/mfa-code`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
+    body: JSON.stringify({ to: email, code, name }),
+  }).catch(() => null);
+
+  if (!commsRes || !commsRes.ok) {
+    throw new Error("Failed to send MFA code email");
+  }
 
   return mfaRecord.id;
 }
@@ -251,7 +253,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       if (!user.mfaEnabled && MFA_FORCED_ROLES.includes(user.role)) {
         await db.update(users).set({ mfaEnabled: true }).where(eq(users.id, user.id));
       }
-      await createAndSendMfaCode(db, user.id, user.email!, user.name);
+      try {
+        await createAndSendMfaCode(db, user.id, user.email!, user.name);
+      } catch {
+        return reply.status(502).send({ error: "Failed to send verification code. Please try again." });
+      }
       const mfaToken = await signMfaToken(user.id, user.email!);
       return { mfaPending: true, mfaToken, mfaMethod: "email" };
     }
@@ -333,7 +339,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       if (!user.mfaEnabled) {
         await db.update(users).set({ mfaEnabled: true, mfaMethod: "email" }).where(eq(users.id, user.id));
       }
-      await createAndSendMfaCode(db, user.id, user.email!, user.name);
+      try {
+        await createAndSendMfaCode(db, user.id, user.email!, user.name);
+      } catch {
+        return reply.status(502).send({ error: "Failed to send verification code. Please try again." });
+      }
       const mfaToken = await signMfaToken(user.id, user.email!);
       return { mfaPending: true, mfaToken, mfaMethod: "email" };
     }
@@ -441,7 +451,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       if (!user.mfaEnabled && MFA_FORCED_ROLES.includes(user.role)) {
         await db.update(users).set({ mfaEnabled: true }).where(eq(users.id, user.id));
       }
-      await createAndSendMfaCode(db, user.id, user.email, user.name);
+      try {
+        await createAndSendMfaCode(db, user.id, user.email, user.name);
+      } catch {
+        return reply.status(502).send({ error: "Failed to send verification code. Please try again." });
+      }
       const mfaToken = await signMfaToken(user.id, user.email);
       return { mfaPending: true, mfaToken, mfaMethod: "email" };
     }
@@ -812,7 +826,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     };
   });
 
-  app.post("/api/auth/resend-mfa", {
+  app.post("/api/auth/mfa/resend", {
     schema: {
       tags: ["Auth"],
       body: {
@@ -862,42 +876,16 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       resends: (existing?.resends ?? 0) + 1,
     });
 
-    try {
-      await fetch(`${COMMS_URL}/api/comms/internal/mfa-code`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
-        body: JSON.stringify({ to: user.email, code, name: user.name }),
-      });
-    } catch {}
+    const commsRes = await fetch(`${COMMS_URL}/api/comms/internal/mfa-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
+      body: JSON.stringify({ to: user.email, code, name: user.name }),
+    }).catch(() => null);
 
-    return { success: true, resendsRemaining: 2 - (existing?.resends ?? 0) };
-  });
+    if (!commsRes || !commsRes.ok) {
+      return reply.status(502).send({ error: "Failed to send verification code. Please try again." });
+    }
 
-  app.post("/api/auth/mfa/resend", {
-    schema: {
-      tags: ["Auth"],
-      body: {
-        type: "object",
-        required: ["mfaToken"],
-        properties: { mfaToken: { type: "string" } },
-      },
-    },
-  }, async (req, reply) => {
-    const { mfaToken } = req.body as any;
-    const db = (app as any).db;
-    let payload: any;
-    try { payload = await verifyJWT(mfaToken); } catch { return reply.status(401).send({ error: "MFA session expired. Please login again." }); }
-    if (payload.purpose !== "mfa") return reply.status(401).send({ error: "Invalid MFA token" });
-    const [existing] = await db.select().from(mfaCodes)
-      .where(and(eq(mfaCodes.userId, payload.sub), eq(mfaCodes.used, false)))
-      .orderBy(sql`created_at DESC`).limit(1);
-    if (existing && existing.resends >= 3) return reply.status(429).send({ error: "Maximum resends reached. Please login again." });
-    if (existing) await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(eq(mfaCodes.id, existing.id));
-    const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
-    if (!user) return reply.status(404).send({ error: "User not found" });
-    const code = generateMfaCode();
-    await db.insert(mfaCodes).values({ userId: user.id, code, purpose: existing?.purpose || "login", expiresAt: new Date(Date.now() + 10 * 60 * 1000), resends: (existing?.resends ?? 0) + 1 });
-    try { await fetch(`${COMMS_URL}/api/comms/internal/mfa-code`, { method: "POST", headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY }, body: JSON.stringify({ to: user.email, code, name: user.name }) }); } catch {}
     return { success: true, resendsRemaining: 2 - (existing?.resends ?? 0) };
   });
 
@@ -928,7 +916,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const valid = await verifyPassword(user.passwordHash, password);
     if (!valid) return reply.status(400).send({ error: "Incorrect password" });
 
-    await createAndSendMfaCode(db, user.id, user.email!, user.name, "enable");
+    try {
+      await createAndSendMfaCode(db, user.id, user.email!, user.name, "enable");
+    } catch {
+      return reply.status(502).send({ error: "Failed to send verification code. Please try again." });
+    }
     const mfaToken = await signMfaToken(user.id, user.email!);
     return { success: true, mfaPending: true, mfaToken };
   });

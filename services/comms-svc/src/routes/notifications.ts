@@ -180,7 +180,8 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
 
   app.post("/api/comms/internal/mfa-code", async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
-    if (!internalKey || internalKey !== (process.env.INTERNAL_SERVICE_KEY || "aivo-internal-dev-key")) {
+    const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+    if (!internalKey || !expectedKey || internalKey !== expectedKey) {
       return reply.status(401).send({ error: "Unauthorized" });
     }
     const { to, code, name } = request.body as any;
