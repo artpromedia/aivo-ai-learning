@@ -1088,7 +1088,16 @@
     "homework_pending": "Pending",
     "homework_completed": "Completed",
     "homework_overdue": "Overdue",
-    "homework_view": "View Homework"
+    "homework_view": "View Homework",
+    "nav_home": "Home",
+    "nav_inbox": "Inbox",
+    "nav_settings": "Settings",
+    "nav_billing": "Billing",
+    "nav_store": "Store",
+    "nav_help": "Help",
+    "nav_child": "Child",
+    "nav_progress": "Progress",
+    "nav_more": "More"
   },
   "language": {
     "en": "English",

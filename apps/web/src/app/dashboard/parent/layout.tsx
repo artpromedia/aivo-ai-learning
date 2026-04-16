@@ -42,11 +42,11 @@ const NAV_ITEMS = [
 ];
 
 const BOTTOM_TABS = [
-  { key: "home", icon: "🏠", label: "Home", href: "/dashboard/parent", matchExact: true },
-  { key: "child", icon: "🧒", label: "Child", href: null },
-  { key: "progress", icon: "📊", label: "Progress", href: null },
-  { key: "inbox", icon: "💬", label: "Inbox", href: "/dashboard/parent/inbox" },
-  { key: "more", icon: "☰", label: "More", href: null },
+  { key: "home", icon: "🏠", href: "/dashboard/parent", matchExact: true },
+  { key: "child", icon: "🧒", href: null },
+  { key: "progress", icon: "📊", href: null },
+  { key: "inbox", icon: "💬", href: "/dashboard/parent/inbox" },
+  { key: "more", icon: "☰", href: null },
 ];
 
 export default function ParentDashboardLayout({ children }: { children: React.ReactNode }) {
@@ -180,7 +180,7 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
               <button onClick={logout}
                 className="flex items-center gap-3 px-2 py-2.5 rounded-lg text-sm text-slate-500 hover:bg-red-50 hover:text-red-600 transition w-full">
                 <span className="text-lg flex-shrink-0 w-6 text-center">🚪</span>
-                {sidebarExpanded && <span>Logout</span>}
+                {sidebarExpanded && <span>{t("logout")}</span>}
               </button>
             </div>
           </div>
@@ -255,7 +255,7 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
                   className={`flex flex-col items-center justify-center w-full h-full relative ${active ? "text-purple-600" : "text-slate-400"}`}
                   style={{ minHeight: 44, minWidth: 44 }}>
                   <span className="text-lg">{tab.icon}</span>
-                  <span className={`text-[10px] mt-0.5 ${active ? "font-bold" : ""}`}>{tab.label}</span>
+                  <span className={`text-[10px] mt-0.5 ${active ? "font-bold" : ""}`}>{t(`nav_${tab.key}`, { defaultValue: tab.key.charAt(0).toUpperCase() + tab.key.slice(1) })}</span>
                   {tab.key === "inbox" && unreadCount > 0 && (
                     <span className="absolute top-1 right-1/4 bg-red-500 text-white text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
                   )}
@@ -267,21 +267,21 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
           {showMoreMenu && (
             <div className="absolute bottom-full left-0 right-0 bg-white border-t border-slate-200 shadow-lg rounded-t-2xl p-4 space-y-2">
               {[
-                { label: "Settings", href: "/dashboard/parent/settings", icon: "⚙️" },
-                { label: "Billing", href: "/dashboard/parent/billing", icon: "💳" },
-                { label: "Store", href: "/dashboard/parent/store", icon: "🛍️" },
-                { label: "Help", href: "/dashboard/parent/help", icon: "❓" },
+                { key: "settings", href: "/dashboard/parent/settings", icon: "⚙️" },
+                { key: "billing", href: "/dashboard/parent/billing", icon: "💳" },
+                { key: "store", href: "/dashboard/parent/store", icon: "🛍️" },
+                { key: "help", href: "/dashboard/parent/help", icon: "❓" },
               ].map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setShowMoreMenu(false)}
                   className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 text-sm font-semibold text-slate-700">
                   <span className="text-lg">{item.icon}</span>
-                  <span>{item.label}</span>
+                  <span>{t(`nav_${item.key}`, { defaultValue: item.key.charAt(0).toUpperCase() + item.key.slice(1) })}</span>
                 </Link>
               ))}
               <button onClick={() => { setShowMoreMenu(false); logout(); }}
                 className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-red-50 text-sm font-semibold text-red-500 w-full">
                 <span className="text-lg">🚪</span>
-                <span>Logout</span>
+                <span>{t("logout")}</span>
               </button>
             </div>
           )}

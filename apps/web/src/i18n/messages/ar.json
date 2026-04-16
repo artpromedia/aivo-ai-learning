@@ -1105,7 +1105,16 @@
     "processing": "Processing...",
     "raw_score": "Raw: {score} on {difficulty} difficulty",
     "current_label": "Current",
-    "seats_full": "جميع المقاعد ممتلئة"
+    "seats_full": "جميع المقاعد ممتلئة",
+    "nav_home": "الرئيسية",
+    "nav_inbox": "البريد",
+    "nav_settings": "الإعدادات",
+    "nav_billing": "الفواتير",
+    "nav_store": "المتجر",
+    "nav_help": "المساعدة",
+    "nav_child": "الطفل",
+    "nav_progress": "التقدم",
+    "nav_more": "المزيد"
   },
   "marketing": {
     "header": {

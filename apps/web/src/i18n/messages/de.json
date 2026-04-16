@@ -1105,7 +1105,16 @@
     "homework_pending": "Ausstehend",
     "homework_completed": "Abgeschlossen",
     "homework_overdue": "Überfällig",
-    "homework_view": "Hausaufgabe Anzeigen"
+    "homework_view": "Hausaufgabe Anzeigen",
+    "nav_home": "Start",
+    "nav_inbox": "Posteingang",
+    "nav_settings": "Einstellungen",
+    "nav_billing": "Abrechnung",
+    "nav_store": "Shop",
+    "nav_help": "Hilfe",
+    "nav_child": "Kind",
+    "nav_progress": "Fortschritt",
+    "nav_more": "Mehr"
   },
   "marketing": {
     "header": {

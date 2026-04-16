@@ -1105,7 +1105,16 @@
     "homework_pending": "待完成",
     "homework_completed": "已完成",
     "homework_overdue": "逾期",
-    "homework_view": "查看作业"
+    "homework_view": "查看作业",
+    "nav_home": "首页",
+    "nav_inbox": "收件箱",
+    "nav_settings": "设置",
+    "nav_billing": "账单",
+    "nav_store": "商店",
+    "nav_help": "帮助",
+    "nav_child": "孩子",
+    "nav_progress": "进度",
+    "nav_more": "更多"
   },
   "marketing": {
     "header": {

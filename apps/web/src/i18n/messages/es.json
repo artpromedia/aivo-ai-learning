@@ -1088,7 +1088,16 @@
     "homework_pending": "Pendiente",
     "homework_completed": "Completada",
     "homework_overdue": "Atrasada",
-    "homework_view": "Ver Tarea"
+    "homework_view": "Ver Tarea",
+    "nav_home": "Inicio",
+    "nav_inbox": "Bandeja",
+    "nav_settings": "Ajustes",
+    "nav_billing": "Facturación",
+    "nav_store": "Tienda",
+    "nav_help": "Ayuda",
+    "nav_child": "Hijo",
+    "nav_progress": "Progreso",
+    "nav_more": "Más"
   },
   "language": {
     "en": "English",

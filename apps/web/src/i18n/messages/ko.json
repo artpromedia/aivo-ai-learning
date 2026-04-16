@@ -1088,7 +1088,16 @@
     "homework_pending": "대기 중",
     "homework_completed": "완료됨",
     "homework_overdue": "기한 초과",
-    "homework_view": "숙제 보기"
+    "homework_view": "숙제 보기",
+    "nav_home": "홈",
+    "nav_inbox": "받은편지함",
+    "nav_settings": "설정",
+    "nav_billing": "결제",
+    "nav_store": "스토어",
+    "nav_help": "도움말",
+    "nav_child": "아이",
+    "nav_progress": "진행",
+    "nav_more": "더보기"
   },
   "language": {
     "en": "English",

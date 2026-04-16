@@ -1105,7 +1105,16 @@
     "processing": "Processing...",
     "raw_score": "Raw: {score} on {difficulty} difficulty",
     "current_label": "Current",
-    "seats_full": "सभी सीटें भरी हुई हैं"
+    "seats_full": "सभी सीटें भरी हुई हैं",
+    "nav_home": "होम",
+    "nav_inbox": "इनबॉक्स",
+    "nav_settings": "सेटिंग्स",
+    "nav_billing": "बिलिंग",
+    "nav_store": "स्टोर",
+    "nav_help": "सहायता",
+    "nav_child": "बच्चा",
+    "nav_progress": "प्रगति",
+    "nav_more": "अधिक"
   },
   "marketing": {
     "header": {

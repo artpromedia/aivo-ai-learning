@@ -81,6 +81,7 @@ export default function ParentDashboard() {
   const [familySummary, setFamilySummary] = useState<any>(null);
   const [activities, setActivities] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     setNewLearner((prev) => ({ ...prev, preferredLanguage: currentLocale }));
@@ -156,17 +157,22 @@ export default function ParentDashboard() {
 
   const addLearner = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/users/learners", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-      body: JSON.stringify(newLearner),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setLearners([...learners, data.learner]);
-      setShowAddForm(false);
-      setNewLearner({ name: "", gradeLevel: "", pin: "", zipCode: "", country: "US", region: "", preferredLanguage: currentLocale });
-      setCurriculumInfo(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/users/learners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify(newLearner),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLearners([...learners, data.learner]);
+        setShowAddForm(false);
+        setNewLearner({ name: "", gradeLevel: "", pin: "", zipCode: "", country: "US", region: "", preferredLanguage: currentLocale });
+        setCurriculumInfo(null);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -288,8 +294,10 @@ export default function ParentDashboard() {
             </div>
           </div>
 
-          <button type="submit" className="px-8 py-3 rounded-full bg-purple-600 text-white font-bold hover:bg-purple-700 transition shadow-lg shadow-purple-200" style={{ minHeight: 48 }}>
-            {t("common.submit")}
+          <button type="submit" disabled={submitting}
+            className={`px-8 py-3 rounded-full font-bold transition shadow-lg shadow-purple-200 ${submitting ? "bg-purple-400 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700 active:scale-[0.97]"} text-white`}
+            style={{ minHeight: 48 }}>
+            {submitting ? t("common.saving") : t("common.submit")}
           </button>
         </form>
       )}

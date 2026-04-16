@@ -1105,7 +1105,16 @@
     "homework_pending": "En attente",
     "homework_completed": "Terminé",
     "homework_overdue": "En retard",
-    "homework_view": "Voir le Devoir"
+    "homework_view": "Voir le Devoir",
+    "nav_home": "Accueil",
+    "nav_inbox": "Messages",
+    "nav_settings": "Paramètres",
+    "nav_billing": "Facturation",
+    "nav_store": "Boutique",
+    "nav_help": "Aide",
+    "nav_child": "Enfant",
+    "nav_progress": "Progrès",
+    "nav_more": "Plus"
   },
   "marketing": {
     "header": {

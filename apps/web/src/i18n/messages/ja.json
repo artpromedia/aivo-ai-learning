@@ -1088,7 +1088,16 @@
     "homework_pending": "未完了",
     "homework_completed": "完了",
     "homework_overdue": "期限超過",
-    "homework_view": "宿題を表示"
+    "homework_view": "宿題を表示",
+    "nav_home": "ホーム",
+    "nav_inbox": "受信箱",
+    "nav_settings": "設定",
+    "nav_billing": "請求",
+    "nav_store": "ストア",
+    "nav_help": "ヘルプ",
+    "nav_child": "子ども",
+    "nav_progress": "進捗",
+    "nav_more": "その他"
   },
   "language": {
     "en": "English",
