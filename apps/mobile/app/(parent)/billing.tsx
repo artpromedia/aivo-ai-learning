@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,7 +52,8 @@ export default function BillingScreen() {
           {!plan.current && (
             <AivoButton
               title={plan.name === 'District' ? t('parentBilling.contactSales') : t('parentBilling.switchPlan')}
-              onPress={() => Alert.alert(plan.name === 'District' ? t('parentBilling.contactSales') : t('parentBilling.switchPlan'), t('common.comingSoon'))}
+              onPress={() => {}}
+              disabled
               variant="outline"
               size="sm"
               style={{ marginTop: spacing.md }}
@@ -71,7 +72,7 @@ export default function BillingScreen() {
             <Text style={styles.cardNumber}>**** **** **** 4242</Text>
             <Text style={styles.cardExpiry}>Expires 12/2027</Text>
           </View>
-          <Pressable onPress={() => Alert.alert(t('parentBilling.paymentMethod'), t('common.comingSoon'))}>
+          <Pressable disabled style={{ opacity: 0.5 }}>
             <Text style={styles.editLink}>{t('common.edit')}</Text>
           </Pressable>
         </View>
@@ -101,4 +102,6 @@ const styles = StyleSheet.create({
   cardNumber: { fontSize: 15, fontFamily: 'Nunito-Bold', color: colors.text },
   cardExpiry: { fontSize: 12, fontFamily: 'Nunito-Regular', color: colors.textSecondary },
   editLink: { fontSize: 14, fontFamily: 'Nunito-SemiBold', color: colors.primary },
+  comingSoonBadge: { backgroundColor: colors.accent + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, alignSelf: 'flex-start', marginTop: 8 },
+  comingSoonText: { fontSize: 10, fontFamily: 'Nunito-Bold', color: colors.accent },
 });

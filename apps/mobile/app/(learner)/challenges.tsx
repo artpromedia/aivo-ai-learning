@@ -1,11 +1,24 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Alert, Share } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Share } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
 import { AivoCard, AivoButton, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
+
+function ComingSoonBadge({ t }: { t: (k: string) => string }) {
+  return (
+    <View style={badgeStyles.badge}>
+      <Text style={badgeStyles.text}>{t('common.comingSoon')}</Text>
+    </View>
+  );
+}
+
+const badgeStyles = StyleSheet.create({
+  badge: { backgroundColor: colors.accent + '20', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12, alignSelf: 'center', marginTop: 6 },
+  text: { fontSize: 11, fontFamily: 'Nunito-Bold', color: colors.accent },
+});
 
 export default function ChallengesScreen() {
   const insets = useSafeAreaInsets();
@@ -27,21 +40,24 @@ export default function ChallengesScreen() {
         <Ionicons name="flash" size={32} color={colors.accent} />
         <Text style={styles.battleTitle}>{t('learnerChallenges.quickBattle')}</Text>
         <Text style={styles.battleDesc}>{t('learnerChallenges.quickBattleDesc')}</Text>
-        <AivoButton title={t('learnerChallenges.findMatch')} onPress={() => Alert.alert(t('learnerChallenges.quickBattle'), t('common.comingSoon'))} size="sm" style={{ marginTop: spacing.md }} />
+        <AivoButton title={t('learnerChallenges.findMatch')} onPress={() => {}} disabled size="sm" style={{ marginTop: spacing.md }} />
+        <ComingSoonBadge t={t} />
       </AivoCard>
 
       <AivoCard style={styles.battleCard}>
         <Ionicons name="people" size={32} color={colors.secondary} />
         <Text style={styles.battleTitle}>{t('learnerChallenges.teamChallenge')}</Text>
         <Text style={styles.battleDesc}>{t('learnerChallenges.teamChallengeDesc')}</Text>
-        <AivoButton title={t('learnerChallenges.joinTeam')} onPress={() => Alert.alert(t('learnerChallenges.teamChallenge'), t('common.comingSoon'))} variant="secondary" size="sm" style={{ marginTop: spacing.md }} />
+        <AivoButton title={t('learnerChallenges.joinTeam')} onPress={() => {}} disabled variant="secondary" size="sm" style={{ marginTop: spacing.md }} />
+        <ComingSoonBadge t={t} />
       </AivoCard>
 
       <AivoCard style={styles.battleCard}>
         <Ionicons name="trophy" size={32} color={colors.primary} />
         <Text style={styles.battleTitle}>{t('learnerChallenges.weeklyTournament')}</Text>
         <Text style={styles.battleDesc}>{t('learnerChallenges.weeklyTournamentDesc')}</Text>
-        <AivoButton title={t('learnerChallenges.enterTournament')} onPress={() => Alert.alert(t('learnerChallenges.weeklyTournament'), t('common.comingSoon'))} variant="outline" size="sm" style={{ marginTop: spacing.md }} />
+        <AivoButton title={t('learnerChallenges.enterTournament')} onPress={() => {}} disabled variant="outline" size="sm" style={{ marginTop: spacing.md }} />
+        <ComingSoonBadge t={t} />
       </AivoCard>
 
       <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>{t('learnerChallenges.inviteFriend')}</Text>

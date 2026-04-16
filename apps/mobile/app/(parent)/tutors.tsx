@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -42,13 +42,15 @@ export default function TutorStoreScreen() {
       </View>
 
       <View style={styles.bundles}>
-        <Pressable style={[styles.bundleCard, { borderColor: colors.primary }]} onPress={() => Alert.alert(t('parentTutors.core7Bundle'), t('common.comingSoon'))}>
+        <Pressable style={[styles.bundleCard, { borderColor: colors.primary }]} disabled>
           <Text style={styles.bundleName}>{t('parentTutors.core7Bundle')}</Text>
           <Text style={styles.bundlePrice}>{t('parentTutors.includedWithSub')}</Text>
+          <Text style={styles.comingSoonTag}>{t('common.comingSoon')}</Text>
         </Pressable>
-        <Pressable style={[styles.bundleCard, { borderColor: colors.secondary }]} onPress={() => Alert.alert(t('parentTutors.full14Bundle'), t('common.comingSoon'))}>
+        <Pressable style={[styles.bundleCard, { borderColor: colors.secondary }]} disabled>
           <Text style={styles.bundleName}>{t('parentTutors.full14Bundle')}</Text>
           <Text style={styles.bundlePrice}>{t('parentTutors.full14Price')}</Text>
+          <Text style={styles.comingSoonTag}>{t('common.comingSoon')}</Text>
         </Pressable>
       </View>
 
@@ -60,7 +62,7 @@ export default function TutorStoreScreen() {
           icon={tutor.icon}
           color={tutor.color}
           subscribed={tutor.tier === 'core'}
-          onPress={() => Alert.alert(tutor.name, tutor.domain)}
+          onPress={() => {}}
         />
       ))}
     </ScrollView>
@@ -91,4 +93,5 @@ const styles = StyleSheet.create({
   },
   bundleName: { fontSize: 14, fontFamily: 'Nunito-Bold', color: colors.text },
   bundlePrice: { fontSize: 12, fontFamily: 'Nunito-Regular', color: colors.textSecondary, marginTop: 4 },
+  comingSoonTag: { fontSize: 10, fontFamily: 'Nunito-Bold', color: colors.accent, marginTop: 6 },
 });
