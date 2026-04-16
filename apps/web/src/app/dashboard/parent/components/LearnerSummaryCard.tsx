@@ -108,7 +108,8 @@ export function LearnerSummaryCard({
           <span className="font-semibold">{statusLabel}</span>
         </div>
 
-        <div role="group" className="flex gap-2 mt-4 flex-wrap" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
+        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+        <fieldset className="flex gap-2 mt-4 flex-wrap border-0 p-0 m-0" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
           <button onClick={() => router.push(`/dashboard/parent/learner/${learner.id}/progress`)}
             className="px-4 py-2 text-sm rounded-full bg-purple-50 text-purple-700 font-semibold hover:bg-purple-100 transition" style={{ minHeight: 44 }}>
             View Progress
@@ -131,7 +132,7 @@ export function LearnerSummaryCard({
               Start Assessment
             </button>
           )}
-        </div>
+        </fieldset>
       </div>
     </div>
   );

@@ -18,7 +18,7 @@ export default function CommandPalette() {
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDialogElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -84,14 +84,13 @@ export default function CommandPalette() {
   if (!open) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Command palette"
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    <dialog
+      open
       ref={overlayRef}
       onClick={handleOverlayClick}
       onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
-      className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center pt-[20vh]"
+      className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center pt-[20vh] w-full h-full max-w-none max-h-none m-0 p-0 border-0"
     >
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
@@ -199,6 +198,6 @@ export default function CommandPalette() {
           )}
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }
