@@ -145,6 +145,9 @@ export async function registerUserRoutes(app: FastifyInstance) {
 
     const [learner] = await db.select().from(learners).where(eq(learners.id, learnerId));
     if (!learner) return reply.status(404).send({ error: "Learner not found" });
+    if (user.role === "PARENT" && learner.parentId !== user.sub) {
+      return reply.status(403).send({ error: "Not authorized" });
+    }
     if (learner.tenantId !== user.tenantId && user.role !== "PLATFORM_ADMIN") {
       return reply.status(403).send({ error: "Not authorized" });
     }

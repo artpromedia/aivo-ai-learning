@@ -175,7 +175,7 @@ export default function SettingsScreen() {
             body: JSON.stringify({ pin: newPin }),
           });
           if (updateRes.ok) {
-            Alert.alert('✅', `PIN updated for ${learnersList[0].firstName}!`);
+            Alert.alert('✅', `PIN updated for ${learnersList[0].name}!`);
             setPinModalVisible(false);
             setNewPin('');
           } else {
