@@ -181,9 +181,9 @@ export default function Finale({ learnerName, chapterResults, totalCorrect, tota
 
         {onExitHome && stage !== "saving" && (
           <button
-            onClick={() => {
+            onClick={async () => {
               if (stage === "celebration") {
-                saveResults();
+                await saveResults();
               }
               onExitHome();
             }}
