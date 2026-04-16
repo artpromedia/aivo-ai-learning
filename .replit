@@ -1,4 +1,4 @@
-modules = ["python-3.12", "bash", "nodejs-22", "postgresql-16", "javascript"]
+modules = ["python-3.12", "bash", "nodejs-22", "javascript", "postgresql-16"]
 [agent]
 expertMode = true
 
