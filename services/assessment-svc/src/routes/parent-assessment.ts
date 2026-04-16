@@ -18,9 +18,18 @@ export async function registerParentAssessmentRoutes(app: FastifyInstance) {
       params: { type: "object", properties: { learnerId: { type: "string" } }, required: ["learnerId"] },
     },
     preHandler: authenticate,
-  }, async (req) => {
+  }, async (req, reply) => {
     const db = (app as any).db;
     const { learnerId } = req.params as { learnerId: string };
+    const userId = (req as any).user?.userId || (req as any).user?.id;
+
+    const [learner] = await db.select({ id: learners.id, parentId: learners.parentId })
+      .from(learners)
+      .where(eq(learners.id, learnerId))
+      .limit(1);
+
+    if (!learner) return reply.status(404).send({ error: "Learner not found" });
+    if (learner.parentId !== userId) return reply.status(403).send({ error: "Forbidden" });
 
     const [row] = await db.select({
       id: parentAssessments.id,

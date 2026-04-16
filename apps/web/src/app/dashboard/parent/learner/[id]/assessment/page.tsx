@@ -185,7 +185,9 @@ export default function ParentAssessmentPage() {
           </p>
           <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
             <p className="text-sm font-bold text-purple-700">{t("functioning_level_label")}</p>
-            <p className="text-xl font-heading font-bold text-primary mt-1">{learnerFunctioningLevel.replace(/_/g, " ")}</p>
+            <p className="text-xl font-heading font-bold text-primary mt-1">
+              {learnerFunctioningLevel.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
+            </p>
           </div>
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
             <div className="text-2xl mb-2">🧭</div>
@@ -225,8 +227,16 @@ export default function ParentAssessmentPage() {
           {result.functioningLevel && (
             <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
               <p className="text-sm font-bold text-purple-700">{t("recommended_level")}</p>
-              <p className="text-xl font-heading font-bold text-primary mt-1">{result.functioningLevel.level}</p>
-              <p className="text-xs text-purple-500 mt-1">{t("confidence")}: {Math.round((result.functioningLevel.confidence || 0) * 100)}%</p>
+              <p className="text-xl font-heading font-bold text-primary mt-1">
+                {(result.functioningLevel.level || "").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
+              </p>
+              <p className="text-xs text-purple-500 mt-1">
+                {t("confidence")}: {(() => {
+                  const c = Number(result.functioningLevel.confidence) || 0;
+                  const pct = c <= 1 ? c * 100 : c;
+                  return `${Math.round(pct)}%`;
+                })()}
+              </p>
             </div>
           )}
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
