@@ -21,7 +21,8 @@ export async function registerParentAssessmentRoutes(app: FastifyInstance) {
   }, async (req, reply) => {
     const db = (app as any).db;
     const { learnerId } = req.params as { learnerId: string };
-    const userId = (req as any).user?.userId || (req as any).user?.id;
+    const user = (req as any).user;
+    const userId = user?.sub || user?.userId || user?.id;
 
     const [learner] = await db.select({ id: learners.id, parentId: learners.parentId })
       .from(learners)
