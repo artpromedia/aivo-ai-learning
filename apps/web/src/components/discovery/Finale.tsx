@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { TUTORS } from "@aivo/brand";
 import { ADVENTURE_CHAPTERS, TUTOR_INTROS, type ChapterResult, type FunctioningLevel } from "./types";
-import Awakening from "./Awakening";
 
 interface FinaleProps {
   learnerName: string;
@@ -14,26 +13,22 @@ interface FinaleProps {
   functioningLevel: FunctioningLevel;
   onFinish: () => void;
   onExitHome?: () => void;
-  onSubmitResults: () => Promise<{ success: boolean; brain?: any; error?: string }>;
+  onSubmitResults: () => Promise<{ success: boolean; error?: string }>;
 }
 
-type FinaleStage = "celebration" | "awakening" | "complete";
-type BrainStatus = "idle" | "building" | "ready" | "error";
+type FinaleStage = "celebration" | "saving" | "saved" | "error";
 
 export default function Finale({ learnerName, chapterResults, totalCorrect, totalAttempts, xpEarned, functioningLevel, onFinish, onExitHome, onSubmitResults }: FinaleProps) {
   const [stage, setStage] = useState<FinaleStage>("celebration");
   const [step, setStep] = useState(0);
-  const [brainStatus, setBrainStatus] = useState<BrainStatus>("idle");
-  const [brainData, setBrainData] = useState<any>(null);
 
-  const buildBrain = useCallback(async () => {
-    setBrainStatus("building");
+  const saveResults = useCallback(async () => {
+    setStage("saving");
     const result = await onSubmitResults();
     if (result.success) {
-      setBrainData(result.brain);
-      setBrainStatus("ready");
+      setStage("saved");
     } else {
-      setBrainStatus("error");
+      setStage("error");
     }
   }, [onSubmitResults]);
 
@@ -43,37 +38,18 @@ export default function Finale({ learnerName, chapterResults, totalCorrect, tota
     const t3 = setTimeout(() => setStep(3), 4000);
     const t4 = setTimeout(() => {
       setStep(4);
-      buildBrain();
+      saveResults();
     }, 5500);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [buildBrain]);
+  }, [saveResults]);
 
-  useEffect(() => {
-    if (brainStatus === "ready" && step >= 4) {
-      const timer = setTimeout(() => setStage("awakening"), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [brainStatus, step]);
-
-  if (stage === "awakening") {
-    return (
-      <Awakening
-        learnerName={learnerName}
-        chapterResults={chapterResults}
-        functioningLevel={functioningLevel}
-        brainData={brainData}
-        onComplete={onFinish}
-      />
-    );
-  }
-
-  const brainStatusSection = () => {
-    if (brainStatus === "building") {
+  const statusSection = () => {
+    if (stage === "saving") {
       return (
         <div className="mt-6 bg-white/10 backdrop-blur rounded-2xl px-6 py-5 animate-pulse">
-          <div className="text-3xl mb-2">🧠</div>
-          <p className="text-sm font-heading font-bold text-purple-300">Something amazing is happening...</p>
-          <p className="text-[11px] text-white/40 mt-1">Your Brain is forming from everything you just did</p>
+          <div className="text-3xl mb-2">📝</div>
+          <p className="text-sm font-heading font-bold text-purple-300">Saving your results...</p>
+          <p className="text-[11px] text-white/40 mt-1">Almost done!</p>
           <div className="flex gap-1 justify-center mt-3">
             <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "0ms" }} />
             <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -83,25 +59,35 @@ export default function Finale({ learnerName, chapterResults, totalCorrect, tota
       );
     }
 
-    if (brainStatus === "ready") {
+    if (stage === "saved") {
       return (
-        <div className="mt-6 bg-gradient-to-r from-amber-500/20 to-purple-500/20 backdrop-blur border border-amber-500/30 rounded-2xl px-6 py-5">
-          <div className="text-3xl mb-2 animate-pulse">✨</div>
-          <p className="text-sm font-heading font-bold text-amber-400">Your Brain is ready to awaken!</p>
-          <p className="text-[11px] text-white/40 mt-1">Get ready for something special...</p>
+        <div className="mt-6 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 backdrop-blur border border-emerald-500/30 rounded-2xl px-6 py-5">
+          <div className="text-3xl mb-2">🎉</div>
+          <p className="text-sm font-heading font-bold text-emerald-400">Adventure Complete!</p>
+          <p className="text-[11px] text-white/50 mt-1 leading-relaxed">
+            Your results are saved. Your parent will review them and set up your personalized Brain — then the real learning adventure begins!
+          </p>
+          <button
+            onClick={onFinish}
+            className="mt-4 px-8 py-3 rounded-full text-white text-base font-heading font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 shadow-lg hover:scale-105 active:scale-95 transition-all"
+            style={{ minHeight: "48px" }}
+          >
+            Go Home 🏠
+          </button>
         </div>
       );
     }
 
-    if (brainStatus === "error") {
+    if (stage === "error") {
       return (
         <div className="mt-6 bg-white/10 backdrop-blur rounded-2xl px-6 py-5">
-          <div className="text-3xl mb-2">🧠</div>
+          <div className="text-3xl mb-2">📝</div>
           <p className="text-sm font-heading font-bold text-amber-400">Your results are saved!</p>
-          <p className="text-[11px] text-white/40 mt-1">Your learning brain will finish setting up when you start your first lesson</p>
+          <p className="text-[11px] text-white/40 mt-1">Your learning brain will finish setting up soon.</p>
           <button
             onClick={onFinish}
             className="mt-4 px-8 py-3 rounded-full text-white text-base font-heading font-bold bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg hover:scale-105 active:scale-95 transition-all"
+            style={{ minHeight: "48px" }}
           >
             Continue 🚀
           </button>
@@ -190,14 +176,14 @@ export default function Finale({ learnerName, chapterResults, totalCorrect, tota
         </div>
 
         <div className={`transition-all duration-1000 ${step >= 4 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-          {brainStatusSection()}
+          {statusSection()}
         </div>
 
-        {onExitHome && brainStatus !== "building" && (
+        {onExitHome && stage !== "saving" && (
           <button
             onClick={() => {
-              if (brainStatus === "idle") {
-                buildBrain();
+              if (stage === "celebration") {
+                saveResults();
               }
               onExitHome();
             }}

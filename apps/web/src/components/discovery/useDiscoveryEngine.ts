@@ -411,7 +411,7 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     return loadSavedState(learnerId) !== null;
   }, [learnerId]);
 
-  const submitResults = useCallback(async (): Promise<{ success: boolean; brain?: any; error?: string }> => {
+  const submitResults = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     if (!accessToken) return { success: false, error: "No auth token" };
 
     try {
@@ -428,8 +428,8 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
       });
 
       if (res.ok) {
-        const data = await res.json();
-        return { success: true, brain: data.brain };
+        clearSavedState(learnerId);
+        return { success: true };
       } else {
         const err = await res.text();
         return { success: false, error: err };

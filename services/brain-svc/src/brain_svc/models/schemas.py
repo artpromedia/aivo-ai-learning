@@ -27,7 +27,7 @@ class ParentAssessmentData(BaseModel):
 
 class BrainCloneRequest(BaseModel):
     learner_id: str
-    tenant_id: str
+    tenant_id: Optional[str] = None
     assessment_id: Optional[str] = None
     functioning_level: str = "STANDARD"
     parent_assessment_id: Optional[str] = None
@@ -70,8 +70,18 @@ class RecommendationResolve(BaseModel):
     status: str
     parent_notes: Optional[str] = None
 
+class ParentModification(BaseModel):
+    field: str
+    original_value: float | str | bool | None = None
+    parent_value: float | str | bool | None = None
+    parent_note: Optional[str] = None
+    modified_at: Optional[str] = None
+
 class BrainApproveRequest(BaseModel):
     parent_notes: Optional[str] = None
+    consent_given: bool = False
+    consent_version: str = "1.0"
+    parent_modifications: list[ParentModification] = []
 
 class BrainAmendRequest(BaseModel):
     parent_notes: str
