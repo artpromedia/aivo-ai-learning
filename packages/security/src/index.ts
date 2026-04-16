@@ -1,4 +1,6 @@
 import * as jose from "jose";
+import * as fs from "fs";
+import * as path from "path";
 
 export interface JWTPayload {
   sub: string;
@@ -19,11 +21,34 @@ export async function initKeys() {
   if (privPem && pubPem) {
     privateKey = await jose.importPKCS8(privPem, "RS256");
     publicKey = await jose.importSPKI(pubPem, "RS256");
-  } else {
-    const { privateKey: priv, publicKey: pub } = await jose.generateKeyPair("RS256");
-    privateKey = priv;
-    publicKey = pub;
+    return;
   }
+
+  const keyDir = process.env.JWT_KEY_DIR || path.resolve(process.cwd(), "..", "..", ".local", "jwt-keys");
+  const privPath = path.join(keyDir, "private.pem");
+  const pubPath = path.join(keyDir, "public.pem");
+
+  try {
+    if (fs.existsSync(privPath) && fs.existsSync(pubPath)) {
+      const privFile = fs.readFileSync(privPath, "utf8");
+      const pubFile = fs.readFileSync(pubPath, "utf8");
+      privateKey = await jose.importPKCS8(privFile, "RS256");
+      publicKey = await jose.importSPKI(pubFile, "RS256");
+      return;
+    }
+  } catch {}
+
+  const { privateKey: priv, publicKey: pub } = await jose.generateKeyPair("RS256", { extractable: true });
+  privateKey = priv;
+  publicKey = pub;
+
+  try {
+    fs.mkdirSync(keyDir, { recursive: true });
+    const privPemOut = await jose.exportPKCS8(priv as jose.CryptoKey);
+    const pubPemOut = await jose.exportSPKI(pub as jose.CryptoKey);
+    fs.writeFileSync(privPath, privPemOut, { mode: 0o600 });
+    fs.writeFileSync(pubPath, pubPemOut, { mode: 0o644 });
+  } catch {}
 }
 
 export async function signJWT(payload: JWTPayload, expiresIn = "15m"): Promise<string> {
