@@ -14,15 +14,32 @@ import { colors, spacing, radius } from '@/constants/colors';
 const SUBJECTS = ['Mathematics', 'English Language Arts', 'Science', 'History & Social Studies', 'Coding & Computer Science', 'Speech & Language', 'Social-Emotional Learning'];
 const GRADE_LEVELS = ['Pre-K', 'Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade', '6th Grade', '7th Grade', '8th Grade'];
 
+interface LessonPlanContent {
+  objective?: string;
+  overview?: string;
+  standards?: string[];
+  materials?: string[];
+  duration?: string;
+  differentiationGroups?: { level: string; modifications: string }[];
+}
+
+interface LessonPlanActivity {
+  name: string;
+  description: string;
+  duration: string;
+  materials?: string[];
+  differentiationTips?: string;
+}
+
 interface LessonPlan {
   id: string;
   title: string;
   subject: string;
   gradeLevel?: string;
   status: string;
-  content?: Record<string, unknown>;
-  activities?: unknown[];
-  accommodations?: unknown[];
+  content?: LessonPlanContent;
+  activities?: LessonPlanActivity[];
+  accommodations?: { type: string; description: string }[];
   createdAt: string;
 }
 
@@ -164,17 +181,17 @@ export default function LessonPlanScreen() {
           </Text>
           {generatedPlan.content && (
             <>
-              {(generatedPlan.content as any).objective && (
+              {generatedPlan.content.objective && (
                 <View style={{ marginBottom: 8 }}>
                   <Text style={styles.fieldLabel}>Objective</Text>
                   <Text style={{ fontSize: 13, fontFamily: 'Nunito-Regular', color: colors.text }}>
-                    {(generatedPlan.content as any).objective}
+                    {generatedPlan.content.objective}
                   </Text>
                 </View>
               )}
-              {(generatedPlan.content as any).duration && (
+              {generatedPlan.content.duration && (
                 <Text style={{ fontSize: 12, fontFamily: 'Nunito-SemiBold', color: colors.textSecondary }}>
-                  Duration: {(generatedPlan.content as any).duration}
+                  Duration: {generatedPlan.content.duration}
                 </Text>
               )}
             </>
@@ -182,7 +199,7 @@ export default function LessonPlanScreen() {
           {Array.isArray(generatedPlan.activities) && generatedPlan.activities.length > 0 && (
             <View style={{ marginTop: 8 }}>
               <Text style={styles.fieldLabel}>Activities ({generatedPlan.activities.length})</Text>
-              {generatedPlan.activities.map((a: any, i: number) => (
+              {generatedPlan.activities.map((a, i) => (
                 <Text key={i} style={{ fontSize: 12, fontFamily: 'Nunito-Regular', color: colors.text, marginLeft: 8 }}>
                   • {a.name}: {a.duration}
                 </Text>
