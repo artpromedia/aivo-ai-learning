@@ -173,6 +173,10 @@ function DiscoveryAdventurePage() {
   }
 
   const effectiveId = resolvedLearnerId || user.id;
+  const isParent = user.role === "PARENT";
+  const postBaselineHref = isParent && queryLearnerId
+    ? `/dashboard/parent/learner/${queryLearnerId}/brain-review`
+    : "/dashboard/learner";
 
   return (
     <DiscoveryAdventureInner
@@ -180,6 +184,7 @@ function DiscoveryAdventurePage() {
       learnerName={learnerName}
       functioningLevel={learnerFL}
       accessToken={accessToken}
+      postBaselineHref={postBaselineHref}
     />
   );
 }
@@ -189,11 +194,13 @@ function DiscoveryAdventureInner({
   learnerName,
   functioningLevel,
   accessToken,
+  postBaselineHref,
 }: {
   learnerId: string;
   learnerName: string;
   functioningLevel: FunctioningLevel;
   accessToken: string | null;
+  postBaselineHref: string;
 }) {
   const router = useRouter();
   const t = useTranslations("assessment");
@@ -319,10 +326,10 @@ function DiscoveryAdventureInner({
         totalAttempts={state.totalAttempts}
         xpEarned={state.xpEarned}
         functioningLevel={functioningLevel}
-        onFinish={() => router.push("/dashboard/learner")}
+        onFinish={() => router.push(postBaselineHref)}
         onExitHome={() => {
           exitToHome();
-          router.push("/dashboard/learner");
+          router.push(postBaselineHref);
         }}
         onSubmitResults={submitResults}
       />
