@@ -107,7 +107,7 @@ async function verifyGoogleToken(idToken: string): Promise<{ email: string; name
 }
 
 const COMMS_URL = process.env.COMMS_SERVICE_URL || "http://localhost:3003";
-const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || "aivo-internal-dev-key";
+const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
 
 function generateMfaCode(): string {
   return crypto.randomInt(100000, 999999).toString();
@@ -870,6 +870,34 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       });
     } catch {}
 
+    return { success: true, resendsRemaining: 2 - (existing?.resends ?? 0) };
+  });
+
+  app.post("/api/auth/mfa/resend", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["mfaToken"],
+        properties: { mfaToken: { type: "string" } },
+      },
+    },
+  }, async (req, reply) => {
+    const { mfaToken } = req.body as any;
+    const db = (app as any).db;
+    let payload: any;
+    try { payload = await verifyJWT(mfaToken); } catch { return reply.status(401).send({ error: "MFA session expired. Please login again." }); }
+    if (payload.purpose !== "mfa") return reply.status(401).send({ error: "Invalid MFA token" });
+    const [existing] = await db.select().from(mfaCodes)
+      .where(and(eq(mfaCodes.userId, payload.sub), eq(mfaCodes.used, false)))
+      .orderBy(sql`created_at DESC`).limit(1);
+    if (existing && existing.resends >= 3) return reply.status(429).send({ error: "Maximum resends reached. Please login again." });
+    if (existing) await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(eq(mfaCodes.id, existing.id));
+    const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
+    if (!user) return reply.status(404).send({ error: "User not found" });
+    const code = generateMfaCode();
+    await db.insert(mfaCodes).values({ userId: user.id, code, purpose: existing?.purpose || "login", expiresAt: new Date(Date.now() + 10 * 60 * 1000), resends: (existing?.resends ?? 0) + 1 });
+    try { await fetch(`${COMMS_URL}/api/comms/internal/mfa-code`, { method: "POST", headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY }, body: JSON.stringify({ to: user.email, code, name: user.name }) }); } catch {}
     return { success: true, resendsRemaining: 2 - (existing?.resends ?? 0) };
   });
 

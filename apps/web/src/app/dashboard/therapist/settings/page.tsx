@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { AccessibleToggle } from "@/components/a11y/AccessibleToggle";
+import { MfaSettings } from "@/components/settings/MfaSettings";
 
 export default function TherapistSettingsPage() {
   const { user, accessToken, loading } = useAuth();
@@ -110,6 +111,8 @@ export default function TherapistSettingsPage() {
           {saving ? "Saving..." : "Save Preferences"}
         </button>
       </div>
+
+      <MfaSettings accentColor="pink" />
     </div>
   );
 }

@@ -58,6 +58,8 @@ export default function LoginScreen() {
     const result = await loginWithGoogle(idToken, consent);
     if (result.success) {
       router.replace('/');
+    } else if (result.mfaPending && result.mfaToken) {
+      router.push({ pathname: '/(auth)/verify-mfa', params: { mfaToken: result.mfaToken } });
     } else if (result.requiresConsent) {
       setPendingIdToken(idToken);
       setConsentModal(true);
