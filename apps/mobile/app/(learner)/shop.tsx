@@ -1,24 +1,28 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useEngagement } from '@/hooks/useEngagement';
+import { useLearners } from '@/hooks/useLearners';
+import { apiFetch } from '@/lib/api';
+import { API } from '@/constants/api';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 const categoryKeys = ['all', 'hats', 'outfits', 'pets', 'backgrounds', 'effects', 'special'] as const;
 const categoryOriginals = ['All', 'Hats', 'Outfits', 'Pets', 'Backgrounds', 'Effects', 'Special'];
 const shopItems = [
-  { id: '1', name: 'Wizard Hat', category: 'Hats', price: 50, currency: 'coins', rarity: 'common' },
-  { id: '2', name: 'Space Suit', category: 'Outfits', price: 150, currency: 'coins', rarity: 'rare' },
-  { id: '3', name: 'Dragon Pet', category: 'Pets', price: 25, currency: 'gems', rarity: 'epic' },
-  { id: '4', name: 'Galaxy BG', category: 'Backgrounds', price: 100, currency: 'coins', rarity: 'rare' },
-  { id: '5', name: 'Sparkle Trail', category: 'Effects', price: 75, currency: 'coins', rarity: 'common' },
-  { id: '6', name: 'Crown', category: 'Hats', price: 50, currency: 'gems', rarity: 'legendary' },
-  { id: '7', name: 'Ninja Outfit', category: 'Outfits', price: 200, currency: 'coins', rarity: 'epic' },
-  { id: '8', name: 'Robot Pet', category: 'Pets', price: 30, currency: 'gems', rarity: 'rare' },
+  { id: '1', name: 'Wizard Hat', category: 'Hats', price: 50, currency: 'coins' as const, rarity: 'common' },
+  { id: '2', name: 'Space Suit', category: 'Outfits', price: 150, currency: 'coins' as const, rarity: 'rare' },
+  { id: '3', name: 'Dragon Pet', category: 'Pets', price: 25, currency: 'gems' as const, rarity: 'epic' },
+  { id: '4', name: 'Galaxy BG', category: 'Backgrounds', price: 100, currency: 'coins' as const, rarity: 'rare' },
+  { id: '5', name: 'Sparkle Trail', category: 'Effects', price: 75, currency: 'coins' as const, rarity: 'common' },
+  { id: '6', name: 'Crown', category: 'Hats', price: 50, currency: 'gems' as const, rarity: 'legendary' },
+  { id: '7', name: 'Ninja Outfit', category: 'Outfits', price: 200, currency: 'coins' as const, rarity: 'epic' },
+  { id: '8', name: 'Robot Pet', category: 'Pets', price: 30, currency: 'gems' as const, rarity: 'rare' },
 ];
 
 const rarityColors: Record<string, string> = {
@@ -31,11 +35,63 @@ const rarityColors: Record<string, string> = {
 export default function ShopScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { data: engagement } = useEngagement(user?.id || '');
+  const { data: learners } = useLearners();
+  const learnerId = user?.role === 'LEARNER' ? user.id : learners?.[0]?.id || '';
+  const { data: engagement } = useEngagement(learnerId);
   const [selectedCat, setSelectedCat] = useState('All');
+  const [purchasingId, setPurchasingId] = useState<string | null>(null);
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const filtered = selectedCat === 'All' ? shopItems : shopItems.filter(i => i.category === selectedCat);
+
+  const handlePurchase = useCallback(async (item: typeof shopItems[0]) => {
+    if (!learnerId) {
+      Alert.alert(t('common.error'), 'No learner profile found.');
+      return;
+    }
+
+    const balance = item.currency === 'gems' ? (engagement?.gems || 0) : (engagement?.coins || 0);
+    if (balance < item.price) {
+      Alert.alert(t('common.error'), `Not enough ${item.currency}. You have ${balance} but need ${item.price}.`);
+      return;
+    }
+
+    Alert.alert(
+      t('common.buy'),
+      `Buy ${item.name} for ${item.price} ${item.currency === 'coins' ? '🪙' : '💎'}?`,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.buy'),
+          onPress: async () => {
+            setPurchasingId(item.id);
+            try {
+              const res = await apiFetch(API.ENGAGEMENT, '/api/engagement/shop/purchase', {
+                method: 'POST',
+                body: JSON.stringify({
+                  learnerId,
+                  itemId: item.id,
+                  currencyType: item.currency,
+                }),
+              });
+              const data = await res.json();
+              if (res.ok) {
+                Alert.alert('🎉', `${item.name} purchased!`);
+                queryClient.invalidateQueries({ queryKey: ['engagement', learnerId] });
+              } else {
+                Alert.alert(t('common.error'), data.error || 'Purchase failed');
+              }
+            } catch {
+              Alert.alert(t('common.error'), 'Network error. Please try again.');
+            } finally {
+              setPurchasingId(null);
+            }
+          },
+        },
+      ]
+    );
+  }, [learnerId, engagement, t, queryClient]);
 
   return (
     <ScrollView
@@ -69,20 +125,27 @@ export default function ShopScreen() {
       </ScrollView>
 
       <View style={styles.grid}>
-        {filtered.map((item) => (
-          <AivoCard key={item.id} style={styles.itemCard}>
-            <View style={[styles.rarityDot, { backgroundColor: rarityColors[item.rarity] }]} />
-            <View style={styles.itemPreview}>
-              <Ionicons name="shirt-outline" size={32} color={colors.textSecondary} />
-            </View>
-            <Text style={styles.itemName}>{item.name}</Text>
-            <View style={styles.priceRow}>
-              <Text>{item.currency === 'coins' ? '🪙' : '💎'}</Text>
-              <Text style={styles.priceText}>{item.price}</Text>
-            </View>
-            <AivoButton title={t('common.buy')} onPress={() => {}} disabled size="sm" style={{ marginTop: 8 }} />
-          </AivoCard>
-        ))}
+        {filtered.map((item) => {
+          const isPurchasing = purchasingId === item.id;
+          return (
+            <AivoCard key={item.id} style={styles.itemCard}>
+              <View style={[styles.rarityDot, { backgroundColor: rarityColors[item.rarity] }]} />
+              <View style={styles.itemPreview}>
+                <Ionicons name="shirt-outline" size={32} color={colors.textSecondary} />
+              </View>
+              <Text style={styles.itemName}>{item.name}</Text>
+              <View style={styles.priceRow}>
+                <Text>{item.currency === 'coins' ? '🪙' : '💎'}</Text>
+                <Text style={styles.priceText}>{item.price}</Text>
+              </View>
+              {isPurchasing ? (
+                <ActivityIndicator color={colors.primary} style={{ marginTop: 8 }} />
+              ) : (
+                <AivoButton title={t('common.buy')} onPress={() => handlePurchase(item)} size="sm" style={{ marginTop: 8 }} />
+              )}
+            </AivoCard>
+          );
+        })}
       </View>
     </ScrollView>
   );
