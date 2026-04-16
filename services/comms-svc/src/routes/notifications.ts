@@ -178,6 +178,35 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     return { templates: AVAILABLE_TEMPLATES };
   });
 
+  app.post("/api/comms/internal/mfa-code", async (request, reply) => {
+    const internalKey = request.headers["x-internal-key"];
+    if (!internalKey || internalKey !== (process.env.INTERNAL_SERVICE_KEY || "aivo-internal-dev-key")) {
+      return reply.status(401).send({ error: "Unauthorized" });
+    }
+    const { to, code, name } = request.body as any;
+    if (!to || !code) {
+      return reply.code(400).send({ error: "to and code required" });
+    }
+    if (!isConfigured()) {
+      logger.warn({ to }, "MFA code requested but email not configured, code logged for dev");
+      return { status: "dev_mode", code };
+    }
+    const rendered = renderTemplate("mfa_code", { code, name: name || "there" });
+    try {
+      const result = await sendEmail({
+        to,
+        subject: rendered.subject,
+        htmlBody: rendered.html,
+        textBody: rendered.text,
+        tag: "mfa_code",
+      });
+      return { status: result.status, messageId: result.messageId };
+    } catch (err: any) {
+      logger.error({ err, to }, "Failed to send MFA code email");
+      return reply.code(500).send({ error: "Failed to send MFA code" });
+    }
+  });
+
   app.get("/api/comms/status", async () => {
     return {
       postmark: isConfigured() ? "connected" : "not_configured",

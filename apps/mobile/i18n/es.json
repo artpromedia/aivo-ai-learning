@@ -18,7 +18,11 @@
     "approve": "Aprobar",
     "decline": "Rechazar",
     "comingSoon": "Próximamente",
-    "overview": "Resumen"
+    "overview": "Resumen",
+    "on": "Activado",
+    "off": "Desactivado",
+    "saving": "Guardando...",
+    "confirm": "Confirmar"
   },
   "auth": {
     "aiPoweredLearning": "Aprendizaje con IA",
@@ -37,6 +41,18 @@
     "signUp": "Registrarse",
     "enterEmailPassword": "Ingresa tu correo y contraseña",
     "loginFailed": "Error al iniciar sesión",
+    "checkEmail": "Revisa tu correo",
+    "codeSentDesc": "Enviamos un código de 6 dígitos a tu correo.",
+    "verificationFailed": "La verificación falló. Inténtalo de nuevo.",
+    "verifyCode": "Verificar código",
+    "verifying": "Verificando...",
+    "resendCode": "Reenviar código",
+    "resending": "Reenviando...",
+    "codeResent": "Se ha enviado un nuevo código.",
+    "resendFailed": "No se pudo reenviar el código.",
+    "backToLogin": "Volver al inicio de sesión",
+    "sessionExpired": "Tu sesión ha expirado. Inicia sesión de nuevo.",
+    "codeExpires": "El código expira en 10 minutos.",
     "googleSignInFailed": "Error con Google",
     "createAccount": "Crea Tu Cuenta",
     "createAccountSubtitle": "Comienza el viaje de aprendizaje personalizado de tu hijo",
@@ -104,7 +120,14 @@
     "managePins": "Administrar PINs",
     "exportData": "Exportar Datos (RGPD)",
     "deleteAccount": "Eliminar Cuenta",
-    "appVersion": "AIVO Learning v1.0.0"
+    "appVersion": "AIVO Learning v1.0.0",
+    "twoFactorAuth": "Autenticación de dos factores",
+    "mfaDesc": "Agrega seguridad extra con códigos de verificación por correo.",
+    "enableMfa": "Activar MFA",
+    "disableMfa": "Desactivar MFA",
+    "enterPassword": "Ingresa tu contraseña",
+    "mfaEnabled": "MFA ha sido activado.",
+    "mfaDisabled": "MFA ha sido desactivado."
   },
   "parentBilling": {
     "title": "Facturación y Suscripción",

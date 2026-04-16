@@ -1097,7 +1097,17 @@
     "nav_help": "도움말",
     "nav_child": "아이",
     "nav_progress": "진행",
-    "nav_more": "더보기"
+    "nav_more": "더보기",
+    "two_factor_auth": "이중 인증",
+    "mfa_description": "이메일 인증 코드로 계정에 추가 보안 계층을 추가하세요.",
+    "mfa_on": "활성화됨",
+    "mfa_off": "비활성화됨",
+    "mfa_required_role": "계정 역할에 MFA가 필요하며 비활성화할 수 없습니다.",
+    "enable_mfa": "MFA 활성화",
+    "disable_mfa": "MFA 비활성화",
+    "confirm_password_mfa": "이 변경을 확인하려면 비밀번호를 입력하세요.",
+    "mfa_enabled_msg": "MFA가 활성화되었습니다. 매번 로그인할 때 이메일의 코드를 입력해야 합니다.",
+    "mfa_disabled_msg": "MFA가 비활성화되었습니다."
   },
   "language": {
     "en": "English",
@@ -1382,5 +1392,21 @@
     "daily_summary": "Daily Summary",
     "communication_log": "Communication Log",
     "behavior_notes": "Behavior Notes"
+  },
+  "mfa": {
+    "check_email": "이메일을 확인하세요",
+    "code_sent_desc": "6자리 인증 코드를 이메일로 보냈습니다.",
+    "enter_full_code": "6자리 코드를 모두 입력해주세요.",
+    "verification_failed": "인증에 실패했습니다. 다시 시도해주세요.",
+    "verify_code": "코드 확인",
+    "verifying": "확인 중...",
+    "resend_code": "코드 재전송",
+    "resending": "재전송 중...",
+    "code_resent": "새 코드가 이메일로 전송되었습니다.",
+    "resend_failed": "코드 재전송에 실패했습니다. 다시 시도해주세요.",
+    "session_expired": "MFA 세션이 만료되었습니다. 다시 로그인해주세요.",
+    "back_to_login": "로그인으로 돌아가기",
+    "code_expires": "코드는 10분 후에 만료됩니다.",
+    "digit": "자리"
   }
 }

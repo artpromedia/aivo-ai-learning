@@ -1114,7 +1114,17 @@
     "nav_help": "सहायता",
     "nav_child": "बच्चा",
     "nav_progress": "प्रगति",
-    "nav_more": "अधिक"
+    "nav_more": "अधिक",
+    "two_factor_auth": "दो-कारक प्रमाणीकरण",
+    "mfa_description": "ईमेल सत्यापन कोड से अपने खाते में सुरक्षा की एक अतिरिक्त परत जोड़ें।",
+    "mfa_on": "सक्षम",
+    "mfa_off": "अक्षम",
+    "mfa_required_role": "आपकी खाता भूमिका के लिए MFA आवश्यक है और इसे अक्षम नहीं किया जा सकता।",
+    "enable_mfa": "MFA सक्षम करें",
+    "disable_mfa": "MFA अक्षम करें",
+    "confirm_password_mfa": "इस बदलाव की पुष्टि के लिए अपना पासवर्ड दर्ज करें।",
+    "mfa_enabled_msg": "MFA सक्षम कर दिया गया है। हर लॉगिन पर आपको अपने ईमेल से कोड दर्ज करना होगा।",
+    "mfa_disabled_msg": "MFA अक्षम कर दिया गया है।"
   },
   "marketing": {
     "header": {
@@ -1382,5 +1392,21 @@
     "daily_summary": "Daily Summary",
     "communication_log": "Communication Log",
     "behavior_notes": "Behavior Notes"
+  },
+  "mfa": {
+    "check_email": "अपना ईमेल जांचें",
+    "code_sent_desc": "हमने आपके ईमेल पते पर 6-अंकीय सत्यापन कोड भेजा है।",
+    "enter_full_code": "कृपया पूरा 6-अंकीय कोड दर्ज करें।",
+    "verification_failed": "सत्यापन विफल। कृपया पुनः प्रयास करें।",
+    "verify_code": "कोड सत्यापित करें",
+    "verifying": "सत्यापित हो रहा है...",
+    "resend_code": "कोड पुनः भेजें",
+    "resending": "पुनः भेजा जा रहा है...",
+    "code_resent": "आपके ईमेल पर एक नया कोड भेजा गया है।",
+    "resend_failed": "कोड पुनः भेजने में विफल। कृपया पुनः प्रयास करें।",
+    "session_expired": "आपका MFA सत्र समाप्त हो गया है। कृपया पुनः लॉगिन करें।",
+    "back_to_login": "लॉगिन पर वापस जाएं",
+    "code_expires": "कोड 10 मिनट में समाप्त हो जाएगा।",
+    "digit": "अंक"
   }
 }

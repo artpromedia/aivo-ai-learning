@@ -1097,7 +1097,17 @@
     "nav_help": "Help",
     "nav_child": "Child",
     "nav_progress": "Progress",
-    "nav_more": "More"
+    "nav_more": "More",
+    "two_factor_auth": "Two-Factor Authentication",
+    "mfa_description": "Add an extra layer of security to your account with email-based verification codes.",
+    "mfa_on": "Enabled",
+    "mfa_off": "Disabled",
+    "mfa_required_role": "MFA is required for your account role and cannot be disabled.",
+    "enable_mfa": "Enable MFA",
+    "disable_mfa": "Disable MFA",
+    "confirm_password_mfa": "Enter your password to confirm this change.",
+    "mfa_enabled_msg": "MFA has been enabled. You will need to enter a code from your email on each login.",
+    "mfa_disabled_msg": "MFA has been disabled."
   },
   "language": {
     "en": "English",
@@ -1382,5 +1392,21 @@
     "daily_summary": "Daily Summary",
     "communication_log": "Communication Log",
     "behavior_notes": "Behavior Notes"
+  },
+  "mfa": {
+    "check_email": "Check Your Email",
+    "code_sent_desc": "We sent a 6-digit verification code to your email address.",
+    "enter_full_code": "Please enter the full 6-digit code.",
+    "verification_failed": "Verification failed. Please try again.",
+    "verify_code": "Verify Code",
+    "verifying": "Verifying...",
+    "resend_code": "Resend Code",
+    "resending": "Resending...",
+    "code_resent": "A new code has been sent to your email.",
+    "resend_failed": "Failed to resend code. Please try again.",
+    "session_expired": "Your MFA session has expired. Please log in again.",
+    "back_to_login": "Back to Login",
+    "code_expires": "Code expires in 10 minutes.",
+    "digit": "Digit"
   }
 }

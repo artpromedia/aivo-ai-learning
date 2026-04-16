@@ -38,7 +38,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Mobile**: React Native (Expo SDK 54) + Expo Router v6 + TypeScript
 - **Backend (TS)**: Fastify 5 + Drizzle ORM + PostgreSQL 16
 - **Backend (Python)**: FastAPI + LiteLLM + Uvicorn (both ai-svc and brain-svc use LiteLLM with fallback chain: Claude Sonnet → Gemini Flash → GPT-4o-mini)
-- **Auth**: JWT RS256 (jose library), refresh tokens, PIN login, Google OAuth. Public key served at `/api/auth/public-key` for cross-service verification. Brain-svc (Python) fetches and caches the RSA public key from identity-svc. Google Sign-In via `expo-auth-session` on mobile, `POST /api/auth/google` on identity-svc verifies Google ID tokens and creates/links accounts.
+- **Auth**: JWT RS256 (jose library), refresh tokens, PIN login, Google OAuth, email-based MFA. Public key served at `/api/auth/public-key` for cross-service verification. Brain-svc (Python) fetches and caches the RSA public key from identity-svc. Google Sign-In via `expo-auth-session` on mobile, `POST /api/auth/google` on identity-svc verifies Google ID tokens and creates/links accounts. MFA enforced for admin roles (PLATFORM_ADMIN, DISTRICT_ADMIN, etc.) across all login paths (email, Google). MFA codes: 6-digit numeric, 10min expiry, max 5 attempts, max 3 resends per session. Users can enable/disable MFA in settings (password confirmation required).
 - **Database**: PostgreSQL 16 with JSONB brain states
 - **Email**: Postmark (transactional email via `postmark` SDK in comms-svc)
 - **Styling**: AIVO brand system (purple primary #7C3AED), game-themed Fredoka + Nunito fonts

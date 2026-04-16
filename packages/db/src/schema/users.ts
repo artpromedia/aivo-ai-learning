@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, boolean, text } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, boolean, text, integer } from "drizzle-orm/pg-core";
 import { userRoleEnum } from "./enums";
 import { tenants } from "./tenants";
 
@@ -11,6 +11,8 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull(),
   pin: varchar("pin", { length: 10 }),
   emailVerified: boolean("email_verified").default(false),
+  mfaEnabled: boolean("mfa_enabled").default(false),
+  mfaMethod: varchar("mfa_method", { length: 20 }).default("email"),
   avatarUrl: text("avatar_url"),
   googleId: varchar("google_id", { length: 255 }),
   appleId: varchar("apple_id", { length: 255 }),
@@ -21,6 +23,17 @@ export const users = pgTable("users", {
   lastDashboardVisit: timestamp("last_dashboard_visit"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const mfaCodes = pgTable("mfa_codes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  code: varchar("code", { length: 6 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  resends: integer("resends").default(0).notNull(),
+  used: boolean("used").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const sessions = pgTable("sessions", {

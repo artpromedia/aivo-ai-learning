@@ -15,7 +15,7 @@ interface AuthContextType {
   loading: boolean;
   isImpersonating: boolean;
   originalAdmin: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<any>;
   register: (email: string, password: string, name: string, role: string) => Promise<void>;
   pinLogin: (parentId: string, pin: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -70,13 +70,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ email, password }),
       credentials: "include",
     });
-    if (!res.ok) throw new Error((await res.json()).error);
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    if (data.mfaPending) {
+      return { mfaPending: true, mfaToken: data.mfaToken, mfaMethod: data.mfaMethod };
+    }
     setUser(data.user);
     setAccessToken(data.accessToken);
     setIsImpersonating(false);
     setOriginalAdmin(null);
     sessionStorage.removeItem(IMPERSONATION_FLAG_KEY);
+    return data;
   };
 
   const register = async (email: string, password: string, name: string, role: string) => {

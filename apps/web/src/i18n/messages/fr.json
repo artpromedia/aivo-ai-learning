@@ -1114,7 +1114,17 @@
     "nav_help": "Aide",
     "nav_child": "Enfant",
     "nav_progress": "Progrès",
-    "nav_more": "Plus"
+    "nav_more": "Plus",
+    "two_factor_auth": "Authentification à deux facteurs",
+    "mfa_description": "Ajoutez une couche de sécurité supplémentaire à votre compte avec des codes de vérification par e-mail.",
+    "mfa_on": "Activé",
+    "mfa_off": "Désactivé",
+    "mfa_required_role": "La MFA est requise pour votre rôle et ne peut pas être désactivée.",
+    "enable_mfa": "Activer MFA",
+    "disable_mfa": "Désactiver MFA",
+    "confirm_password_mfa": "Entrez votre mot de passe pour confirmer ce changement.",
+    "mfa_enabled_msg": "La MFA a été activée. Vous devrez entrer un code reçu par e-mail à chaque connexion.",
+    "mfa_disabled_msg": "La MFA a été désactivée."
   },
   "marketing": {
     "header": {
@@ -1382,5 +1392,21 @@
     "daily_summary": "Résumé quotidien",
     "communication_log": "Journal de communication",
     "behavior_notes": "Notes de comportement"
+  },
+  "mfa": {
+    "check_email": "Vérifiez votre e-mail",
+    "code_sent_desc": "Nous avons envoyé un code de vérification à 6 chiffres à votre adresse e-mail.",
+    "enter_full_code": "Veuillez entrer le code complet à 6 chiffres.",
+    "verification_failed": "La vérification a échoué. Veuillez réessayer.",
+    "verify_code": "Vérifier le code",
+    "verifying": "Vérification...",
+    "resend_code": "Renvoyer le code",
+    "resending": "Renvoi en cours...",
+    "code_resent": "Un nouveau code a été envoyé à votre e-mail.",
+    "resend_failed": "Impossible de renvoyer le code. Veuillez réessayer.",
+    "session_expired": "Votre session MFA a expiré. Veuillez vous reconnecter.",
+    "back_to_login": "Retour à la connexion",
+    "code_expires": "Le code expire dans 10 minutes.",
+    "digit": "Chiffre"
   }
 }

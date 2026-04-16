@@ -1097,7 +1097,17 @@
     "nav_help": "ヘルプ",
     "nav_child": "子ども",
     "nav_progress": "進捗",
-    "nav_more": "その他"
+    "nav_more": "その他",
+    "two_factor_auth": "二要素認証",
+    "mfa_description": "メール認証コードでアカウントにセキュリティ層を追加します。",
+    "mfa_on": "有効",
+    "mfa_off": "無効",
+    "mfa_required_role": "あなたのアカウントの役割にはMFAが必要であり、無効にできません。",
+    "enable_mfa": "MFAを有効にする",
+    "disable_mfa": "MFAを無効にする",
+    "confirm_password_mfa": "この変更を確認するためにパスワードを入力してください。",
+    "mfa_enabled_msg": "MFAが有効になりました。ログインの度にメールのコードを入力する必要があります。",
+    "mfa_disabled_msg": "MFAが無効になりました。"
   },
   "language": {
     "en": "English",
@@ -1382,5 +1392,21 @@
     "daily_summary": "Daily Summary",
     "communication_log": "Communication Log",
     "behavior_notes": "Behavior Notes"
+  },
+  "mfa": {
+    "check_email": "メールを確認してください",
+    "code_sent_desc": "6桁の確認コードをメールアドレスに送信しました。",
+    "enter_full_code": "6桁のコードを全て入力してください。",
+    "verification_failed": "確認に失敗しました。もう一度お試しください。",
+    "verify_code": "コードを確認",
+    "verifying": "確認中...",
+    "resend_code": "コードを再送信",
+    "resending": "再送信中...",
+    "code_resent": "新しいコードがメールに送信されました。",
+    "resend_failed": "コードの再送信に失敗しました。もう一度お試しください。",
+    "session_expired": "MFAセッションが期限切れです。再度ログインしてください。",
+    "back_to_login": "ログインに戻る",
+    "code_expires": "コードは10分で期限切れになります。",
+    "digit": "桁"
   }
 }

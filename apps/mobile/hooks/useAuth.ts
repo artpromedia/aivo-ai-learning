@@ -19,10 +19,12 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; mfaPending?: boolean; mfaToken?: string }>;
   loginWithPin: (pin: string, parentId: string) => Promise<{ success: boolean; error?: string }>;
   signup: (data: SignupData) => Promise<{ success: boolean; error?: string }>;
-  loginWithGoogle: (idToken: string, consent?: { coppaConsent: boolean; termsAccepted: boolean }) => Promise<{ success: boolean; error?: string; requiresConsent?: boolean }>;
+  loginWithGoogle: (idToken: string, consent?: { coppaConsent: boolean; termsAccepted: boolean }) => Promise<{ success: boolean; error?: string; requiresConsent?: boolean; mfaPending?: boolean; mfaToken?: string }>;
+  verifyMfa: (mfaToken: string, code: string) => Promise<{ success: boolean; error?: string }>;
+  resendMfa: (mfaToken: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
 }
 
@@ -100,8 +102,11 @@ export function useAuthState(): AuthContextValue {
         skipAuth: true,
       });
 
+      const data = await response.json();
       if (response.ok) {
-        const data = await response.json();
+        if (data.mfaPending) {
+          return { success: false, mfaPending: true, mfaToken: data.mfaToken };
+        }
         await setToken(data.accessToken);
         const user = extractUser(data.accessToken);
         if (user) {
@@ -109,8 +114,7 @@ export function useAuthState(): AuthContextValue {
           return { success: true };
         }
       }
-      const error = await response.json().catch(() => ({}));
-      return { success: false, error: error.error || error.message || 'Login failed' };
+      return { success: false, error: data.error || data.message || 'Login failed' };
     } catch (err) {
       return { success: false, error: 'Network error. Please try again.' };
     }
@@ -177,6 +181,34 @@ export function useAuthState(): AuthContextValue {
         skipAuth: true,
       });
 
+      const data = await response.json();
+      if (response.ok) {
+        if (data.mfaPending) {
+          return { success: false, mfaPending: true, mfaToken: data.mfaToken };
+        }
+        await setToken(data.accessToken);
+        const user = extractUser(data.accessToken);
+        if (user) {
+          setState({ user, isLoading: false, isAuthenticated: true });
+          return { success: true };
+        }
+      }
+      if (data.requiresConsent) {
+        return { success: false, error: 'requiresConsent', requiresConsent: true };
+      }
+      return { success: false, error: data.error || 'Google sign-in failed' };
+    } catch {
+      return { success: false, error: 'Network error. Please try again.' };
+    }
+  }, []);
+
+  const verifyMfa = useCallback(async (mfaToken: string, code: string) => {
+    try {
+      const response = await apiFetch(API.IDENTITY, '/api/auth/verify-mfa', {
+        method: 'POST',
+        body: JSON.stringify({ mfaToken, code }),
+        skipAuth: true,
+      });
       if (response.ok) {
         const data = await response.json();
         await setToken(data.accessToken);
@@ -187,12 +219,26 @@ export function useAuthState(): AuthContextValue {
         }
       }
       const error = await response.json().catch(() => ({}));
-      if (error.requiresConsent) {
-        return { success: false, error: 'requiresConsent', requiresConsent: true };
-      }
-      return { success: false, error: error.error || 'Google sign-in failed' };
+      return { success: false, error: error.error || 'Verification failed' };
     } catch {
-      return { success: false, error: 'Network error. Please try again.' };
+      return { success: false, error: 'Network error' };
+    }
+  }, []);
+
+  const resendMfa = useCallback(async (mfaToken: string) => {
+    try {
+      const response = await apiFetch(API.IDENTITY, '/api/auth/resend-mfa', {
+        method: 'POST',
+        body: JSON.stringify({ mfaToken }),
+        skipAuth: true,
+      });
+      if (response.ok) {
+        return { success: true };
+      }
+      const error = await response.json().catch(() => ({}));
+      return { success: false, error: error.error || 'Resend failed' };
+    } catch {
+      return { success: false, error: 'Network error' };
     }
   }, []);
 
@@ -210,6 +256,8 @@ export function useAuthState(): AuthContextValue {
     loginWithPin,
     signup,
     loginWithGoogle,
+    verifyMfa,
+    resendMfa,
     logout,
   };
 }

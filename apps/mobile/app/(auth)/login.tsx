@@ -86,6 +86,8 @@ export default function LoginScreen() {
     const result = await login(email.trim(), password);
     if (result.success) {
       router.replace('/');
+    } else if (result.mfaPending && result.mfaToken) {
+      router.push({ pathname: '/(auth)/verify-mfa', params: { mfaToken: result.mfaToken } });
     } else {
       setError(result.error || t('auth.loginFailed'));
     }

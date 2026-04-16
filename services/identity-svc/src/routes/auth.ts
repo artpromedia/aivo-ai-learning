@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
-import { users, sessions, tenants, learners } from "@aivo/db";
+import { users, sessions, tenants, learners, mfaCodes } from "@aivo/db";
 import { signJWT, verifyJWT } from "@aivo/security";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, lt } from "drizzle-orm";
 import crypto from "crypto";
 import argon2 from "argon2";
 
@@ -105,6 +105,40 @@ async function verifyGoogleToken(idToken: string): Promise<{ email: string; name
     return null;
   }
 }
+
+const COMMS_URL = process.env.COMMS_SERVICE_URL || "http://localhost:3003";
+const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || "aivo-internal-dev-key";
+
+function generateMfaCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function createAndSendMfaCode(db: any, userId: string, email: string, name: string): Promise<string> {
+  await db.update(mfaCodes).set({ used: true }).where(and(eq(mfaCodes.userId, userId), eq(mfaCodes.used, false)));
+
+  const code = generateMfaCode();
+  const [mfaRecord] = await db.insert(mfaCodes).values({
+    userId,
+    code,
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+  }).returning();
+
+  try {
+    await fetch(`${COMMS_URL}/api/comms/internal/mfa-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
+      body: JSON.stringify({ to: email, code, name }),
+    });
+  } catch {}
+
+  return mfaRecord.id;
+}
+
+async function signMfaToken(userId: string, email: string): Promise<string> {
+  return signJWT({ sub: userId, tenantId: "", role: "", email, purpose: "mfa" } as any, "15m");
+}
+
+const MFA_FORCED_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
 
 export async function registerAuthRoutes(app: FastifyInstance) {
   app.get("/api/auth/public-key", async (_req, reply) => {
@@ -211,6 +245,16 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.status(401).send({ error: "Invalid credentials" });
     }
 
+    const mfaRequired = user.mfaEnabled || MFA_FORCED_ROLES.includes(user.role);
+    if (mfaRequired) {
+      if (!user.mfaEnabled && MFA_FORCED_ROLES.includes(user.role)) {
+        await db.update(users).set({ mfaEnabled: true }).where(eq(users.id, user.id));
+      }
+      await createAndSendMfaCode(db, user.id, user.email!, user.name);
+      const mfaToken = await signMfaToken(user.id, user.email!);
+      return { mfaPending: true, mfaToken, mfaMethod: "email" };
+    }
+
     const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
     await db.update(users).set({
       lastLoginAt: new Date(),
@@ -282,6 +326,15 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     if (user.deactivatedAt) {
       return reply.status(401).send({ error: genericError });
+    }
+
+    if (user.mfaEnabled || MFA_FORCED_ROLES.includes(user.role)) {
+      if (!user.mfaEnabled) {
+        await db.update(users).set({ mfaEnabled: true, mfaMethod: "email" }).where(eq(users.id, user.id));
+      }
+      await createAndSendMfaCode(db, user.id, user.email!, user.name);
+      const mfaToken = await signMfaToken(user.id, user.email!);
+      return { mfaPending: true, mfaToken, mfaMethod: "email" };
     }
 
     const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
@@ -380,6 +433,16 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         }).returning();
         user = newUser;
       }
+    }
+
+    const googleMfaRequired = user.mfaEnabled || MFA_FORCED_ROLES.includes(user.role);
+    if (googleMfaRequired && user.email) {
+      if (!user.mfaEnabled && MFA_FORCED_ROLES.includes(user.role)) {
+        await db.update(users).set({ mfaEnabled: true }).where(eq(users.id, user.id));
+      }
+      await createAndSendMfaCode(db, user.id, user.email, user.name);
+      const mfaToken = await signMfaToken(user.id, user.email);
+      return { mfaPending: true, mfaToken, mfaMethod: "email" };
     }
 
     const accessToken = await signJWT({
@@ -661,4 +724,243 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     return { success: true, deletedLearnerId: learnerId };
   });
+
+  app.post("/api/auth/verify-mfa", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["mfaToken", "code"],
+        properties: {
+          mfaToken: { type: "string" },
+          code: { type: "string", minLength: 6, maxLength: 6 },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { mfaToken, code } = req.body as any;
+    const db = (app as any).db;
+
+    let payload: any;
+    try {
+      payload = await verifyJWT(mfaToken);
+    } catch {
+      return reply.status(401).send({ error: "MFA session expired. Please login again." });
+    }
+    if (payload.purpose !== "mfa") {
+      return reply.status(401).send({ error: "Invalid MFA token" });
+    }
+
+    const [mfaRecord] = await db.select().from(mfaCodes)
+      .where(and(eq(mfaCodes.userId, payload.sub), eq(mfaCodes.used, false)))
+      .orderBy(sql`created_at DESC`)
+      .limit(1);
+
+    if (!mfaRecord) {
+      return reply.status(400).send({ error: "No active MFA code. Please login again." });
+    }
+
+    if (new Date(mfaRecord.expiresAt) < new Date()) {
+      return reply.status(400).send({ error: "Code expired. Please request a new one." });
+    }
+
+    if (mfaRecord.attempts >= 5) {
+      await db.update(mfaCodes).set({ used: true }).where(eq(mfaCodes.id, mfaRecord.id));
+      return reply.status(429).send({ error: "Too many attempts. Please login again." });
+    }
+
+    if (mfaRecord.code !== code) {
+      await db.update(mfaCodes).set({ attempts: mfaRecord.attempts + 1 }).where(eq(mfaCodes.id, mfaRecord.id));
+      return reply.status(400).send({ error: "Invalid code", attemptsRemaining: 4 - mfaRecord.attempts });
+    }
+
+    await db.update(mfaCodes).set({ used: true }).where(eq(mfaCodes.id, mfaRecord.id));
+
+    const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
+    if (!user) return reply.status(404).send({ error: "User not found" });
+
+    const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
+    await db.update(users).set({ lastLoginAt: new Date(), lastLoginIp: clientIp }).where(eq(users.id, user.id));
+
+    const accessToken = await signJWT({
+      sub: user.id,
+      tenantId: user.tenantId,
+      role: user.role,
+      email: user.email!,
+      name: user.name,
+    });
+
+    const rawRefreshToken = crypto.randomUUID();
+    await db.insert(sessions).values({
+      userId: user.id,
+      refreshToken: hashRefreshToken(rawRefreshToken),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    reply.setCookie("refreshToken", rawRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60,
+    });
+
+    return {
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
+      accessToken,
+    };
+  });
+
+  app.post("/api/auth/resend-mfa", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["mfaToken"],
+        properties: {
+          mfaToken: { type: "string" },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { mfaToken } = req.body as any;
+    const db = (app as any).db;
+
+    let payload: any;
+    try {
+      payload = await verifyJWT(mfaToken);
+    } catch {
+      return reply.status(401).send({ error: "MFA session expired. Please login again." });
+    }
+    if (payload.purpose !== "mfa") {
+      return reply.status(401).send({ error: "Invalid MFA token" });
+    }
+
+    const [existing] = await db.select().from(mfaCodes)
+      .where(and(eq(mfaCodes.userId, payload.sub), eq(mfaCodes.used, false)))
+      .orderBy(sql`created_at DESC`)
+      .limit(1);
+
+    if (existing && existing.resends >= 3) {
+      return reply.status(429).send({ error: "Maximum resends reached. Please login again." });
+    }
+
+    if (existing) {
+      await db.update(mfaCodes).set({ used: true }).where(eq(mfaCodes.id, existing.id));
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
+    if (!user) return reply.status(404).send({ error: "User not found" });
+
+    const code = generateMfaCode();
+    await db.insert(mfaCodes).values({
+      userId: user.id,
+      code,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      resends: (existing?.resends ?? 0) + 1,
+    });
+
+    try {
+      await fetch(`${COMMS_URL}/api/comms/internal/mfa-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
+        body: JSON.stringify({ to: user.email, code, name: user.name }),
+      });
+    } catch {}
+
+    return { success: true, resendsRemaining: 2 - (existing?.resends ?? 0) };
+  });
+
+  app.post("/api/auth/mfa/enable", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["password"],
+        properties: {
+          password: { type: "string" },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) return reply.status(401).send({ error: "Missing authorization" });
+
+    let payload: any;
+    try { payload = await verifyJWT(auth.slice(7)); } catch { return reply.status(401).send({ error: "Invalid token" }); }
+
+    const db = (app as any).db;
+    const { password } = req.body as any;
+
+    const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
+    if (!user || !user.passwordHash) return reply.status(404).send({ error: "User not found" });
+
+    const valid = await verifyPassword(user.passwordHash, password);
+    if (!valid) return reply.status(400).send({ error: "Incorrect password" });
+
+    await db.update(users).set({ mfaEnabled: true, mfaMethod: "email" }).where(eq(users.id, user.id));
+    return { success: true, mfaEnabled: true };
+  });
+
+  app.post("/api/auth/mfa/disable", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["password"],
+        properties: {
+          password: { type: "string" },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) return reply.status(401).send({ error: "Missing authorization" });
+
+    let payload: any;
+    try { payload = await verifyJWT(auth.slice(7)); } catch { return reply.status(401).send({ error: "Invalid token" }); }
+
+    const db = (app as any).db;
+    const { password } = req.body as any;
+
+    const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
+    if (!user || !user.passwordHash) return reply.status(404).send({ error: "User not found" });
+
+    if (MFA_FORCED_ROLES.includes(user.role)) {
+      return reply.status(403).send({ error: "MFA cannot be disabled for admin roles" });
+    }
+
+    const valid = await verifyPassword(user.passwordHash, password);
+    if (!valid) return reply.status(400).send({ error: "Incorrect password" });
+
+    await db.update(users).set({ mfaEnabled: false }).where(eq(users.id, user.id));
+    return { success: true, mfaEnabled: false };
+  });
+
+  app.get("/api/auth/mfa/status", {
+    schema: { tags: ["Auth"] },
+  }, async (req, reply) => {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) return reply.status(401).send({ error: "Missing authorization" });
+
+    let payload: any;
+    try { payload = await verifyJWT(auth.slice(7)); } catch { return reply.status(401).send({ error: "Invalid token" }); }
+
+    const db = (app as any).db;
+    const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
+    if (!user) return reply.status(404).send({ error: "User not found" });
+
+    return {
+      mfaEnabled: !!user.mfaEnabled,
+      mfaMethod: user.mfaMethod || "email",
+      mfaForced: MFA_FORCED_ROLES.includes(user.role),
+    };
+  });
+
+  setInterval(async () => {
+    try {
+      const db = (app as any).db;
+      await db.delete(mfaCodes).where(lt(mfaCodes.expiresAt, new Date(Date.now() - 24 * 60 * 60 * 1000)));
+    } catch {}
+  }, 60 * 60 * 1000);
 }

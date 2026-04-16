@@ -1114,7 +1114,17 @@
     "nav_help": "المساعدة",
     "nav_child": "الطفل",
     "nav_progress": "التقدم",
-    "nav_more": "المزيد"
+    "nav_more": "المزيد",
+    "two_factor_auth": "المصادقة الثنائية",
+    "mfa_description": "أضف طبقة أمان إضافية لحسابك باستخدام رموز التحقق عبر البريد الإلكتروني.",
+    "mfa_on": "مفعّل",
+    "mfa_off": "معطّل",
+    "mfa_required_role": "المصادقة الثنائية مطلوبة لدورك في الحساب ولا يمكن تعطيلها.",
+    "enable_mfa": "تفعيل MFA",
+    "disable_mfa": "تعطيل MFA",
+    "confirm_password_mfa": "أدخل كلمة المرور لتأكيد هذا التغيير.",
+    "mfa_enabled_msg": "تم تفعيل MFA. ستحتاج إلى إدخال رمز من بريدك الإلكتروني عند كل تسجيل دخول.",
+    "mfa_disabled_msg": "تم تعطيل MFA."
   },
   "marketing": {
     "header": {
@@ -1382,5 +1392,21 @@
     "daily_summary": "Daily Summary",
     "communication_log": "Communication Log",
     "behavior_notes": "Behavior Notes"
+  },
+  "mfa": {
+    "check_email": "تحقق من بريدك الإلكتروني",
+    "code_sent_desc": "أرسلنا رمز تحقق مكون من 6 أرقام إلى بريدك الإلكتروني.",
+    "enter_full_code": "يرجى إدخال الرمز المكون من 6 أرقام كاملاً.",
+    "verification_failed": "فشل التحقق. يرجى المحاولة مرة أخرى.",
+    "verify_code": "تحقق من الرمز",
+    "verifying": "جاري التحقق...",
+    "resend_code": "إعادة إرسال الرمز",
+    "resending": "جاري إعادة الإرسال...",
+    "code_resent": "تم إرسال رمز جديد إلى بريدك الإلكتروني.",
+    "resend_failed": "فشل في إعادة إرسال الرمز. يرجى المحاولة مرة أخرى.",
+    "session_expired": "انتهت جلسة MFA الخاصة بك. يرجى تسجيل الدخول مرة أخرى.",
+    "back_to_login": "العودة لتسجيل الدخول",
+    "code_expires": "ينتهي الرمز خلال 10 دقائق.",
+    "digit": "رقم"
   }
 }

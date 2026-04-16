@@ -57,7 +57,7 @@ export default function AdminCompliancePage() {
 
   const securityControls = [
     { label: "JWT RS256 Token Authentication", status: true, category: "Auth" },
-    { label: "Multi-Factor Authentication (MFA)", status: true, category: "Auth" },
+    { label: "Multi-Factor Authentication (MFA)", status: !!(stats?.mfaAdoptionRate && stats.mfaAdoptionRate > 0), category: "Auth" },
     { label: "Step-Up Authentication for Sensitive Ops", status: true, category: "Auth" },
     { label: "Role-Based Access Control (RBAC)", status: true, category: "Access" },
     { label: "Tenant Data Isolation", status: true, category: "Access" },
