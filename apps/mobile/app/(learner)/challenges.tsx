@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert, Share } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,21 +27,21 @@ export default function ChallengesScreen() {
         <Ionicons name="flash" size={32} color={colors.accent} />
         <Text style={styles.battleTitle}>{t('learnerChallenges.quickBattle')}</Text>
         <Text style={styles.battleDesc}>{t('learnerChallenges.quickBattleDesc')}</Text>
-        <AivoButton title={t('learnerChallenges.findMatch')} onPress={() => {}} size="sm" style={{ marginTop: spacing.md }} />
+        <AivoButton title={t('learnerChallenges.findMatch')} onPress={() => Alert.alert(t('learnerChallenges.quickBattle'), t('common.comingSoon'))} size="sm" style={{ marginTop: spacing.md }} />
       </AivoCard>
 
       <AivoCard style={styles.battleCard}>
         <Ionicons name="people" size={32} color={colors.secondary} />
         <Text style={styles.battleTitle}>{t('learnerChallenges.teamChallenge')}</Text>
         <Text style={styles.battleDesc}>{t('learnerChallenges.teamChallengeDesc')}</Text>
-        <AivoButton title={t('learnerChallenges.joinTeam')} onPress={() => {}} variant="secondary" size="sm" style={{ marginTop: spacing.md }} />
+        <AivoButton title={t('learnerChallenges.joinTeam')} onPress={() => Alert.alert(t('learnerChallenges.teamChallenge'), t('common.comingSoon'))} variant="secondary" size="sm" style={{ marginTop: spacing.md }} />
       </AivoCard>
 
       <AivoCard style={styles.battleCard}>
         <Ionicons name="trophy" size={32} color={colors.primary} />
         <Text style={styles.battleTitle}>{t('learnerChallenges.weeklyTournament')}</Text>
         <Text style={styles.battleDesc}>{t('learnerChallenges.weeklyTournamentDesc')}</Text>
-        <AivoButton title={t('learnerChallenges.enterTournament')} onPress={() => {}} variant="outline" size="sm" style={{ marginTop: spacing.md }} />
+        <AivoButton title={t('learnerChallenges.enterTournament')} onPress={() => Alert.alert(t('learnerChallenges.weeklyTournament'), t('common.comingSoon'))} variant="outline" size="sm" style={{ marginTop: spacing.md }} />
       </AivoCard>
 
       <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>{t('learnerChallenges.inviteFriend')}</Text>
@@ -50,7 +50,7 @@ export default function ChallengesScreen() {
         <View style={styles.codeBox}>
           <Text style={styles.codeText}>AIVO-XK7M</Text>
         </View>
-        <AivoButton title={t('learnerChallenges.copyCode')} onPress={() => {}} variant="outline" size="sm" style={{ marginTop: spacing.md }} />
+        <AivoButton title={t('learnerChallenges.copyCode')} onPress={() => Share.share({ message: 'AIVO-XK7M' })} variant="outline" size="sm" style={{ marginTop: spacing.md }} />
       </AivoCard>
     </ScrollView>
   );

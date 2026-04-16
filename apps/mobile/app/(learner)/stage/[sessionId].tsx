@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,10 +6,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing } from '@/constants/colors';
 
+const CORRECT_ANSWER = '56';
+
 export default function StageScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const [selected, setSelected] = useState<string | null>(null);
+  const [answered, setAnswered] = useState(false);
+
+  const handleAnswer = (answer: string) => {
+    if (answered) return;
+    setSelected(answer);
+    setAnswered(true);
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -24,7 +34,7 @@ export default function StageScreen() {
           <View style={[styles.progressDot, styles.progressDotInactive]} />
           <View style={[styles.progressDot, styles.progressDotInactive]} />
         </View>
-        <Pressable>
+        <Pressable onPress={() => router.back()}>
           <Ionicons name="pause" size={28} color="#FFF" />
         </Pressable>
       </View>
@@ -45,18 +55,27 @@ export default function StageScreen() {
       </View>
 
       <View style={styles.responseZone}>
-        {['48', '54', '56', '63'].map((answer, i) => (
-          <Pressable
-            key={answer}
-            style={({ pressed }) => [
-              styles.answerCard,
-              pressed && styles.answerPressed,
-            ]}
-            onPress={() => {}}
-          >
-            <Text style={styles.answerText}>{answer}</Text>
-          </Pressable>
-        ))}
+        {['48', '54', '56', '63'].map((answer) => {
+          const isSelected = selected === answer;
+          const isCorrect = answer === CORRECT_ANSWER;
+          const showResult = answered && isSelected;
+          return (
+            <Pressable
+              key={answer}
+              style={({ pressed }) => [
+                styles.answerCard,
+                pressed && !answered && styles.answerPressed,
+                showResult && isCorrect && styles.answerCorrect,
+                showResult && !isCorrect && styles.answerWrong,
+                answered && !isSelected && isCorrect && styles.answerRevealCorrect,
+              ]}
+              onPress={() => handleAnswer(answer)}
+              disabled={answered}
+            >
+              <Text style={styles.answerText}>{answer}</Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
@@ -87,5 +106,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.2)',
   },
   answerPressed: { backgroundColor: colors.primary, borderColor: colors.primary, transform: [{ scale: 0.97 }] },
+  answerCorrect: { backgroundColor: '#16a34a', borderColor: '#16a34a' },
+  answerWrong: { backgroundColor: '#dc2626', borderColor: '#dc2626' },
+  answerRevealCorrect: { borderColor: '#16a34a', borderWidth: 2, opacity: 0.7 },
   answerText: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', color: '#FFF' },
 });

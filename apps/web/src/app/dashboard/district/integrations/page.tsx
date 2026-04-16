@@ -86,6 +86,9 @@ export default function IntegrationsPage() {
   const [canvasUrlInput, setCanvasUrlInput] = useState("");
   const [activeTab, setActiveTab] = useState<"catalog" | "connected">("catalog");
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestName, setRequestName] = useState("");
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
 
   const tenantId = user?.tenantId;
 
@@ -431,7 +434,10 @@ export default function IntegrationsPage() {
             <p className="text-sm text-slate-600 mb-3">
               We're always adding new connectors. If your district uses a platform not listed here, let us know and we'll prioritize it.
             </p>
-            <button className="px-4 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition">
+            <button
+              onClick={() => { setShowRequestModal(true); setRequestSubmitted(false); setRequestName(""); }}
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition"
+            >
               Request Integration
             </button>
           </div>
@@ -570,6 +576,60 @@ export default function IntegrationsPage() {
               );
             })
           )}
+        </div>
+      )}
+
+      {showRequestModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            {requestSubmitted ? (
+              <>
+                <div className="text-center py-4">
+                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">&#10003;</div>
+                  <h3 className="font-heading font-bold text-lg text-slate-900 mb-2">Request Submitted</h3>
+                  <p className="text-sm text-slate-500">Thank you! We&apos;ll review your request and keep you updated on its status.</p>
+                </div>
+                <button
+                  onClick={() => setShowRequestModal(false)}
+                  className="w-full py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition mt-4"
+                >
+                  Done
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="font-heading font-bold text-lg text-slate-900 mb-2">Request an Integration</h3>
+                <p className="text-sm text-slate-500 mb-4">Tell us which platform you&apos;d like us to support and we&apos;ll prioritize it.</p>
+                <label htmlFor="request-name" className="block text-sm font-medium text-slate-700 mb-1">Platform Name</label>
+                <input
+                  id="request-name"
+                  type="text"
+                  value={requestName}
+                  onChange={(e) => setRequestName(e.target.value)}
+                  placeholder="e.g. Infinite Campus, Aeries, etc."
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none mb-4"
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowRequestModal(false)}
+                    className="flex-1 py-2 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setRequestSubmitted(true);
+                      setNotification({ type: "success", message: `Integration request for "${requestName}" submitted!` });
+                    }}
+                    disabled={!requestName.trim()}
+                    className="flex-1 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition disabled:opacity-50"
+                  >
+                    Submit Request
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -42,11 +42,11 @@ export default function TutorStoreScreen() {
       </View>
 
       <View style={styles.bundles}>
-        <Pressable style={[styles.bundleCard, { borderColor: colors.primary }]}>
+        <Pressable style={[styles.bundleCard, { borderColor: colors.primary }]} onPress={() => Alert.alert(t('parentTutors.core7Bundle'), t('common.comingSoon'))}>
           <Text style={styles.bundleName}>{t('parentTutors.core7Bundle')}</Text>
           <Text style={styles.bundlePrice}>{t('parentTutors.includedWithSub')}</Text>
         </Pressable>
-        <Pressable style={[styles.bundleCard, { borderColor: colors.secondary }]}>
+        <Pressable style={[styles.bundleCard, { borderColor: colors.secondary }]} onPress={() => Alert.alert(t('parentTutors.full14Bundle'), t('common.comingSoon'))}>
           <Text style={styles.bundleName}>{t('parentTutors.full14Bundle')}</Text>
           <Text style={styles.bundlePrice}>{t('parentTutors.full14Price')}</Text>
         </Pressable>
@@ -60,7 +60,7 @@ export default function TutorStoreScreen() {
           icon={tutor.icon}
           color={tutor.color}
           subscribed={tutor.tier === 'core'}
-          onPress={() => {}}
+          onPress={() => Alert.alert(tutor.name, tutor.domain)}
         />
       ))}
     </ScrollView>

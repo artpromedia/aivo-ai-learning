@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,7 +52,7 @@ export default function BillingScreen() {
           {!plan.current && (
             <AivoButton
               title={plan.name === 'District' ? t('parentBilling.contactSales') : t('parentBilling.switchPlan')}
-              onPress={() => {}}
+              onPress={() => Alert.alert(plan.name === 'District' ? t('parentBilling.contactSales') : t('parentBilling.switchPlan'), t('common.comingSoon'))}
               variant="outline"
               size="sm"
               style={{ marginTop: spacing.md }}
@@ -71,7 +71,7 @@ export default function BillingScreen() {
             <Text style={styles.cardNumber}>**** **** **** 4242</Text>
             <Text style={styles.cardExpiry}>Expires 12/2027</Text>
           </View>
-          <Pressable>
+          <Pressable onPress={() => Alert.alert(t('parentBilling.paymentMethod'), t('common.comingSoon'))}>
             <Text style={styles.editLink}>{t('common.edit')}</Text>
           </Pressable>
         </View>

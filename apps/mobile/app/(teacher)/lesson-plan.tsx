@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -22,7 +22,7 @@ export default function LessonPlanScreen() {
         <Ionicons name="sparkles" size={32} color={colors.primary} />
         <Text style={styles.genTitle}>{t('teacherLessonPlan.generateNew')}</Text>
         <Text style={styles.genDesc}>{t('teacherLessonPlan.generateDesc')}</Text>
-        <AivoButton title={t('teacherLessonPlan.createPlan')} onPress={() => {}} style={{ marginTop: spacing.md }} />
+        <AivoButton title={t('teacherLessonPlan.createPlan')} onPress={() => Alert.alert(t('teacherLessonPlan.createPlan'), t('common.comingSoon'))} style={{ marginTop: spacing.md }} />
       </AivoCard>
 
       <Text style={[styles.sectionTitle, { marginBottom: spacing.md }]}>{t('teacherLessonPlan.recentPlans')}</Text>

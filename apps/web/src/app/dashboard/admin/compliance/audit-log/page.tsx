@@ -72,7 +72,25 @@ export default function AuditLogPage() {
   };
 
   const handleExport = () => {
-    console.log("Export audit log");
+    if (!data || data.entries.length === 0) return;
+    const headers = ["Timestamp", "Actor", "Role", "Action", "Resource Type", "Resource ID", "IP Address"];
+    const rows = data.entries.map((e) => [
+      new Date(e.createdAt).toISOString(),
+      e.actorEmail,
+      e.actorRole,
+      e.action,
+      e.resourceType,
+      e.resourceId,
+      e.ipAddress || "",
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const totalPages = data ? Math.ceil(data.total / data.pageSize) : 1;

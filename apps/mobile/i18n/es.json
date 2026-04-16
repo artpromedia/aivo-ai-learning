@@ -120,6 +120,7 @@
     "managePins": "Administrar PINs",
     "exportData": "Exportar Datos (RGPD)",
     "deleteAccount": "Eliminar Cuenta",
+    "deleteAccountConfirm": "Esta acción no se puede deshacer. Por favor contacte a soporte para eliminar su cuenta.",
     "appVersion": "AIVO Learning v1.0.0",
     "twoFactorAuth": "Autenticación de dos factores",
     "mfaDesc": "Agrega seguridad extra con códigos de verificación por correo.",
@@ -297,7 +298,8 @@
     "enterTournament": "Entrar al Torneo",
     "inviteFriend": "Invitar a un Amigo",
     "inviteText": "¡Comparte tu código de invitación para jugar con amigos!",
-    "copyCode": "Copiar Código"
+    "copyCode": "Copiar Código",
+    "codeCopied": "¡Código de invitación copiado al portapapeles!"
   },
   "learnerBadges": {
     "title": "Vitrina de Insignias",

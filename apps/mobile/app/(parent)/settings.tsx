@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -102,13 +102,25 @@ export default function SettingsScreen() {
     setMfaLoading(false);
   };
 
+  const handleComingSoon = useCallback((label: string) => {
+    Alert.alert(label, t('common.comingSoon'));
+  }, [t]);
+
+  const handleDeleteAccount = useCallback(() => {
+    Alert.alert(
+      t('parentSettings.deleteAccount'),
+      t('parentSettings.deleteAccountConfirm') || 'This action cannot be undone. Please contact support to delete your account.',
+      [{ text: t('common.cancel'), style: 'cancel' }]
+    );
+  }, [t]);
+
   const settingsItems = [
-    { icon: 'person-outline' as const, label: t('parentSettings.accountDetails'), route: '' },
-    { icon: 'notifications-outline' as const, label: t('parentSettings.notifications'), route: '' },
-    { icon: 'language-outline' as const, label: t('parentSettings.language'), route: '' },
-    { icon: 'key-outline' as const, label: t('parentSettings.managePins'), route: '' },
-    { icon: 'download-outline' as const, label: t('parentSettings.exportData'), route: '' },
-    { icon: 'trash-outline' as const, label: t('parentSettings.deleteAccount'), route: '', danger: true },
+    { icon: 'person-outline' as const, label: t('parentSettings.accountDetails'), action: () => handleComingSoon(t('parentSettings.accountDetails')) },
+    { icon: 'notifications-outline' as const, label: t('parentSettings.notifications'), action: () => handleComingSoon(t('parentSettings.notifications')) },
+    { icon: 'language-outline' as const, label: t('parentSettings.language'), action: () => handleComingSoon(t('parentSettings.language')) },
+    { icon: 'key-outline' as const, label: t('parentSettings.managePins'), action: () => handleComingSoon(t('parentSettings.managePins')) },
+    { icon: 'download-outline' as const, label: t('parentSettings.exportData'), action: () => handleComingSoon(t('parentSettings.exportData')) },
+    { icon: 'trash-outline' as const, label: t('parentSettings.deleteAccount'), action: handleDeleteAccount, danger: true },
   ];
 
   const handleLogout = () => {
@@ -145,7 +157,7 @@ export default function SettingsScreen() {
           <Pressable
             key={item.label}
             style={[styles.settingsRow, i < settingsItems.length - 1 && styles.settingsBorder]}
-            onPress={() => {}}
+            onPress={item.action}
           >
             <Ionicons
               name={item.icon}

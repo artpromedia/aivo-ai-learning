@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -80,7 +80,7 @@ export default function ShopScreen() {
               <Text>{item.currency === 'coins' ? '🪙' : '💎'}</Text>
               <Text style={styles.priceText}>{item.price}</Text>
             </View>
-            <AivoButton title={t('common.buy')} onPress={() => {}} size="sm" style={{ marginTop: 8 }} />
+            <AivoButton title={t('common.buy')} onPress={() => Alert.alert(item.name, t('common.comingSoon'))} size="sm" style={{ marginTop: 8 }} />
           </AivoCard>
         ))}
       </View>
