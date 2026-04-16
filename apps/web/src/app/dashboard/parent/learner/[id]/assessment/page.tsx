@@ -177,7 +177,7 @@ export default function ParentAssessmentPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-3xl p-10 shadow-xl border border-slate-100 text-center max-w-lg space-y-6">
           <div className="w-20 h-20 mx-auto rounded-full bg-green-100 flex items-center justify-center">
-            <span className="text-4xl">&#10003;</span>
+            <span className="text-4xl">✓</span>
           </div>
           <h1 className="text-2xl font-heading font-bold text-slate-900">{t("already_complete_title")}</h1>
           <p className="text-slate-500">
@@ -220,7 +220,7 @@ export default function ParentAssessmentPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-3xl p-10 shadow-xl border border-slate-100 text-center max-w-lg space-y-6">
           <div className="w-20 h-20 mx-auto rounded-full bg-green-100 flex items-center justify-center">
-            <span className="text-4xl">&#10003;</span>
+            <span className="text-4xl">✓</span>
           </div>
           <h1 className="text-2xl font-heading font-bold text-slate-900">{t("assessment_complete_title")}</h1>
           <p className="text-slate-500">{t("assessment_thank_you")}</p>
@@ -278,7 +278,7 @@ export default function ParentAssessmentPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-8 text-center shadow-2xl max-w-sm mx-4 animate-in fade-in zoom-in">
             <div className="w-16 h-16 rounded-full bg-green-400 flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl text-white">&#10003;</span>
+              <span className="text-3xl text-white">✓</span>
             </div>
             <h3 className="text-xl font-heading font-bold text-slate-900">{t("section_complete")}</h3>
             <p className="text-sm text-slate-500 mt-1">{t("moving_next")}</p>
@@ -434,7 +434,7 @@ function QuestionInput({
                   backgroundColor: isSelected ? categoryColor : "transparent",
                   color: "white",
                 }}>
-                {isSelected ? "&#10003;" : ""}
+                {isSelected ? "✓" : ""}
               </span>
               {opt}
             </button>

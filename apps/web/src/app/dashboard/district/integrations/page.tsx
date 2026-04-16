@@ -585,7 +585,7 @@ export default function IntegrationsPage() {
             {requestSubmitted ? (
               <>
                 <div className="text-center py-4">
-                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">&#10003;</div>
+                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
                   <h3 className="font-heading font-bold text-lg text-slate-900 mb-2">Request Submitted</h3>
                   <p className="text-sm text-slate-500">Thank you! We&apos;ll review your request and keep you updated on its status.</p>
                 </div>
