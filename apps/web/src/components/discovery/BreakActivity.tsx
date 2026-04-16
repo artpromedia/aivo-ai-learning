@@ -1,22 +1,13 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { BREAK_OPTIONS, type BreakType, type BreakOption } from "./types";
+import { BREAK_OPTIONS, type BreakType, type BreakOption, type FunctioningLevel } from "./types";
 
 interface BreakActivityProps {
   chapterNumber: number;
   onBreakComplete: () => void;
+  functioningLevel?: FunctioningLevel;
+  parentMinDurationSec?: number;
 }
-
-const WORD_GAME_WORDS = [
-  { scrambled: "PPLAE", answer: "APPLE", hint: "A red fruit" },
-  { scrambled: "ASTR", answer: "STAR", hint: "It shines at night" },
-  { scrambled: "OBOK", answer: "BOOK", hint: "You read it" },
-  { scrambled: "USNE", answer: "SNUE", hint: "You hear it" },
-  { scrambled: "RTEE", answer: "TREE", hint: "It grows in the ground" },
-  { scrambled: "IFHS", answer: "FISH", hint: "It lives in water" },
-  { scrambled: "ATBO", answer: "BOAT", hint: "It floats on water" },
-  { scrambled: "OMNO", answer: "MOON", hint: "You see it at night" },
-];
 
 const EXERCISES = [
   { name: "Reach for the Sky!", emoji: "🙆", instruction: "Stretch your arms up high!" },
@@ -36,17 +27,29 @@ const MUSIC_VISUALS = [
   { emoji: "🎺", color: "#EF4444" },
 ];
 
-export default function BreakActivity({ chapterNumber, onBreakComplete }: BreakActivityProps) {
+const WORD_GAME_WORDS = [
+  { scrambled: "PPLAE", answer: "APPLE", hint: "A red fruit" },
+  { scrambled: "ASTR", answer: "STAR", hint: "It shines at night" },
+  { scrambled: "OBOK", answer: "BOOK", hint: "You read it" },
+  { scrambled: "RTEE", answer: "TREE", hint: "It grows in the ground" },
+  { scrambled: "IFHS", answer: "FISH", hint: "It lives in water" },
+  { scrambled: "ATBO", answer: "BOAT", hint: "It floats on water" },
+  { scrambled: "OMNO", answer: "MOON", hint: "You see it at night" },
+];
+
+export default function BreakActivity({ chapterNumber, onBreakComplete, functioningLevel = "STANDARD", parentMinDurationSec = 0 }: BreakActivityProps) {
   const [selectedBreak, setSelectedBreak] = useState<BreakType | null>(null);
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [totalTime, setTotalTime] = useState(0);
   const [show, setShow] = useState(false);
   const [exerciseIdx, setExerciseIdx] = useState(0);
   const [wordIdx, setWordIdx] = useState(0);
   const [guess, setGuess] = useState("");
   const [wordSolved, setWordSolved] = useState(false);
   const [musicNoteIdx, setMusicNoteIdx] = useState(0);
+  const [elapsedSec, setElapsedSec] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const isTextFree = functioningLevel === "NON_VERBAL" || functioningLevel === "PRE_SYMBOLIC";
+  const minDurationMet = elapsedSec >= parentMinDurationSec;
 
   useEffect(() => {
     const t = setTimeout(() => setShow(true), 200);
@@ -60,87 +63,89 @@ export default function BreakActivity({ chapterNumber, onBreakComplete }: BreakA
 
   const startBreak = useCallback((option: BreakOption) => {
     setSelectedBreak(option.type);
-    setTimeLeft(option.durationSec);
-    setTotalTime(option.durationSec);
+    setElapsedSec(0);
   }, []);
 
   useEffect(() => {
-    if (timeLeft <= 0 && selectedBreak) return;
     if (!selectedBreak) return;
-
     timerRef.current = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 1) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          return 0;
-        }
-        return t - 1;
-      });
+      setElapsedSec(t => t + 1);
     }, 1000);
-
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [selectedBreak]);
 
   useEffect(() => {
-    if (!selectedBreak || selectedBreak !== "exercise" || timeLeft <= 0) return;
+    if (!selectedBreak || selectedBreak !== "exercise") return;
     const interval = setInterval(() => {
       setExerciseIdx(i => (i + 1) % EXERCISES.length);
     }, 6000);
     return () => clearInterval(interval);
-  }, [selectedBreak, timeLeft]);
+  }, [selectedBreak]);
 
   useEffect(() => {
-    if (!selectedBreak || selectedBreak !== "music" || timeLeft <= 0) return;
+    if (!selectedBreak || selectedBreak !== "music") return;
     const interval = setInterval(() => {
       setMusicNoteIdx(i => (i + 1) % MUSIC_VISUALS.length);
     }, 800);
     return () => clearInterval(interval);
-  }, [selectedBreak, timeLeft]);
+  }, [selectedBreak]);
 
-  const progressPct = totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0;
-  const breakDone = selectedBreak && timeLeft <= 0;
+  const breakOptions = isTextFree
+    ? BREAK_OPTIONS.filter(o => o.type !== "word_game")
+    : BREAK_OPTIONS;
 
   if (!selectedBreak) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-950 flex items-center justify-center px-4">
         <div className={`max-w-md w-full text-center transition-all duration-700 ${show ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}>
           <div className="text-5xl mb-4">🎉</div>
-          <h2 className="text-2xl font-heading font-bold text-white mb-2">
-            Great job on Chapter {chapterNumber}!
-          </h2>
-          <p className="text-white/60 font-body mb-8">
-            Time for a quick break before the next chapter. Pick what sounds fun!
-          </p>
+          {!isTextFree && (
+            <>
+              <h2 className="text-2xl font-heading font-bold text-white mb-2">
+                Great job on Chapter {chapterNumber}!
+              </h2>
+              <p className="text-white/60 font-body mb-8">
+                Time for a break. Pick what feels good — take as long as you need!
+              </p>
+            </>
+          )}
+          {isTextFree && (
+            <div className="mb-8" />
+          )}
 
           <div className="space-y-3">
-            {BREAK_OPTIONS.map((option) => (
+            {breakOptions.map((option) => (
               <button
                 key={option.type}
                 onClick={() => startBreak(option)}
                 className="w-full flex items-center gap-4 bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-4 hover:bg-white/20 hover:scale-[1.02] active:scale-[0.98] transition-all text-left group"
+                style={{ minHeight: "72px" }}
+                aria-label={option.label}
               >
                 <div className="text-4xl group-hover:scale-110 transition-transform">
                   {option.emoji}
                 </div>
-                <div className="flex-1">
-                  <p className="font-heading font-bold text-white text-lg">{option.label}</p>
-                  <p className="text-white/50 text-sm font-body">{option.description}</p>
-                </div>
-                <div className="text-white/30 text-sm font-body">
-                  {option.durationSec}s
-                </div>
+                {!isTextFree && (
+                  <div className="flex-1">
+                    <p className="font-heading font-bold text-white text-lg">{option.label}</p>
+                    <p className="text-white/50 text-sm font-body">{option.description}</p>
+                  </div>
+                )}
               </button>
             ))}
           </div>
 
-          <button
-            onClick={onBreakComplete}
-            className="mt-6 text-white/40 hover:text-white/60 text-sm font-body transition"
-          >
-            Skip break
-          </button>
+          {parentMinDurationSec <= 0 && (
+            <button
+              onClick={onBreakComplete}
+              className="mt-6 text-white/40 hover:text-white/60 text-sm font-body transition"
+              style={{ minHeight: "48px" }}
+            >
+              {isTextFree ? "➡️" : "Skip break"}
+            </button>
+          )}
         </div>
       </div>
     );
@@ -149,27 +154,15 @@ export default function BreakActivity({ chapterNumber, onBreakComplete }: BreakA
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-950 flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">
-        <div className="mb-6">
-          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden mb-2">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 transition-all duration-1000"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-          <p className="text-white/40 text-xs font-body">
-            {breakDone ? "Break complete!" : `${timeLeft}s remaining`}
-          </p>
-        </div>
-
-        {selectedBreak === "music" && !breakDone && (
+        {selectedBreak === "music" && (
           <div className="space-y-6">
             <div className="text-6xl mb-4 animate-pulse">🎵</div>
-            <h2 className="text-2xl font-heading font-bold text-white mb-2">
-              Relax & Listen
-            </h2>
-            <p className="text-white/60 font-body mb-6">
-              Close your eyes and enjoy the moment...
-            </p>
+            {!isTextFree && (
+              <>
+                <h2 className="text-2xl font-heading font-bold text-white mb-2">Relax & Listen</h2>
+                <p className="text-white/60 font-body mb-6">Close your eyes and enjoy the moment...</p>
+              </>
+            )}
             <div className="flex justify-center gap-4 h-32 items-end">
               {MUSIC_VISUALS.map((note, i) => (
                 <div
@@ -200,22 +193,17 @@ export default function BreakActivity({ chapterNumber, onBreakComplete }: BreakA
           </div>
         )}
 
-        {selectedBreak === "word_game" && !breakDone && (
+        {selectedBreak === "word_game" && (
           <div className="space-y-6">
             <div className="text-6xl mb-4">🔤</div>
-            <h2 className="text-2xl font-heading font-bold text-white mb-2">
-              Word Scramble!
-            </h2>
-            <p className="text-white/60 font-body mb-2">
-              Unscramble the letters to find the word
-            </p>
+            <h2 className="text-2xl font-heading font-bold text-white mb-2">Word Scramble!</h2>
+            <p className="text-white/60 font-body mb-2">Unscramble the letters to find the word</p>
             <div className="bg-white/10 backdrop-blur rounded-2xl p-6 border border-white/20">
               <div className="flex justify-center gap-2 mb-4">
                 {WORD_GAME_WORDS[wordIdx].scrambled.split("").map((letter, i) => (
                   <div
                     key={i}
                     className="w-12 h-12 rounded-xl bg-amber-400 flex items-center justify-center text-xl font-heading font-bold text-slate-900 shadow-lg"
-                    style={{ animationName: "bounce", animationDuration: "1s", animationDelay: `${i * 0.1}s`, animationIterationCount: "1" }}
                   >
                     {letter}
                   </div>
@@ -234,7 +222,6 @@ export default function BreakActivity({ chapterNumber, onBreakComplete }: BreakA
                     onChange={(e) => {
                       const val = e.target.value.toUpperCase();
                       setGuess(val);
-                      const answer = WORD_GAME_WORDS[wordIdx].answer;
                       const scrambled = WORD_GAME_WORDS[wordIdx].scrambled;
                       const sorted = (s: string) => s.split("").sort().join("");
                       if (val.length === scrambled.length && sorted(val) === sorted(scrambled)) {
@@ -251,17 +238,21 @@ export default function BreakActivity({ chapterNumber, onBreakComplete }: BreakA
           </div>
         )}
 
-        {selectedBreak === "exercise" && !breakDone && (
+        {selectedBreak === "exercise" && (
           <div className="space-y-6">
             <div className="text-7xl mb-4 transition-all duration-500" key={exerciseIdx}>
               {EXERCISES[exerciseIdx].emoji}
             </div>
-            <h2 className="text-2xl font-heading font-bold text-white mb-2">
-              {EXERCISES[exerciseIdx].name}
-            </h2>
-            <p className="text-white/70 font-body text-lg mb-4">
-              {EXERCISES[exerciseIdx].instruction}
-            </p>
+            {!isTextFree && (
+              <>
+                <h2 className="text-2xl font-heading font-bold text-white mb-2">
+                  {EXERCISES[exerciseIdx].name}
+                </h2>
+                <p className="text-white/70 font-body text-lg mb-4">
+                  {EXERCISES[exerciseIdx].instruction}
+                </p>
+              </>
+            )}
             <div className="flex justify-center gap-2">
               {EXERCISES.map((_, i) => (
                 <div
@@ -275,23 +266,26 @@ export default function BreakActivity({ chapterNumber, onBreakComplete }: BreakA
           </div>
         )}
 
-        {breakDone && (
-          <div className="space-y-6">
-            <div className="text-6xl mb-4">✨</div>
-            <h2 className="text-2xl font-heading font-bold text-white mb-2">
-              Break Complete!
-            </h2>
-            <p className="text-white/60 font-body mb-6">
-              Ready for the next chapter?
+        <div className="mt-8">
+          <button
+            onClick={onBreakComplete}
+            disabled={!minDurationMet}
+            className={`px-8 py-4 rounded-full text-white font-heading font-bold text-lg shadow-xl transition-all ${
+              minDurationMet
+                ? "bg-gradient-to-r from-amber-400 to-orange-500 hover:scale-105 active:scale-95"
+                : "bg-white/10 cursor-not-allowed opacity-50"
+            }`}
+            style={{ minHeight: "56px" }}
+            aria-label="I'm ready to go back"
+          >
+            {isTextFree ? "✅ ➡️" : "I'm ready to go back"}
+          </button>
+          {!minDurationMet && !isTextFree && (
+            <p className="text-white/30 text-xs mt-2 font-body">
+              Take your time — {parentMinDurationSec - elapsedSec}s before you can continue
             </p>
-            <button
-              onClick={onBreakComplete}
-              className="px-8 py-4 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-heading font-bold text-lg shadow-xl hover:scale-105 active:scale-95 transition-transform"
-            >
-              Continue Adventure! 🚀
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

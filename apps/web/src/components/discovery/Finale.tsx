@@ -13,13 +13,14 @@ interface FinaleProps {
   xpEarned: number;
   functioningLevel: FunctioningLevel;
   onFinish: () => void;
+  onExitHome?: () => void;
   onSubmitResults: () => Promise<{ success: boolean; brain?: any; error?: string }>;
 }
 
 type FinaleStage = "celebration" | "awakening" | "complete";
 type BrainStatus = "idle" | "building" | "ready" | "error";
 
-export default function Finale({ learnerName, chapterResults, totalCorrect, totalAttempts, xpEarned, functioningLevel, onFinish, onSubmitResults }: FinaleProps) {
+export default function Finale({ learnerName, chapterResults, totalCorrect, totalAttempts, xpEarned, functioningLevel, onFinish, onExitHome, onSubmitResults }: FinaleProps) {
   const [stage, setStage] = useState<FinaleStage>("celebration");
   const [step, setStep] = useState(0);
   const [brainStatus, setBrainStatus] = useState<BrainStatus>("idle");
@@ -191,6 +192,21 @@ export default function Finale({ learnerName, chapterResults, totalCorrect, tota
         <div className={`transition-all duration-1000 ${step >= 4 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
           {brainStatusSection()}
         </div>
+
+        {onExitHome && brainStatus !== "building" && (
+          <button
+            onClick={() => {
+              if (brainStatus === "idle") {
+                buildBrain();
+              }
+              onExitHome();
+            }}
+            className="mt-4 text-white/40 hover:text-white/60 text-sm font-body transition"
+            style={{ minHeight: "48px" }}
+          >
+            Go home — progress is saved
+          </button>
+        )}
       </div>
     </div>
   );

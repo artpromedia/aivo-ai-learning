@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import type {
   DiscoveryState,
   AdventurePhase,
@@ -137,25 +137,71 @@ interface UseDiscoveryEngineProps {
   accessToken: string | null;
 }
 
+const STORAGE_KEY_PREFIX = "aivo_discovery_";
+
+function loadSavedState(learnerId: string): DiscoveryState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${learnerId}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as DiscoveryState;
+    if (parsed.phase === "results" || parsed.phase === "finale") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function persistState(learnerId: string, state: DiscoveryState) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${learnerId}`, JSON.stringify(state));
+  } catch {}
+}
+
+function clearSavedState(learnerId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(`${STORAGE_KEY_PREFIX}${learnerId}`);
+  } catch {}
+}
+
 export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, accessToken }: UseDiscoveryEngineProps) {
   const config = FUNCTIONING_LEVEL_CONFIG[functioningLevel] || FUNCTIONING_LEVEL_CONFIG.STANDARD;
   const chapters = ADVENTURE_CHAPTERS.slice(0, config.chaptersCount);
 
-  const [state, setState] = useState<DiscoveryState>({
-    phase: "loading",
-    currentChapterIdx: 0,
-    currentActivityIdx: 0,
-    chapterResults: [],
-    startedAt: Date.now(),
-    currentDifficulty: "easy",
-    streakCorrect: 0,
-    streakWrong: 0,
-    totalCorrect: 0,
-    totalAttempts: 0,
-    xpEarned: 0,
-    favoriteChapterIdx: 0,
-    responseLatencies: [],
+  const [state, setState] = useState<DiscoveryState>(() => {
+    const saved = loadSavedState(learnerId);
+    if (saved) return saved;
+    return {
+      phase: "loading",
+      currentChapterIdx: 0,
+      currentActivityIdx: 0,
+      chapterResults: [],
+      startedAt: Date.now(),
+      currentDifficulty: "easy",
+      streakCorrect: 0,
+      streakWrong: 0,
+      totalCorrect: 0,
+      totalAttempts: 0,
+      xpEarned: 0,
+      favoriteChapterIdx: 0,
+      responseLatencies: [],
+    };
   });
+
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const resumeHandledRef = useRef(false);
+
+  useEffect(() => {
+    if (state.phase !== "loading" && state.phase !== "results") {
+      persistState(learnerId, state);
+    }
+    if (state.phase === "results") {
+      clearSavedState(learnerId);
+    }
+  }, [state, learnerId]);
 
   const chapterActivitiesRef = useRef<Record<string, ChapterActivities>>({});
   const chapterCorrectRef = useRef(0);
@@ -210,6 +256,17 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     chapterActivitiesRef.current[chapter.id] = fallback;
     return fallback;
   }, [accessToken, learnerId]);
+
+  useEffect(() => {
+    if (resumeHandledRef.current) return;
+    const saved = loadSavedState(learnerId);
+    if (!saved) return;
+    resumeHandledRef.current = true;
+    const needsActivities = saved.phase === "activity" || saved.phase === "chapter-intro" || saved.phase === "chapter-complete";
+    if (needsActivities && chapters[saved.currentChapterIdx]) {
+      loadChapterActivities(chapters[saved.currentChapterIdx]);
+    }
+  }, [learnerId, chapters, loadChapterActivities]);
 
   const getCurrentActivities = useCallback((): Activity[] => {
     const chapter = chapters[state.currentChapterIdx];
@@ -342,8 +399,17 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
   }, [state.currentChapterIdx, chapters, loadChapterActivities]);
 
   const finishAdventure = useCallback(() => {
+    clearSavedState(learnerId);
     setState(s => ({ ...s, phase: "results" }));
-  }, []);
+  }, [learnerId]);
+
+  const exitToHome = useCallback(() => {
+    persistState(learnerId, stateRef.current);
+  }, [learnerId]);
+
+  const hasSavedProgress = useCallback(() => {
+    return loadSavedState(learnerId) !== null;
+  }, [learnerId]);
 
   const submitResults = useCallback(async (): Promise<{ success: boolean; brain?: any; error?: string }> => {
     if (!accessToken) return { success: false, error: "No auth token" };
@@ -386,6 +452,8 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     advanceToNextChapter,
     resumeAfterBreak,
     finishAdventure,
+    exitToHome,
+    hasSavedProgress,
     submitResults,
   };
 }

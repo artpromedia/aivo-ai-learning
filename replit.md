@@ -186,6 +186,8 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `POST /api/ai/parse-iep` — AI IEP document parser (ai-svc direct)
 - `POST /api/learning/path/:learnerId/:subject/init` — Auto-initialize learning path
 - `POST /api/brain/:learnerId/engagement` — Sync engagement data to brain episodic memory
+- `GET /api/brain/:learnerId/next-action` — Brain's recommended next action for learner PrimarySlot (returns tutorKey, title, subtitle, color)
+- `GET /api/brain/:learnerId/sensory-css-vars` — Server-computed CSS variable bundle per FL + sensory profile overrides
 - `GET /api/brain/:learnerId/context` — Full enriched Brain context (brain state + sensory + IEP + language profile)
 - `POST /api/brain/:learnerId/regression-check` — Detect ≥15% mastery regression with causal analysis
 - `POST /api/assessments/sensory-profile` — Create/update learner sensory profile (5 modalities)
@@ -209,7 +211,7 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `/dashboard/teacher` — Teacher dashboard (connected learners grid with Brain Visualization)
 - `/dashboard/caregiver` — Caregiver dashboard (connected learners grid with Brain Visualization)
 - `/dashboard/therapist` — Therapist dashboard (connected clients grid with Brain Visualization)
-- `/dashboard/learner` — Learner dashboard (gamification panel: XP/level/streak/badges/currency + tutor grid + navigation to quests/challenges/shop/leaderboard)
+- `/dashboard/learner` — Learner dashboard v2 (decomposed from 491-line monolith into `LearnerHome/` folder: TopBar, TutorShelf, QuietProgressStrip, SelCheckIn, TodayTab, AdventuresTab, RewardsTab, PreSymbolicView, NonVerbalView, LearnerHome shell. FL variant map: STANDARD=3 tabs/scroll shelf/full progress, SUPPORTED=3 tabs icons only/4 tutors paged, LOW_VERBAL=2 tabs Play/Gifts/stars only, NON_VERBAL=1 full-width picture button/single tutor card/hidden progress, PRE_SYMBOLIC=parent-gated entry. Uses FlVariantProvider+SensoryProvider from learner-ui. Primary slot calls brain next-action API)
 - `/dashboard/learner/assessment` — Discovery Adventure (immersive baseline assessment with 6 themed chapters, tutor characters, adaptive difficulty, adventure map)
 - `/dashboard/learner/lesson/[tutorKey]` — Lesson Chat UI
 - `/dashboard/learner/homework` — Homework Helper (upload photo/paste text, assignment list)
@@ -268,20 +270,29 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **DB Schema**: 15 engagement tables in `packages/db/src/schema/engagement.ts`
 - **Seed Data**: 50 avatar items (6 categories), 25 quest chapters (5 worlds × 5 chapters)
 
-### Discovery Adventure (Baseline Assessment)
+### Discovery Adventure (Baseline Assessment) — v2 Redesign
 - **Architecture**: Immersive 6-chapter adventure replacing traditional quiz-based baseline assessment
 - **Chapters**: Sage (ELA), Nova (Math), Spark (Science), Harmony (SEL), Echo (Speech), Pixel (Executive Function)
-- **Components**: `apps/web/src/components/discovery/` — PreAdventure, AdventureMap, ChapterIntro, ActivityRenderer, ChapterComplete, Finale
-- **Engine**: `useDiscoveryEngine.ts` — Adaptive difficulty (easy→medium→hard based on chapter performance ≥80%/≤40%), functioning-level-aware chapter counts (STANDARD=6, SUPPORTED=5, LOW_VERBAL=4, NON_VERBAL=3, PRE_SYMBOLIC=0)
+- **Components**: `apps/web/src/components/discovery/` — PreAdventure (v2: click-to-advance, tap-to-replay tutor intros, "Show me the map first"), AdventureMapPreview (full journey preview screen), ChapterIntro (v2: "Ready?" card with Start/Hear again/Bring my grown-up), ActivityRenderer, ChapterComplete, BreakActivity (v2: learner-controlled duration, no timer minimum, text-free NON_VERBAL/PRE_SYMBOLIC path, parent min-duration setting), Finale (v2: mid-sequence exit with autosave), Awakening
+- **Engine**: `useDiscoveryEngine.ts` — Adaptive difficulty (easy→medium→hard based on chapter performance ≥80%/≤40%), functioning-level-aware chapter counts (STANDARD=6, SUPPORTED=6, LOW_VERBAL=6, NON_VERBAL=4, PRE_SYMBOLIC=0)
+- **Resume Support**: Discovery state auto-persisted to localStorage on every phase change; restored on page reload; cleared on completion. `exitToHome()` saves current progress, `hasSavedProgress()` checks for resume availability.
 - **AI Integration**: Activities generated per chapter via `POST /api/assessments/learner/discovery/:learnerId/chapter` → ai-svc `build_discovery_adventure_prompt()`
 - **Fallback**: Rich local fallback activities for all 6 chapters when AI service unavailable
 - **Completion Flow**: `POST /api/assessments/learner/discovery/:learnerId/complete` → saves assessment_attempt with domain_scores → calls brain-svc `/api/brain/clone` with discovery results + parent assessment data
 - **Brain Creation**: clone_pipeline seeds initial mastery levels from discovery scores (raw_score × difficulty_multiplier), disability_signals from parent assessment, and episodic_memory with both assessment events
 - **Backend**: assessment-svc route + ai-svc `generate-discovery-chapter` endpoint + brain-svc enhanced clone pipeline
 
-### The Stage (Learner Experience Engine)
+### The Stage (Learner Experience Engine) — v2 Redesign
 - **Architecture**: Full-screen immersive learning environment replacing the chat-based lesson UI
-- **Components**: `apps/web/src/components/stage/` — StageLayout, TutorCharacter, ResponseZone, StageContent, CelebrationOverlay, ProgressPath
+- **Components**: `apps/web/src/components/stage/` — StageLayout (refactored: `role="application"` scoped to ResponseZone only), TutorCharacter, ResponseZone, StageContent, CelebrationOverlay, ProgressPath, BeatPreview, StageBreakCloud
+- **BeatPreview**: Click-to-advance overlay (600-1200ms) shown before each beat; auto-advances on motion budget timer
+- **StageBreakCloud**: 4 break options (breathe, music, stretch, quiet sit) + "Go home" exit; accessible from stage header
+- **Help Button**: Visible "I need help" affordance in stage header
+- **Back Home**: Visible "Back home" button always available
+- **Progress**: Shows "beats until break" checkpoint counter
+- **Subtitles**: ON by default for all FL levels
+- **Particle Counts by FL**: STANDARD=10, SUPPORTED=3, LOW_VERBAL/NON_VERBAL/PRE_SYMBOLIC=0
+- **Co-viewing Badge**: Friendly copy when parent co-viewing active
 - **Hooks**: useSensoryAdapter (loads sensory profile, computes rendering adaptations), useSessionFlow (beat-based state machine), useTTS (Web Speech API per-tutor voices)
 - **Beat System**: Lessons structured as theatrical "beats" — narration, demonstration, interaction, celebration. Each beat specifies visuals, tutor state, interaction type, and transitions.
 - **Response Types**: Multiple choice (adaptive count per functioning level), drag-and-drop, voice input, tap-to-continue
@@ -289,6 +300,15 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Tutor Themes**: Each of 14 tutors has unique environment (gradient, particles, accent color, env name)
 - **Session Flow**: Opening greeting → Warm-up review → Core lesson beats → Mastery check → Celebration (XP/coins/badges)
 - **CSS Animations**: 17 custom keyframe animations in globals.css (breathe, speak, celebrate, think, float, confetti, etc.)
+
+### packages/learner-ui (Shared Component Kit)
+- **Package**: `packages/learner-ui/` — shared component kit for learner surfaces, imported as `@aivo/learner-ui`
+- **Tokens**: `fl-profiles.ts` (FL_PROFILES: density/maxChoices/textWeight/motionBudget/audioFirst per FL), `motion.ts` (MOTION_BUDGETS: maxParticles/maxConcurrentAnim/transitionMs/celebrationDuration/autoAdvanceMs per FL), `sensory-vars.ts` (CSS variable writer)
+- **Primitives**: Button (48/72px hit-target variants), IconText (icon+text dual-encode), Card (predictable slot container)
+- **Layout**: LearnerShell (skip link + top bar + main + break cloud slot), PrimarySlot (single CTA slot), TabsRail (tabbed secondary nav)
+- **Feedback**: BreakCloud (global break overlay), Celebration (tutor-aware, dismissible, motion-budget-aware), PreviewOverlay ("you're about to..." transition card)
+- **Adapters**: SensoryProvider (reads profile → writes CSS vars to :root), FlVariantProvider (exposes FL variant to children via context)
+- **A11y**: SkipLink, LiveRegion (aria-live polite/assertive announcements)
 
 ### Brain Visualization
 - **Component**: `apps/web/src/components/BrainVisualization.tsx`

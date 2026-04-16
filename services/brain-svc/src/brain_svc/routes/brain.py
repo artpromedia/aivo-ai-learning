@@ -562,3 +562,190 @@ async def update_engagement_profile(learner_id: str, request: dict = None, db: S
     db.commit()
 
     return {"status": "engagement_synced", "learner_id": learner_id}
+
+
+@router.get("/{learner_id}/next-action")
+async def get_next_action(learner_id: str, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
+    _verify_parent_access(db, auth, learner_id)
+
+    brain = db.execute(
+        text("SELECT * FROM brain_states WHERE learner_id = :lid AND status = 'active' ORDER BY version DESC LIMIT 1"),
+        {"lid": learner_id}
+    ).mappings().first()
+
+    tutors_catalog = {
+        "nova": {"name": "Nova", "domain": "Mathematics", "icon": "🔢", "color": "#7C3AED"},
+        "sage": {"name": "Sage", "domain": "English Language Arts", "icon": "📚", "color": "#10B981"},
+        "spark": {"name": "Spark", "domain": "Science", "icon": "🔬", "color": "#F59E0B"},
+        "chrono": {"name": "Chrono", "domain": "History & Social Studies", "icon": "🏛️", "color": "#6366F1"},
+        "pixel": {"name": "Pixel", "domain": "Coding", "icon": "💻", "color": "#06B6D4"},
+        "echo": {"name": "Echo", "domain": "Speech & Language", "icon": "🗣️", "color": "#EC4899"},
+        "harmony": {"name": "Harmony", "domain": "Social-Emotional Learning", "icon": "💜", "color": "#8B5CF6"},
+        "atlas": {"name": "Atlas", "domain": "Geography", "icon": "🌍", "color": "#14B8A6"},
+        "cadence": {"name": "Cadence", "domain": "Music & Rhythm", "icon": "🎵", "color": "#D946EF"},
+        "vigor": {"name": "Vigor", "domain": "Physical Education", "icon": "🏃", "color": "#22C55E"},
+        "lingua": {"name": "Lingua", "domain": "World Languages", "icon": "🌐", "color": "#0EA5E9"},
+        "forge": {"name": "Forge", "domain": "STEM & Engineering", "icon": "⚙️", "color": "#EF4444"},
+        "compass": {"name": "Compass", "domain": "Life Skills", "icon": "🧭", "color": "#F97316"},
+        "muse": {"name": "Muse", "domain": "Creative Arts", "icon": "🎨", "color": "#A855F7"},
+    }
+
+    domain_to_tutor = {
+        "math": "nova", "mathematics": "nova",
+        "ela": "sage", "english": "sage", "reading": "sage",
+        "science": "spark",
+        "history": "chrono", "social_studies": "chrono",
+        "coding": "pixel", "executive_function": "pixel", "programming": "pixel",
+        "speech": "echo", "language": "echo",
+        "sel": "harmony", "social_emotional": "harmony",
+        "geography": "atlas",
+        "music": "cadence",
+        "pe": "vigor", "physical_education": "vigor",
+        "languages": "lingua", "world_languages": "lingua",
+        "stem": "forge", "engineering": "forge",
+        "life_skills": "compass",
+        "creative_arts": "muse", "art": "muse",
+    }
+
+    if not brain:
+        default_tutor = "nova"
+        info = tutors_catalog[default_tutor]
+        return {
+            "type": "lesson",
+            "tutorKey": default_tutor,
+            "tutorName": info["name"],
+            "tutorColor": info["color"],
+            "tutorIcon": info["icon"],
+            "title": f"Start learning with {info['name']}",
+            "subtitle": info["domain"],
+        }
+
+    mastery = brain.get("mastery_scores") or brain.get("mastery_levels")
+    if isinstance(mastery, str):
+        try:
+            mastery = json.loads(mastery)
+        except (json.JSONDecodeError, TypeError):
+            mastery = {}
+
+    if not mastery or not isinstance(mastery, dict):
+        mastery = {}
+
+    weakest_tutor = None
+    lowest_score = 999
+    for domain_key, score_data in mastery.items():
+        score = score_data if isinstance(score_data, (int, float)) else (score_data.get("score", 50) if isinstance(score_data, dict) else 50)
+        tutor_key = domain_to_tutor.get(domain_key.lower(), domain_key)
+        if tutor_key in tutors_catalog and score < lowest_score:
+            lowest_score = score
+            weakest_tutor = tutor_key
+
+    if not weakest_tutor:
+        weakest_tutor = "nova"
+
+    info = tutors_catalog[weakest_tutor]
+    return {
+        "type": "lesson",
+        "tutorKey": weakest_tutor,
+        "tutorName": info["name"],
+        "tutorColor": info["color"],
+        "tutorIcon": info["icon"],
+        "title": f"Continue with {info['name']} → {info['domain']}",
+        "subtitle": f"Practice {info['domain'].lower()}",
+    }
+
+
+FL_CSS_PROFILES = {
+    "STANDARD": {
+        "--learner-base-font": "16px",
+        "--learner-hit-target": "48px",
+        "--learner-motion-ms": "300",
+        "--learner-saturation": "1",
+        "--learner-max-concurrent-anim": "10",
+        "--learner-max-choices": "4",
+        "--learner-text-weight": "normal",
+    },
+    "SUPPORTED": {
+        "--learner-base-font": "18px",
+        "--learner-hit-target": "56px",
+        "--learner-motion-ms": "200",
+        "--learner-saturation": "0.85",
+        "--learner-max-concurrent-anim": "3",
+        "--learner-max-choices": "3",
+        "--learner-text-weight": "normal",
+    },
+    "LOW_VERBAL": {
+        "--learner-base-font": "20px",
+        "--learner-hit-target": "64px",
+        "--learner-motion-ms": "150",
+        "--learner-saturation": "0.7",
+        "--learner-max-concurrent-anim": "0",
+        "--learner-max-choices": "2",
+        "--learner-text-weight": "bold",
+    },
+    "NON_VERBAL": {
+        "--learner-base-font": "24px",
+        "--learner-hit-target": "72px",
+        "--learner-motion-ms": "100",
+        "--learner-saturation": "0.6",
+        "--learner-max-concurrent-anim": "0",
+        "--learner-max-choices": "2",
+        "--learner-text-weight": "bold",
+    },
+    "PRE_SYMBOLIC": {
+        "--learner-base-font": "28px",
+        "--learner-hit-target": "80px",
+        "--learner-motion-ms": "0",
+        "--learner-saturation": "0.5",
+        "--learner-max-concurrent-anim": "0",
+        "--learner-max-choices": "2",
+        "--learner-text-weight": "bold",
+    },
+}
+
+
+@router.get("/{learner_id}/sensory-css-vars")
+async def get_sensory_css_vars(learner_id: str, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
+    _verify_parent_access(db, auth, learner_id)
+
+    brain = db.execute(
+        text("SELECT functioning_level, functioning_level_profile, sensory_profile FROM brain_states WHERE learner_id = :lid AND status = 'active' ORDER BY version DESC LIMIT 1"),
+        {"lid": learner_id}
+    ).mappings().first()
+
+    fl = "STANDARD"
+    if brain:
+        fl_profile = brain.get("functioning_level_profile")
+        raw_fl = brain.get("functioning_level")
+        if isinstance(fl_profile, str):
+            try:
+                fl_data = json.loads(fl_profile)
+                if isinstance(fl_data, dict) and fl_data.get("level"):
+                    fl = str(fl_data["level"]).upper().replace(" ", "_")
+            except (json.JSONDecodeError, TypeError):
+                pass
+        if fl == "STANDARD" and raw_fl and isinstance(raw_fl, str):
+            fl = raw_fl.upper().replace(" ", "_")
+
+    css_vars = dict(FL_CSS_PROFILES.get(fl, FL_CSS_PROFILES["STANDARD"]))
+
+    if brain:
+        profile = brain.get("sensory_profile")
+        if isinstance(profile, str):
+            try:
+                profile = json.loads(profile)
+            except (json.JSONDecodeError, TypeError):
+                profile = None
+        if isinstance(profile, dict):
+            if profile.get("reducedMotion"):
+                css_vars["--learner-motion-ms"] = "0"
+                css_vars["--learner-max-concurrent-anim"] = "0"
+            if profile.get("highContrast"):
+                css_vars["--learner-saturation"] = "1.2"
+            if profile.get("largerText"):
+                current_size = int(css_vars["--learner-base-font"].replace("px", ""))
+                css_vars["--learner-base-font"] = f"{current_size + 4}px"
+
+    return {
+        "functioningLevel": fl,
+        "cssVars": css_vars,
+    }

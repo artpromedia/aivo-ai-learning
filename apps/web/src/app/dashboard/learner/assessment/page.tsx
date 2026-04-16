@@ -149,12 +149,16 @@ function DiscoveryAdventureInner({
     advanceToNextChapter,
     resumeAfterBreak,
     finishAdventure,
+    exitToHome,
+    hasSavedProgress,
     submitResults,
   } = useDiscoveryEngine({ learnerId, learnerName, functioningLevel, accessToken });
 
   useEffect(() => {
-    startAdventure();
-  }, [startAdventure]);
+    if (!hasSavedProgress()) {
+      startAdventure();
+    }
+  }, [startAdventure, hasSavedProgress]);
 
   const currentChapter = chapters[state.currentChapterIdx];
   const currentActivity = getCurrentActivity();
@@ -240,6 +244,7 @@ function DiscoveryAdventureInner({
       <BreakActivity
         chapterNumber={state.currentChapterIdx + 1}
         onBreakComplete={resumeAfterBreak}
+        functioningLevel={functioningLevel}
       />
     );
   }
@@ -254,6 +259,10 @@ function DiscoveryAdventureInner({
         xpEarned={state.xpEarned}
         functioningLevel={functioningLevel}
         onFinish={() => router.push("/dashboard/learner")}
+        onExitHome={() => {
+          exitToHome();
+          router.push("/dashboard/learner");
+        }}
         onSubmitResults={submitResults}
       />
     );

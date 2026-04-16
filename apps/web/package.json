@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@aivo/brand": "workspace:*",
+    "@aivo/learner-ui": "workspace:*",
     "lucide-react": "^0.513.0",
     "next": "^15.3.3",
     "next-intl": "^4.9.1",
