@@ -404,7 +404,7 @@ function BrainNetworkView({
               <circle
                 cx={pos.x} cy={pos.y} r={r + 4}
                 fill={node.color}
-                opacity={0.15 + Math.sin(tick * 0.03 + node.pulsePhase) * 0.1}
+                opacity={0.2}
               />
               <circle
                 cx={pos.x} cy={pos.y} r={r}
