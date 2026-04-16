@@ -202,9 +202,9 @@ export default function ParentLearnerSettingsPage() {
             <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Learning Goals</h2>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-semibold text-slate-900">{t("daily_goal_label")}</label>
+                <label htmlFor="daily-goal-minutes" className="text-sm font-semibold text-slate-900">{t("daily_goal_label")}</label>
                 <div className="flex items-center gap-4 mt-2">
-                  <input type="range" min={10} max={120} step={5} value={settings.learningGoals.dailyGoalMinutes}
+                  <input id="daily-goal-minutes" type="range" min={10} max={120} step={5} value={settings.learningGoals.dailyGoalMinutes}
                     onChange={e => updateGoals("dailyGoalMinutes", Number(e.target.value))}
                     className="flex-1 accent-purple-500" />
                   <span className="text-lg font-bold text-purple-600 w-16 text-right">{settings.learningGoals.dailyGoalMinutes}m</span>
@@ -212,16 +212,16 @@ export default function ParentLearnerSettingsPage() {
                 <p className="text-xs text-slate-400 mt-1">{t("daily_goal_recommended")}</p>
               </div>
               <div>
-                <label className="text-sm font-semibold text-slate-900">Weekly Session Target</label>
+                <label htmlFor="weekly-session-target" className="text-sm font-semibold text-slate-900">Weekly Session Target</label>
                 <div className="flex items-center gap-4 mt-2">
-                  <input type="range" min={1} max={14} step={1} value={settings.learningGoals.weeklySessionTarget}
+                  <input id="weekly-session-target" type="range" min={1} max={14} step={1} value={settings.learningGoals.weeklySessionTarget}
                     onChange={e => updateGoals("weeklySessionTarget", Number(e.target.value))}
                     className="flex-1 accent-purple-500" />
                   <span className="text-lg font-bold text-purple-600 w-20 text-right">{settings.learningGoals.weeklySessionTarget}/week</span>
                 </div>
               </div>
               <div>
-                <label className="text-sm font-semibold text-slate-900">Preferred Time</label>
+                <span className="text-sm font-semibold text-slate-900">Preferred Time</span>
                 <div className="flex gap-2 mt-2">
                   {(["morning", "afternoon", "evening"] as const).map(time => (
                     <button key={time} onClick={() => updateGoals("preferredSessionTime", time)}
@@ -260,7 +260,7 @@ export default function ParentLearnerSettingsPage() {
             <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Tutor Session Preferences</h2>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-semibold text-slate-900">Session Length</label>
+                <span className="text-sm font-semibold text-slate-900">Session Length</span>
                 <div className="flex gap-2 mt-2">
                   {([
                     { key: "short" as const, label: "Short (10 min)" },

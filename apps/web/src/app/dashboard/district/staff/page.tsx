@@ -213,25 +213,25 @@ function InviteStaffModal({ accessToken, schools, onClose, onCreated }: {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1">
-              <label className="text-xs text-slate-500 font-medium">Full Name *</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
+              <label htmlFor="staff-name" className="text-xs text-slate-500 font-medium">Full Name *</label>
+              <input id="staff-name" type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-slate-500 font-medium">Email *</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
+              <label htmlFor="staff-email" className="text-xs text-slate-500 font-medium">Email *</label>
+              <input id="staff-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs text-slate-500 font-medium">Role *</label>
-                <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none">
+                <label htmlFor="staff-role" className="text-xs text-slate-500 font-medium">Role *</label>
+                <select id="staff-role" value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none">
                   <option value="TEACHER">Teacher</option>
                   <option value="THERAPIST">Therapist</option>
                   <option value="CAREGIVER">Caregiver</option>
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-slate-500 font-medium">Assign to School</label>
-                <select value={schoolId} onChange={(e) => setSchoolId(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none">
+                <label htmlFor="staff-school" className="text-xs text-slate-500 font-medium">Assign to School</label>
+                <select id="staff-school" value={schoolId} onChange={(e) => setSchoolId(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none">
                   <option value="">No assignment</option>
                   {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>

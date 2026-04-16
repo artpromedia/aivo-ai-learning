@@ -63,7 +63,8 @@ export function LearnerSummaryCard({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-purple-200 transition-all cursor-pointer"
+    <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") router.push(`/dashboard/parent/learner/${learner.id}`); }}
+      className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-purple-200 transition-all cursor-pointer"
       onClick={() => router.push(`/dashboard/parent/learner/${learner.id}`)}>
       <div className="p-5 lg:p-6">
         <div className="flex items-center justify-between mb-3">
@@ -107,7 +108,7 @@ export function LearnerSummaryCard({
           <span className="font-semibold">{statusLabel}</span>
         </div>
 
-        <div className="flex gap-2 mt-4 flex-wrap" onClick={e => e.stopPropagation()}>
+        <div role="group" className="flex gap-2 mt-4 flex-wrap" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
           <button onClick={() => router.push(`/dashboard/parent/learner/${learner.id}/progress`)}
             className="px-4 py-2 text-sm rounded-full bg-purple-50 text-purple-700 font-semibold hover:bg-purple-100 transition" style={{ minHeight: 44 }}>
             View Progress

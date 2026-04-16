@@ -133,7 +133,7 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
   return (
     <ParentLayoutContext.Provider value={{ learners, activeLearner, setActiveLearner, unreadCount, refreshLearners }}>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
-        <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:flex-col"
+        <nav aria-label="Parent sidebar" className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:flex-col"
           onMouseEnter={() => setSidebarExpanded(true)} onMouseLeave={() => setSidebarExpanded(false)}
           style={{ width: sidebarExpanded ? 220 : 64, transition: "width 200ms ease" }}>
           <div className="flex flex-col h-full bg-white/95 backdrop-blur border-r border-slate-100 shadow-sm">
@@ -184,7 +184,7 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
               </button>
             </div>
           </div>
-        </div>
+        </nav>
 
         <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-100 lg:pl-16" style={{ transition: "padding 200ms ease" }}>
           <div className="flex items-center justify-between px-4 lg:px-6 h-14">

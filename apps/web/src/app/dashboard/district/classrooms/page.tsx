@@ -167,27 +167,27 @@ function CreateClassroomModal({ accessToken, schools, onClose, onCreated }: {
         {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1">
-            <label className="text-xs text-slate-500 font-medium">Classroom Name *</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Room 101" className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
+            <label htmlFor="classroom-name" className="text-xs text-slate-500 font-medium">Classroom Name *</label>
+            <input id="classroom-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Room 101" className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-slate-500 font-medium">School *</label>
-            <select value={schoolId} onChange={(e) => setSchoolId(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none">
+            <label htmlFor="classroom-school" className="text-xs text-slate-500 font-medium">School *</label>
+            <select id="classroom-school" value={schoolId} onChange={(e) => setSchoolId(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none">
               {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className="text-xs text-slate-500 font-medium">Grade</label>
-              <input type="text" value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none" />
+              <label htmlFor="classroom-grade" className="text-xs text-slate-500 font-medium">Grade</label>
+              <input id="classroom-grade" type="text" value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none" />
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-slate-500 font-medium">Subject</label>
-              <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none" />
+              <label htmlFor="classroom-subject" className="text-xs text-slate-500 font-medium">Subject</label>
+              <input id="classroom-subject" type="text" value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none" />
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-slate-500 font-medium">Capacity</label>
-              <input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none" />
+              <label htmlFor="classroom-capacity" className="text-xs text-slate-500 font-medium">Capacity</label>
+              <input id="classroom-capacity" type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none" />
             </div>
           </div>
           <div className="flex gap-3 pt-2">

@@ -85,8 +85,12 @@ export default function CommandPalette() {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command palette"
       ref={overlayRef}
       onClick={handleOverlayClick}
+      onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
       className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center pt-[20vh]"
     >
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden">
