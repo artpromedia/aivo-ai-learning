@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 
 interface BrainState {
@@ -133,9 +133,7 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
   const [viewMode, setViewMode] = useState<ViewMode>("brain");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const animRef = useRef<number>(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -183,19 +181,7 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
     return () => { cancelled = true; };
   }, [learnerId, accessToken]);
 
-  useEffect(() => {
-    let running = true;
-    const animate = () => {
-      if (!running) return;
-      setTick(t => t + 1);
-      animRef.current = requestAnimationFrame(animate);
-    };
-    animRef.current = requestAnimationFrame(animate);
-    return () => {
-      running = false;
-      cancelAnimationFrame(animRef.current);
-    };
-  }, []);
+  useEffect(() => {}, []);
 
   const mastery = brainState?.masteryLevels || {};
   const nodes = generateBrainNodes(mastery);
@@ -207,13 +193,8 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
   const iepGoals = brainState?.iepProfile?.goals || [];
   const signals = brainState?.disabilitySignals || {};
 
-  const getNodePosition = useCallback((node: BrainNode, t: number): { x: number; y: number } => {
-    const speed = 0.02;
-    const amplitude = 2;
-    return {
-      x: node.x + Math.sin(t * speed + node.pulsePhase) * amplitude,
-      y: node.y + Math.cos(t * speed * 0.7 + node.pulsePhase) * amplitude,
-    };
+  const getNodePosition = useCallback((node: BrainNode): { x: number; y: number } => {
+    return { x: node.x, y: node.y };
   }, []);
 
   if (loading) {
@@ -315,7 +296,6 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
           <BrainNetworkView
             nodes={nodes}
             connections={connections}
-            tick={tick}
             hoveredNode={hoveredNode}
             setHoveredNode={setHoveredNode}
             getNodePosition={getNodePosition}
@@ -350,14 +330,13 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
 }
 
 function BrainNetworkView({
-  nodes, connections, tick, hoveredNode, setHoveredNode, getNodePosition, funcBadge, funcLevel, compact,
+  nodes, connections, hoveredNode, setHoveredNode, getNodePosition, funcBadge, funcLevel, compact,
 }: {
   nodes: BrainNode[];
   connections: NeuralConnection[];
-  tick: number;
   hoveredNode: string | null;
   setHoveredNode: (id: string | null) => void;
-  getNodePosition: (node: BrainNode, t: number) => { x: number; y: number };
+  getNodePosition: (node: BrainNode) => { x: number; y: number };
   funcBadge: { label: string; color: string; bg: string };
   funcLevel: string;
   compact: boolean;
@@ -393,9 +372,8 @@ function BrainNetworkView({
           const fromNode = nodes.find(n => n.id === conn.from);
           const toNode = nodes.find(n => n.id === conn.to);
           if (!fromNode || !toNode) return null;
-          const fromPos = getNodePosition(fromNode, tick);
-          const toPos = getNodePosition(toNode, tick);
-          const pulseOffset = (tick * 0.03 + i * 0.5) % 1;
+          const fromPos = getNodePosition(fromNode);
+          const toPos = getNodePosition(toNode);
           const isHighlighted = hoveredNode === conn.from || hoveredNode === conn.to;
 
           return (
@@ -407,22 +385,14 @@ function BrainNetworkView({
                 strokeWidth={isHighlighted ? 2 : 1}
                 strokeOpacity={isHighlighted ? 0.8 : 0.15 + conn.strength * 0.4}
               />
-              <circle
-                cx={fromPos.x + (toPos.x - fromPos.x) * pulseOffset}
-                cy={fromPos.y + (toPos.y - fromPos.y) * pulseOffset}
-                r={1.5}
-                fill="#7C3AED"
-                opacity={0.3 + conn.strength * 0.5}
-              />
             </g>
           );
         })}
 
         {nodes.map((node) => {
-          const pos = getNodePosition(node, tick);
+          const pos = getNodePosition(node);
           const isHovered = hoveredNode === node.id;
-          const pulseScale = 1 + Math.sin(tick * 0.04 + node.pulsePhase) * 0.08;
-          const r = node.radius * (isHovered ? 1.3 : pulseScale);
+          const r = node.radius * (isHovered ? 1.3 : 1);
 
           return (
             <g
