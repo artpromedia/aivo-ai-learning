@@ -70,13 +70,13 @@ outputType = "console"
 name = "Web App"
 author = "agent"
 
-[workflows.workflow.metadata]
-outputType = "webview"
-
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd apps/web && npx next dev --port 5000 --turbopack --hostname 0.0.0.0"
 waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [[ports]]
 localPort = 3001
@@ -141,6 +141,11 @@ externalPort = 3003
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 6379
+externalPort = 3000
+exposeLocalhost = true
 
 [[ports]]
 localPort = 8222
