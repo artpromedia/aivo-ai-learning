@@ -82,6 +82,8 @@ export default function ParentDashboard() {
   const [activities, setActivities] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     setNewLearner((prev) => ({ ...prev, preferredLanguage: currentLocale }));
@@ -157,6 +159,13 @@ export default function ParentDashboard() {
 
   const addLearner = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!accessToken) {
+      setSubmitError("You are not authenticated. Please refresh and try again.");
+      return;
+    }
+
+    setSubmitError(null);
+    setSubmitSuccess(null);
     setSubmitting(true);
     try {
       const res = await fetch("/api/users/learners", {
@@ -164,13 +173,32 @@ export default function ParentDashboard() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify(newLearner),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setLearners([...learners, data.learner]);
-        setShowAddForm(false);
-        setNewLearner({ name: "", gradeLevel: "", pin: "", zipCode: "", country: "US", region: "", preferredLanguage: currentLocale });
-        setCurriculumInfo(null);
+
+      if (!res.ok) {
+        let message = "Unable to add learner. Please try again.";
+        try {
+          const err = await res.json();
+          if (err?.error) message = String(err.error);
+        } catch {}
+        setSubmitError(message);
+        return;
       }
+
+      const data = await res.json();
+      const createdLearner = data?.learner;
+      if (!createdLearner?.id) {
+        setSubmitError("Learner was created, but navigation data is missing.");
+        return;
+      }
+
+      setLearners((prev) => [...prev, createdLearner]);
+      setShowAddForm(false);
+      setNewLearner({ name: "", gradeLevel: "", pin: "", zipCode: "", country: "US", region: "", preferredLanguage: currentLocale });
+      setCurriculumInfo(null);
+      setSubmitSuccess("Learner added successfully. Opening profile...");
+      setTimeout(() => {
+        router.push(`/dashboard/parent/learner/${createdLearner.id}`);
+      }, 700);
     } finally {
       setSubmitting(false);
     }
@@ -299,6 +327,18 @@ export default function ParentDashboard() {
             style={{ minHeight: 48 }}>
             {submitting ? t("common.saving") : t("common.submit")}
           </button>
+
+          {submitError && (
+            <p className="text-sm font-semibold text-red-600" role="alert" aria-live="assertive">
+              {submitError}
+            </p>
+          )}
+
+          {submitSuccess && (
+            <p className="text-sm font-semibold text-green-700" role="status" aria-live="polite">
+              {submitSuccess}
+            </p>
+          )}
         </form>
       )}
 
