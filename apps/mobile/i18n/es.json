@@ -127,7 +127,8 @@
     "disableMfa": "Desactivar MFA",
     "enterPassword": "Ingresa tu contraseña",
     "mfaEnabled": "MFA ha sido activado.",
-    "mfaDisabled": "MFA ha sido desactivado."
+    "mfaDisabled": "MFA ha sido desactivado.",
+    "enterCode": "Ingresa el código de 6 dígitos enviado a tu correo."
   },
   "parentBilling": {
     "title": "Facturación y Suscripción",

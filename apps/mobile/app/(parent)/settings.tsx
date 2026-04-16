@@ -21,6 +21,8 @@ export default function SettingsScreen() {
   const [mfaLoading, setMfaLoading] = useState(false);
   const [mfaMsg, setMfaMsg] = useState('');
   const [showMfaInput, setShowMfaInput] = useState(false);
+  const [mfaEnableToken, setMfaEnableToken] = useState('');
+  const [mfaEnableCode, setMfaEnableCode] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -40,19 +42,59 @@ export default function SettingsScreen() {
     setMfaLoading(true);
     setMfaMsg('');
     try {
-      const endpoint = mfaEnabled ? '/api/auth/mfa/disable' : '/api/auth/mfa/enable';
-      const res = await apiFetch(API.IDENTITY, endpoint, {
+      if (mfaEnabled) {
+        const res = await apiFetch(API.IDENTITY, '/api/auth/mfa/disable', {
+          method: 'POST',
+          body: JSON.stringify({ password: mfaPassword }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setMfaEnabled(false);
+          setMfaMsg(t('parentSettings.mfaDisabled'));
+          setShowMfaInput(false);
+          setMfaPassword('');
+        } else {
+          setMfaMsg(data.error || t('common.error'));
+        }
+      } else {
+        const res = await apiFetch(API.IDENTITY, '/api/auth/mfa/enable', {
+          method: 'POST',
+          body: JSON.stringify({ password: mfaPassword }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setMfaEnableToken(data.mfaToken);
+          setMfaPassword('');
+        } else {
+          setMfaMsg(data.error || t('common.error'));
+        }
+      }
+    } catch {
+      setMfaMsg(t('common.error'));
+    }
+    setMfaLoading(false);
+  };
+
+  const handleMfaConfirmEnable = async () => {
+    if (mfaEnableCode.length !== 6) return;
+    setMfaLoading(true);
+    setMfaMsg('');
+    try {
+      const res = await apiFetch(API.IDENTITY, '/api/auth/mfa/confirm-enable', {
         method: 'POST',
-        body: JSON.stringify({ password: mfaPassword }),
+        body: JSON.stringify({ mfaToken: mfaEnableToken, code: mfaEnableCode }),
+        skipAuth: true,
       });
       const data = await res.json();
       if (res.ok) {
-        setMfaEnabled(data.mfaEnabled);
-        setMfaMsg(data.mfaEnabled ? t('parentSettings.mfaEnabled') : t('parentSettings.mfaDisabled'));
+        setMfaEnabled(true);
+        setMfaMsg(t('parentSettings.mfaEnabled'));
+        setMfaEnableToken('');
+        setMfaEnableCode('');
         setShowMfaInput(false);
-        setMfaPassword('');
       } else {
         setMfaMsg(data.error || t('common.error'));
+        setMfaEnableCode('');
       }
     } catch {
       setMfaMsg(t('common.error'));
@@ -131,7 +173,36 @@ export default function SettingsScreen() {
           </View>
         </View>
         {mfaMsg ? <Text style={styles.mfaMsg}>{mfaMsg}</Text> : null}
-        {!showMfaInput ? (
+        {mfaEnableToken ? (
+          <View style={styles.mfaInputSection}>
+            <Text style={styles.mfaDesc}>{t('parentSettings.enterCode') || 'Enter the 6-digit code sent to your email.'}</Text>
+            <TextInput
+              style={[styles.mfaInput, { textAlign: 'center', letterSpacing: 8, fontSize: 20, fontFamily: 'Nunito-Bold' }]}
+              value={mfaEnableCode}
+              onChangeText={v => setMfaEnableCode(v.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="number-pad"
+              maxLength={6}
+            />
+            <View style={styles.mfaBtnRow}>
+              <AivoButton
+                title={mfaLoading ? t('common.saving') : t('common.confirm')}
+                onPress={handleMfaConfirmEnable}
+                loading={mfaLoading}
+                disabled={mfaEnableCode.length !== 6}
+                size="sm"
+                style={{ flex: 1 }}
+              />
+              <Pressable
+                style={styles.mfaCancelBtn}
+                onPress={() => { setMfaEnableToken(''); setMfaEnableCode(''); setShowMfaInput(false); }}
+              >
+                <Text style={styles.mfaCancelText}>{t('common.cancel')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : !showMfaInput ? (
           <Pressable
             style={[styles.mfaToggleBtn, mfaEnabled && styles.mfaToggleBtnDanger]}
             onPress={() => setShowMfaInput(true)}

@@ -21,10 +21,13 @@ export default function VerifyMfaScreen() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendMsg, setResendMsg] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
     setTimeout(() => inputRefs.current[0]?.focus(), 300);
+    return () => { if (cooldownRef.current) clearInterval(cooldownRef.current); };
   }, []);
 
   const handleChange = (index: number, value: string) => {
@@ -63,7 +66,7 @@ export default function VerifyMfaScreen() {
   };
 
   const handleResend = async () => {
-    if (!mfaToken) return;
+    if (!mfaToken || resendCooldown > 0) return;
     setResending(true);
     setResendMsg('');
     setError('');
@@ -72,6 +75,9 @@ export default function VerifyMfaScreen() {
       setResendMsg(t('auth.codeResent'));
       setCode(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
+      setResendCooldown(30);
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+      cooldownRef.current = setInterval(() => setResendCooldown(v => { if (v <= 1) { if (cooldownRef.current) clearInterval(cooldownRef.current); cooldownRef.current = null; return 0; } return v - 1; }), 1000);
     } else {
       setError(result.error || t('auth.resendFailed'));
     }
@@ -140,9 +146,9 @@ export default function VerifyMfaScreen() {
             style={{ marginTop: spacing.md }}
           />
 
-          <Pressable onPress={handleResend} disabled={resending} style={styles.resendBtn}>
-            <Text style={styles.resendText}>
-              {resending ? t('auth.resending') : t('auth.resendCode')}
+          <Pressable onPress={handleResend} disabled={resending || resendCooldown > 0} style={styles.resendBtn}>
+            <Text style={[styles.resendText, (resending || resendCooldown > 0) && { opacity: 0.5 }]}>
+              {resending ? t('auth.resending') : resendCooldown > 0 ? `${t('auth.resendCode')} (${resendCooldown}s)` : t('auth.resendCode')}
             </Text>
           </Pressable>
 

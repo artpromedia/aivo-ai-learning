@@ -59,7 +59,8 @@
     "continue": "متابعة",
     "skip": "تخطي",
     "done": "تم",
-    "welcome": "مرحباً"
+    "welcome": "مرحباً",
+    "wait": "انتظر"
   },
   "auth": {
     "welcome_back": "مرحباً بعودتك",
@@ -1124,7 +1125,11 @@
     "disable_mfa": "تعطيل MFA",
     "confirm_password_mfa": "أدخل كلمة المرور لتأكيد هذا التغيير.",
     "mfa_enabled_msg": "تم تفعيل MFA. ستحتاج إلى إدخال رمز من بريدك الإلكتروني عند كل تسجيل دخول.",
-    "mfa_disabled_msg": "تم تعطيل MFA."
+    "mfa_disabled_msg": "تم تعطيل MFA.",
+    "mfa_enter_code": "أدخل الرمز المكون من 6 أرقام المرسل إلى بريدك الإلكتروني.",
+    "mfa_resend": "إعادة إرسال الرمز",
+    "mfa_code_resent": "تم إرسال رمز جديد.",
+    "verification_failed": "فشل التحقق. يرجى المحاولة مرة أخرى."
   },
   "marketing": {
     "header": {

@@ -59,7 +59,8 @@
     "continue": "Continue",
     "skip": "Skip",
     "done": "Done",
-    "welcome": "Welcome"
+    "welcome": "Welcome",
+    "wait": "Wait"
   },
   "auth": {
     "welcome_back": "Welcome back",
@@ -1107,7 +1108,11 @@
     "disable_mfa": "Disable MFA",
     "confirm_password_mfa": "Enter your password to confirm this change.",
     "mfa_enabled_msg": "MFA has been enabled. You will need to enter a code from your email on each login.",
-    "mfa_disabled_msg": "MFA has been disabled."
+    "mfa_disabled_msg": "MFA has been disabled.",
+    "mfa_enter_code": "Enter the 6-digit code sent to your email.",
+    "mfa_resend": "Resend code",
+    "mfa_code_resent": "A new code has been sent.",
+    "verification_failed": "Verification failed. Please try again."
   },
   "language": {
     "en": "English",

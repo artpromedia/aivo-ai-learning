@@ -59,7 +59,8 @@
     "continue": "続ける",
     "skip": "スキップ",
     "done": "完了",
-    "welcome": "ようこそ"
+    "welcome": "ようこそ",
+    "wait": "待機"
   },
   "auth": {
     "welcome_back": "おかえりなさい",
@@ -1107,7 +1108,11 @@
     "disable_mfa": "MFAを無効にする",
     "confirm_password_mfa": "この変更を確認するためにパスワードを入力してください。",
     "mfa_enabled_msg": "MFAが有効になりました。ログインの度にメールのコードを入力する必要があります。",
-    "mfa_disabled_msg": "MFAが無効になりました。"
+    "mfa_disabled_msg": "MFAが無効になりました。",
+    "mfa_enter_code": "メールに送信された6桁のコードを入力してください。",
+    "mfa_resend": "コードを再送信",
+    "mfa_code_resent": "新しいコードが送信されました。",
+    "verification_failed": "確認に失敗しました。もう一度お試しください。"
   },
   "language": {
     "en": "English",

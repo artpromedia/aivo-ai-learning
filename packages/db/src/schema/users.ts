@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, boolean, text, integer } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, boolean, text, integer, index } from "drizzle-orm/pg-core";
 import { userRoleEnum } from "./enums";
 import { tenants } from "./tenants";
 
@@ -29,12 +29,17 @@ export const mfaCodes = pgTable("mfa_codes", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id").references(() => users.id).notNull(),
   code: varchar("code", { length: 6 }).notNull(),
+  purpose: varchar("purpose", { length: 20 }).default("login").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   attempts: integer("attempts").default(0).notNull(),
   resends: integer("resends").default(0).notNull(),
   used: boolean("used").default(false).notNull(),
+  usedAt: timestamp("used_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  index("mfa_codes_user_id_idx").on(table.userId),
+  index("mfa_codes_expires_at_idx").on(table.expiresAt),
+]);
 
 export const sessions = pgTable("sessions", {
   id: uuid("id").defaultRandom().primaryKey(),

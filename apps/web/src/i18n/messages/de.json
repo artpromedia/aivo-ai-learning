@@ -59,7 +59,8 @@
     "continue": "Fortfahren",
     "skip": "Überspringen",
     "done": "Fertig",
-    "welcome": "Willkommen"
+    "welcome": "Willkommen",
+    "wait": "Warten"
   },
   "auth": {
     "welcome_back": "Willkommen zurück",
@@ -1124,7 +1125,11 @@
     "disable_mfa": "MFA deaktivieren",
     "confirm_password_mfa": "Geben Sie Ihr Passwort ein, um diese Änderung zu bestätigen.",
     "mfa_enabled_msg": "MFA wurde aktiviert. Sie müssen bei jeder Anmeldung einen Code aus Ihrer E-Mail eingeben.",
-    "mfa_disabled_msg": "MFA wurde deaktiviert."
+    "mfa_disabled_msg": "MFA wurde deaktiviert.",
+    "mfa_enter_code": "Geben Sie den 6-stelligen Code ein, der an Ihre E-Mail gesendet wurde.",
+    "mfa_resend": "Code erneut senden",
+    "mfa_code_resent": "Ein neuer Code wurde gesendet.",
+    "verification_failed": "Verifizierung fehlgeschlagen. Versuchen Sie es erneut."
   },
   "marketing": {
     "header": {

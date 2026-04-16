@@ -127,7 +127,8 @@
     "disableMfa": "Disable MFA",
     "enterPassword": "Enter your password",
     "mfaEnabled": "MFA has been enabled.",
-    "mfaDisabled": "MFA has been disabled."
+    "mfaDisabled": "MFA has been disabled.",
+    "enterCode": "Enter the 6-digit code sent to your email."
   },
   "parentBilling": {
     "title": "Billing & Subscription",

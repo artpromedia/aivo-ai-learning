@@ -59,7 +59,8 @@
     "continue": "继续",
     "skip": "跳过",
     "done": "完成",
-    "welcome": "欢迎"
+    "welcome": "欢迎",
+    "wait": "等待"
   },
   "auth": {
     "welcome_back": "欢迎回来",
@@ -1124,7 +1125,11 @@
     "disable_mfa": "禁用MFA",
     "confirm_password_mfa": "输入密码以确认此更改。",
     "mfa_enabled_msg": "MFA已启用。每次登录时您需要输入邮箱中的验证码。",
-    "mfa_disabled_msg": "MFA已禁用。"
+    "mfa_disabled_msg": "MFA已禁用。",
+    "mfa_enter_code": "输入发送到您邮箱的6位验证码。",
+    "mfa_resend": "重新发送",
+    "mfa_code_resent": "新验证码已发送。",
+    "verification_failed": "验证失败，请重试。"
   },
   "marketing": {
     "header": {

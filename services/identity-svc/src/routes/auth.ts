@@ -110,16 +110,17 @@ const COMMS_URL = process.env.COMMS_SERVICE_URL || "http://localhost:3003";
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || "aivo-internal-dev-key";
 
 function generateMfaCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 999999).toString();
 }
 
-async function createAndSendMfaCode(db: any, userId: string, email: string, name: string): Promise<string> {
-  await db.update(mfaCodes).set({ used: true }).where(and(eq(mfaCodes.userId, userId), eq(mfaCodes.used, false)));
+async function createAndSendMfaCode(db: any, userId: string, email: string, name: string, purpose = "login"): Promise<string> {
+  await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(and(eq(mfaCodes.userId, userId), eq(mfaCodes.used, false)));
 
   const code = generateMfaCode();
   const [mfaRecord] = await db.insert(mfaCodes).values({
     userId,
     code,
+    purpose,
     expiresAt: new Date(Date.now() + 10 * 60 * 1000),
   }).returning();
 
@@ -752,7 +753,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
 
     const [mfaRecord] = await db.select().from(mfaCodes)
-      .where(and(eq(mfaCodes.userId, payload.sub), eq(mfaCodes.used, false)))
+      .where(and(eq(mfaCodes.userId, payload.sub), eq(mfaCodes.used, false), eq(mfaCodes.purpose, "login")))
       .orderBy(sql`created_at DESC`)
       .limit(1);
 
@@ -765,16 +766,16 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
 
     if (mfaRecord.attempts >= 5) {
-      await db.update(mfaCodes).set({ used: true }).where(eq(mfaCodes.id, mfaRecord.id));
+      await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(eq(mfaCodes.id, mfaRecord.id));
       return reply.status(429).send({ error: "Too many attempts. Please login again." });
     }
 
     if (mfaRecord.code !== code) {
-      await db.update(mfaCodes).set({ attempts: mfaRecord.attempts + 1 }).where(eq(mfaCodes.id, mfaRecord.id));
+      await db.update(mfaCodes).set({ attempts: sql`${mfaCodes.attempts} + 1` }).where(and(eq(mfaCodes.id, mfaRecord.id), sql`${mfaCodes.attempts} < 5`));
       return reply.status(400).send({ error: "Invalid code", attemptsRemaining: 4 - mfaRecord.attempts });
     }
 
-    await db.update(mfaCodes).set({ used: true }).where(eq(mfaCodes.id, mfaRecord.id));
+    await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(eq(mfaCodes.id, mfaRecord.id));
 
     const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
     if (!user) return reply.status(404).send({ error: "User not found" });
@@ -846,7 +847,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
 
     if (existing) {
-      await db.update(mfaCodes).set({ used: true }).where(eq(mfaCodes.id, existing.id));
+      await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(eq(mfaCodes.id, existing.id));
     }
 
     const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
@@ -856,6 +857,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     await db.insert(mfaCodes).values({
       userId: user.id,
       code,
+      purpose: existing?.purpose || "login",
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       resends: (existing?.resends ?? 0) + 1,
     });
@@ -898,7 +900,49 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const valid = await verifyPassword(user.passwordHash, password);
     if (!valid) return reply.status(400).send({ error: "Incorrect password" });
 
-    await db.update(users).set({ mfaEnabled: true, mfaMethod: "email" }).where(eq(users.id, user.id));
+    await createAndSendMfaCode(db, user.id, user.email!, user.name, "enable");
+    const mfaToken = await signMfaToken(user.id, user.email!);
+    return { success: true, mfaPending: true, mfaToken };
+  });
+
+  app.post("/api/auth/mfa/confirm-enable", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["mfaToken", "code"],
+        properties: {
+          mfaToken: { type: "string" },
+          code: { type: "string" },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { mfaToken, code } = req.body as any;
+    const db = (app as any).db;
+
+    let payload: any;
+    try { payload = await verifyJWT(mfaToken); } catch { return reply.status(401).send({ error: "Session expired" }); }
+    if (payload.purpose !== "mfa") return reply.status(401).send({ error: "Invalid token" });
+
+    const [mfaRecord] = await db.select().from(mfaCodes)
+      .where(and(eq(mfaCodes.userId, payload.sub), eq(mfaCodes.used, false), eq(mfaCodes.purpose, "enable")))
+      .orderBy(sql`created_at DESC`)
+      .limit(1);
+
+    if (!mfaRecord) return reply.status(400).send({ error: "No pending code found" });
+    if (new Date(mfaRecord.expiresAt) < new Date()) return reply.status(400).send({ error: "Code expired" });
+    if (mfaRecord.attempts >= 5) {
+      await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(eq(mfaCodes.id, mfaRecord.id));
+      return reply.status(429).send({ error: "Too many attempts" });
+    }
+    if (mfaRecord.code !== code) {
+      await db.update(mfaCodes).set({ attempts: sql`${mfaCodes.attempts} + 1` }).where(and(eq(mfaCodes.id, mfaRecord.id), sql`${mfaCodes.attempts} < 5`));
+      return reply.status(400).send({ error: "Invalid code" });
+    }
+
+    await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(eq(mfaCodes.id, mfaRecord.id));
+    await db.update(users).set({ mfaEnabled: true, mfaMethod: "email" }).where(eq(users.id, payload.sub));
     return { success: true, mfaEnabled: true };
   });
 
@@ -960,7 +1004,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   setInterval(async () => {
     try {
       const db = (app as any).db;
-      await db.delete(mfaCodes).where(lt(mfaCodes.expiresAt, new Date(Date.now() - 24 * 60 * 60 * 1000)));
+      await db.delete(mfaCodes).where(lt(mfaCodes.expiresAt, new Date(Date.now() - 60 * 60 * 1000)));
     } catch {}
   }, 60 * 60 * 1000);
 }

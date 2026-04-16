@@ -21,10 +21,13 @@ export default function VerifyMfaPage() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendMsg, setResendMsg] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
+    return () => { if (cooldownRef.current) clearInterval(cooldownRef.current); };
   }, []);
 
   const handleChange = (index: number, value: string) => {
@@ -90,6 +93,7 @@ export default function VerifyMfaPage() {
   }, [code]);
 
   const handleResend = async () => {
+    if (resendCooldown > 0) return;
     setResending(true);
     setResendMsg("");
     setError("");
@@ -104,6 +108,9 @@ export default function VerifyMfaPage() {
         setResendMsg(t("code_resent"));
         setCode(["", "", "", "", "", ""]);
         inputRefs.current[0]?.focus();
+        setResendCooldown(30);
+        if (cooldownRef.current) clearInterval(cooldownRef.current);
+        cooldownRef.current = setInterval(() => setResendCooldown(v => { if (v <= 1) { if (cooldownRef.current) clearInterval(cooldownRef.current); cooldownRef.current = null; return 0; } return v - 1; }), 1000);
       } else {
         setError(data.error || t("resend_failed"));
       }
@@ -190,10 +197,10 @@ export default function VerifyMfaPage() {
           <div className="mt-6 text-center space-y-3">
             <button
               onClick={handleResend}
-              disabled={resending}
+              disabled={resending || resendCooldown > 0}
               className="text-sm text-violet-600 font-semibold hover:text-violet-800 transition disabled:opacity-50"
             >
-              {resending ? t("resending") : t("resend_code")}
+              {resending ? t("resending") : resendCooldown > 0 ? `${t("resend_code")} (${resendCooldown}s)` : t("resend_code")}
             </button>
             <div>
               <Link href="/login" className="text-sm text-gray-500 hover:text-gray-700 transition">{t("back_to_login")}</Link>

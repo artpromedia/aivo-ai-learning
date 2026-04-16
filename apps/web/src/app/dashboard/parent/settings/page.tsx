@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -32,6 +32,10 @@ export default function ParentSettingsPage() {
   const [mfaErr, setMfaErr] = useState("");
   const [mfaPassword, setMfaPassword] = useState("");
   const [showMfaConfirm, setShowMfaConfirm] = useState(false);
+  const [mfaEnableToken, setMfaEnableToken] = useState("");
+  const [mfaEnableCode, setMfaEnableCode] = useState("");
+  const [mfaResendCooldown, setMfaResendCooldown] = useState(0);
+  const mfaCooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [notifPrefs, setNotifPrefs] = useState({
     emailEnabled: true, emailDigest: "daily", emailMarketing: false,
@@ -49,6 +53,10 @@ export default function ParentSettingsPage() {
   const [deleteAccPw, setDeleteAccPw] = useState("");
   const [deleteAccErr, setDeleteAccErr] = useState("");
   const [deleteAccLoading, setDeleteAccLoading] = useState(false);
+
+  useEffect(() => {
+    return () => { if (mfaCooldownRef.current) clearInterval(mfaCooldownRef.current); };
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -135,22 +143,76 @@ export default function ParentSettingsPage() {
     if (!mfaPassword) { setMfaErr(t("enter_password")); return; }
     setMfaLoading(true);
     try {
-      const endpoint = mfaEnabled ? "/api/auth/mfa/disable" : "/api/auth/mfa/enable";
-      const res = await fetch(endpoint, {
+      if (mfaEnabled) {
+        const res = await fetch("/api/auth/mfa/disable", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ password: mfaPassword }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setMfaErr(data.error || t("update_failed")); }
+        else {
+          setMfaEnabled(false);
+          setMfaMsg(t("mfa_disabled_msg"));
+          setMfaPassword(""); setShowMfaConfirm(false);
+        }
+      } else {
+        const res = await fetch("/api/auth/mfa/enable", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ password: mfaPassword }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setMfaErr(data.error || t("update_failed")); }
+        else {
+          setMfaEnableToken(data.mfaToken);
+          setMfaPassword("");
+        }
+      }
+    } catch { setMfaErr(t("network_error")); }
+    setMfaLoading(false);
+  };
+
+  const handleMfaConfirmEnable = async () => {
+    if (mfaEnableCode.length !== 6) return;
+    setMfaLoading(true); setMfaErr("");
+    try {
+      const res = await fetch("/api/auth/mfa/confirm-enable", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ password: mfaPassword }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mfaToken: mfaEnableToken, code: mfaEnableCode }),
       });
       const data = await res.json();
-      if (!res.ok) { setMfaErr(data.error || t("update_failed")); }
+      if (!res.ok) { setMfaErr(data.error || t("verification_failed")); setMfaEnableCode(""); }
       else {
-        setMfaEnabled(data.mfaEnabled);
-        setMfaMsg(data.mfaEnabled ? t("mfa_enabled_msg") : t("mfa_disabled_msg"));
-        setMfaPassword("");
+        setMfaEnabled(true);
+        setMfaMsg(t("mfa_enabled_msg"));
+        setMfaEnableToken(""); setMfaEnableCode("");
         setShowMfaConfirm(false);
       }
     } catch { setMfaErr(t("network_error")); }
     setMfaLoading(false);
+  };
+
+  const handleMfaResendEnable = async () => {
+    if (mfaResendCooldown > 0) return;
+    setMfaErr("");
+    try {
+      const res = await fetch("/api/auth/resend-mfa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mfaToken: mfaEnableToken }),
+      });
+      if (res.ok) {
+        setMfaMsg(t("mfa_code_resent") || "Code resent.");
+        setMfaResendCooldown(30);
+        if (mfaCooldownRef.current) clearInterval(mfaCooldownRef.current);
+        mfaCooldownRef.current = setInterval(() => setMfaResendCooldown(v => { if (v <= 1) { if (mfaCooldownRef.current) clearInterval(mfaCooldownRef.current); mfaCooldownRef.current = null; return 0; } return v - 1; }), 1000);
+      } else {
+        const data = await res.json();
+        setMfaErr(data.error || "Resend failed");
+      }
+    } catch { setMfaErr(t("network_error")); }
   };
 
   const handleNotifSave = async () => {
@@ -303,7 +365,34 @@ export default function ParentSettingsPage() {
           {mfaForced && (
             <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">{t("mfa_required_role")}</p>
           )}
-          {!showMfaConfirm ? (
+          {mfaEnableToken ? (
+            <div className="p-4 rounded-lg bg-violet-50 border border-violet-200 space-y-3">
+              <p className="text-sm text-slate-700 font-medium">{t("mfa_enter_code") || "Enter the 6-digit code sent to your email."}</p>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={mfaEnableCode}
+                onChange={e => setMfaEnableCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="000000"
+                className="w-full px-4 py-2 rounded-lg border border-slate-200 text-sm text-center tracking-[0.5em] font-mono font-bold"
+              />
+              <div className="flex gap-2 items-center">
+                <button onClick={handleMfaConfirmEnable} disabled={mfaLoading || mfaEnableCode.length !== 6}
+                  className="px-4 py-2 text-xs rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition disabled:opacity-50">
+                  {mfaLoading ? tc("saving") : tc("confirm")}
+                </button>
+                <button onClick={handleMfaResendEnable} disabled={mfaResendCooldown > 0}
+                  className="px-4 py-2 text-xs rounded-lg text-violet-600 font-semibold hover:bg-violet-100 transition disabled:opacity-50">
+                  {mfaResendCooldown > 0 ? `${tc("wait")} ${mfaResendCooldown}s` : (t("mfa_resend") || "Resend code")}
+                </button>
+                <button onClick={() => { setMfaEnableToken(""); setMfaEnableCode(""); setShowMfaConfirm(false); setMfaErr(""); }}
+                  className="px-4 py-2 text-xs rounded-lg bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition">
+                  {tc("cancel")}
+                </button>
+              </div>
+            </div>
+          ) : !showMfaConfirm ? (
             <button
               onClick={() => setShowMfaConfirm(true)}
               disabled={mfaForced && mfaEnabled}
