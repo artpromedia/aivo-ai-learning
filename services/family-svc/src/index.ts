@@ -11,6 +11,7 @@ import { registerTransitionRoutes } from "./routes/transition.js";
 import { registerLanguageProfileRoutes } from "./routes/language-profile.js";
 import { registerDataExportRoutes } from "./routes/data-export.js";
 import { registerParentDashboardRoutes } from "./routes/parent-dashboard.js";
+import { registerObservationRoutes } from "./routes/observations.js";
 
 const logger = createLogger("family-svc");
 const PORT = parseInt(process.env.FAMILY_PORT || "3007", 10);
@@ -34,6 +35,7 @@ async function start() {
   await registerLanguageProfileRoutes(app);
   await registerDataExportRoutes(app);
   await registerParentDashboardRoutes(app);
+  await registerObservationRoutes(app);
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Family service listening on port ${PORT}`);

@@ -81,26 +81,27 @@ export default function TeacherReportsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
+              <caption className="sr-only">Learner roster and functioning-level summary</caption>
               <thead>
                 <tr className="border-b border-slate-100">
-                  <th className="text-left py-3 px-4 text-slate-500 font-semibold text-xs uppercase">Learner</th>
-                  <th className="text-left py-3 px-4 text-slate-500 font-semibold text-xs uppercase">Grade</th>
-                  <th className="text-left py-3 px-4 text-slate-500 font-semibold text-xs uppercase">Functioning Level</th>
-                  <th className="text-left py-3 px-4 text-slate-500 font-semibold text-xs uppercase">Status</th>
+                  <th scope="col" className="text-left py-3 px-4 text-slate-500 font-semibold text-xs uppercase">Learner</th>
+                  <th scope="col" className="text-left py-3 px-4 text-slate-500 font-semibold text-xs uppercase">Grade</th>
+                  <th scope="col" className="text-left py-3 px-4 text-slate-500 font-semibold text-xs uppercase">Functioning Level</th>
+                  <th scope="col" className="text-left py-3 px-4 text-slate-500 font-semibold text-xs uppercase">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {learners.map(l => (
                   <tr key={l.id} className="border-b border-slate-50 hover:bg-slate-50/50">
-                    <td className="py-3 px-4 font-medium text-slate-900">{l.name}</td>
-                    <td className="py-3 px-4 text-slate-600">{l.gradeLevel || "—"}</td>
+                    <th scope="row" className="py-3 px-4 font-medium text-slate-900 text-left">{l.name}</th>
+                    <td className="py-3 px-4 text-slate-600">{l.gradeLevel || "\u2014"}</td>
                     <td className="py-3 px-4">
                       <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700 font-medium">
                         {l.functioningLevel || "Pending"}
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 font-medium">Active</span>
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-slate-100 text-slate-500 font-medium" aria-label="Status unavailable">&mdash;</span>
                     </td>
                   </tr>
                 ))}

@@ -1360,5 +1360,18 @@
       "copyright": "© {year} AIVO Plateforme d'Apprentissage. Tous droits reserves.",
       "built_with_care": "Construit avec soin pour chaque apprenant."
     }
+  },
+  "therapist": {
+    "dashboard": "Tableau de bord du thérapeute",
+    "my_clients": "Mes clients",
+    "caseload": "Charge de travail",
+    "iep_goals": "Objectifs thérapeutiques",
+    "session_notes": "Notes de séance",
+    "progress_tracking": "Suivi des progrès",
+    "therapy_notes": "Notes de thérapie",
+    "accommodations": "Adaptations",
+    "daily_summary": "Résumé quotidien",
+    "communication_log": "Journal de communication",
+    "behavior_notes": "Notes de comportement"
   }
 }

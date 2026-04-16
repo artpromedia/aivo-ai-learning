@@ -1,19 +1,54 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { AccessibleToggle } from "@/components/a11y/AccessibleToggle";
 
 export default function TherapistSettingsPage() {
-  const { user, loading } = useAuth();
+  const { user, accessToken, loading } = useAuth();
   const td = useTranslations("dashboard");
   const tc = useTranslations("common");
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [sessionReminders, setSessionReminders] = useState(true);
   const [goalAlerts, setGoalAlerts] = useState(true);
-  const [settingsSaved, setSettingsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
+  const [loadingPrefs, setLoadingPrefs] = useState(true);
+
+  const fetchPreferences = useCallback(async () => {
+    if (!accessToken || !user) return;
+    try {
+      const res = await fetch(`/api/comms/preferences/${user.id}`, { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.email !== undefined) setEmailNotifs(data.email);
+        if (data.sessionReminders !== undefined) setSessionReminders(data.sessionReminders);
+        if (data.goalAlerts !== undefined) setGoalAlerts(data.goalAlerts);
+      }
+    } catch { /* use defaults */ }
+    setLoadingPrefs(false);
+  }, [accessToken, user]);
+
+  useEffect(() => { fetchPreferences(); }, [fetchPreferences]);
 
   if (loading || !user) return null;
+
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    setSaveStatus("idle");
+    try {
+      const res = await fetch(`/api/comms/preferences/${user.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ email: emailNotifs, sessionReminders, goalAlerts }),
+      });
+      setSaveStatus(res.ok ? "success" : "error");
+    } catch {
+      setSaveStatus("error");
+    }
+    setSaving(false);
+    if (saveStatus !== "error") setTimeout(() => setSaveStatus("idle"), 3000);
+  };
 
   return (
     <div className="p-8 max-w-2xl space-y-6">
@@ -39,33 +74,40 @@ export default function TherapistSettingsPage() {
 
       <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
         <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{tc("details")}</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Email Notifications</p>
-              <p className="text-xs text-slate-500">Receive email updates about your clients</p>
-            </div>
-            <AccessibleToggle id="email-notifs" value={emailNotifs} onChange={setEmailNotifs} label="Email Notifications" description="Receive email updates about your clients" color="bg-pink-600" />
+        {loadingPrefs ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse motion-reduce:animate-none" />)}
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Session Reminders</p>
-              <p className="text-xs text-slate-500">Get reminders before scheduled therapy sessions</p>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-900" id="email-notifs-label">Email Notifications</p>
+                <p className="text-xs text-slate-500" id="email-notifs-desc">Receive email updates about your clients</p>
+              </div>
+              <AccessibleToggle id="email-notifs" value={emailNotifs} onChange={setEmailNotifs} label="Email Notifications" description="Receive email updates about your clients" color="bg-pink-600" />
             </div>
-            <AccessibleToggle id="session-reminders" value={sessionReminders} onChange={setSessionReminders} label="Session Reminders" description="Get reminders before scheduled therapy sessions" color="bg-pink-600" />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Goal Progress Alerts</p>
-              <p className="text-xs text-slate-500">Notifications when a therapy goal reaches milestones</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-900" id="session-reminders-label">Session Reminders</p>
+                <p className="text-xs text-slate-500" id="session-reminders-desc">Reminders before scheduled therapy sessions</p>
+              </div>
+              <AccessibleToggle id="session-reminders" value={sessionReminders} onChange={setSessionReminders} label="Session Reminders" description="Reminders before scheduled therapy sessions" color="bg-pink-600" />
             </div>
-            <AccessibleToggle id="goal-alerts" value={goalAlerts} onChange={setGoalAlerts} label="Goal Progress Alerts" description="Notifications when a therapy goal reaches milestones" color="bg-pink-600" />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-900" id="goal-alerts-label">Goal Progress Alerts</p>
+                <p className="text-xs text-slate-500" id="goal-alerts-desc">Notification when client goals reach milestones</p>
+              </div>
+              <AccessibleToggle id="goal-alerts" value={goalAlerts} onChange={setGoalAlerts} label="Goal Progress Alerts" description="Notification when client goals reach milestones" color="bg-pink-600" />
+            </div>
           </div>
-        </div>
-        {settingsSaved && <p className="text-sm text-green-600 mt-3 font-medium" role="status" aria-live="polite">Settings saved!</p>}
-        <button onClick={() => { setSettingsSaved(true); setTimeout(() => setSettingsSaved(false), 3000); }}
-          className="mt-4 px-6 py-2.5 rounded-xl bg-pink-600 text-white font-bold text-sm hover:bg-pink-700 transition">
-          Save Preferences
+        )}
+        {saveStatus === "success" && <p className="text-sm text-green-600 mt-3 font-medium" role="status" aria-live="polite">Settings saved!</p>}
+        {saveStatus === "error" && <p className="text-sm text-red-600 mt-3 font-medium" role="alert">Failed to save settings. Please try again.</p>}
+        <button onClick={handleSaveSettings} disabled={saving} aria-busy={saving}
+          className="mt-4 px-6 py-2.5 rounded-xl bg-pink-600 text-white font-bold text-sm hover:bg-pink-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          {saving ? "Saving..." : "Save Preferences"}
         </button>
       </div>
     </div>

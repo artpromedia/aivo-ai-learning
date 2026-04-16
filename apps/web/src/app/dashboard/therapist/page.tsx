@@ -1,8 +1,11 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import BrainVisualization from "@/components/BrainVisualization";
 import { useTranslations } from "next-intl";
+import LearnerCardSkeleton from "@/components/states/LearnerCardSkeleton";
+import FetchErrorState from "@/components/states/FetchErrorState";
+import EmptyLearnerState from "@/components/states/EmptyLearnerState";
 
 interface ConnectedLearner {
   id: string;
@@ -23,31 +26,36 @@ interface TherapyGoal {
 
 export default function TherapistCaseloadPage() {
   const { user, accessToken, loading } = useAuth();
-  const t = useTranslations("caregiver");
+  const t = useTranslations("therapist");
   const [learners, setLearners] = useState<ConnectedLearner[]>([]);
   const [therapyGoals, setTherapyGoals] = useState<TherapyGoal[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!accessToken || !user) return;
     setFetchError(false);
-    Promise.all([
-      fetch("/api/family/collaboration/connected-learners", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }).then(r => r.ok ? r.json() : []),
-      fetch("/api/family/therapy-goals", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }).then(r => r.ok ? r.json() : { goals: [] }).catch(() => ({ goals: [] })),
-    ])
-      .then(([learnersData, goalsData]) => {
-        setLearners(Array.isArray(learnersData) ? learnersData : []);
-        setTherapyGoals(Array.isArray(goalsData?.goals) ? goalsData.goals : []);
-      })
-      .catch(() => setFetchError(true))
-      .finally(() => setLoadingData(false));
+    setLoadingData(true);
+    try {
+      const [learnersData, goalsData] = await Promise.all([
+        fetch("/api/family/collaboration/connected-learners", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }).then(r => r.ok ? r.json() : []),
+        fetch("/api/family/therapy-goals", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }).then(r => r.ok ? r.json() : { goals: [] }).catch(() => ({ goals: [] })),
+      ]);
+      setLearners(Array.isArray(learnersData) ? learnersData : []);
+      setTherapyGoals(Array.isArray(goalsData?.goals) ? goalsData.goals : []);
+    } catch {
+      setFetchError(true);
+    } finally {
+      setLoadingData(false);
+    }
   }, [accessToken, user]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   if (loading || !user) return null;
 
@@ -91,20 +99,11 @@ export default function TherapistCaseloadPage() {
       </div>
 
       {loadingData ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-          <div className="animate-pulse text-slate-500" role="status" aria-live="polite">Loading your caseload...</div>
-        </div>
+        <LearnerCardSkeleton count={4} />
       ) : fetchError ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-red-100" role="alert">
-          <p className="text-red-600 font-semibold text-lg">Unable to load clients</p>
-          <p className="text-sm text-slate-500 mt-2">Please try refreshing the page.</p>
-        </div>
+        <FetchErrorState title="Unable to load clients" onRetry={fetchData} />
       ) : learners.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-          <div className="text-5xl mb-4" aria-hidden="true">💜</div>
-          <p className="text-slate-700 font-heading font-bold text-xl">No clients connected yet</p>
-          <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">Parents can invite you to their learner&apos;s care team from the Collaboration page in their dashboard.</p>
-        </div>
+        <EmptyLearnerState icon="\uD83D\uDC9C" title="No clients connected yet" description="Parents can invite you to their learner's care team from the Collaboration page in their dashboard." />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {learners.map(l => {
@@ -112,13 +111,13 @@ export default function TherapistCaseloadPage() {
             const isExpanded = expandedClient === l.id;
             return (
               <div key={l.id}
-                className={`bg-white rounded-2xl border transition cursor-pointer ${isExpanded ? "border-pink-300 shadow-md" : "border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200"}`}
-                onClick={() => setExpandedClient(isExpanded ? null : l.id)}
-                role="button"
-                tabIndex={0}
-                aria-expanded={isExpanded}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpandedClient(isExpanded ? null : l.id); } }}>
-                <div className="p-6">
+                className={`bg-white rounded-2xl border transition ${isExpanded ? "border-pink-300 shadow-md" : "border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200"}`}>
+                <button
+                  type="button"
+                  onClick={() => setExpandedClient(isExpanded ? null : l.id)}
+                  aria-expanded={isExpanded}
+                  aria-controls={`client-details-${l.id}`}
+                  className="w-full text-left p-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2 rounded-2xl">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-heading font-bold text-slate-900">{l.name}</h3>
                     <span className="px-3 py-1 text-xs rounded-full bg-purple-100 text-primary font-bold">
@@ -135,8 +134,8 @@ export default function TherapistCaseloadPage() {
                           <div key={g.id} className="flex items-center gap-3">
                             <div className="flex-1">
                               <p className="text-sm font-medium text-slate-700 truncate">{g.title}</p>
-                              <div className="w-full bg-slate-100 rounded-full h-1.5 mt-1" role="progressbar" aria-valuenow={g.progressPct} aria-valuemin={0} aria-valuemax={100} aria-label={`${g.title} progress`}>
-                                <div className="h-1.5 rounded-full bg-pink-500 transition-all" style={{ width: `${g.progressPct}%` }} />
+                              <div className="w-full bg-slate-100 rounded-full h-2.5 mt-1" role="progressbar" aria-valuenow={g.progressPct} aria-valuemin={0} aria-valuemax={100} aria-label={`${g.title} progress`}>
+                                <div className="h-2.5 rounded-full bg-pink-500 transition-all" style={{ width: `${g.progressPct}%` }} />
                               </div>
                             </div>
                             <span className="text-xs text-slate-500 font-medium">{g.progressPct}%</span>
@@ -148,14 +147,14 @@ export default function TherapistCaseloadPage() {
                       </div>
                     </div>
                   )}
+                </button>
 
-                  {isExpanded && accessToken && (
-                    <div className="mt-4 pt-4 border-t border-slate-100">
-                      <p className="text-xs text-slate-500 font-semibold uppercase mb-3">Brain Profile</p>
-                      <BrainVisualization learnerId={l.id} learnerName={l.name} accessToken={accessToken} compact />
-                    </div>
-                  )}
-                </div>
+                {isExpanded && accessToken && (
+                  <div id={`client-details-${l.id}`} className="px-6 pb-6 border-t border-slate-100">
+                    <p className="text-xs text-slate-500 font-semibold uppercase mb-3 mt-4">Brain Profile</p>
+                    <BrainVisualization learnerId={l.id} learnerName={l.name} accessToken={accessToken} compact />
+                  </div>
+                )}
               </div>
             );
           })}

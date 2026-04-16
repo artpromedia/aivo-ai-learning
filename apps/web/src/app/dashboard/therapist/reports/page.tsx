@@ -22,7 +22,7 @@ interface ConnectedLearner {
 
 export default function TherapistReportsPage() {
   const { user, accessToken, loading } = useAuth();
-  const t = useTranslations("caregiver");
+  const t = useTranslations("therapist");
   const [learners, setLearners] = useState<ConnectedLearner[]>([]);
   const [therapyGoals, setTherapyGoals] = useState<TherapyGoal[]>([]);
 

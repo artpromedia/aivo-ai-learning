@@ -1,8 +1,11 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import BrainVisualization from "@/components/BrainVisualization";
 import { useTranslations } from "next-intl";
+import LearnerCardSkeleton from "@/components/states/LearnerCardSkeleton";
+import FetchErrorState from "@/components/states/FetchErrorState";
+import EmptyLearnerState from "@/components/states/EmptyLearnerState";
 
 interface ConnectedLearner {
   id: string;
@@ -14,8 +17,6 @@ interface ConnectedLearner {
 interface ClassroomGroup {
   grade: string;
   learners: ConnectedLearner[];
-  avgMastery: number;
-  atRiskCount: number;
 }
 
 export default function TeacherOverviewPage() {
@@ -26,27 +27,32 @@ export default function TeacherOverviewPage() {
   const [fetchError, setFetchError] = useState(false);
   const [expandedLearner, setExpandedLearner] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchLearners = useCallback(async () => {
     if (!accessToken || !user) return;
     setFetchError(false);
-    fetch("/api/family/collaboration/connected-learners", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then(r => {
-        if (!r.ok) { setFetchError(true); return []; }
-        return r.json();
-      })
-      .then(data => setLearners(Array.isArray(data) ? data : []))
-      .catch(() => setFetchError(true))
-      .finally(() => setLoadingLearners(false));
+    setLoadingLearners(true);
+    try {
+      const r = await fetch("/api/family/collaboration/connected-learners", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!r.ok) { setFetchError(true); return; }
+      const data = await r.json();
+      setLearners(Array.isArray(data) ? data : []);
+    } catch {
+      setFetchError(true);
+    } finally {
+      setLoadingLearners(false);
+    }
   }, [accessToken, user]);
+
+  useEffect(() => { fetchLearners(); }, [fetchLearners]);
 
   if (loading || !user) return null;
 
   const classrooms: ClassroomGroup[] = Object.values(
     learners.reduce((acc: Record<string, ClassroomGroup>, l) => {
       const grade = l.gradeLevel || "Unassigned";
-      if (!acc[grade]) acc[grade] = { grade, learners: [], avgMastery: 0, atRiskCount: 0 };
+      if (!acc[grade]) acc[grade] = { grade, learners: [] };
       acc[grade].learners.push(l);
       return acc;
     }, {})
@@ -92,20 +98,11 @@ export default function TeacherOverviewPage() {
       </div>
 
       {loadingLearners ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-          <div className="animate-pulse text-slate-500" role="status" aria-live="polite">Loading your learners...</div>
-        </div>
+        <LearnerCardSkeleton count={6} />
       ) : fetchError ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-red-100" role="alert">
-          <p className="text-red-600 font-semibold text-lg">Unable to load learners</p>
-          <p className="text-sm text-slate-500 mt-2">Please try refreshing the page.</p>
-        </div>
+        <FetchErrorState title="Unable to load learners" onRetry={fetchLearners} />
       ) : learners.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-          <div className="text-5xl mb-4" aria-hidden="true">📚</div>
-          <p className="text-slate-700 font-heading font-bold text-xl">No learners connected yet</p>
-          <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">Parents can invite you to their learner&apos;s team from the Collaboration page in their dashboard.</p>
-        </div>
+        <EmptyLearnerState icon="\uD83D\uDCDA" />
       ) : (
         <div className="space-y-6">
           {classrooms.map(group => (
@@ -123,26 +120,26 @@ export default function TeacherOverviewPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {group.learners.map(l => (
                     <div key={l.id}
-                      className={`rounded-xl border transition cursor-pointer ${expandedLearner === l.id ? "border-blue-300 bg-blue-50/30 shadow-md" : "border-slate-100 bg-white hover:shadow-sm hover:border-slate-200"}`}
-                      onClick={() => setExpandedLearner(expandedLearner === l.id ? null : l.id)}
-                      role="button"
-                      tabIndex={0}
-                      aria-expanded={expandedLearner === l.id}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpandedLearner(expandedLearner === l.id ? null : l.id); } }}>
-                      <div className="p-4">
+                      className={`rounded-xl border transition ${expandedLearner === l.id ? "border-blue-300 bg-blue-50/30 shadow-md" : "border-slate-100 bg-white hover:shadow-sm hover:border-slate-200"}`}>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedLearner(expandedLearner === l.id ? null : l.id)}
+                        aria-expanded={expandedLearner === l.id}
+                        aria-controls={`learner-details-${l.id}`}
+                        className="w-full text-left p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-xl">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-semibold text-slate-900">{l.name}</h4>
                           <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-primary font-bold">
                             {l.functioningLevel || "Pending"}
                           </span>
                         </div>
-                        {l.gradeLevel && <p className="text-xs text-slate-500 mb-2">Grade {l.gradeLevel}</p>}
-                        {expandedLearner === l.id && accessToken && (
-                          <div className="mt-3 pt-3 border-t border-slate-100">
-                            <BrainVisualization learnerId={l.id} learnerName={l.name} accessToken={accessToken} compact />
-                          </div>
-                        )}
-                      </div>
+                        {l.gradeLevel && <p className="text-xs text-slate-500">Grade {l.gradeLevel}</p>}
+                      </button>
+                      {expandedLearner === l.id && accessToken && (
+                        <div id={`learner-details-${l.id}`} className="px-4 pb-4 border-t border-slate-100">
+                          <BrainVisualization learnerId={l.id} learnerName={l.name} accessToken={accessToken} compact />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

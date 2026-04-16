@@ -1,8 +1,11 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import BrainVisualization from "@/components/BrainVisualization";
 import { useTranslations } from "next-intl";
+import LearnerCardSkeleton from "@/components/states/LearnerCardSkeleton";
+import FetchErrorState from "@/components/states/FetchErrorState";
+import EmptyLearnerState from "@/components/states/EmptyLearnerState";
 
 interface ConnectedLearner {
   id: string;
@@ -29,26 +32,31 @@ export default function CaregiverOverviewPage() {
   const [fetchError, setFetchError] = useState(false);
   const [selectedLearner, setSelectedLearner] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!accessToken || !user) return;
     setFetchError(false);
-    Promise.all([
-      fetch("/api/family/collaboration/connected-learners", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }).then(r => r.ok ? r.json() : []),
-      fetch("/api/family/iep-goals", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }).then(r => r.ok ? r.json() : { goals: [] }).catch(() => ({ goals: [] })),
-    ])
-      .then(([learnersData, goalsData]) => {
-        const parsed = Array.isArray(learnersData) ? learnersData : [];
-        setLearners(parsed);
-        setIepGoals(Array.isArray(goalsData?.goals) ? goalsData.goals : []);
-        if (parsed.length > 0 && !selectedLearner) setSelectedLearner(parsed[0].id);
-      })
-      .catch(() => setFetchError(true))
-      .finally(() => setLoadingData(false));
+    setLoadingData(true);
+    try {
+      const [learnersData, goalsData] = await Promise.all([
+        fetch("/api/family/collaboration/connected-learners", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }).then(r => r.ok ? r.json() : []),
+        fetch("/api/family/iep-goals", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }).then(r => r.ok ? r.json() : { goals: [] }).catch(() => ({ goals: [] })),
+      ]);
+      const parsed = Array.isArray(learnersData) ? learnersData : [];
+      setLearners(parsed);
+      setIepGoals(Array.isArray(goalsData?.goals) ? goalsData.goals : []);
+      if (parsed.length > 0 && !selectedLearner) setSelectedLearner(parsed[0].id);
+    } catch {
+      setFetchError(true);
+    } finally {
+      setLoadingData(false);
+    }
   }, [accessToken, user]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   if (loading || !user) return null;
 
@@ -72,20 +80,11 @@ export default function CaregiverOverviewPage() {
       </div>
 
       {loadingData ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-          <div className="animate-pulse text-slate-500" role="status" aria-live="polite">Loading...</div>
-        </div>
+        <LearnerCardSkeleton count={3} />
       ) : fetchError ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-red-100" role="alert">
-          <p className="text-red-600 font-semibold text-lg">Unable to load data</p>
-          <p className="text-sm text-slate-500 mt-2">Please try refreshing the page.</p>
-        </div>
+        <FetchErrorState title="Unable to load data" onRetry={fetchData} />
       ) : learners.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-          <div className="text-5xl mb-4" aria-hidden="true">💚</div>
-          <p className="text-slate-700 font-heading font-bold text-xl">No learners connected yet</p>
-          <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">Parents can invite you to their learner&apos;s care team from the Collaboration page in their dashboard.</p>
-        </div>
+        <EmptyLearnerState icon="\uD83D\uDC9A" title="No learners connected yet" description="Parents can invite you to their learner's care team from the Collaboration page in their dashboard." />
       ) : activeLearner && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

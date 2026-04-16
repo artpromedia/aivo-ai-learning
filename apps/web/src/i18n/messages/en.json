@@ -1360,5 +1360,18 @@
       "copyright": "© {year} AIVO Learning Platform. All rights reserved.",
       "built_with_care": "Built with care for every learner."
     }
+  },
+  "therapist": {
+    "dashboard": "Therapist Dashboard",
+    "my_clients": "My Clients",
+    "caseload": "Caseload",
+    "iep_goals": "Therapy Goals",
+    "session_notes": "Session Notes",
+    "progress_tracking": "Progress Tracking",
+    "therapy_notes": "Therapy Notes",
+    "accommodations": "Accommodations",
+    "daily_summary": "Daily Summary",
+    "communication_log": "Communication Log",
+    "behavior_notes": "Behavior Notes"
   }
 }

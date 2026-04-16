@@ -82,6 +82,18 @@ export const therapySessions = pgTable("therapy_sessions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const caregiverObservations = pgTable("caregiver_observations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  learnerId: uuid("learner_id").references(() => learners.id).notNull(),
+  submittedBy: uuid("submitted_by").references(() => users.id).notNull(),
+  category: varchar("category", { length: 100 }).default("General").notNull(),
+  notes: text("notes").notNull(),
+  mood: varchar("mood", { length: 50 }),
+  date: timestamp("date").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const collaborationInvites = pgTable("collaboration_invites", {
   id: uuid("id").defaultRandom().primaryKey(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
