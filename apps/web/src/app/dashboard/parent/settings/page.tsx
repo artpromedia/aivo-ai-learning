@@ -1,10 +1,11 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { MfaSettings } from "@/components/settings/MfaSettings";
 
 export default function ParentSettingsPage() {
   const { user, accessToken, logout, loading } = useAuth();
@@ -25,18 +26,6 @@ export default function ParentSettingsPage() {
   const [pwErr, setPwErr] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
 
-  const [mfaEnabled, setMfaEnabled] = useState(false);
-  const [mfaForced, setMfaForced] = useState(false);
-  const [mfaLoading, setMfaLoading] = useState(false);
-  const [mfaMsg, setMfaMsg] = useState("");
-  const [mfaErr, setMfaErr] = useState("");
-  const [mfaPassword, setMfaPassword] = useState("");
-  const [showMfaConfirm, setShowMfaConfirm] = useState(false);
-  const [mfaEnableToken, setMfaEnableToken] = useState("");
-  const [mfaEnableCode, setMfaEnableCode] = useState("");
-  const [mfaResendCooldown, setMfaResendCooldown] = useState(0);
-  const mfaCooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   const [notifPrefs, setNotifPrefs] = useState({
     emailEnabled: true, emailDigest: "daily", emailMarketing: false,
     pushEnabled: true, pushSessionReminders: true, pushProgressUpdates: true,
@@ -55,10 +44,6 @@ export default function ParentSettingsPage() {
   const [deleteAccLoading, setDeleteAccLoading] = useState(false);
 
   useEffect(() => {
-    return () => { if (mfaCooldownRef.current) clearInterval(mfaCooldownRef.current); };
-  }, []);
-
-  useEffect(() => {
     if (!loading && !user) router.push("/login");
     if (!loading && user && user.role !== "PARENT") router.push("/");
   }, [user, loading, router]);
@@ -75,14 +60,6 @@ export default function ParentSettingsPage() {
     fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } })
       .then(r => r.json())
       .then(data => setLearners(Array.isArray(data) ? data : data.learners || []))
-      .catch(() => {});
-
-    fetch("/api/auth/mfa/status", { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then(r => r.json())
-      .then(data => {
-        setMfaEnabled(!!data.mfaEnabled);
-        setMfaForced(!!data.mfaForced);
-      })
       .catch(() => {});
 
     fetch("/api/comms/preferences/" + user?.id, { headers: { Authorization: `Bearer ${accessToken}` } })
@@ -136,83 +113,6 @@ export default function ParentSettingsPage() {
       else { setPwMsg(t("password_changed")); setCurrentPw(""); setNewPw(""); setConfirmPw(""); }
     } catch { setPwErr(t("network_error")); }
     setPwLoading(false);
-  };
-
-  const handleMfaToggle = async () => {
-    setMfaMsg(""); setMfaErr("");
-    if (!mfaPassword) { setMfaErr(t("enter_password")); return; }
-    setMfaLoading(true);
-    try {
-      if (mfaEnabled) {
-        const res = await fetch("/api/auth/mfa/disable", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-          body: JSON.stringify({ password: mfaPassword }),
-        });
-        const data = await res.json();
-        if (!res.ok) { setMfaErr(data.error || t("update_failed")); }
-        else {
-          setMfaEnabled(false);
-          setMfaMsg(t("mfa_disabled_msg"));
-          setMfaPassword(""); setShowMfaConfirm(false);
-        }
-      } else {
-        const res = await fetch("/api/auth/mfa/enable", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-          body: JSON.stringify({ password: mfaPassword }),
-        });
-        const data = await res.json();
-        if (!res.ok) { setMfaErr(data.error || t("update_failed")); }
-        else {
-          setMfaEnableToken(data.mfaToken);
-          setMfaPassword("");
-        }
-      }
-    } catch { setMfaErr(t("network_error")); }
-    setMfaLoading(false);
-  };
-
-  const handleMfaConfirmEnable = async () => {
-    if (mfaEnableCode.length !== 6) return;
-    setMfaLoading(true); setMfaErr("");
-    try {
-      const res = await fetch("/api/auth/mfa/confirm-enable", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mfaToken: mfaEnableToken, code: mfaEnableCode }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setMfaErr(data.error || t("verification_failed")); setMfaEnableCode(""); }
-      else {
-        setMfaEnabled(true);
-        setMfaMsg(t("mfa_enabled_msg"));
-        setMfaEnableToken(""); setMfaEnableCode("");
-        setShowMfaConfirm(false);
-      }
-    } catch { setMfaErr(t("network_error")); }
-    setMfaLoading(false);
-  };
-
-  const handleMfaResendEnable = async () => {
-    if (mfaResendCooldown > 0) return;
-    setMfaErr("");
-    try {
-      const res = await fetch("/api/auth/mfa/resend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mfaToken: mfaEnableToken }),
-      });
-      if (res.ok) {
-        setMfaMsg(t("mfa_code_resent") || "Code resent.");
-        setMfaResendCooldown(30);
-        if (mfaCooldownRef.current) clearInterval(mfaCooldownRef.current);
-        mfaCooldownRef.current = setInterval(() => setMfaResendCooldown(v => { if (v <= 1) { if (mfaCooldownRef.current) clearInterval(mfaCooldownRef.current); mfaCooldownRef.current = null; return 0; } return v - 1; }), 1000);
-      } else {
-        const data = await res.json();
-        setMfaErr(data.error || "Resend failed");
-      }
-    } catch { setMfaErr(t("network_error")); }
   };
 
   const handleNotifSave = async () => {
@@ -350,83 +250,7 @@ export default function ParentSettingsPage() {
           </form>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-heading font-bold text-slate-900">{t("two_factor_auth")}</h2>
-              <p className="text-sm text-slate-500 mt-1">{t("mfa_description")}</p>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-bold ${mfaEnabled ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
-              {mfaEnabled ? t("mfa_on") : t("mfa_off")}
-            </div>
-          </div>
-          {mfaMsg && <p className="text-sm text-green-600 bg-green-50 p-2 rounded">{mfaMsg}</p>}
-          {mfaErr && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{mfaErr}</p>}
-          {mfaForced && (
-            <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">{t("mfa_required_role")}</p>
-          )}
-          {mfaEnableToken ? (
-            <div className="p-4 rounded-lg bg-violet-50 border border-violet-200 space-y-3">
-              <p className="text-sm text-slate-700 font-medium">{t("mfa_enter_code") || "Enter the 6-digit code sent to your email."}</p>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={mfaEnableCode}
-                onChange={e => setMfaEnableCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="000000"
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 text-sm text-center tracking-[0.5em] font-mono font-bold"
-              />
-              <div className="flex gap-2 items-center">
-                <button onClick={handleMfaConfirmEnable} disabled={mfaLoading || mfaEnableCode.length !== 6}
-                  className="px-4 py-2 text-xs rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition disabled:opacity-50">
-                  {mfaLoading ? tc("saving") : tc("confirm")}
-                </button>
-                <button onClick={handleMfaResendEnable} disabled={mfaResendCooldown > 0}
-                  className="px-4 py-2 text-xs rounded-lg text-violet-600 font-semibold hover:bg-violet-100 transition disabled:opacity-50">
-                  {mfaResendCooldown > 0 ? `${tc("wait")} ${mfaResendCooldown}s` : (t("mfa_resend") || "Resend code")}
-                </button>
-                <button onClick={() => { setMfaEnableToken(""); setMfaEnableCode(""); setShowMfaConfirm(false); setMfaErr(""); }}
-                  className="px-4 py-2 text-xs rounded-lg bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition">
-                  {tc("cancel")}
-                </button>
-              </div>
-            </div>
-          ) : !showMfaConfirm ? (
-            <button
-              onClick={() => setShowMfaConfirm(true)}
-              disabled={mfaForced && mfaEnabled}
-              className={`px-6 py-2.5 rounded-lg font-semibold transition text-sm ${
-                mfaEnabled
-                  ? "border-2 border-red-300 text-red-700 hover:bg-red-50"
-                  : "bg-primary text-white hover:bg-primary-dark"
-              } disabled:opacity-50`}
-            >
-              {mfaEnabled ? t("disable_mfa") : t("enable_mfa")}
-            </button>
-          ) : (
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-3">
-              <p className="text-sm text-slate-700 font-medium">{t("confirm_password_mfa")}</p>
-              <input
-                type="password"
-                value={mfaPassword}
-                onChange={e => setMfaPassword(e.target.value)}
-                placeholder={t("enter_password")}
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 text-sm"
-              />
-              <div className="flex gap-2">
-                <button onClick={handleMfaToggle} disabled={mfaLoading || !mfaPassword}
-                  className="px-4 py-2 text-xs rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition disabled:opacity-50">
-                  {mfaLoading ? tc("saving") : tc("confirm")}
-                </button>
-                <button onClick={() => { setShowMfaConfirm(false); setMfaPassword(""); setMfaErr(""); }}
-                  className="px-4 py-2 text-xs rounded-lg bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition">
-                  {tc("cancel")}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <MfaSettings accentColor="violet" />
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
           <h2 className="text-lg font-heading font-bold text-slate-900">{t("notification_preferences")}</h2>
