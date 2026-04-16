@@ -148,7 +148,7 @@ const AVAILABLE_ACCOMMODATIONS = [
 type PageMode = "loading" | "pre-clone" | "cloning" | "building" | "review";
 
 export default function BrainReviewPage() {
-  const { user, accessToken, loading } = useAuth();
+  const { user, accessToken, loading, refreshToken } = useAuth();
   const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
@@ -277,15 +277,42 @@ export default function BrainReviewPage() {
     return mods;
   }, [review, masteryOverrides, accommodationToggles, tutorToggles, modNotes]);
 
+  const authedFetch = useCallback(async (input: RequestInfo, init: RequestInit = {}): Promise<Response> => {
+    const tokenToUse = accessToken;
+    const doFetch = (tok: string | null) => {
+      const headers = new Headers(init.headers as HeadersInit | undefined);
+      if (tok) headers.set("Authorization", `Bearer ${tok}`);
+      return fetch(input, { ...init, headers });
+    };
+    let res = await doFetch(tokenToUse);
+    if (res.status === 401) {
+      let isExpired = true;
+      try {
+        const clone = res.clone();
+        const body = await clone.text();
+        if (body && !/expired|expire/i.test(body)) isExpired = false;
+      } catch {}
+      if (isExpired) {
+        const newToken = await refreshToken();
+        if (newToken) {
+          res = await doFetch(newToken);
+        } else {
+          router.push("/login");
+        }
+      }
+    }
+    return res;
+  }, [accessToken, refreshToken, router]);
+
   const handleCloneAndBuild = async () => {
     if (!accessToken || !consentChecked) return;
     setSubmitting(true);
     setPageMode("cloning");
 
     try {
-      const cloneRes = await fetch(`/api/brain/clone`, {
+      const cloneRes = await authedFetch(`/api/brain/clone`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           learner_id: learnerId,
           consent_given: true,
@@ -297,13 +324,20 @@ export default function BrainReviewPage() {
         const err = await cloneRes.text();
         setSubmitting(false);
         setPageMode("pre-clone");
-        alert(`Failed to build brain: ${err}`);
+        let msg = err;
+        try {
+          const parsed = JSON.parse(err);
+          msg = parsed.detail || parsed.error || err;
+        } catch {}
+        if (cloneRes.status === 401) {
+          router.push("/login");
+          return;
+        }
+        alert(`Failed to build brain: ${msg}`);
         return;
       }
 
-      const reviewRes = await fetch(`/api/brain/${learnerId}/review`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const reviewRes = await authedFetch(`/api/brain/${learnerId}/review`);
 
       if (reviewRes.ok) {
         const data = await reviewRes.json();
@@ -331,9 +365,9 @@ export default function BrainReviewPage() {
     setSubmitting(true);
     try {
       const mods = buildModificationsArray();
-      const res = await fetch(`/api/brain/${learnerId}/approve`, {
+      const res = await authedFetch(`/api/brain/${learnerId}/approve`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           parent_notes: null,
           consent_given: true,
@@ -348,8 +382,11 @@ export default function BrainReviewPage() {
         });
         setReview((prev) => prev ? { ...prev, approval_status: "approved" } : prev);
       } else {
+        if (res.status === 401) { router.push("/login"); return; }
         const err = await res.text();
-        alert(`Approval failed: ${err}`);
+        let msg = err;
+        try { const parsed = JSON.parse(err); msg = parsed.detail || parsed.error || err; } catch {}
+        alert(`Approval failed: ${msg}`);
       }
     } catch {}
     setSubmitting(false);
@@ -366,9 +403,9 @@ export default function BrainReviewPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/brain/${learnerId}/amend`, {
+      const res = await authedFetch(`/api/brain/${learnerId}/amend`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ parent_notes: contextParts.join("\n\n") }),
       });
       if (res.ok) {
@@ -387,9 +424,9 @@ export default function BrainReviewPage() {
     if (!accessToken) return;
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/brain/${learnerId}/decline`, {
+      const res = await authedFetch(`/api/brain/${learnerId}/decline`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: startOverReason || "Parent requested reassessment" }),
       });
       if (res.ok) {

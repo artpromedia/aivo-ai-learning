@@ -19,7 +19,7 @@ interface AuthContextType {
   register: (email: string, password: string, name: string, role: string) => Promise<void>;
   pinLogin: (parentId: string, pin: string) => Promise<void>;
   logout: () => Promise<void>;
-  refreshToken: () => Promise<void>;
+  refreshToken: () => Promise<string | null>;
   impersonate: (userId: string) => Promise<void>;
   exitImpersonation: () => Promise<void>;
 }
@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [originalAdmin, setOriginalAdmin] = useState<User | null>(null);
 
-  const refreshToken = useCallback(async () => {
+  const refreshToken = useCallback(async (): Promise<string | null> => {
     try {
       const res = await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
       if (res.ok) {
@@ -56,9 +56,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             sessionStorage.removeItem(IMPERSONATION_FLAG_KEY);
           }
         }
+        setLoading(false);
+        return data.accessToken as string;
       }
     } catch {}
     setLoading(false);
+    return null;
   }, []);
 
   useEffect(() => { refreshToken(); }, [refreshToken]);
