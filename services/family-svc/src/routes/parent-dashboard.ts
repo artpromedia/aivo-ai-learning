@@ -117,7 +117,7 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     const { since } = req.query as { since?: string };
 
     const parentLearners = await db.select({ id: learners.id, name: learners.name }).from(learners).where(eq(learners.parentId, parentId));
-    const learnerIds = parentLearners.map(l => l.id);
+    const learnerIds = parentLearners.map((l: { id: string; name: string }) => l.id);
 
     if (learnerIds.length === 0) return { activities: [], learners: [] };
 
@@ -126,7 +126,7 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
       let conditions: any[] = [eq(learnerMilestones.learnerId, lid)];
       if (since) conditions.push(sql`${learnerMilestones.createdAt} > ${new Date(since)}`);
       const m = await db.select().from(learnerMilestones).where(and(...conditions)).orderBy(desc(learnerMilestones.createdAt)).limit(20);
-      milestones.push(...m.map(item => ({ ...item, learnerName: parentLearners.find(l => l.id === lid)?.name })));
+      milestones.push(...m.map((item: any) => ({ ...item, learnerName: parentLearners.find((l: { id: string; name: string }) => l.id === lid)?.name })));
     }
 
     milestones.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -176,7 +176,7 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
 
     const parentLearners = await db.select().from(learners).where(eq(learners.parentId, parentId));
 
-    const learnerSummaries = await Promise.all(parentLearners.map(async (l) => {
+    const learnerSummaries = await Promise.all(parentLearners.map(async (l: any) => {
       const [streak] = await db.select().from(learnerStreaks).where(eq(learnerStreaks.learnerId, l.id));
       const [badge_count] = await db.select({ count: sql<number>`count(*)` }).from(learnerBadges).where(eq(learnerBadges.learnerId, l.id));
       const recentMilestones = await db.select().from(learnerMilestones)
