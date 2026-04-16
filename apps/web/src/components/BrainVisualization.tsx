@@ -71,7 +71,8 @@ function generateBrainNodes(mastery: Record<string, number>): BrainNode[] {
   const cy = 180;
   const maxRadius = 130;
 
-  entries.forEach(([domain, value], i) => {
+  entries.forEach(([domain, rawValue], i) => {
+    const pct = rawValue <= 1 ? rawValue * 100 : rawValue;
     const angle = (i / entries.length) * Math.PI * 2 - Math.PI / 2;
     const dist = maxRadius * (0.5 + Math.random() * 0.4);
     nodes.push({
@@ -79,9 +80,9 @@ function generateBrainNodes(mastery: Record<string, number>): BrainNode[] {
       label: domain.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
       x: cx + Math.cos(angle) * dist,
       y: cy + Math.sin(angle) * dist,
-      radius: 12 + (value / 100) * 14,
+      radius: 14 + (pct / 100) * 18,
       color: getDomainColor(domain),
-      mastery: value,
+      mastery: pct,
       pulsePhase: Math.random() * Math.PI * 2,
     });
   });
