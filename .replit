@@ -206,3 +206,7 @@ EXPO_ROUTER_APP_ROOT = "app"
 deploymentTarget = "autoscale"
 run = ["bash", "start.sh"]
 build = ["bash", "-c", "cd services/identity-svc && npx tsup --no-dts && cd ../.. && cd apps/web && pnpm run build"]
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 180000
