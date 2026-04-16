@@ -1,27 +1,26 @@
 import type { Metadata } from "next";
 
-  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aivolearning.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aivolearning.com";
 
-  export const metadata: Metadata = {
-    title: "Start Your Free Trial - AIVO Learning",
-    description: "Create a free AIVO Learning account. Get AI-powered adaptive tutoring for your child with 14 specialized tutors. No credit card required.",
-    openGraph: {
-      title: "Start Your Free Trial - AIVO Learning",
-      description: "Create a free AIVO Learning account. Get AI-powered adaptive tutoring for your child with 14 specialized tutors. No credit card required.",
-      url: `${SITE_URL}/signup`,
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: "Start Your Free Trial - AIVO Learning",
-      description: "Create a free AIVO Learning account. Get AI-powered adaptive tutoring for your child with 14 specialized tutors. No credit card required.",
-    },
-    alternates: {
-      canonical: `${SITE_URL}/signup`,
-    },
-  };
+export const metadata: Metadata = {
+  title: "Create Account | AIVO Learning",
+  description: "Create a free AIVO Learning account. AI-powered adaptive tutoring personalized for every learner, including neurodiverse children.",
+  robots: { index: false, follow: false },
+  alternates: { canonical: `${SITE_URL}/signup` },
+  openGraph: {
+    title: "Create Account | AIVO Learning",
+    description: "Create a free AIVO Learning account. AI-powered adaptive tutoring personalized for every learner.",
+    url: `${SITE_URL}/signup`,
+    siteName: "AIVO Learning",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Create Account | AIVO Learning",
+    description: "Create a free AIVO Learning account with personalized AI tutoring.",
+  },
+};
 
-  export default function Layout({ children }: { children: React.ReactNode }) {
-    return children;
-  }
-  
+export default function SignupLayout({ children }: { children: React.ReactNode }) {
+  return children;
+}

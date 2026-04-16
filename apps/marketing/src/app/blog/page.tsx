@@ -1,6 +1,7 @@
 "use client";
 import { CompanyPageLayout } from "@/components/marketing/legal/CompanyPageLayout";
-import Link from "next/link";
+import { trackCTAClick, trackSignupInitiation } from "@/lib/analytics";
+import { WEB_APP_URL } from "@/lib/constants";
 
 const POSTS = [
   {
@@ -78,9 +79,16 @@ export default function BlogPage() {
       <div className="mt-12 p-8 rounded-3xl bg-slate-50 border border-slate-100 text-center">
         <h3 className="text-xl font-heading font-bold text-slate-900 mb-2">Want to be notified when we launch?</h3>
         <p className="text-slate-500 font-body mb-6">Sign up for an AIVO account and we will keep you updated.</p>
-        <Link href="/signup" className="inline-flex items-center px-8 py-3 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200">
+        <a
+          href={`${WEB_APP_URL}/signup?plan=free`}
+          onClick={() => {
+            trackCTAClick("blog_create_account", `${WEB_APP_URL}/signup?plan=free`);
+            trackSignupInitiation("blog");
+          }}
+          className="inline-flex items-center px-8 py-3 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200"
+        >
           Create Free Account
-        </Link>
+        </a>
       </div>
     </CompanyPageLayout>
   );

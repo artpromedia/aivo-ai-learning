@@ -1,27 +1,27 @@
 import type { Metadata } from "next";
 
-  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aivolearning.com";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aivolearning.com";
 
-  export const metadata: Metadata = {
-    title: "About AIVO - Our Mission to Transform Education",
-    description: "Learn about AIVO Learning's mission to provide AI-powered adaptive education for every child. Meet our team and discover our core values.",
-    openGraph: {
-      title: "About AIVO - Our Mission to Transform Education",
-      description: "Learn about AIVO Learning's mission to provide AI-powered adaptive education for every child. Meet our team and discover our core values.",
-      url: `${SITE_URL}/about`,
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: "About AIVO - Our Mission to Transform Education",
-      description: "Learn about AIVO Learning's mission to provide AI-powered adaptive education for every child. Meet our team and discover our core values.",
-    },
-    alternates: {
-      canonical: `${SITE_URL}/about`,
-    },
-  };
+export const metadata: Metadata = {
+  title: "About AIVO Learning – Our Mission, Values & Leadership Team",
+  description:
+    "AIVO Learning was founded to ensure no learner is left behind. Meet our leadership team of healthcare executives, education experts, and technology leaders building AI-powered adaptive learning for all abilities.",
+  openGraph: {
+    title: "About AIVO Learning – Our Mission, Values & Leadership Team",
+    description:
+      "Meet the team behind AIVO's mission to bring personalized AI-powered education to every child, regardless of learning differences or abilities.",
+    url: `${BASE_URL}/about`,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About AIVO Learning – Our Mission & Team",
+    description:
+      "Meet the team behind AIVO's mission to bring personalized AI-powered education to every child.",
+  },
+  alternates: { canonical: `${BASE_URL}/about` },
+};
 
-  export default function Layout({ children }: { children: React.ReactNode }) {
-    return children;
-  }
-  
+export default function AboutLayout({ children }: { children: React.ReactNode }) {
+  return children;
+}

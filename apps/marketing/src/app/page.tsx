@@ -69,7 +69,9 @@ export default function Home() {
 
         <Pricing />
 
-        <FAQ />
+        <div id="faq">
+          <FAQ />
+        </div>
 
         <CTASection />
       </main>

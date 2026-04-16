@@ -1,27 +1,26 @@
 import type { Metadata } from "next";
 
-  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aivolearning.com";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aivolearning.com";
 
-  export const metadata: Metadata = {
-    title: "COPPA Compliance - Children's Online Privacy Protection",
-    description: "Learn how AIVO Learning complies with COPPA regulations to protect children's online privacy and data security.",
-    openGraph: {
-      title: "COPPA Compliance - Children's Online Privacy Protection",
-      description: "Learn how AIVO Learning complies with COPPA regulations to protect children's online privacy and data security.",
-      url: `${SITE_URL}/coppa-compliance`,
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: "COPPA Compliance - Children's Online Privacy Protection",
-      description: "Learn how AIVO Learning complies with COPPA regulations to protect children's online privacy and data security.",
-    },
-    alternates: {
-      canonical: `${SITE_URL}/coppa-compliance`,
-    },
-  };
+export const metadata: Metadata = {
+  title: "COPPA Compliance – Children's Privacy Protection at AIVO Learning",
+  description:
+    "AIVO Learning fully complies with COPPA. Learn how we protect children's online privacy with verifiable parental consent, minimal data collection, and no advertising to children.",
+  openGraph: {
+    title: "AIVO Learning COPPA Compliance",
+    description:
+      "How AIVO Learning protects children's online privacy under COPPA with parental consent and strict data handling.",
+    url: `${BASE_URL}/coppa-compliance`,
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "AIVO Learning COPPA Compliance",
+    description: "Children's online privacy protection at AIVO Learning.",
+  },
+  alternates: { canonical: `${BASE_URL}/coppa-compliance` },
+};
 
-  export default function Layout({ children }: { children: React.ReactNode }) {
-    return children;
-  }
-  
+export default function CoppaLayout({ children }: { children: React.ReactNode }) {
+  return children;
+}

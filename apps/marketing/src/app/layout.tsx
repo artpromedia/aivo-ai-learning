@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Fredoka, Nunito } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { I18nProvider } from "@/providers/i18n-provider";
 import enMessages from "@/i18n/messages/en.json";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 
 const fredoka = Fredoka({
   subsets: ["latin"],
@@ -19,65 +19,68 @@ const nunito = Nunito({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aivolearning.com";
-const GA_ID = process.env.NEXT_PUBLIC_GA4_ID || "";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aivolearning.com";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  metadataBase: new URL(BASE_URL),
   title: {
-    default: "AIVO - AI-Powered Adaptive Learning for Every Child",
+    default: "AIVO Learning – AI-Powered Adaptive Learning for Every Child",
     template: "%s | AIVO Learning",
   },
   description:
-    "AIVO uses AI to personalize education for every child. 14 expert AI tutors, 5 functioning levels, Brain Clone technology. COPPA & FERPA compliant. Start free today.",
+    "AIVO Learning uses AI-powered Brain Clone technology to create personalized learning experiences for children of all abilities, including those with autism and special needs. 14 AI tutors, 5 functioning levels, COPPA & FERPA compliant.",
+  keywords: [
+    "AI learning",
+    "adaptive learning",
+    "special education",
+    "autism education",
+    "personalized learning",
+    "AI tutors",
+    "Brain Clone",
+    "IEP tracking",
+    "COPPA compliant",
+    "FERPA compliant",
+    "edtech",
+    "K-12 education",
+  ],
   icons: { icon: "/images/favicon-192.png" },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: SITE_URL,
+    url: BASE_URL,
     siteName: "AIVO Learning",
-    title: "AIVO - AI-Powered Adaptive Learning for Every Child",
+    title: "AIVO Learning – AI-Powered Adaptive Learning for Every Child",
     description:
-      "Personalized AI tutoring that meets every child where they are. 14 specialized tutors, adaptive Brain Clone technology, COPPA compliant.",
+      "Personalized AI tutors that adapt to every child's unique learning style. 14 specialized tutors, 5 functioning levels, built for all abilities.",
     images: [
       {
-        url: `${SITE_URL}/images/og-banner.png`,
+        url: `${BASE_URL}/images/aivo-logo-purple.png`,
         width: 1200,
         height: 630,
-        alt: "AIVO Learning - AI-Powered Adaptive Learning",
+        alt: "AIVO Learning Platform",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AIVO - AI-Powered Adaptive Learning for Every Child",
+    title: "AIVO Learning – AI-Powered Adaptive Learning for Every Child",
     description:
-      "Personalized AI tutoring that meets every child where they are. 14 specialized tutors, adaptive Brain Clone technology.",
-    images: [`${SITE_URL}/images/og-banner.png`],
+      "Personalized AI tutors that adapt to every child's unique learning style. Built for all abilities, COPPA & FERPA compliant.",
+    images: [`${BASE_URL}/images/aivo-logo-purple.png`],
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true },
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   alternates: {
-    canonical: SITE_URL,
-  },
-};
-
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "AIVO Learning",
-  url: SITE_URL,
-  logo: `${SITE_URL}/images/aivo-logo-purple.png`,
-  description:
-    "AI-Powered Adaptive Learning platform for every child, featuring 14 specialized AI tutors and Brain Clone technology.",
-  sameAs: [],
-  contactPoint: {
-    "@type": "ContactPoint",
-    email: "hello@aivo.education",
-    contactType: "customer support",
+    canonical: BASE_URL,
   },
 };
 
@@ -87,24 +90,42 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "AIVO Learning",
+              url: BASE_URL,
+              logo: `${BASE_URL}/images/aivo-logo-purple.png`,
+              description:
+                "AI-powered adaptive learning platform for children of all abilities, featuring Brain Clone technology, 14 AI tutors, and 5 functioning levels.",
+              foundingDate: "2024",
+              founders: [
+                { "@type": "Person", name: "Dr. Ikechukwu Osuji" },
+                { "@type": "Person", name: "Ofem Ekapong Ofem" },
+                { "@type": "Person", name: "Nnamdi Uzokwe" },
+              ],
+              address: {
+                "@type": "PostalAddress",
+                addressLocality: "Washington",
+                addressRegion: "DC",
+                addressCountry: "US",
+              },
+              contactPoint: {
+                "@type": "ContactPoint",
+                email: "hello@aivo.education",
+                contactType: "customer service",
+              },
+              sameAs: [],
+            }),
+          }}
         />
       </head>
       <body className="font-body antialiased bg-white text-slate-800">
+        <GoogleAnalytics />
         <I18nProvider initialMessages={enMessages}>
           {children}
         </I18nProvider>
-        {GA_ID && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-              strategy="afterInteractive"
-            />
-            <Script id="ga4-init" strategy="afterInteractive">
-              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:true});`}
-            </Script>
-          </>
-        )}
       </body>
     </html>
   );

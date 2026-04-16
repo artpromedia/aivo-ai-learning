@@ -2,6 +2,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { trackCTAClick, trackSignupInitiation } from "@/lib/analytics";
+import { WEB_APP_URL } from "@/lib/constants";
 
 interface CompanyPageLayoutProps {
   badge: string;
@@ -38,16 +40,20 @@ export function CompanyPageLayout({
             <LanguageSwitcher compact />
             <Link
               href="/"
-              className="px-5 py-2 rounded-lg text-slate-600 font-semibold hover:text-primary transition hidden sm:inline-flex"
+              className="px-5 py-2 rounded-lg text-slate-600 font-semibold hover:text-primary transition hidden sm:inline-flex min-h-[44px] items-center"
             >
               Home
             </Link>
-            <Link
-              href="/signup"
-              className="px-5 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200"
+            <a
+              href={`${WEB_APP_URL}/signup?plan=free`}
+              onClick={() => {
+                trackCTAClick("company_get_started", `${WEB_APP_URL}/signup?plan=free`);
+                trackSignupInitiation("company_page");
+              }}
+              className="px-5 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200 min-h-[44px] inline-flex items-center"
             >
               Get Started
-            </Link>
+            </a>
           </div>
         </div>
       </header>

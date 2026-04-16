@@ -1,17 +1,15 @@
 "use client";
-import { useState, FormEvent } from "react";
+import { useState } from "react";
 import { CompanyPageLayout } from "@/components/marketing/legal/CompanyPageLayout";
-import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
-
-const COMMS_URL = process.env.NEXT_PUBLIC_COMMS_URL || "";
+import { trackFormSubmission } from "@/lib/analytics";
 
 const CONTACTS = [
   {
-    icon: "🏫",
-    title: "Schools & Districts",
-    description: "Interested in AIVO for your school or district? Let's talk.",
-    email: "sales@aivo.education",
-    color: "#2563eb",
+    icon: "📧",
+    title: "General Inquiries",
+    description: "Questions about AIVO Learning? We'd love to hear from you.",
+    email: "hello@aivo.education",
+    color: "#7c3aed",
   },
   {
     icon: "🛡️",
@@ -37,43 +35,39 @@ const CONTACTS = [
 ];
 
 function ContactForm() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
+  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    setError("");
+    setStatus("submitting");
     try {
-      const res = await fetch(`${COMMS_URL}/api/comms/public/contact`, {
+      const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message, source: "contact_page" }),
+        body: JSON.stringify({ type: "contact", ...form }),
       });
-      if (res.ok) {
-        setSubmitted(true);
-        trackEvent(AnalyticsEvents.CONTACT_SUBMIT, { type: "general" });
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error || "Failed to send message. Please try again.");
-      }
+      if (!res.ok) throw new Error();
+      setStatus("success");
+      trackFormSubmission("contact_form");
+      setForm({ name: "", email: "", message: "" });
     } catch {
-      setError("Network error. Please check your connection and try again.");
-    } finally {
-      setSubmitting(false);
+      setStatus("error");
     }
   }
 
-  if (submitted) {
+  if (status === "success") {
     return (
-      <div className="text-center py-12">
-        <div className="text-5xl mb-4">✅</div>
-        <h3 className="text-2xl font-heading font-bold text-slate-900 mb-2">Message Sent!</h3>
-        <p className="text-slate-500 font-body">Thank you for reaching out. Our team will get back to you within 1-2 business days.</p>
+      <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-8 text-center">
+        <div className="text-4xl mb-4">✅</div>
+        <h3 className="text-xl font-heading font-bold text-slate-900 mb-2">Message Sent!</h3>
+        <p className="text-slate-600 font-body">Thank you for reaching out. Our team will get back to you within 1-2 business days.</p>
+        <button
+          onClick={() => setStatus("idle")}
+          className="mt-4 px-6 py-2 rounded-full bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition"
+        >
+          Send Another Message
+        </button>
       </div>
     );
   }
@@ -82,14 +76,15 @@ function ContactForm() {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <label htmlFor="contact-name" className="block text-sm font-bold text-slate-700 mb-1.5">Your Name</label>
+          <label htmlFor="contact-name" className="block text-sm font-bold text-slate-700 mb-1.5">Full Name *</label>
           <input
             id="contact-name"
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition font-body"
-            placeholder="Jane Smith"
+            required
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition font-body text-slate-800"
+            placeholder="Your full name"
           />
         </div>
         <div>
@@ -98,10 +93,10 @@ function ContactForm() {
             id="contact-email"
             type="email"
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition font-body"
-            placeholder="jane@example.com"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition font-body text-slate-800"
+            placeholder="you@example.com"
           />
         </div>
       </div>
@@ -111,64 +106,60 @@ function ContactForm() {
           id="contact-message"
           required
           rows={5}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition font-body resize-none"
+          value={form.message}
+          onChange={(e) => setForm({ ...form, message: e.target.value })}
+          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition font-body text-slate-800 resize-none"
           placeholder="How can we help you?"
         />
       </div>
-      {error && <p className="text-sm text-red-600 font-semibold">{error}</p>}
+      {status === "error" && (
+        <p className="text-red-600 text-sm font-body">Something went wrong. Please try again.</p>
+      )}
       <button
         type="submit"
-        disabled={submitting}
-        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition shadow-lg disabled:opacity-50 min-h-[44px]"
+        disabled={status === "submitting"}
+        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition shadow-lg disabled:opacity-60 min-h-[44px]"
       >
-        {submitting ? "Sending..." : "Send Message"}
+        {status === "submitting" ? "Sending..." : "Send Message"}
       </button>
     </form>
   );
 }
 
-function DemoRequestForm() {
-  const [formData, setFormData] = useState({ name: "", email: "", company: "", role: "", schoolSize: "", message: "" });
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
+function DemoForm() {
+  const [form, setForm] = useState({ name: "", email: "", company: "", role: "", schoolSize: "" });
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
 
-  function update(field: string, value: string) {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  }
-
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    setError("");
+    setStatus("submitting");
     try {
-      const res = await fetch(`${COMMS_URL}/api/comms/public/demo-request`, {
+      const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ type: "demo", ...form }),
       });
-      if (res.ok) {
-        setSubmitted(true);
-        trackEvent(AnalyticsEvents.DEMO_REQUEST, { company: formData.company, schoolSize: formData.schoolSize });
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error || "Failed to submit. Please try again.");
-      }
+      if (!res.ok) throw new Error();
+      setStatus("success");
+      trackFormSubmission("demo_request");
+      setForm({ name: "", email: "", company: "", role: "", schoolSize: "" });
     } catch {
-      setError("Network error. Please check your connection and try again.");
-    } finally {
-      setSubmitting(false);
+      setStatus("error");
     }
   }
 
-  if (submitted) {
+  if (status === "success") {
     return (
-      <div className="text-center py-12">
-        <div className="text-5xl mb-4">🎉</div>
-        <h3 className="text-2xl font-heading font-bold text-slate-900 mb-2">Demo Request Received!</h3>
-        <p className="text-slate-500 font-body">Our education specialists will reach out within 24 hours to schedule your personalized demo.</p>
+      <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-8 text-center">
+        <div className="text-4xl mb-4">🎉</div>
+        <h3 className="text-xl font-heading font-bold text-slate-900 mb-2">Demo Request Received!</h3>
+        <p className="text-slate-600 font-body">Our education specialists will reach out within 24 hours to schedule your personalized demo.</p>
+        <button
+          onClick={() => setStatus("idle")}
+          className="mt-4 px-6 py-2 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition"
+        >
+          Submit Another Request
+        </button>
       </div>
     );
   }
@@ -177,54 +168,93 @@ function DemoRequestForm() {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <label htmlFor="demo-name" className="block text-sm font-bold text-slate-700 mb-1.5">Your Name *</label>
-          <input id="demo-name" type="text" required value={formData.name} onChange={(e) => update("name", e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none transition font-body"
-            placeholder="Dr. Sarah Johnson" />
+          <label htmlFor="demo-name" className="block text-sm font-bold text-slate-700 mb-1.5">Full Name *</label>
+          <input
+            id="demo-name"
+            type="text"
+            required
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition font-body text-slate-800"
+            placeholder="Your full name"
+          />
         </div>
         <div>
           <label htmlFor="demo-email" className="block text-sm font-bold text-slate-700 mb-1.5">Work Email *</label>
-          <input id="demo-email" type="email" required value={formData.email} onChange={(e) => update("email", e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none transition font-body"
-            placeholder="sarah@schooldistrict.edu" />
+          <input
+            id="demo-email"
+            type="email"
+            required
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition font-body text-slate-800"
+            placeholder="you@school.edu"
+          />
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <label htmlFor="demo-company" className="block text-sm font-bold text-slate-700 mb-1.5">School / Organization</label>
-          <input id="demo-company" type="text" value={formData.company} onChange={(e) => update("company", e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none transition font-body"
-            placeholder="Lincoln School District" />
+          <label htmlFor="demo-company" className="block text-sm font-bold text-slate-700 mb-1.5">School / District Name *</label>
+          <input
+            id="demo-company"
+            type="text"
+            required
+            value={form.company}
+            onChange={(e) => setForm({ ...form, company: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition font-body text-slate-800"
+            placeholder="School or district name"
+          />
         </div>
         <div>
-          <label htmlFor="demo-role" className="block text-sm font-bold text-slate-700 mb-1.5">Your Role</label>
-          <input id="demo-role" type="text" value={formData.role} onChange={(e) => update("role", e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none transition font-body"
-            placeholder="Special Education Director" />
+          <label htmlFor="demo-role" className="block text-sm font-bold text-slate-700 mb-1.5">Your Role *</label>
+          <select
+            id="demo-role"
+            required
+            value={form.role}
+            onChange={(e) => setForm({ ...form, role: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition font-body text-slate-800"
+          >
+            <option value="">Select your role</option>
+            <option value="superintendent">Superintendent</option>
+            <option value="district-admin">District Administrator</option>
+            <option value="principal">Principal</option>
+            <option value="special-ed-director">Special Education Director</option>
+            <option value="teacher">Teacher</option>
+            <option value="curriculum-coordinator">Curriculum Coordinator</option>
+            <option value="it-director">IT Director</option>
+            <option value="other">Other</option>
+          </select>
         </div>
       </div>
       <div>
-        <label htmlFor="demo-size" className="block text-sm font-bold text-slate-700 mb-1.5">Number of Students</label>
-        <select id="demo-size" value={formData.schoolSize} onChange={(e) => update("schoolSize", e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none transition font-body bg-white">
-          <option value="">Select size...</option>
-          <option value="1-50">1-50 students</option>
-          <option value="51-200">51-200 students</option>
-          <option value="201-500">201-500 students</option>
-          <option value="501-2000">501-2,000 students</option>
-          <option value="2000+">2,000+ students</option>
+        <label htmlFor="demo-size" className="block text-sm font-bold text-slate-700 mb-1.5">School / District Size *</label>
+        <select
+          id="demo-size"
+          required
+          value={form.schoolSize}
+          onChange={(e) => setForm({ ...form, schoolSize: e.target.value })}
+          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition font-body text-slate-800"
+        >
+          <option value="">Select size</option>
+          <option value="1-100">1–100 students</option>
+          <option value="101-500">101–500 students</option>
+          <option value="501-2000">501–2,000 students</option>
+          <option value="2001-10000">2,001–10,000 students</option>
+          <option value="10001+">10,001+ students</option>
         </select>
       </div>
-      <div>
-        <label htmlFor="demo-message" className="block text-sm font-bold text-slate-700 mb-1.5">Anything else we should know?</label>
-        <textarea id="demo-message" rows={3} value={formData.message} onChange={(e) => update("message", e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none transition font-body resize-none"
-          placeholder="Tell us about your students' needs..." />
-      </div>
-      {error && <p className="text-sm text-red-600 font-semibold">{error}</p>}
-      <button type="submit" disabled={submitting}
-        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold hover:from-purple-700 hover:to-indigo-700 transition shadow-lg disabled:opacity-50 min-h-[44px]">
-        {submitting ? "Submitting..." : "Request a Demo"}
+      {status === "error" && (
+        <p className="text-red-600 text-sm font-body">Something went wrong. Please try again.</p>
+      )}
+      <button
+        type="submit"
+        disabled={status === "submitting"}
+        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition shadow-lg disabled:opacity-60 min-h-[44px]"
+      >
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        {status === "submitting" ? "Submitting..." : "Request a Demo"}
       </button>
     </form>
   );
@@ -239,24 +269,14 @@ export default function ContactPage() {
       icon="💬"
       accentColor="#2563eb"
     >
-      <div className="bg-white rounded-3xl border border-slate-100 p-8 md:p-12 mb-16 shadow-sm">
-        <h2 className="text-2xl font-heading font-bold text-slate-900 mb-2">Send Us a Message</h2>
-        <p className="text-slate-500 font-body mb-8">Have a question? We typically respond within 1-2 business days.</p>
-        <ContactForm />
-      </div>
-
-      <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-3xl p-8 md:p-12 border border-purple-100 mb-16">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-3xl">🏫</span>
-          <h2 className="text-2xl font-heading font-bold text-slate-900">Request a Demo</h2>
+      <section className="mb-16">
+        <h2 className="text-2xl font-heading font-bold text-slate-900 mb-6">Send Us a Message</h2>
+        <div className="bg-white rounded-2xl border border-slate-100 p-6 md:p-8">
+          <ContactForm />
         </div>
-        <p className="text-slate-600 font-body mb-8 max-w-2xl">
-          See how AIVO can transform learning for your students. Our education specialists will walk you through the platform and answer all your questions.
-        </p>
-        <DemoRequestForm />
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
         {CONTACTS.map((c) => (
           <div key={c.title} className="bg-white rounded-2xl border border-slate-100 p-6 hover:shadow-lg transition-all hover:-translate-y-1">
             <div className="flex items-start gap-4">
@@ -280,6 +300,14 @@ export default function ContactPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div id="demo" className="bg-slate-50 rounded-3xl p-8 md:p-12 border border-slate-100">
+        <h2 className="text-2xl font-heading font-bold text-slate-900 mb-2">Request a Demo</h2>
+        <p className="text-slate-600 font-body mb-8 max-w-2xl">
+          See how AIVO can transform learning for your students. Fill out the form below, and our education specialists will walk you through the platform and answer all your questions.
+        </p>
+        <DemoForm />
       </div>
     </CompanyPageLayout>
   );

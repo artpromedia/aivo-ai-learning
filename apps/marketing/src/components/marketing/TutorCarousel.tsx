@@ -1,8 +1,9 @@
 "use client";
 import Image from "next/image";
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { trackCTAClick, trackSignupInitiation } from "@/lib/analytics";
+import { WEB_APP_URL } from "@/lib/constants";
 
 export interface Tutor {
   name: string;
@@ -185,13 +186,17 @@ export function TutorCarousel({ tutors }: { tutors: Tutor[] }) {
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/signup"
+              <a
+                href={`${WEB_APP_URL}/signup?plan=free`}
+                onClick={() => {
+                  trackCTAClick("tutor_learn_with", `${WEB_APP_URL}/signup?plan=free`);
+                  trackSignupInitiation("tutor_carousel");
+                }}
                 className="block w-full py-3 rounded-full text-white font-bold transition hover:opacity-90 shadow-lg text-center"
                 style={{ backgroundColor: current.color }}
               >
                 {t("learn_with", { name: current.name })}
-              </Link>
+              </a>
             </div>
           </div>
 
@@ -204,13 +209,17 @@ export function TutorCarousel({ tutors }: { tutors: Tutor[] }) {
                   </p>
                   <h3 className="text-xl font-heading font-bold text-slate-900">{current.name}</h3>
                 </div>
-                <Link
-                  href="/signup"
+                <a
+                  href={`${WEB_APP_URL}/signup?plan=free`}
+                  onClick={() => {
+                    trackCTAClick("tutor_learn_mobile", `${WEB_APP_URL}/signup?plan=free`);
+                    trackSignupInitiation("tutor_carousel_mobile");
+                  }}
                   className="px-4 py-2 rounded-full text-white text-sm font-bold"
                   style={{ backgroundColor: current.color }}
                 >
                   {t("learn")}
-                </Link>
+                </a>
               </div>
               <p className="text-sm italic" style={{ color: current.color }}>
                 {current.tagline}

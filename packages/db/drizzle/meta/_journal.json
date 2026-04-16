@@ -15,6 +15,13 @@
       "when": 1775954697284,
       "tag": "0001_talented_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776349147162,
+      "tag": "0002_goofy_malice",
+      "breakpoints": true
     }
   ]
 }
