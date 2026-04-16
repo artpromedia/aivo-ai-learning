@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { parentAssessments, learners, learnerFunctioningLevels } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
-import { eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { determineFunctioningLevel } from "../services/level-router.js";
 
 async function authenticate(req: any, reply: any) {
@@ -11,6 +11,34 @@ async function authenticate(req: any, reply: any) {
 }
 
 export async function registerParentAssessmentRoutes(app: FastifyInstance) {
+  app.get("/api/assessments/parent/:learnerId/status", {
+    schema: {
+      tags: ["Parent Assessment"],
+      security: [{ bearerAuth: [] }],
+      params: { type: "object", properties: { learnerId: { type: "string" } }, required: ["learnerId"] },
+    },
+    preHandler: authenticate,
+  }, async (req) => {
+    const db = (app as any).db;
+    const { learnerId } = req.params as { learnerId: string };
+
+    const [row] = await db.select({
+      id: parentAssessments.id,
+      completedAt: parentAssessments.completedAt,
+      createdAt: parentAssessments.createdAt,
+    })
+      .from(parentAssessments)
+      .where(and(eq(parentAssessments.learnerId, learnerId), isNotNull(parentAssessments.completedAt)))
+      .orderBy(desc(parentAssessments.completedAt))
+      .limit(1);
+
+    return {
+      completed: !!row,
+      completedAt: row?.completedAt || null,
+      assessmentId: row?.id || null,
+    };
+  });
+
   app.post("/api/assessments/parent", {
     schema: {
       tags: ["Parent Assessment"],

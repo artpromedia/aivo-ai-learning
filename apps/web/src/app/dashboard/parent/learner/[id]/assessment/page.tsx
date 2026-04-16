@@ -36,22 +36,32 @@ export default function ParentAssessmentPage() {
 
   useEffect(() => {
     if (!accessToken || !user) return;
-    fetch("/api/users/learners", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((learners: any[]) => {
-        const found = learners.find((l: any) => l.id === learnerId);
-        if (found) {
-          setLearnerName(found.name || "");
-          if (found.functioningLevel) {
-            setAlreadyCompleted(true);
-            setLearnerFunctioningLevel(found.functioningLevel);
+
+    const loadStatus = async () => {
+      try {
+        const [learnersRes, statusRes] = await Promise.all([
+          fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } }),
+          fetch(`/api/assessments/parent/${learnerId}/status`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+        ]);
+
+        if (learnersRes.ok) {
+          const learners: any[] = await learnersRes.json();
+          const found = learners.find((l: any) => l.id === learnerId);
+          if (found) {
+            setLearnerName(found.name || "");
+            if (found.functioningLevel) setLearnerFunctioningLevel(found.functioningLevel);
           }
         }
-      })
-      .catch(() => {})
-      .finally(() => setCheckingStatus(false));
+
+        if (statusRes.ok) {
+          const status = await statusRes.json();
+          if (status?.completed) setAlreadyCompleted(true);
+        }
+      } catch {}
+      setCheckingStatus(false);
+    };
+
+    loadStatus();
   }, [accessToken, user, learnerId]);
 
   const category = PARENT_ASSESSMENT_CATEGORIES[currentCategoryIdx];
