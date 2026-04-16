@@ -477,6 +477,40 @@ export default function BrainReviewPage() {
   }
 
   if (pageMode === "pre-clone") {
+    if (preCloneData && !preCloneData.baseline_assessment) {
+      const learnerName = preCloneData.learner?.name || "your child";
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center px-4">
+          <div className="bg-white rounded-3xl p-10 shadow-xl border border-slate-100 text-center max-w-lg space-y-6">
+            <div className="text-6xl">🧭</div>
+            <h1 className="text-2xl font-heading font-bold text-slate-900">Baseline Adventure Needed</h1>
+            <p className="text-slate-500">
+              Before we can build {learnerName}&apos;s personalized Brain, they need to complete the Discovery Adventure so we can learn how they learn best.
+            </p>
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-left">
+              <p className="text-sm font-bold text-amber-700 mb-1">Why this is required</p>
+              <p className="text-xs text-amber-600">
+                The Brain is built from real interaction data — reading, math, pattern recognition, and response timing — gathered during the adventure. Without it, there&apos;s nothing to personalize.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => router.push(`/dashboard/learner/assessment?learnerId=${learnerId}`)}
+                className="px-8 py-3 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold hover:from-amber-500 hover:to-orange-600 transition shadow-lg shadow-amber-200"
+              >
+                Start Discovery Adventure
+              </button>
+              <button
+                onClick={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
+                className="px-8 py-3 rounded-full bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition"
+              >
+                Back to Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return <PreCloneReview
       preCloneData={preCloneData}
       learnerId={learnerId}
