@@ -21,6 +21,12 @@ const nextConfig: NextConfig = {
         source: "/signup",
         destination: `${webAppUrl}/signup`,
         permanent: false,
+        has: [{ type: "query" as const, key: "plan" }],
+      },
+      {
+        source: "/signup",
+        destination: `${webAppUrl}/signup`,
+        permanent: false,
       },
     ];
   },

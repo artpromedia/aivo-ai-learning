@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
+import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
 
 const HERO_SLIDES = [
   {
@@ -184,7 +185,8 @@ export function Hero({ scrollY }: { scrollY: number }) {
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Link
                 href="/signup"
-                className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white font-bold text-lg hover:from-primary-dark hover:to-purple-700 transition-all shadow-2xl shadow-purple-900/40 hover:shadow-purple-800/50 hover:-translate-y-0.5"
+                onClick={() => trackEvent(AnalyticsEvents.CTA_CLICK, { location: "hero", type: "trial" })}
+                className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white font-bold text-lg hover:from-primary-dark hover:to-purple-700 transition-all shadow-2xl shadow-purple-900/40 hover:shadow-purple-800/50 hover:-translate-y-0.5 min-h-[44px]"
               >
                 {t("cta_trial")}
                 <svg
@@ -198,7 +200,7 @@ export function Hero({ scrollY }: { scrollY: number }) {
               </Link>
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center px-10 py-4 rounded-full border-2 border-white/25 text-white font-bold text-lg hover:bg-white/10 hover:border-white/40 transition-all hover:-translate-y-0.5 backdrop-blur-sm"
+                className="inline-flex items-center justify-center px-10 py-4 rounded-full border-2 border-white/25 text-white font-bold text-lg hover:bg-white/10 hover:border-white/40 transition-all hover:-translate-y-0.5 backdrop-blur-sm min-h-[44px]"
               >
                 {t("cta_signin")}
               </Link>

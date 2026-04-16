@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
 
 export function CTASection() {
   const t = useTranslations("marketing.cta");
@@ -27,7 +28,8 @@ export function CTASection() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/signup"
-            className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 rounded-full bg-white text-primary font-bold text-lg hover:bg-slate-50 transition-all shadow-xl hover:-translate-y-0.5"
+            onClick={() => trackEvent(AnalyticsEvents.CTA_CLICK, { location: "cta_section", type: "trial" })}
+            className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 rounded-full bg-white text-primary font-bold text-lg hover:bg-slate-50 transition-all shadow-xl hover:-translate-y-0.5 min-h-[44px]"
           >
             {t("cta_trial")}
             <svg
@@ -40,8 +42,9 @@ export function CTASection() {
             </svg>
           </Link>
           <Link
-            href="#pricing"
-            className="inline-flex items-center justify-center px-10 py-4 rounded-full border-2 border-white/30 text-white font-bold text-lg hover:bg-white/10 transition-all hover:-translate-y-0.5"
+            href="/contact"
+            onClick={() => trackEvent(AnalyticsEvents.CTA_CLICK, { location: "cta_section", type: "demo" })}
+            className="inline-flex items-center justify-center px-10 py-4 rounded-full border-2 border-white/30 text-white font-bold text-lg hover:bg-white/10 transition-all hover:-translate-y-0.5 min-h-[44px]"
           >
             {t("cta_pricing")}
           </Link>

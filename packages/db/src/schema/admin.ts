@@ -114,6 +114,24 @@ export const webhookDeliveries = pgTable("webhook_deliveries", {
   deliveredAt: timestamp("delivered_at").defaultNow().notNull(),
 });
 
+export const contactSubmissions = pgTable("contact_submissions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  type: varchar("type", { length: 50 }).notNull(),
+  name: varchar("name", { length: 255 }),
+  email: varchar("email", { length: 255 }).notNull(),
+  company: varchar("company", { length: 255 }),
+  role: varchar("role", { length: 100 }),
+  schoolSize: varchar("school_size", { length: 50 }),
+  message: text("message"),
+  source: varchar("source", { length: 100 }),
+  status: varchar("status", { length: 50 }).notNull().default("new"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_contact_type").on(table.type),
+  index("idx_contact_email").on(table.email),
+  index("idx_contact_created").on(table.createdAt),
+]);
+
 export const apiKeys = pgTable("api_keys", {
   id: uuid("id").defaultRandom().primaryKey(),
   keyHash: varchar("key_hash", { length: 255 }).notNull(),

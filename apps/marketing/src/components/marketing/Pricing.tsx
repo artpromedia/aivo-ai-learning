@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
 
 const CHECK_ICON = (
   <svg className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -99,7 +100,8 @@ export function Pricing() {
 
               <Link
                 href={plan.href}
-                className={`block w-full py-3.5 rounded-full ${plan.ctaBg} text-white font-bold text-center transition shadow-lg`}
+                onClick={() => trackEvent(AnalyticsEvents.PRICING_SELECT, { plan: plan.nameKey })}
+                className={`block w-full py-3.5 rounded-full ${plan.ctaBg} text-white font-bold text-center transition shadow-lg min-h-[44px] flex items-center justify-center`}
               >
                 {t(plan.ctaKey)}
               </Link>
@@ -142,14 +144,16 @@ export function Pricing() {
             </ul>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/signup?type=district"
-                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-white text-primary font-bold text-lg hover:bg-slate-50 transition shadow-lg"
+                href="/contact"
+                onClick={() => trackEvent(AnalyticsEvents.CTA_CLICK, { location: "pricing", type: "district_demo" })}
+                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-white text-primary font-bold text-lg hover:bg-slate-50 transition shadow-lg min-h-[44px]"
               >
                 {t("district_demo")}
               </Link>
               <Link
-                href="/signup?type=school"
-                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full border-2 border-white/30 text-white font-bold text-lg hover:bg-white/10 transition"
+                href="/contact"
+                onClick={() => trackEvent(AnalyticsEvents.CTA_CLICK, { location: "pricing", type: "district_sales" })}
+                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full border-2 border-white/30 text-white font-bold text-lg hover:bg-white/10 transition min-h-[44px]"
               >
                 {t("district_sales")}
               </Link>
