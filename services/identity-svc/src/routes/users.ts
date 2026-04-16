@@ -118,4 +118,52 @@ export async function registerUserRoutes(app: FastifyInstance) {
 
     return { learner, user: { id: learnerUser.id, name: learnerUser.name, role: "LEARNER" } };
   });
+
+  app.put("/api/users/learners/:learnerId", {
+    schema: {
+      tags: ["Users"],
+      security: [{ bearerAuth: [] }],
+      body: {
+        type: "object",
+        properties: {
+          pin: { type: "string", minLength: 4, maxLength: 6 },
+          name: { type: "string" },
+          gradeLevel: { type: "string" },
+        },
+      },
+    },
+    preHandler: authenticate,
+  }, async (req, reply) => {
+    const db = (app as any).db;
+    const user = (req as any).user;
+    const { learnerId } = req.params as { learnerId: string };
+    const body = req.body as { pin?: string; name?: string; gradeLevel?: string };
+
+    if (!["PARENT", "PLATFORM_ADMIN"].includes(user.role)) {
+      return reply.status(403).send({ error: "Not authorized" });
+    }
+
+    const [learner] = await db.select().from(learners).where(eq(learners.id, learnerId));
+    if (!learner) return reply.status(404).send({ error: "Learner not found" });
+    if (user.role === "PARENT" && learner.parentId !== user.sub) {
+      return reply.status(403).send({ error: "Not authorized" });
+    }
+    if (learner.tenantId !== user.tenantId && user.role !== "PLATFORM_ADMIN") {
+      return reply.status(403).send({ error: "Not authorized" });
+    }
+
+    if (body.pin && learner.userId) {
+      await db.update(users).set({ pin: body.pin }).where(eq(users.id, learner.userId));
+    }
+
+    const updateFields: Record<string, unknown> = {};
+    if (body.name) updateFields.name = body.name;
+    if (body.gradeLevel) updateFields.gradeLevel = body.gradeLevel;
+
+    if (Object.keys(updateFields).length > 0) {
+      await db.update(learners).set(updateFields).where(eq(learners.id, learnerId));
+    }
+
+    return { success: true, learnerId };
+  });
 }

@@ -1,4 +1,4 @@
-modules = ["python-3.12", "bash", "nodejs-22", "postgresql-16"]
+modules = ["python-3.12", "bash", "nodejs-22", "javascript", "postgresql-16"]
 [agent]
 expertMode = true
 
@@ -70,13 +70,13 @@ outputType = "console"
 name = "Web App"
 author = "agent"
 
-[workflows.workflow.metadata]
-outputType = "webview"
-
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd apps/web && npx next dev --port 5000 --turbopack --hostname 0.0.0.0"
 waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [[ports]]
 localPort = 3001
@@ -206,3 +206,7 @@ EXPO_ROUTER_APP_ROOT = "app"
 deploymentTarget = "autoscale"
 run = ["bash", "start.sh"]
 build = ["bash", "-c", "cd services/identity-svc && npx tsup --no-dts && cd ../.. && cd apps/web && pnpm run build"]
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 180000

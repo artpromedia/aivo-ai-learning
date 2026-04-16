@@ -1,8 +1,9 @@
 "use client";
-import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
+import { trackCTAClick, trackSignupInitiation } from "@/lib/analytics";
+import { WEB_APP_URL } from "@/lib/constants";
 
 const HERO_SLIDES = [
   {
@@ -182,9 +183,13 @@ export function Hero({ scrollY }: { scrollY: number }) {
             </ul>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Link
-                href="/signup"
-                className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white font-bold text-lg hover:from-primary-dark hover:to-purple-700 transition-all shadow-2xl shadow-purple-900/40 hover:shadow-purple-800/50 hover:-translate-y-0.5"
+              <a
+                href={`${WEB_APP_URL}/signup?plan=free`}
+                onClick={() => {
+                  trackCTAClick("hero_start_trial", `${WEB_APP_URL}/signup?plan=free`);
+                  trackSignupInitiation("hero");
+                }}
+                className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white font-bold text-lg hover:from-primary-dark hover:to-purple-700 transition-all shadow-2xl shadow-purple-900/40 hover:shadow-purple-800/50 hover:-translate-y-0.5 min-h-[44px]"
               >
                 {t("cta_trial")}
                 <svg
@@ -195,13 +200,13 @@ export function Hero({ scrollY }: { scrollY: number }) {
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center px-10 py-4 rounded-full border-2 border-white/25 text-white font-bold text-lg hover:bg-white/10 hover:border-white/40 transition-all hover:-translate-y-0.5 backdrop-blur-sm"
+              </a>
+              <a
+                href={`${WEB_APP_URL}/login`}
+                className="inline-flex items-center justify-center px-10 py-4 rounded-full border-2 border-white/25 text-white font-bold text-lg hover:bg-white/10 hover:border-white/40 transition-all hover:-translate-y-0.5 backdrop-blur-sm min-h-[44px]"
               >
                 {t("cta_signin")}
-              </Link>
+              </a>
             </div>
 
             <div className="flex items-center gap-2">

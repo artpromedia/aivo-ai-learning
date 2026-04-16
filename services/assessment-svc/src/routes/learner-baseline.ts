@@ -132,9 +132,14 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
       .orderBy(desc(parentAssessments.createdAt))
       .limit(1);
 
-    const parentPayload = parentAssessment
-      ? buildParentAssessmentPayload(parentAssessment, learner)
-      : { functioningLevel: learner.functioningLevel || "STANDARD" };
+    if (!parentAssessment?.completedAt) {
+      return reply.status(403).send({
+        error: "parent_assessment_required",
+        message: "Parent assessment must be completed before baseline assessment can begin",
+      });
+    }
+
+    const parentPayload = buildParentAssessmentPayload(parentAssessment, learner);
 
     try {
       const aiRes = await fetch(`${AI_SVC_URL}/api/ai/generate-discovery-chapter`, {
@@ -207,6 +212,20 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: "Access denied" });
     }
 
+    const [parentCheck] = await db
+      .select()
+      .from(parentAssessments)
+      .where(eq(parentAssessments.learnerId, learner.id))
+      .orderBy(desc(parentAssessments.createdAt))
+      .limit(1);
+
+    if (!parentCheck?.completedAt) {
+      return reply.status(403).send({
+        error: "parent_assessment_required",
+        message: "Parent assessment must be completed before baseline assessment can be completed",
+      });
+    }
+
     const [attempt] = await db.insert(assessmentAttempts).values({
       tenantId: learner.tenantId,
       learnerId: learner.id,
@@ -229,70 +248,13 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
       },
     }).returning();
 
-    const [parentAssessment] = await db
-      .select()
-      .from(parentAssessments)
-      .where(eq(parentAssessments.learnerId, learnerId))
-      .orderBy(desc(parentAssessments.createdAt))
-      .limit(1);
-
-    let brainResult: any = null;
-    try {
-      const clonePayload: any = {
-        learner_id: learnerId,
-        tenant_id: learner.tenantId,
-        functioning_level: learner.functioningLevel || "STANDARD",
-        assessment_id: attempt.id,
-        discovery_results: {
-          chapterResults: body.chapterResults || [],
-          totalCorrect: body.totalCorrect,
-          totalAttempts: body.totalAttempts,
-          xpEarned: body.xpEarned || 0,
-          responseLatencies: body.responseLatencies || [],
-        },
-      };
-
-      if (parentAssessment) {
-        clonePayload.parent_assessment_id = parentAssessment.id;
-        clonePayload.parent_assessment_data = {
-          communicationMode: parentAssessment.communicationMode,
-          deviceInteraction: parentAssessment.deviceInteraction,
-          responseMethod: parentAssessment.responseMethod,
-          attentionSpan: parentAssessment.attentionSpan,
-          diagnoses: parentAssessment.diagnoses || [],
-          responses: parentAssessment.responses || {},
-        };
-      }
-
-      const brainRes = await fetch(`${BRAIN_SVC_URL}/api/brain/clone`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: req.headers.authorization as string,
-        },
-        body: JSON.stringify(clonePayload),
-      });
-
-      if (brainRes.ok) {
-        brainResult = await brainRes.json();
-      } else {
-        const errText = await brainRes.text();
-        brainResult = { error: "Brain clone failed", detail: errText };
-      }
-    } catch (e: any) {
-      brainResult = { error: "Failed to reach brain service", detail: e.message };
-    }
-
-    const cloneSucceeded = brainResult && !brainResult.error;
-
     return reply.send({
       success: true,
       assessmentId: attempt.id,
       learnerId,
       functioningLevel: learner.functioningLevel,
       domainScores: attempt.domainScores,
-      brain: brainResult,
-      brainCloneStatus: cloneSucceeded ? "pending_parent_review" : "clone_failed",
+      brainCloneStatus: "awaiting_parent_consent",
     });
   });
 

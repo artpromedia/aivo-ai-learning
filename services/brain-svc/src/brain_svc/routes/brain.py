@@ -30,6 +30,89 @@ def _to_camel_case(data: dict) -> dict:
 
 @router.post("/clone")
 async def clone_brain_endpoint(request: BrainCloneRequest, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
+    _verify_parent_access(db, auth, request.learner_id)
+
+    completed_pa = db.execute(
+        text("""SELECT id FROM parent_assessments WHERE learner_id = :lid
+                AND completed_at IS NOT NULL ORDER BY created_at DESC LIMIT 1"""),
+        {"lid": request.learner_id}
+    ).first()
+    if not completed_pa:
+        raise HTTPException(status_code=403, detail="Parent assessment must be completed before building a Brain")
+
+    completed_baseline = db.execute(
+        text("""SELECT id FROM assessment_attempts
+                WHERE learner_id = :lid AND type = 'discovery_adventure' AND status = 'COMPLETED'
+                ORDER BY created_at DESC LIMIT 1"""),
+        {"lid": request.learner_id}
+    ).first()
+    if not completed_baseline:
+        raise HTTPException(status_code=403, detail="Baseline assessment must be completed before building a Brain")
+
+    if not request.tenant_id:
+        learner = db.execute(
+            text("SELECT tenant_id, functioning_level FROM learners WHERE id = :lid"),
+            {"lid": request.learner_id}
+        ).mappings().first()
+        if not learner:
+            raise HTTPException(status_code=404, detail="Learner not found")
+        request.tenant_id = learner["tenant_id"]
+        if not request.functioning_level or request.functioning_level == "STANDARD":
+            request.functioning_level = learner.get("functioning_level") or "STANDARD"
+
+    if not request.discovery_results:
+        attempt = db.execute(
+            text("""SELECT id, domain_scores, metadata FROM assessment_attempts
+                    WHERE learner_id = :lid AND type = 'discovery_adventure' AND status = 'COMPLETED'
+                    ORDER BY created_at DESC LIMIT 1"""),
+            {"lid": request.learner_id}
+        ).mappings().first()
+        if attempt:
+            request.assessment_id = attempt["id"]
+            ds = attempt.get("domain_scores", {})
+            if isinstance(ds, str):
+                try: ds = json.loads(ds)
+                except: ds = {}
+            meta = attempt.get("metadata", {})
+            if isinstance(meta, str):
+                try: meta = json.loads(meta)
+                except: meta = {}
+            chapter_results = meta.get("chapterResults", [])
+            from brain_svc.models.schemas import DiscoveryResults
+            request.discovery_results = DiscoveryResults(
+                chapterResults=chapter_results,
+                totalCorrect=meta.get("totalCorrect", 0),
+                totalAttempts=meta.get("totalAttempts", 0),
+                xpEarned=meta.get("xpEarned", 0),
+                responseLatencies=meta.get("responseLatencies", []),
+            )
+
+    if not request.parent_assessment_data:
+        pa = db.execute(
+            text("""SELECT * FROM parent_assessments WHERE learner_id = :lid
+                    AND completed_at IS NOT NULL ORDER BY created_at DESC LIMIT 1"""),
+            {"lid": request.learner_id}
+        ).mappings().first()
+        if pa:
+            request.parent_assessment_id = pa["id"]
+            from brain_svc.models.schemas import ParentAssessmentData
+            diagnoses = pa.get("diagnoses", [])
+            if isinstance(diagnoses, str):
+                try: diagnoses = json.loads(diagnoses)
+                except: diagnoses = []
+            responses = pa.get("responses", {})
+            if isinstance(responses, str):
+                try: responses = json.loads(responses)
+                except: responses = {}
+            request.parent_assessment_data = ParentAssessmentData(
+                communicationMode=pa.get("communication_mode"),
+                deviceInteraction=pa.get("device_interaction"),
+                responseMethod=pa.get("response_method"),
+                attentionSpan=pa.get("attention_span"),
+                diagnoses=diagnoses,
+                responses=responses,
+            )
+
     result = clone_brain(db, request)
     return result
 
@@ -57,6 +140,79 @@ def _verify_parent_access(db: Session, auth: AuthClaims, learner_id: str):
             raise HTTPException(status_code=403, detail="Not authorized for this learner")
         return
     raise HTTPException(status_code=403, detail="Only parents can review brain clones")
+
+
+@router.get("/{learner_id}/pre-clone-data")
+async def get_pre_clone_data(learner_id: str, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
+    _verify_parent_access(db, auth, learner_id)
+
+    learner = db.execute(
+        text("SELECT id, name, grade_level, functioning_level, communication_mode, diagnoses FROM learners WHERE id = :lid"),
+        {"lid": learner_id}
+    ).mappings().first()
+    if not learner:
+        raise HTTPException(status_code=404, detail="Learner not found")
+
+    parent_assessment = db.execute(
+        text("""SELECT * FROM parent_assessments WHERE learner_id = :lid
+                ORDER BY created_at DESC LIMIT 1"""),
+        {"lid": learner_id}
+    ).mappings().first()
+
+    assessment_attempt = db.execute(
+        text("""SELECT * FROM assessment_attempts
+                WHERE learner_id = :lid AND type = 'discovery_adventure' AND status = 'COMPLETED'
+                ORDER BY created_at DESC LIMIT 1"""),
+        {"lid": learner_id}
+    ).mappings().first()
+
+    brain_exists = db.execute(
+        text("SELECT id, approval_status FROM brain_states WHERE learner_id = :lid ORDER BY version DESC LIMIT 1"),
+        {"lid": learner_id}
+    ).mappings().first()
+
+    pa_data = None
+    if parent_assessment:
+        pa_dict = dict(parent_assessment)
+        for field in ["responses", "diagnoses"]:
+            val = pa_dict.get(field)
+            if isinstance(val, str):
+                try: pa_dict[field] = json.loads(val)
+                except: pass
+        pa_data = pa_dict
+
+    aa_data = None
+    if assessment_attempt:
+        aa_dict = dict(assessment_attempt)
+        for field in ["domain_scores", "metadata"]:
+            val = aa_dict.get(field)
+            if isinstance(val, str):
+                try: aa_dict[field] = json.loads(val)
+                except: pass
+        aa_data = aa_dict
+
+    l_dict = dict(learner)
+    if isinstance(l_dict.get("diagnoses"), str):
+        try: l_dict["diagnoses"] = json.loads(l_dict["diagnoses"])
+        except: pass
+
+    from brain_svc.services.clone_pipeline import SEED_TEMPLATES
+    fl = l_dict.get("functioning_level", "STANDARD") or "STANDARD"
+    template = SEED_TEMPLATES.get(fl, SEED_TEMPLATES["STANDARD"])
+
+    return {
+        "learner": l_dict,
+        "parent_assessment": pa_data,
+        "baseline_assessment": aa_data,
+        "brain_exists": brain_exists is not None,
+        "brain_status": dict(brain_exists).get("approval_status") if brain_exists else None,
+        "template_preview": {
+            "functioning_level": fl,
+            "accommodations": template["active_accommodations"],
+            "tutors": template["active_tutors"],
+            "domains": list(template["mastery_levels"].keys()),
+        },
+    }
 
 
 @router.get("/{learner_id}/review")
@@ -100,6 +256,9 @@ async def get_brain_review(learner_id: str, db: Session = Depends(get_db), auth:
 async def approve_brain(learner_id: str, request: BrainApproveRequest, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
     _verify_parent_access(db, auth, learner_id)
 
+    if not request.consent_given:
+        raise HTTPException(status_code=400, detail="COPPA consent is required before approving the brain clone")
+
     current = db.execute(
         text("SELECT * FROM brain_states WHERE learner_id = :lid ORDER BY version DESC LIMIT 1"),
         {"lid": learner_id}
@@ -111,25 +270,101 @@ async def approve_brain(learner_id: str, request: BrainApproveRequest, db: Sessi
 
     now = datetime.utcnow()
     new_version = (current["version"] or 1) + 1
+
+    mastery = current.get("mastery_levels", {})
+    if isinstance(mastery, str):
+        try: mastery = json.loads(mastery)
+        except: mastery = {}
+
+    accommodations = current.get("active_accommodations", [])
+    if isinstance(accommodations, str):
+        try: accommodations = json.loads(accommodations)
+        except: accommodations = []
+
+    tutors = current.get("active_tutors", [])
+    if isinstance(tutors, str):
+        try: tutors = json.loads(tutors)
+        except: tutors = []
+
+    xai = current.get("xai_explanation", {})
+    if isinstance(xai, str):
+        try: xai = json.loads(xai)
+        except: xai = {}
+    if not isinstance(xai, dict):
+        xai = {}
+
+    parent_mods_record = []
+    if request.parent_modifications:
+        for mod in request.parent_modifications:
+            mod_entry = {
+                "field": mod.field,
+                "original_value": mod.original_value,
+                "parent_value": mod.parent_value,
+                "parent_note": mod.parent_note,
+                "modified_at": mod.modified_at or now.isoformat(),
+            }
+            parent_mods_record.append(mod_entry)
+
+            if mod.field.startswith("mastery_levels."):
+                domain = mod.field.split(".", 1)[1]
+                if domain in mastery and mod.parent_value is not None:
+                    mastery[domain] = float(mod.parent_value)
+            elif mod.field.startswith("accommodation."):
+                acc_name = mod.field.split(".", 1)[1]
+                if mod.parent_value is True and acc_name not in accommodations:
+                    accommodations.append(acc_name)
+                elif mod.parent_value is False and acc_name in accommodations:
+                    accommodations.remove(acc_name)
+            elif mod.field.startswith("tutor."):
+                tutor_key = mod.field.split(".", 1)[1]
+                if mod.parent_value is True and tutor_key not in tutors:
+                    tutors.append(tutor_key)
+                elif mod.parent_value is False and tutor_key in tutors:
+                    tutors.remove(tutor_key)
+
+        xai["parent_modifications"] = parent_mods_record
+
+    consent_record = {
+        "consent_given": True,
+        "consent_version": request.consent_version,
+        "consent_timestamp": now.isoformat(),
+        "parent_id": auth.sub,
+    }
+    xai["coppa_consent"] = consent_record
+
     db.execute(
         text("""UPDATE brain_states
                 SET approval_status = 'approved', parent_notes = :notes,
+                    mastery_levels = :ml, active_accommodations = :aa,
+                    active_tutors = :at, xai_explanation = :xai,
                     version = :v, updated_at = :now
                 WHERE id = :id"""),
-        {"notes": request.parent_notes, "v": new_version, "now": now, "id": current["id"]}
+        {
+            "notes": request.parent_notes,
+            "ml": json.dumps(mastery),
+            "aa": json.dumps(accommodations),
+            "at": json.dumps(tutors),
+            "xai": json.dumps(xai),
+            "v": new_version,
+            "now": now,
+            "id": current["id"],
+        }
     )
 
     snap_id = str(uuid.uuid4())
     snap_data = {}
-    for field in ["mastery_levels", "disability_signals", "functioning_level_profile",
-                  "iep_profile", "sensory_profile", "active_accommodations",
-                  "active_tutors", "functional_curriculum", "episodic_memory",
+    for field in ["disability_signals", "functioning_level_profile",
+                  "iep_profile", "sensory_profile",
+                  "functional_curriculum", "episodic_memory",
                   "visual_identity"]:
         val = current.get(field)
         if isinstance(val, str):
             try: val = json.loads(val)
             except: pass
         snap_data[field] = val
+    snap_data["mastery_levels"] = mastery
+    snap_data["active_accommodations"] = accommodations
+    snap_data["active_tutors"] = tutors
 
     db.execute(
         text("""INSERT INTO brain_state_snapshots
@@ -143,9 +378,6 @@ async def approve_brain(learner_id: str, request: BrainApproveRequest, db: Sessi
 
     try:
         import httpx
-        mastery = current.get("mastery_levels", {})
-        if isinstance(mastery, str):
-            mastery = json.loads(mastery)
         fl = current.get("functioning_level_profile", {})
         if isinstance(fl, str):
             fl = json.loads(fl)
@@ -158,7 +390,7 @@ async def approve_brain(learner_id: str, request: BrainApproveRequest, db: Sessi
     except Exception:
         pass
 
-    return {"status": "approved", "version": new_version, "snapshot_id": snap_id}
+    return {"status": "approved", "version": new_version, "snapshot_id": snap_id, "consent": consent_record}
 
 @router.post("/{learner_id}/amend")
 async def amend_brain(learner_id: str, request: BrainAmendRequest, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):

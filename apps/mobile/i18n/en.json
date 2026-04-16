@@ -18,7 +18,11 @@
     "approve": "Approve",
     "decline": "Decline",
     "comingSoon": "Coming soon",
-    "overview": "Overview"
+    "overview": "Overview",
+    "on": "On",
+    "off": "Off",
+    "saving": "Saving...",
+    "confirm": "Confirm"
   },
   "auth": {
     "aiPoweredLearning": "AI-Powered Learning",
@@ -37,6 +41,18 @@
     "signUp": "Sign Up",
     "enterEmailPassword": "Please enter email and password",
     "loginFailed": "Login failed",
+    "checkEmail": "Check Your Email",
+    "codeSentDesc": "We sent a 6-digit code to your email.",
+    "verificationFailed": "Verification failed. Please try again.",
+    "verifyCode": "Verify Code",
+    "verifying": "Verifying...",
+    "resendCode": "Resend Code",
+    "resending": "Resending...",
+    "codeResent": "A new code has been sent.",
+    "resendFailed": "Failed to resend code.",
+    "backToLogin": "Back to Login",
+    "sessionExpired": "Your session has expired. Please log in again.",
+    "codeExpires": "Code expires in 10 minutes.",
     "googleSignInFailed": "Google sign-in failed",
     "createAccount": "Create Your Account",
     "createAccountSubtitle": "Start your child's personalized learning journey",
@@ -104,7 +120,16 @@
     "managePins": "Manage PINs",
     "exportData": "Export Data (GDPR)",
     "deleteAccount": "Delete Account",
-    "appVersion": "AIVO Learning v1.0.0"
+    "deleteAccountConfirm": "This action cannot be undone. Please contact support to delete your account.",
+    "appVersion": "AIVO Learning v1.0.0",
+    "twoFactorAuth": "Two-Factor Authentication",
+    "mfaDesc": "Add extra security with email verification codes.",
+    "enableMfa": "Enable MFA",
+    "disableMfa": "Disable MFA",
+    "enterPassword": "Enter your password",
+    "mfaEnabled": "MFA has been enabled.",
+    "mfaDisabled": "MFA has been disabled.",
+    "enterCode": "Enter the 6-digit code sent to your email."
   },
   "parentBilling": {
     "title": "Billing & Subscription",
@@ -273,7 +298,8 @@
     "enterTournament": "Enter Tournament",
     "inviteFriend": "Invite a Friend",
     "inviteText": "Share your invite code to play with friends!",
-    "copyCode": "Copy Code"
+    "copyCode": "Copy Code",
+    "codeCopied": "Invite code copied to clipboard!"
   },
   "learnerBadges": {
     "title": "Badge Cabinet",

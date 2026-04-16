@@ -36,22 +36,32 @@ export default function ParentAssessmentPage() {
 
   useEffect(() => {
     if (!accessToken || !user) return;
-    fetch("/api/users/learners", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((learners: any[]) => {
-        const found = learners.find((l: any) => l.id === learnerId);
-        if (found) {
-          setLearnerName(found.name || "");
-          if (found.functioningLevel) {
-            setAlreadyCompleted(true);
-            setLearnerFunctioningLevel(found.functioningLevel);
+
+    const loadStatus = async () => {
+      try {
+        const [learnersRes, statusRes] = await Promise.all([
+          fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } }),
+          fetch(`/api/assessments/parent/${learnerId}/status`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+        ]);
+
+        if (learnersRes.ok) {
+          const learners: any[] = await learnersRes.json();
+          const found = learners.find((l: any) => l.id === learnerId);
+          if (found) {
+            setLearnerName(found.name || "");
+            if (found.functioningLevel) setLearnerFunctioningLevel(found.functioningLevel);
           }
         }
-      })
-      .catch(() => {})
-      .finally(() => setCheckingStatus(false));
+
+        if (statusRes.ok) {
+          const status = await statusRes.json();
+          if (status?.completed) setAlreadyCompleted(true);
+        }
+      } catch {}
+      setCheckingStatus(false);
+    };
+
+    loadStatus();
   }, [accessToken, user, learnerId]);
 
   const category = PARENT_ASSESSMENT_CATEGORIES[currentCategoryIdx];
@@ -167,7 +177,7 @@ export default function ParentAssessmentPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-3xl p-10 shadow-xl border border-slate-100 text-center max-w-lg space-y-6">
           <div className="w-20 h-20 mx-auto rounded-full bg-green-100 flex items-center justify-center">
-            <span className="text-4xl">&#10003;</span>
+            <span className="text-4xl">✓</span>
           </div>
           <h1 className="text-2xl font-heading font-bold text-slate-900">{t("already_complete_title")}</h1>
           <p className="text-slate-500">
@@ -175,7 +185,9 @@ export default function ParentAssessmentPage() {
           </p>
           <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
             <p className="text-sm font-bold text-purple-700">{t("functioning_level_label")}</p>
-            <p className="text-xl font-heading font-bold text-primary mt-1">{learnerFunctioningLevel.replace(/_/g, " ")}</p>
+            <p className="text-xl font-heading font-bold text-primary mt-1">
+              {learnerFunctioningLevel.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
+            </p>
           </div>
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
             <div className="text-2xl mb-2">🧭</div>
@@ -208,15 +220,23 @@ export default function ParentAssessmentPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-3xl p-10 shadow-xl border border-slate-100 text-center max-w-lg space-y-6">
           <div className="w-20 h-20 mx-auto rounded-full bg-green-100 flex items-center justify-center">
-            <span className="text-4xl">&#10003;</span>
+            <span className="text-4xl">✓</span>
           </div>
           <h1 className="text-2xl font-heading font-bold text-slate-900">{t("assessment_complete_title")}</h1>
           <p className="text-slate-500">{t("assessment_thank_you")}</p>
           {result.functioningLevel && (
             <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200">
               <p className="text-sm font-bold text-purple-700">{t("recommended_level")}</p>
-              <p className="text-xl font-heading font-bold text-primary mt-1">{result.functioningLevel.level}</p>
-              <p className="text-xs text-purple-500 mt-1">{t("confidence")}: {Math.round((result.functioningLevel.confidence || 0) * 100)}%</p>
+              <p className="text-xl font-heading font-bold text-primary mt-1">
+                {(result.functioningLevel.level || "").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
+              </p>
+              <p className="text-xs text-purple-500 mt-1">
+                {t("confidence")}: {(() => {
+                  const c = Number(result.functioningLevel.confidence) || 0;
+                  const pct = c <= 1 ? c * 100 : c;
+                  return `${Math.round(pct)}%`;
+                })()}
+              </p>
             </div>
           )}
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
@@ -258,7 +278,7 @@ export default function ParentAssessmentPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-8 text-center shadow-2xl max-w-sm mx-4 animate-in fade-in zoom-in">
             <div className="w-16 h-16 rounded-full bg-green-400 flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl text-white">&#10003;</span>
+              <span className="text-3xl text-white">✓</span>
             </div>
             <h3 className="text-xl font-heading font-bold text-slate-900">{t("section_complete")}</h3>
             <p className="text-sm text-slate-500 mt-1">{t("moving_next")}</p>
@@ -414,7 +434,7 @@ function QuestionInput({
                   backgroundColor: isSelected ? categoryColor : "transparent",
                   color: "white",
                 }}>
-                {isSelected ? "&#10003;" : ""}
+                {isSelected ? "✓" : ""}
               </span>
               {opt}
             </button>

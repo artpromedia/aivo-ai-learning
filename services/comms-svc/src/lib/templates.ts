@@ -58,6 +58,8 @@ export function renderTemplate(templateId: string, data: TemplateData): { subjec
       return renderSessionReminder(data);
     case "iep_update":
       return renderIEPUpdate(data);
+    case "mfa_code":
+      return renderMfaCode(data);
     default:
       return renderGeneric(data);
   }
@@ -187,6 +189,25 @@ function renderIEPUpdate(data: TemplateData) {
   };
 }
 
+function renderMfaCode(data: TemplateData) {
+  const code = (data.code as string) || "000000";
+  const name = (data.name as string) || "there";
+  const html = baseLayout(`
+    <h1 class="title">Your Verification Code</h1>
+    <p class="body-text">Hi ${name},</p>
+    <p class="body-text">Use the following code to complete your sign-in. This code expires in 10 minutes.</p>
+    <div style="text-align:center;margin:24px 0">
+      <div style="display:inline-block;padding:16px 40px;background:#F5F3FF;border-radius:12px;letter-spacing:8px;font-size:32px;font-weight:800;color:${BRAND_COLOR};font-family:monospace">${code}</div>
+    </div>
+    <p class="body-text" style="font-size:13px;color:#6b7280">If you didn't request this code, please ignore this email or contact support if you believe your account has been compromised.</p>
+  `);
+  return {
+    subject: `${code} is your ${BRAND_NAME} verification code`,
+    html,
+    text: `Your ${BRAND_NAME} verification code is: ${code}. This code expires in 10 minutes. If you didn't request this, please ignore this email.`,
+  };
+}
+
 function renderGeneric(data: TemplateData) {
   const html = baseLayout(`
     <h1 class="title">${(data.title as string) || "Notification"}</h1>
@@ -208,4 +229,5 @@ export const AVAILABLE_TEMPLATES = [
   { id: "milestone_achieved", name: "Milestone Achievement", channels: ["email", "push"] },
   { id: "session_reminder", name: "Session Reminder", channels: ["push", "email"] },
   { id: "iep_update", name: "IEP Goal Update", channels: ["email", "push"] },
+  { id: "mfa_code", name: "MFA Verification Code", channels: ["email"] },
 ];

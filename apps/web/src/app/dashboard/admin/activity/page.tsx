@@ -25,13 +25,13 @@ function formatTimeAgo(date: Date): string {
   return `${days}d ago`;
 }
 
-function resourceLink(type: string, id: string): string {
+function resourceLink(type: string, id: string): string | null {
   const map: Record<string, string> = {
     User: `/dashboard/admin/users/${id}`,
     Learner: `/dashboard/admin/learners/${id}`,
     Tenant: `/dashboard/admin/tenants/${id}`,
   };
-  return map[type] || "#";
+  return map[type] || null;
 }
 
 const ACTION_COLORS: Record<string, string> = {
@@ -98,12 +98,18 @@ export default function ActivityFeedPage() {
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <Link
-                          href={resourceLink(entry.resourceType, entry.resourceId)}
-                          className="text-xs text-purple-600 hover:text-purple-800 transition"
-                        >
-                          {entry.resourceType} #{entry.resourceId}
-                        </Link>
+                        {resourceLink(entry.resourceType, entry.resourceId) ? (
+                          <Link
+                            href={resourceLink(entry.resourceType, entry.resourceId)!}
+                            className="text-xs text-purple-600 hover:text-purple-800 transition"
+                          >
+                            {entry.resourceType} #{entry.resourceId}
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-slate-500">
+                            {entry.resourceType} #{entry.resourceId}
+                          </span>
+                        )}
                         <span className="px-1.5 py-0.5 text-[10px] rounded bg-slate-100 text-slate-400 font-medium">
                           {entry.actorRole.replace(/_/g, " ")}
                         </span>

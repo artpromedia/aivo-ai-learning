@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { MfaSettings } from "@/components/settings/MfaSettings";
 
 export default function ParentSettingsPage() {
   const { user, accessToken, logout, loading } = useAuth();
@@ -248,6 +249,8 @@ export default function ParentSettingsPage() {
             </button>
           </form>
         </div>
+
+        <MfaSettings accentColor="violet" />
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
           <h2 className="text-lg font-heading font-bold text-slate-900">{t("notification_preferences")}</h2>

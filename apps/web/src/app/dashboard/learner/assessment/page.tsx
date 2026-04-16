@@ -43,6 +43,7 @@ function DiscoveryAdventurePage() {
   const [learnerName, setLearnerName] = useState("");
   const [resolvedLearnerId, setResolvedLearnerId] = useState("");
   const [ready, setReady] = useState(false);
+  const [parentAssessmentRequired, setParentAssessmentRequired] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -84,6 +85,9 @@ function DiscoveryAdventurePage() {
               router.replace(isParent ? "/dashboard/parent" : "/dashboard/learner");
               return;
             }
+            if (!statusData?.parentAssessmentCompleted) {
+              setParentAssessmentRequired(true);
+            }
           }
         } catch {}
         setReady(true);
@@ -111,7 +115,68 @@ function DiscoveryAdventurePage() {
     );
   }
 
+  if (parentAssessmentRequired) {
+    const isParent = user.role === "PARENT";
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 flex items-center justify-center px-6">
+        <div className="max-w-lg text-center">
+          <div className="text-7xl mb-6">🌟</div>
+          <h1 className="text-3xl font-heading font-bold text-white mb-4">
+            Almost Ready for Your Adventure!
+          </h1>
+          <p className="text-white/70 font-body text-lg mb-6 leading-relaxed">
+            {isParent
+              ? "Before your child can start their Discovery Adventure, you need to complete the Parent Assessment first. This helps us personalize the experience just for them!"
+              : "Your parent needs to finish setting things up first! Ask them to complete the Parent Assessment so we can make your adventure just right for you."}
+          </p>
+
+          <div className="bg-white/10 backdrop-blur rounded-2xl p-6 mb-6 border border-white/20">
+            <div className="flex items-center gap-4 text-left">
+              <div className="text-4xl">📋</div>
+              <div>
+                <p className="text-white font-heading font-bold text-sm">Parent Assessment</p>
+                <p className="text-white/50 text-xs font-body">
+                  {isParent
+                    ? "Tell us about your child's communication, learning style, and needs."
+                    : "Your parent will answer questions about how you learn best."}
+                </p>
+              </div>
+              <div className="text-amber-400 text-sm font-heading font-bold whitespace-nowrap">Needed</div>
+            </div>
+          </div>
+
+          {isParent ? (
+            <button
+              onClick={() => router.push(`/dashboard/parent/learner/${queryLearnerId || ""}`)}
+              className="px-8 py-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-heading font-bold rounded-2xl hover:shadow-lg hover:scale-105 active:scale-95 transition-all text-lg"
+              style={{ minHeight: "48px" }}
+            >
+              Complete Parent Assessment
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-white/40 text-sm font-body">
+                Ask your parent or caregiver to log in and complete the setup.
+              </p>
+              <button
+                onClick={() => router.push("/dashboard/learner")}
+                className="px-6 py-3 bg-white/10 text-white font-heading font-bold rounded-xl hover:bg-white/20 transition"
+                style={{ minHeight: "48px" }}
+              >
+                Go Back Home
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const effectiveId = resolvedLearnerId || user.id;
+  const isParent = user.role === "PARENT";
+  const postBaselineHref = isParent && queryLearnerId
+    ? `/dashboard/parent/learner/${queryLearnerId}/brain-review`
+    : "/dashboard/learner";
 
   return (
     <DiscoveryAdventureInner
@@ -119,6 +184,7 @@ function DiscoveryAdventurePage() {
       learnerName={learnerName}
       functioningLevel={learnerFL}
       accessToken={accessToken}
+      postBaselineHref={postBaselineHref}
     />
   );
 }
@@ -128,11 +194,13 @@ function DiscoveryAdventureInner({
   learnerName,
   functioningLevel,
   accessToken,
+  postBaselineHref,
 }: {
   learnerId: string;
   learnerName: string;
   functioningLevel: FunctioningLevel;
   accessToken: string | null;
+  postBaselineHref: string;
 }) {
   const router = useRouter();
   const t = useTranslations("assessment");
@@ -258,10 +326,10 @@ function DiscoveryAdventureInner({
         totalAttempts={state.totalAttempts}
         xpEarned={state.xpEarned}
         functioningLevel={functioningLevel}
-        onFinish={() => router.push("/dashboard/learner")}
+        onFinish={() => router.push(postBaselineHref)}
         onExitHome={() => {
           exitToHome();
-          router.push("/dashboard/learner");
+          router.push(postBaselineHref);
         }}
         onSubmitResults={submitResults}
       />

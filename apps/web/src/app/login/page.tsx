@@ -26,7 +26,11 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      const result = await login(email, password);
+      if (result?.mfaPending) {
+        router.push(`/verify-mfa?token=${encodeURIComponent(result.mfaToken)}&returnTo=/`);
+        return;
+      }
       router.push("/");
     } catch (err: any) {
       setError(err.message || t("login_failed"));

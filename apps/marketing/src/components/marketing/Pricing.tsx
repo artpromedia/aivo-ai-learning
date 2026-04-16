@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { trackCTAClick, trackPricingSelection, trackSignupInitiation } from "@/lib/analytics";
+import { WEB_APP_URL } from "@/lib/constants";
 
 const CHECK_ICON = (
   <svg className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -21,19 +23,19 @@ export function Pricing() {
     {
       nameKey: "free_name" as const, priceKey: "free_price" as const, period: "", perLearner: false,
       descKey: "free_desc" as const, featureKeys: ["free_f1", "free_f2", "free_f3", "free_f4"] as const,
-      ctaKey: "free_cta" as const, href: "/signup", popular: false,
+      ctaKey: "free_cta" as const, href: `${WEB_APP_URL}/signup?plan=free`, popular: false,
       bg: "bg-white", border: "border-slate-200", ctaBg: "bg-slate-900 hover:bg-slate-800",
     },
     {
       nameKey: "single_name" as const, price: "$24.99", period: "/mo", perLearner: true,
       descKey: "single_desc" as const, featureKeys: ["single_f1", "single_f2", "single_f3", "single_f4", "single_f5", "single_f6"] as const,
-      ctaKey: "single_cta" as const, href: "/signup?plan=single", popular: false,
+      ctaKey: "single_cta" as const, href: `${WEB_APP_URL}/signup?plan=single`, popular: false,
       bg: "bg-white", border: "border-slate-200", ctaBg: "bg-slate-900 hover:bg-slate-800",
     },
     {
       nameKey: "family_name" as const, price: "$19.99", period: "/mo", perLearner: true,
       descKey: "family_desc" as const, featureKeys: ["family_f1", "family_f2", "family_f3", "family_f4", "family_f5", "family_f6", "family_f7"] as const,
-      ctaKey: "family_cta" as const, href: "/signup?plan=family", popular: true,
+      ctaKey: "family_cta" as const, href: `${WEB_APP_URL}/signup?plan=family`, popular: true,
       bg: "bg-gradient-to-b from-purple-50 to-white", border: "border-purple-200",
       ctaBg: "bg-gradient-to-r from-primary to-purple-600 hover:from-primary-dark hover:to-purple-700",
     },
@@ -97,12 +99,17 @@ export function Pricing() {
                 ))}
               </ul>
 
-              <Link
+              <a
                 href={plan.href}
-                className={`block w-full py-3.5 rounded-full ${plan.ctaBg} text-white font-bold text-center transition shadow-lg`}
+                onClick={() => {
+                  trackPricingSelection(plan.nameKey);
+                  trackCTAClick(`pricing_${plan.nameKey}`, plan.href);
+                  trackSignupInitiation("pricing");
+                }}
+                className={`block w-full py-3.5 rounded-full ${plan.ctaBg} text-white font-bold text-center transition shadow-lg min-h-[44px] flex items-center justify-center`}
               >
                 {t(plan.ctaKey)}
-              </Link>
+              </a>
             </div>
           ))}
         </div>
@@ -142,14 +149,16 @@ export function Pricing() {
             </ul>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/signup?type=district"
-                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-white text-primary font-bold text-lg hover:bg-slate-50 transition shadow-lg"
+                href="/contact#demo"
+                onClick={() => trackCTAClick("pricing_district_demo", "/contact#demo")}
+                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-white text-primary font-bold text-lg hover:bg-slate-50 transition shadow-lg min-h-[44px]"
               >
                 {t("district_demo")}
               </Link>
               <Link
-                href="/signup?type=school"
-                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full border-2 border-white/30 text-white font-bold text-lg hover:bg-white/10 transition"
+                href="/contact"
+                onClick={() => trackCTAClick("pricing_district_sales", "/contact")}
+                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full border-2 border-white/30 text-white font-bold text-lg hover:bg-white/10 transition min-h-[44px]"
               >
                 {t("district_sales")}
               </Link>

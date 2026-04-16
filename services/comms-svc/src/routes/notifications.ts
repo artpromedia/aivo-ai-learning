@@ -178,11 +178,141 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     return { templates: AVAILABLE_TEMPLATES };
   });
 
+  app.post("/api/comms/internal/mfa-code", async (request, reply) => {
+    const internalKey = request.headers["x-internal-key"];
+    const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+    if (!internalKey || !expectedKey || internalKey !== expectedKey) {
+      return reply.status(401).send({ error: "Unauthorized" });
+    }
+    const { to, code, name } = request.body as any;
+    if (!to || !code) {
+      return reply.code(400).send({ error: "to and code required" });
+    }
+    if (!isConfigured()) {
+      logger.warn({ to }, "MFA code requested but email not configured, code logged for dev");
+      return { status: "dev_mode", code };
+    }
+    const rendered = renderTemplate("mfa_code", { code, name: name || "there" });
+    try {
+      const result = await sendEmail({
+        to,
+        subject: rendered.subject,
+        htmlBody: rendered.html,
+        textBody: rendered.text,
+        tag: "mfa_code",
+      });
+      return { status: result.status, messageId: result.messageId };
+    } catch (err: any) {
+      logger.error({ err, to }, "Failed to send MFA code email");
+      return reply.code(500).send({ error: "Failed to send MFA code" });
+    }
+  });
+
   app.get("/api/comms/status", async () => {
     return {
       postmark: isConfigured() ? "connected" : "not_configured",
       push: "stub",
       sms: "not_available",
     };
+  });
+
+  app.post("/api/comms/public/contact", {
+    schema: {
+      tags: ["Public"],
+      body: {
+        type: "object",
+        required: ["email", "message"],
+        properties: {
+          name: { type: "string", maxLength: 255 },
+          email: { type: "string", format: "email", maxLength: 255 },
+          message: { type: "string", maxLength: 5000 },
+          source: { type: "string", maxLength: 100 },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { name, email, message, source } = request.body as any;
+    try {
+      const { contactSubmissions } = await import("@aivo/db");
+      await db.insert(contactSubmissions).values({
+        type: "contact",
+        name: name || null,
+        email,
+        message,
+        source: source || "website",
+      });
+      logger.info({ email, source }, "Contact form submission stored");
+      return { success: true };
+    } catch (err: any) {
+      logger.error({ err }, "Failed to store contact submission");
+      return reply.code(500).send({ error: "Failed to submit contact form" });
+    }
+  });
+
+  app.post("/api/comms/public/demo-request", {
+    schema: {
+      tags: ["Public"],
+      body: {
+        type: "object",
+        required: ["email", "name"],
+        properties: {
+          name: { type: "string", maxLength: 255 },
+          email: { type: "string", format: "email", maxLength: 255 },
+          company: { type: "string", maxLength: 255 },
+          role: { type: "string", maxLength: 100 },
+          schoolSize: { type: "string", maxLength: 50 },
+          message: { type: "string", maxLength: 5000 },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { name, email, company, role, schoolSize, message } = request.body as any;
+    try {
+      const { contactSubmissions } = await import("@aivo/db");
+      await db.insert(contactSubmissions).values({
+        type: "demo_request",
+        name,
+        email,
+        company: company || null,
+        role: role || null,
+        schoolSize: schoolSize || null,
+        message: message || null,
+        source: "website",
+      });
+      logger.info({ email, company }, "Demo request stored");
+      return { success: true };
+    } catch (err: any) {
+      logger.error({ err }, "Failed to store demo request");
+      return reply.code(500).send({ error: "Failed to submit demo request" });
+    }
+  });
+
+  app.post("/api/comms/public/newsletter", {
+    schema: {
+      tags: ["Public"],
+      body: {
+        type: "object",
+        required: ["email"],
+        properties: {
+          email: { type: "string", format: "email", maxLength: 255 },
+          source: { type: "string", maxLength: 100 },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { email, source } = request.body as any;
+    try {
+      const { contactSubmissions } = await import("@aivo/db");
+      await db.insert(contactSubmissions).values({
+        type: "newsletter",
+        email,
+        source: source || "footer",
+      });
+      logger.info({ email }, "Newsletter signup stored");
+      return { success: true };
+    } catch (err: any) {
+      logger.error({ err }, "Failed to store newsletter signup");
+      return reply.code(500).send({ error: "Failed to subscribe" });
+    }
   });
 }

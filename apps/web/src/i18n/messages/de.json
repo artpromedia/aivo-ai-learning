@@ -59,7 +59,8 @@
     "continue": "Fortfahren",
     "skip": "Überspringen",
     "done": "Fertig",
-    "welcome": "Willkommen"
+    "welcome": "Willkommen",
+    "wait": "Warten"
   },
   "auth": {
     "welcome_back": "Willkommen zurück",
@@ -1114,7 +1115,21 @@
     "nav_help": "Hilfe",
     "nav_child": "Kind",
     "nav_progress": "Fortschritt",
-    "nav_more": "Mehr"
+    "nav_more": "Mehr",
+    "two_factor_auth": "Zwei-Faktor-Authentifizierung",
+    "mfa_description": "Fügen Sie Ihrem Konto eine zusätzliche Sicherheitsebene mit E-Mail-Bestätigungscodes hinzu.",
+    "mfa_on": "Aktiviert",
+    "mfa_off": "Deaktiviert",
+    "mfa_required_role": "MFA ist für Ihre Kontorolle erforderlich und kann nicht deaktiviert werden.",
+    "enable_mfa": "MFA aktivieren",
+    "disable_mfa": "MFA deaktivieren",
+    "confirm_password_mfa": "Geben Sie Ihr Passwort ein, um diese Änderung zu bestätigen.",
+    "mfa_enabled_msg": "MFA wurde aktiviert. Sie müssen bei jeder Anmeldung einen Code aus Ihrer E-Mail eingeben.",
+    "mfa_disabled_msg": "MFA wurde deaktiviert.",
+    "mfa_enter_code": "Geben Sie den 6-stelligen Code ein, der an Ihre E-Mail gesendet wurde.",
+    "mfa_resend": "Code erneut senden",
+    "mfa_code_resent": "Ein neuer Code wurde gesendet.",
+    "verification_failed": "Verifizierung fehlgeschlagen. Versuchen Sie es erneut."
   },
   "marketing": {
     "header": {
@@ -1382,5 +1397,21 @@
     "daily_summary": "Daily Summary",
     "communication_log": "Communication Log",
     "behavior_notes": "Behavior Notes"
+  },
+  "mfa": {
+    "check_email": "Überprüfen Sie Ihre E-Mail",
+    "code_sent_desc": "Wir haben einen 6-stelligen Bestätigungscode an Ihre E-Mail-Adresse gesendet.",
+    "enter_full_code": "Bitte geben Sie den vollständigen 6-stelligen Code ein.",
+    "verification_failed": "Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "verify_code": "Code verifizieren",
+    "verifying": "Verifizierung...",
+    "resend_code": "Code erneut senden",
+    "resending": "Wird gesendet...",
+    "code_resent": "Ein neuer Code wurde an Ihre E-Mail gesendet.",
+    "resend_failed": "Code konnte nicht erneut gesendet werden. Bitte versuchen Sie es erneut.",
+    "session_expired": "Ihre MFA-Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+    "back_to_login": "Zurück zur Anmeldung",
+    "code_expires": "Der Code läuft in 10 Minuten ab.",
+    "digit": "Ziffer"
   }
 }

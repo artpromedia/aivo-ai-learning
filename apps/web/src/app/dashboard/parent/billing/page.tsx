@@ -266,7 +266,7 @@ export default function ParentBillingPage() {
                   <ul className="mt-3 space-y-2 flex-1">
                     {plan.features.map((f, i) => (
                       <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
-                        <span className="text-green-500 mt-0.5 flex-shrink-0">&#10003;</span> {f}
+                        <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span> {f}
                       </li>
                     ))}
                   </ul>

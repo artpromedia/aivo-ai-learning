@@ -2,6 +2,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { trackCTAClick, trackSignupInitiation } from "@/lib/analytics";
+import { WEB_APP_URL } from "@/lib/constants";
 
 const PRINCIPLES = [
   {
@@ -117,7 +119,14 @@ export default function AboutPage() {
           <div className="flex items-center gap-3">
             <LanguageSwitcher compact />
             <Link href="/" className="px-5 py-2 rounded-lg text-slate-600 font-semibold hover:text-primary transition hidden sm:inline-flex">Home</Link>
-            <Link href="/signup" className="px-5 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200">Get Started</Link>
+            <a
+              href={`${WEB_APP_URL}/signup?plan=free`}
+              onClick={() => {
+                trackCTAClick("about_get_started", `${WEB_APP_URL}/signup?plan=free`);
+                trackSignupInitiation("about");
+              }}
+              className="px-5 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition shadow-lg shadow-purple-200"
+            >Get Started</a>
           </div>
         </div>
       </header>
@@ -243,13 +252,13 @@ export default function AboutPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/careers"
-                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-white text-primary font-bold text-lg hover:bg-purple-50 transition shadow-xl"
+                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-white text-primary font-bold text-lg hover:bg-purple-50 transition shadow-xl min-h-[44px]"
               >
                 View Open Positions
               </Link>
               <Link
                 href="/contact"
-                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full border-2 border-white/30 text-white font-bold text-lg hover:bg-white/10 transition"
+                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full border-2 border-white/30 text-white font-bold text-lg hover:bg-white/10 transition min-h-[44px]"
               >
                 Contact Us
               </Link>

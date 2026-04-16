@@ -59,7 +59,8 @@
     "continue": "Continuar",
     "skip": "Omitir",
     "done": "Listo",
-    "welcome": "Bienvenido"
+    "welcome": "Bienvenido",
+    "wait": "Espera"
   },
   "auth": {
     "welcome_back": "Bienvenido de nuevo",
@@ -1097,7 +1098,21 @@
     "nav_help": "Ayuda",
     "nav_child": "Hijo",
     "nav_progress": "Progreso",
-    "nav_more": "Más"
+    "nav_more": "Más",
+    "two_factor_auth": "Autenticación de dos factores",
+    "mfa_description": "Agrega una capa extra de seguridad a tu cuenta con códigos de verificación por correo.",
+    "mfa_on": "Activado",
+    "mfa_off": "Desactivado",
+    "mfa_required_role": "MFA es obligatorio para tu rol de cuenta y no se puede desactivar.",
+    "enable_mfa": "Activar MFA",
+    "disable_mfa": "Desactivar MFA",
+    "confirm_password_mfa": "Ingresa tu contraseña para confirmar este cambio.",
+    "mfa_enabled_msg": "MFA ha sido activado. Necesitarás ingresar un código de tu correo en cada inicio de sesión.",
+    "mfa_disabled_msg": "MFA ha sido desactivado.",
+    "mfa_enter_code": "Ingresa el código de 6 dígitos enviado a tu correo.",
+    "mfa_resend": "Reenviar código",
+    "mfa_code_resent": "Se ha enviado un nuevo código.",
+    "verification_failed": "La verificación falló. Inténtalo de nuevo."
   },
   "language": {
     "en": "English",
@@ -1382,5 +1397,21 @@
     "daily_summary": "Resumen Diario",
     "communication_log": "Registro de Comunicación",
     "behavior_notes": "Notas de Comportamiento"
+  },
+  "mfa": {
+    "check_email": "Revisa tu correo",
+    "code_sent_desc": "Enviamos un código de verificación de 6 dígitos a tu correo.",
+    "enter_full_code": "Por favor ingresa el código completo de 6 dígitos.",
+    "verification_failed": "La verificación falló. Inténtalo de nuevo.",
+    "verify_code": "Verificar código",
+    "verifying": "Verificando...",
+    "resend_code": "Reenviar código",
+    "resending": "Reenviando...",
+    "code_resent": "Se ha enviado un nuevo código a tu correo.",
+    "resend_failed": "No se pudo reenviar el código. Inténtalo de nuevo.",
+    "session_expired": "Tu sesión MFA ha expirado. Inicia sesión de nuevo.",
+    "back_to_login": "Volver al inicio de sesión",
+    "code_expires": "El código expira en 10 minutos.",
+    "digit": "Dígito"
   }
 }

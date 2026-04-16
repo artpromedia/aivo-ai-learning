@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 
 interface BrainState {
   masteryLevels: Record<string, number>;
@@ -70,7 +71,8 @@ function generateBrainNodes(mastery: Record<string, number>): BrainNode[] {
   const cy = 180;
   const maxRadius = 130;
 
-  entries.forEach(([domain, value], i) => {
+  entries.forEach(([domain, rawValue], i) => {
+    const pct = rawValue <= 1 ? rawValue * 100 : rawValue;
     const angle = (i / entries.length) * Math.PI * 2 - Math.PI / 2;
     const dist = maxRadius * (0.5 + Math.random() * 0.4);
     nodes.push({
@@ -78,9 +80,9 @@ function generateBrainNodes(mastery: Record<string, number>): BrainNode[] {
       label: domain.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
       x: cx + Math.cos(angle) * dist,
       y: cy + Math.sin(angle) * dist,
-      radius: 12 + (value / 100) * 14,
+      radius: 14 + (pct / 100) * 18,
       color: getDomainColor(domain),
-      mastery: value,
+      mastery: pct,
       pulsePhase: Math.random() * Math.PI * 2,
     });
   });
@@ -126,47 +128,60 @@ interface BrainVisualizationProps {
 
 export default function BrainVisualization({ learnerId, learnerName, accessToken, compact = false, baselineCompleted = false }: BrainVisualizationProps) {
   const [brainState, setBrainState] = useState<BrainState | null>(null);
+  const [brainExists, setBrainExists] = useState<"unknown" | "true" | "false">("unknown");
+  const [brainStatus, setBrainStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("brain");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const animRef = useRef<number>(0);
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setBrainState(null);
+    setBrainExists("unknown");
+    setBrainStatus(null);
+
     const fetchBrain = async () => {
       try {
         const res = await fetch(`/api/brain/${learnerId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
+        if (cancelled) return;
         if (res.ok) {
           const data = await res.json();
+          if (cancelled) return;
           setBrainState(data.state || data);
+          setBrainExists("true");
+        } else if (res.status === 404) {
+          try {
+            const preRes = await fetch(`/api/brain/${learnerId}/pre-clone-data`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            if (cancelled) return;
+            if (preRes.ok) {
+              const pre = await preRes.json();
+              if (cancelled) return;
+              setBrainExists(pre.brain_exists ? "true" : "false");
+              setBrainStatus(pre.brain_status || null);
+            }
+          } catch {}
+          if (!cancelled) setError("Brain not initialized yet");
         } else {
-          setError("Brain not initialized yet");
+          if (!cancelled) setError("Could not load brain data");
         }
       } catch (err: unknown) {
         console.error("Failed to fetch brain state:", err);
-        setError("Could not load brain data");
+        if (!cancelled) setError("Could not load brain data");
       }
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     };
     fetchBrain();
+    return () => { cancelled = true; };
   }, [learnerId, accessToken]);
 
-  useEffect(() => {
-    let running = true;
-    const animate = () => {
-      if (!running) return;
-      setTick(t => t + 1);
-      animRef.current = requestAnimationFrame(animate);
-    };
-    animRef.current = requestAnimationFrame(animate);
-    return () => {
-      running = false;
-      cancelAnimationFrame(animRef.current);
-    };
-  }, []);
+  useEffect(() => {}, []);
 
   const mastery = brainState?.masteryLevels || {};
   const nodes = generateBrainNodes(mastery);
@@ -178,13 +193,8 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
   const iepGoals = brainState?.iepProfile?.goals || [];
   const signals = brainState?.disabilitySignals || {};
 
-  const getNodePosition = useCallback((node: BrainNode, t: number): { x: number; y: number } => {
-    const speed = 0.02;
-    const amplitude = 2;
-    return {
-      x: node.x + Math.sin(t * speed + node.pulsePhase) * amplitude,
-      y: node.y + Math.cos(t * speed * 0.7 + node.pulsePhase) * amplitude,
-    };
+  const getNodePosition = useCallback((node: BrainNode): { x: number; y: number } => {
+    return { x: node.x, y: node.y };
   }, []);
 
   if (loading) {
@@ -199,26 +209,54 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
   }
 
   if (error || !brainState) {
+    const reviewHref = `/dashboard/parent/learner/${learnerId}/brain-review`;
+    const awaitingReview = brainExists && brainStatus === "pending_parent_review";
+    const readyToBuild = baselineCompleted && !brainExists;
+    const notReady = !baselineCompleted;
+
     return (
       <div className={`bg-white rounded-2xl border border-slate-200 ${compact ? "p-4" : "p-6"}`}>
         {!compact && <h3 className="font-heading font-bold text-slate-900 mb-3">Brain Visualization</h3>}
         <div className="text-center py-8">
-          {baselineCompleted ? (
+          {awaitingReview ? (
             <>
-              <div className="text-4xl mb-3 animate-pulse">&#9889;</div>
-              <p className="text-slate-700 font-heading font-bold">Brain Clone Building</p>
-              <p className="text-xs text-slate-400 mt-1">Baseline assessment is complete. The Brain Clone is being assembled from the assessment data.</p>
-              <div className="flex justify-center gap-1 mt-3">
-                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "300ms" }} />
-              </div>
+              <div className="text-4xl mb-3">📝</div>
+              <p className="text-slate-700 font-heading font-bold">Awaiting Your Review</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                The Brain Clone has been built and is ready for your review. Approve it to activate personalized learning.
+              </p>
+              <Link
+                href={reviewHref}
+                className="inline-block mt-4 px-5 py-2 rounded-full bg-primary text-white text-xs font-bold hover:bg-primary/90 transition"
+              >
+                Review & Approve
+              </Link>
+            </>
+          ) : readyToBuild ? (
+            <>
+              <div className="text-4xl mb-3">🧠</div>
+              <p className="text-slate-700 font-heading font-bold">Ready to Build Brain Clone</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                Baseline assessment is complete. Review the assessment summary, provide COPPA parental consent, and approve to build the Brain Clone.
+              </p>
+              <Link
+                href={reviewHref}
+                className="inline-block mt-4 px-5 py-2 rounded-full bg-primary text-white text-xs font-bold hover:bg-primary/90 transition"
+              >
+                Review &amp; Approve
+              </Link>
+            </>
+          ) : notReady ? (
+            <>
+              <div className="text-4xl mb-3">🧠</div>
+              <p className="text-slate-500 font-semibold">Brain not initialized yet</p>
+              <p className="text-xs text-slate-400 mt-1">Complete the parent assessment and baseline adventure to initialize the Brain Clone</p>
             </>
           ) : (
             <>
               <div className="text-4xl mb-3">🧠</div>
               <p className="text-slate-500 font-semibold">{error || "Brain not initialized yet"}</p>
-              <p className="text-xs text-slate-400 mt-1">Complete the baseline assessment to initialize the Brain Clone</p>
+              <p className="text-xs text-slate-400 mt-1">Please try again in a moment</p>
             </>
           )}
         </div>
@@ -258,7 +296,6 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
           <BrainNetworkView
             nodes={nodes}
             connections={connections}
-            tick={tick}
             hoveredNode={hoveredNode}
             setHoveredNode={setHoveredNode}
             getNodePosition={getNodePosition}
@@ -293,14 +330,13 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
 }
 
 function BrainNetworkView({
-  nodes, connections, tick, hoveredNode, setHoveredNode, getNodePosition, funcBadge, funcLevel, compact,
+  nodes, connections, hoveredNode, setHoveredNode, getNodePosition, funcBadge, funcLevel, compact,
 }: {
   nodes: BrainNode[];
   connections: NeuralConnection[];
-  tick: number;
   hoveredNode: string | null;
   setHoveredNode: (id: string | null) => void;
-  getNodePosition: (node: BrainNode, t: number) => { x: number; y: number };
+  getNodePosition: (node: BrainNode) => { x: number; y: number };
   funcBadge: { label: string; color: string; bg: string };
   funcLevel: string;
   compact: boolean;
@@ -336,9 +372,8 @@ function BrainNetworkView({
           const fromNode = nodes.find(n => n.id === conn.from);
           const toNode = nodes.find(n => n.id === conn.to);
           if (!fromNode || !toNode) return null;
-          const fromPos = getNodePosition(fromNode, tick);
-          const toPos = getNodePosition(toNode, tick);
-          const pulseOffset = (tick * 0.03 + i * 0.5) % 1;
+          const fromPos = getNodePosition(fromNode);
+          const toPos = getNodePosition(toNode);
           const isHighlighted = hoveredNode === conn.from || hoveredNode === conn.to;
 
           return (
@@ -350,22 +385,14 @@ function BrainNetworkView({
                 strokeWidth={isHighlighted ? 2 : 1}
                 strokeOpacity={isHighlighted ? 0.8 : 0.15 + conn.strength * 0.4}
               />
-              <circle
-                cx={fromPos.x + (toPos.x - fromPos.x) * pulseOffset}
-                cy={fromPos.y + (toPos.y - fromPos.y) * pulseOffset}
-                r={1.5}
-                fill="#7C3AED"
-                opacity={0.3 + conn.strength * 0.5}
-              />
             </g>
           );
         })}
 
         {nodes.map((node) => {
-          const pos = getNodePosition(node, tick);
+          const pos = getNodePosition(node);
           const isHovered = hoveredNode === node.id;
-          const pulseScale = 1 + Math.sin(tick * 0.04 + node.pulsePhase) * 0.08;
-          const r = node.radius * (isHovered ? 1.3 : pulseScale);
+          const r = node.radius * (isHovered ? 1.3 : 1);
 
           return (
             <g
@@ -377,7 +404,7 @@ function BrainNetworkView({
               <circle
                 cx={pos.x} cy={pos.y} r={r + 4}
                 fill={node.color}
-                opacity={0.15 + Math.sin(tick * 0.03 + node.pulsePhase) * 0.1}
+                opacity={0.2}
               />
               <circle
                 cx={pos.x} cy={pos.y} r={r}

@@ -59,7 +59,8 @@
     "continue": "Continuar",
     "skip": "Pular",
     "done": "Concluído",
-    "welcome": "Bem-vindo"
+    "welcome": "Bem-vindo",
+    "wait": "Aguarde"
   },
   "auth": {
     "welcome_back": "Bem-vindo de volta",
@@ -1114,7 +1115,21 @@
     "nav_help": "Ajuda",
     "nav_child": "Criança",
     "nav_progress": "Progresso",
-    "nav_more": "Mais"
+    "nav_more": "Mais",
+    "two_factor_auth": "Autenticação de dois fatores",
+    "mfa_description": "Adicione uma camada extra de segurança à sua conta com códigos de verificação por e-mail.",
+    "mfa_on": "Ativado",
+    "mfa_off": "Desativado",
+    "mfa_required_role": "MFA é obrigatório para o seu cargo e não pode ser desativado.",
+    "enable_mfa": "Ativar MFA",
+    "disable_mfa": "Desativar MFA",
+    "confirm_password_mfa": "Digite sua senha para confirmar esta alteração.",
+    "mfa_enabled_msg": "MFA foi ativado. Você precisará inserir um código do seu e-mail a cada login.",
+    "mfa_disabled_msg": "MFA foi desativado.",
+    "mfa_enter_code": "Insira o código de 6 dígitos enviado ao seu e-mail.",
+    "mfa_resend": "Reenviar código",
+    "mfa_code_resent": "Um novo código foi enviado.",
+    "verification_failed": "Verificação falhou. Tente novamente."
   },
   "marketing": {
     "header": {
@@ -1382,5 +1397,21 @@
     "daily_summary": "Daily Summary",
     "communication_log": "Communication Log",
     "behavior_notes": "Behavior Notes"
+  },
+  "mfa": {
+    "check_email": "Verifique seu e-mail",
+    "code_sent_desc": "Enviamos um código de verificação de 6 dígitos para o seu e-mail.",
+    "enter_full_code": "Por favor, insira o código completo de 6 dígitos.",
+    "verification_failed": "A verificação falhou. Tente novamente.",
+    "verify_code": "Verificar código",
+    "verifying": "Verificando...",
+    "resend_code": "Reenviar código",
+    "resending": "Reenviando...",
+    "code_resent": "Um novo código foi enviado para o seu e-mail.",
+    "resend_failed": "Falha ao reenviar o código. Tente novamente.",
+    "session_expired": "Sua sessão MFA expirou. Faça login novamente.",
+    "back_to_login": "Voltar ao login",
+    "code_expires": "O código expira em 10 minutos.",
+    "digit": "Dígito"
   }
 }
