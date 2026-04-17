@@ -140,9 +140,22 @@ jobs:
               --set service.port=$PORT \
               --set service.targetPort=$PORT \
               -n "$NS" \
-              --timeout 5m \
+              --timeout 8m \
               --wait 2>&1 || {
-                echo "⚠  $svc deploy incomplete"
+                echo "⚠  $svc deploy incomplete — dumping diagnostics"
+                echo "--- deployment ---"
+                kubectl -n "$NS" describe deployment "$svc" 2>&1 | tail -40 || true
+                echo "--- replicaset events ---"
+                kubectl -n "$NS" get events --field-selector involvedObject.kind=ReplicaSet --sort-by=.lastTimestamp 2>&1 | grep "$svc" | tail -10 || true
+                echo "--- pods ---"
+                kubectl -n "$NS" get pods -l "app.kubernetes.io/name=$svc" -o wide 2>&1 || true
+                echo "--- pod describe (first failing) ---"
+                POD=$(kubectl -n "$NS" get pods -l "app.kubernetes.io/name=$svc" --field-selector=status.phase!=Running -o name 2>/dev/null | head -1)
+                if [ -n "$POD" ]; then
+                  kubectl -n "$NS" describe "$POD" 2>&1 | tail -50 || true
+                  echo "--- pod logs (last 50 lines) ---"
+                  kubectl -n "$NS" logs "$POD" --tail=50 --all-containers 2>&1 || true
+                fi
                 FAILED=$((FAILED + 1))
               }
           done
