@@ -617,40 +617,46 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const db = (request.server as any).db;
     const normalizedEmail = email.trim().toLowerCase();
 
-    const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
+    const genericResponse = { ok: true, message: "If that email is registered, a reset link has been sent." };
 
-    // Always return success to avoid account enumeration
-    if (!user || !user.passwordHash) {
-      return { ok: true, message: "If that email is registered, a reset link has been sent." };
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
+
+      // Always return success to avoid account enumeration
+      if (!user || !user.passwordHash) {
+        return genericResponse;
+      }
+
+      const rawToken = crypto.randomBytes(32).toString("hex");
+      const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+      await db.update(passwordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(and(eq(passwordResetTokens.userId, user.id), sql`used_at IS NULL`));
+
+      await db.insert(passwordResetTokens).values({
+        userId: user.id,
+        tokenHash,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      });
+
+      const webOrigin = process.env.WEB_APP_URL || request.headers.origin || "";
+      const resetUrl = `${webOrigin}/reset-password?token=${rawToken}`;
+
+      const commsRes = await fetch(`${COMMS_URL}/api/comms/internal/password-reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
+        body: JSON.stringify({ to: user.email, resetUrl, name: user.name }),
+      }).catch(() => null);
+
+      if (!commsRes || !commsRes.ok) {
+        request.log.error({ email: normalizedEmail }, "Failed to send password reset email");
+      }
+    } catch (err) {
+      request.log.error({ err, email: normalizedEmail }, "forgot-password handler error");
     }
 
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
-
-    await db.update(passwordResetTokens)
-      .set({ usedAt: new Date() })
-      .where(and(eq(passwordResetTokens.userId, user.id), sql`used_at IS NULL`));
-
-    await db.insert(passwordResetTokens).values({
-      userId: user.id,
-      tokenHash,
-      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-    });
-
-    const webOrigin = process.env.WEB_APP_URL || request.headers.origin || "";
-    const resetUrl = `${webOrigin}/reset-password?token=${rawToken}`;
-
-    const commsRes = await fetch(`${COMMS_URL}/api/comms/internal/password-reset`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
-      body: JSON.stringify({ to: user.email, resetUrl, name: user.name }),
-    }).catch(() => null);
-
-    if (!commsRes || !commsRes.ok) {
-      request.log.error({ email: normalizedEmail }, "Failed to send password reset email");
-    }
-
-    return { ok: true, message: "If that email is registered, a reset link has been sent." };
+    return genericResponse;
   });
 
   app.post("/api/auth/reset-password", {
