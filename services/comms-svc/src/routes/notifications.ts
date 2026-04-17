@@ -208,6 +208,36 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
+  app.post("/api/comms/internal/password-reset", async (request, reply) => {
+    const internalKey = request.headers["x-internal-key"];
+    const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+    if (!internalKey || !expectedKey || internalKey !== expectedKey) {
+      return reply.status(401).send({ error: "Unauthorized" });
+    }
+    const { to, resetUrl, name } = request.body as any;
+    if (!to || !resetUrl) {
+      return reply.code(400).send({ error: "to and resetUrl required" });
+    }
+    if (!isConfigured()) {
+      logger.warn({ to }, "Password reset requested but email not configured, link logged for dev");
+      return { status: "dev_mode", resetUrl };
+    }
+    const rendered = renderTemplate("password_reset", { resetUrl, name: name || "there" });
+    try {
+      const result = await sendEmail({
+        to,
+        subject: rendered.subject,
+        htmlBody: rendered.html,
+        textBody: rendered.text,
+        tag: "password_reset",
+      });
+      return { status: result.status, messageId: result.messageId };
+    } catch (err: any) {
+      logger.error({ err, to }, "Failed to send password reset email");
+      return reply.code(500).send({ error: "Failed to send password reset" });
+    }
+  });
+
   app.get("/api/comms/status", async () => {
     return {
       postmark: isConfigured() ? "connected" : "not_configured",
