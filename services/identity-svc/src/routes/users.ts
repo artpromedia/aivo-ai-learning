@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { users, learners, consentRecords, languageProfiles } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { eq } from "drizzle-orm";
-import { lookupCurriculum } from "../services/curriculum-lookup";
+import { lookupCurriculum } from "../services/curriculum-lookup.js";
 
 async function authenticate(req: any, reply: any) {
   const auth = req.headers.authorization;

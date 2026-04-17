@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { lookupCurriculum } from "../services/curriculum-lookup";
+import { lookupCurriculum } from "../services/curriculum-lookup.js";
 
 export async function registerCurriculumRoutes(app: FastifyInstance) {
   app.get("/api/curriculum/lookup", {
