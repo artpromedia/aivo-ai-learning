@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { users, sessions, tenants, learners, mfaCodes } from "@aivo/db";
+import { users, sessions, tenants, learners, mfaCodes, passwordResetTokens } from "@aivo/db";
 import { signJWT, verifyJWT } from "@aivo/security";
 import { eq, and, sql, lt } from "drizzle-orm";
 import crypto from "crypto";
@@ -601,6 +601,89 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
     reply.clearCookie("refreshToken", { path: "/" });
     return { success: true };
+  });
+
+  app.post("/api/auth/forgot-password", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["email"],
+        properties: { email: { type: "string", format: "email" } },
+      },
+    },
+  }, async (request, reply) => {
+    const { email } = request.body as { email: string };
+    const db = (request.server as any).db;
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
+
+    // Always return success to avoid account enumeration
+    if (!user || !user.passwordHash) {
+      return { ok: true, message: "If that email is registered, a reset link has been sent." };
+    }
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+    await db.update(passwordResetTokens)
+      .set({ usedAt: new Date() })
+      .where(and(eq(passwordResetTokens.userId, user.id), sql`used_at IS NULL`));
+
+    await db.insert(passwordResetTokens).values({
+      userId: user.id,
+      tokenHash,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    });
+
+    const webOrigin = process.env.WEB_APP_URL || request.headers.origin || "";
+    const resetUrl = `${webOrigin}/reset-password?token=${rawToken}`;
+
+    const commsRes = await fetch(`${COMMS_URL}/api/comms/internal/password-reset`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
+      body: JSON.stringify({ to: user.email, resetUrl, name: user.name }),
+    }).catch(() => null);
+
+    if (!commsRes || !commsRes.ok) {
+      request.log.error({ email: normalizedEmail }, "Failed to send password reset email");
+    }
+
+    return { ok: true, message: "If that email is registered, a reset link has been sent." };
+  });
+
+  app.post("/api/auth/reset-password", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["token", "newPassword"],
+        properties: {
+          token: { type: "string", minLength: 32 },
+          newPassword: { type: "string", minLength: 8, maxLength: 128 },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { token, newPassword } = request.body as { token: string; newPassword: string };
+    const db = (request.server as any).db;
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const [record] = await db.select().from(passwordResetTokens).where(eq(passwordResetTokens.tokenHash, tokenHash)).limit(1);
+
+    if (!record || record.usedAt || record.expiresAt < new Date()) {
+      return reply.status(400).send({ error: "Invalid or expired reset link" });
+    }
+
+    const newHash = await hashPassword(newPassword);
+    await db.update(users).set({ passwordHash: newHash, updatedAt: new Date() }).where(eq(users.id, record.userId));
+    await db.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, record.id));
+
+    // Invalidate any existing sessions for security
+    await db.delete(sessions).where(eq(sessions.userId, record.userId));
+
+    return { ok: true };
   });
 
   app.put("/api/auth/password", {

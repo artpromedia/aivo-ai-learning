@@ -49,6 +49,18 @@ export const sessions = pgTable("sessions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  tokenHash: varchar("token_hash", { length: 128 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("password_reset_tokens_token_hash_idx").on(table.tokenHash),
+  index("password_reset_tokens_user_id_idx").on(table.userId),
+]);
+
 export const consentRecords = pgTable("consent_records", {
   id: uuid("id").defaultRandom().primaryKey(),
   parentId: uuid("parent_id").references(() => users.id).notNull(),
