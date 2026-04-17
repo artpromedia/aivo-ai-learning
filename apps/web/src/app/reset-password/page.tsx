@@ -68,9 +68,10 @@ function ResetPasswordInner() {
         ) : (
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">New password</label>
+              <label htmlFor="reset-password-new" className="block text-sm font-semibold text-slate-700 mb-2">New password</label>
               <div className="relative">
                 <input
+                  id="reset-password-new"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -91,8 +92,9 @@ function ResetPasswordInner() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Confirm new password</label>
+              <label htmlFor="reset-password-confirm" className="block text-sm font-semibold text-slate-700 mb-2">Confirm new password</label>
               <input
+                id="reset-password-confirm"
                 type={showPassword ? "text" : "password"}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
