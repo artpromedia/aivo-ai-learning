@@ -14,3 +14,4 @@ export * from "./integrations";
 export * from "./admin";
 export * from "./district";
 export * from "./parent";
+export * from "./comms";

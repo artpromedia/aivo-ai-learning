@@ -1072,8 +1072,9 @@ export default function BrainReviewPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Learning Context</label>
+                  <label htmlFor="learning-context" className="block text-sm font-semibold text-slate-700 mb-1">Learning Context</label>
                   <textarea
+                    id="learning-context"
                     value={learningContext}
                     onChange={(e) => setLearningContext(e.target.value)}
                     placeholder="e.g., 'He is really interested in dinosaurs.' 'She does better in the morning.'"
@@ -1082,8 +1083,9 @@ export default function BrainReviewPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Clinical Context</label>
+                  <label htmlFor="clinical-context" className="block text-sm font-semibold text-slate-700 mb-1">Clinical Context</label>
                   <textarea
+                    id="clinical-context"
                     value={clinicalContext}
                     onChange={(e) => setClinicalContext(e.target.value)}
                     placeholder="e.g., 'He has been making progress with his speech therapist on the /r/ sound.'"
@@ -1092,8 +1094,9 @@ export default function BrainReviewPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Assessment Concerns</label>
+                  <label htmlFor="assessment-concerns" className="block text-sm font-semibold text-slate-700 mb-1">Assessment Concerns</label>
                   <textarea
+                    id="assessment-concerns"
                     value={assessmentConcerns}
                     onChange={(e) => setAssessmentConcerns(e.target.value)}
                     placeholder="e.g., 'I think the reading score is too low, she was tired during that part.'"
@@ -1102,8 +1105,9 @@ export default function BrainReviewPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Missing Information</label>
+                  <label htmlFor="missing-info" className="block text-sm font-semibold text-slate-700 mb-1">Missing Information</label>
                   <textarea
+                    id="missing-info"
                     value={missingInfo}
                     onChange={(e) => setMissingInfo(e.target.value)}
                     placeholder="e.g., 'She also speaks Spanish at home.' 'He uses a communication device.'"
@@ -1142,8 +1146,9 @@ export default function BrainReviewPage() {
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Reason (optional)</label>
+                  <label htmlFor="start-over-reason" className="block text-sm font-semibold text-slate-700 mb-1">Reason (optional)</label>
                   <textarea
+                    id="start-over-reason"
                     value={startOverReason}
                     onChange={(e) => setStartOverReason(e.target.value)}
                     placeholder="e.g., 'She was having a bad day.' 'The environment was too distracting.'"
