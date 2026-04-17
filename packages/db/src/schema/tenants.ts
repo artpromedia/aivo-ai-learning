@@ -1,5 +1,5 @@
 import { pgTable, uuid, varchar, timestamp, jsonb, text } from "drizzle-orm/pg-core";
-import { tenantTypeEnum } from "./enums";
+import { tenantTypeEnum } from "./enums.js";
 
 export const tenants = pgTable("tenants", {
   id: uuid("id").defaultRandom().primaryKey(),

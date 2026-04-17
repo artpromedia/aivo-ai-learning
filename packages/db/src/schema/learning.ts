@@ -1,7 +1,7 @@
 import { pgTable, uuid, varchar, timestamp, integer, jsonb, text, real, pgEnum } from "drizzle-orm/pg-core";
-import { learners } from "./learners";
-import { tenants } from "./tenants";
-import { users } from "./users";
+import { learners } from "./learners.js";
+import { tenants } from "./tenants.js";
+import { users } from "./users.js";
 
 export const sessionStatusEnum = pgEnum("session_status", [
   "STARTED",

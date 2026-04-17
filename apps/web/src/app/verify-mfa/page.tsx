@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { Suspense, useState, useRef, useEffect } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -7,6 +7,18 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function VerifyMfaPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-white to-purple-50">
+        <div className="animate-spin w-8 h-8 border-4 border-violet-200 border-t-violet-600 rounded-full" />
+      </div>
+    }>
+      <VerifyMfaContent />
+    </Suspense>
+  );
+}
+
+function VerifyMfaContent() {
   const { refreshToken } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();

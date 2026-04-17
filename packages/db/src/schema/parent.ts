@@ -1,6 +1,6 @@
 import { pgTable, uuid, varchar, timestamp, integer, jsonb, text, date, boolean } from "drizzle-orm/pg-core";
-import { learners } from "./learners";
-import { users } from "./users";
+import { learners } from "./learners.js";
+import { users } from "./users.js";
 
 export const learnerSettings = pgTable("learner_settings", {
   id: uuid("id").defaultRandom().primaryKey(),
