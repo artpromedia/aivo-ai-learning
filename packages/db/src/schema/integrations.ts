@@ -1,5 +1,5 @@
 import { pgTable, uuid, varchar, timestamp, jsonb, integer, pgEnum, uniqueIndex, index } from "drizzle-orm/pg-core";
-import { tenants } from "./tenants";
+import { tenants } from "./tenants.js";
 
 export const connectorTypeEnum = pgEnum("connector_type", [
   "lms",

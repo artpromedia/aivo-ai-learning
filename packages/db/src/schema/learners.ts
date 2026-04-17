@@ -1,7 +1,7 @@
 import { pgTable, uuid, varchar, timestamp, integer, jsonb, text, real } from "drizzle-orm/pg-core";
-import { functioningLevelEnum } from "./enums";
-import { users } from "./users";
-import { tenants } from "./tenants";
+import { functioningLevelEnum } from "./enums.js";
+import { users } from "./users.js";
+import { tenants } from "./tenants.js";
 
 export const learners = pgTable("learners", {
   id: uuid("id").defaultRandom().primaryKey(),

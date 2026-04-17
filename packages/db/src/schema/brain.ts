@@ -1,7 +1,7 @@
 import { pgTable, uuid, varchar, timestamp, jsonb, text, integer, real } from "drizzle-orm/pg-core";
-import { brainApprovalStatusEnum, snapshotTriggerEnum, recommendationTypeEnum, recommendationStatusEnum, milestoneStatusEnum } from "./enums";
-import { learners } from "./learners";
-import { tenants } from "./tenants";
+import { brainApprovalStatusEnum, snapshotTriggerEnum, recommendationTypeEnum, recommendationStatusEnum, milestoneStatusEnum } from "./enums.js";
+import { learners } from "./learners.js";
+import { tenants } from "./tenants.js";
 
 export const brainSeedTemplates = pgTable("brain_seed_templates", {
   id: uuid("id").defaultRandom().primaryKey(),

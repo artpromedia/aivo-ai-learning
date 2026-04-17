@@ -9,8 +9,8 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { learners } from "./learners";
-import { homeworkModeEnum, homeworkStatusEnum } from "./enums";
+import { learners } from "./learners.js";
+import { homeworkModeEnum, homeworkStatusEnum } from "./enums.js";
 
 export const homeworkAssignments = pgTable(
   "homework_assignments",

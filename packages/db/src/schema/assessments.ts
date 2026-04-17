@@ -1,7 +1,7 @@
 import { pgTable, uuid, varchar, timestamp, integer, jsonb, text, real } from "drizzle-orm/pg-core";
-import { assessmentModeEnum, assessmentStatusEnum } from "./enums";
-import { learners } from "./learners";
-import { tenants } from "./tenants";
+import { assessmentModeEnum, assessmentStatusEnum } from "./enums.js";
+import { learners } from "./learners.js";
+import { tenants } from "./tenants.js";
 
 export const assessmentAttempts = pgTable("assessment_attempts", {
   id: uuid("id").defaultRandom().primaryKey(),
