@@ -120,16 +120,9 @@ nodeSelector: {}
 # Tolerations
 tolerations: []
 
-# Affinity rules
-affinity:
-  podAntiAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: "{{ .Values.serviceName }}"
-          topologyKey: kubernetes.io/hostname
+# Affinity rules — podAntiAffinity is auto-injected by the deployment template
+# using the resolved serviceName. Set to {} to use only the auto-injected rules.
+affinity: {}
 
 # Liveness probe
 livenessProbe:

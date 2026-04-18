@@ -124,21 +124,8 @@ podDisruptionBudget:
   enabled: true
   minAvailable: 2
 
-# Anti-affinity for HA
-affinity:
-  podAntiAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchLabels:
-            app.kubernetes.io/name: "{{ .Values.serviceName }}"
-        topologyKey: kubernetes.io/hostname
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: "{{ .Values.serviceName }}"
-          topologyKey: topology.kubernetes.io/zone
+# Anti-affinity for HA — auto-injected by deployment template with resolved serviceName
+affinity: {}
 
 # Datadog for production
 datadog:
