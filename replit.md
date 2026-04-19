@@ -80,10 +80,17 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Offline**: NetInfo-based online detection with sync queue (useOffline hook)
 
 ### Running Services
-1. **Start application** (port 5000): Expo mobile app (web mode)
-2. **Identity Service** (ports 3001, 3003, 3005, 3006, 3007, 3008): Identity + Assessment + Learning + Tutor + Family + Engagement services
+1. **Web App** (port 5000): Next.js 15 main web app (primary UI, Turbopack dev server)
+2. **Identity Service** (ports 3001, 3003, 3005–3015): All 13 Node.js microservices started via `scripts/start-services.sh`
 3. **Brain Service** (port 3002): Python FastAPI brain-svc
-4. **ai-svc** (port 3004): Python FastAPI LLM gateway (start separately)
+4. **Start application** (port 8080): Expo mobile app (web mode)
+
+### Replit Environment Notes
+- **pnpm version**: Updated `packageManager` to `pnpm@10.26.1` (matches installed version)
+- **Native modules**: `pnpm-workspace.yaml` `onlyBuiltDependencies` includes argon2, esbuild, @parcel/watcher, @swc/core, sharp
+- **Shared packages must be built first**: Run `pnpm --filter @aivo/observability build`, `@aivo/events`, `@aivo/brand`, `@aivo/security`, `@aivo/db` before starting services
+- **Python packages**: `pyproject.toml` pins `fastapi==0.115.12` and `pydantic==2.11.4` / `pydantic-core==2.33.2` for compatibility
+- **tsx**: Installed globally via npm for use in service startup scripts (`scripts/start-services.sh`)
 
 ### Database
 - Schema managed by Drizzle ORM in `packages/db/src/schema/`
