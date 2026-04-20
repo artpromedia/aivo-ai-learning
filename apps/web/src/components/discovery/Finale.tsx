@@ -27,10 +27,18 @@ export default function Finale({
   const [stage, setStage] = useState<FinaleStage>("celebration");
   const [step, setStep] = useState(0);
 
+  const [saveError, setSaveError] = useState<string>("");
   const saveResults = useCallback(async () => {
     setStage("saving");
     const result = await onSubmitResults();
-    setStage(result.success ? "saved" : "error");
+    if (result.success) {
+      setSaveError("");
+      setStage("saved");
+    } else {
+      console.error("[Finale] submitResults failed:", result.error);
+      setSaveError(result.error || "Unknown error");
+      setStage("error");
+    }
   }, [onSubmitResults]);
 
   useEffect(() => {
@@ -76,8 +84,18 @@ export default function Finale({
     if (stage === "error") {
       return (
         <div className="vi-card p-5 mt-5" style={{ background: "hsl(43 100% 50% / 0.06)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
-          <p className="text-sm font-extrabold text-[hsl(43_100%_50%)] mb-1">Your results are saved!</p>
-          <p className="text-xs text-slate-500 mb-3">Your learning brain will finish setting up soon.</p>
+          <p className="text-sm font-extrabold text-[hsl(43_100%_50%)] mb-1">We couldn&apos;t save your results</p>
+          <p className="text-xs text-slate-600 mb-2">Please try again — your progress is still here.</p>
+          {saveError ? (
+            <p className="text-[10px] text-slate-400 font-mono break-all mb-3 max-h-20 overflow-auto">{saveError}</p>
+          ) : null}
+          <button
+            onClick={saveResults}
+            className="w-full mb-2 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold shadow-lg hover:scale-105 active:scale-95 transition-transform"
+            style={{ minHeight: "48px" }}
+          >
+            Try saving again
+          </button>
           <button
             onClick={onFinish}
             className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[hsl(43_100%_50%)] text-white font-extrabold shadow-lg hover:scale-105 active:scale-95 transition-transform"

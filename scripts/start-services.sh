@@ -11,7 +11,8 @@ NODE_ENV=development $TSX_BIN src/index.ts &
 
 echo "Starting assessment-svc on port 3003..."
 cd /home/runner/workspace/services/assessment-svc
-ASSESSMENT_PORT=3003 NODE_ENV=development $TSX_BIN src/index.ts &
+mkdir -p /tmp/svc-logs
+ASSESSMENT_PORT=3003 NODE_ENV=development $TSX_BIN src/index.ts > /tmp/svc-logs/assessment-svc.log 2>&1 &
 
 echo "Starting learning-svc on port 3005..."
 cd /home/runner/workspace/services/learning-svc

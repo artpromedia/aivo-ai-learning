@@ -199,63 +199,78 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
     const { learnerId } = req.params as { learnerId: string };
     const body = req.body as any;
 
-    let [learner] = await db.select().from(learners).where(eq(learners.id, learnerId)).limit(1);
-    if (!learner) {
-      [learner] = await db.select().from(learners).where(eq(learners.userId, learnerId)).limit(1);
-    }
-    if (!learner) return reply.status(404).send({ error: "Learner not found" });
+    try {
+      app.log.info({ learnerId, userSub: user?.sub, userRole: user?.role, totalCorrect: body?.totalCorrect, totalAttempts: body?.totalAttempts, chapterCount: (body?.chapterResults || []).length }, "[discovery/complete] received");
 
-    if (user.role === "LEARNER" && user.sub !== learner.userId) {
-      return reply.status(403).send({ error: "Access denied" });
-    }
-    if (user.role === "PARENT" && learner.parentId !== user.sub) {
-      return reply.status(403).send({ error: "Access denied" });
-    }
+      let [learner] = await db.select().from(learners).where(eq(learners.id, learnerId)).limit(1);
+      if (!learner) {
+        [learner] = await db.select().from(learners).where(eq(learners.userId, learnerId)).limit(1);
+      }
+      if (!learner) {
+        app.log.warn({ learnerId }, "[discovery/complete] learner not found");
+        return reply.status(404).send({ error: "Learner not found" });
+      }
 
-    const [parentCheck] = await db
-      .select()
-      .from(parentAssessments)
-      .where(eq(parentAssessments.learnerId, learner.id))
-      .orderBy(desc(parentAssessments.createdAt))
-      .limit(1);
+      if (user.role === "LEARNER" && user.sub !== learner.userId) {
+        app.log.warn({ learnerId, userSub: user.sub, learnerUserId: learner.userId }, "[discovery/complete] LEARNER access denied");
+        return reply.status(403).send({ error: "Access denied" });
+      }
+      if (user.role === "PARENT" && learner.parentId !== user.sub) {
+        app.log.warn({ learnerId, userSub: user.sub, learnerParentId: learner.parentId }, "[discovery/complete] PARENT access denied");
+        return reply.status(403).send({ error: "Access denied" });
+      }
 
-    if (!parentCheck?.completedAt) {
-      return reply.status(403).send({
-        error: "parent_assessment_required",
-        message: "Parent assessment must be completed before baseline assessment can be completed",
+      const [parentCheck] = await db
+        .select()
+        .from(parentAssessments)
+        .where(eq(parentAssessments.learnerId, learner.id))
+        .orderBy(desc(parentAssessments.createdAt))
+        .limit(1);
+
+      if (!parentCheck?.completedAt) {
+        app.log.warn({ learnerId, hasParentRow: !!parentCheck }, "[discovery/complete] parent assessment not completed");
+        return reply.status(403).send({
+          error: "parent_assessment_required",
+          message: "Parent assessment must be completed before baseline assessment can be completed",
+        });
+      }
+
+      const [attempt] = await db.insert(assessmentAttempts).values({
+        tenantId: learner.tenantId,
+        learnerId: learner.id,
+        type: "discovery_adventure",
+        mode: "STANDARD",
+        status: "COMPLETED",
+        startedAt: new Date(),
+        completedAt: new Date(),
+        domainScores: Object.fromEntries(
+          (body.chapterResults || []).map((ch: any) => [
+            ch.domain,
+            { correct: ch.correct, total: ch.total, difficulty: ch.difficulty, avgLatencyMs: ch.avgLatencyMs },
+          ])
+        ),
+        metadata: {
+          totalCorrect: body.totalCorrect,
+          totalAttempts: body.totalAttempts,
+          xpEarned: body.xpEarned || 0,
+          chapterResults: body.chapterResults,
+        },
+      }).returning();
+
+      app.log.info({ learnerId, attemptId: attempt.id }, "[discovery/complete] attempt inserted");
+
+      return reply.send({
+        success: true,
+        assessmentId: attempt.id,
+        learnerId,
+        functioningLevel: learner.functioningLevel,
+        domainScores: attempt.domainScores,
+        brainCloneStatus: "awaiting_parent_consent",
       });
+    } catch (err: any) {
+      app.log.error({ err: err?.message, stack: err?.stack, learnerId }, "[discovery/complete] FAILED");
+      return reply.status(500).send({ error: "internal_error", detail: err?.message || String(err) });
     }
-
-    const [attempt] = await db.insert(assessmentAttempts).values({
-      tenantId: learner.tenantId,
-      learnerId: learner.id,
-      type: "discovery_adventure",
-      mode: "STANDARD",
-      status: "COMPLETED",
-      startedAt: new Date(),
-      completedAt: new Date(),
-      domainScores: Object.fromEntries(
-        (body.chapterResults || []).map((ch: any) => [
-          ch.domain,
-          { correct: ch.correct, total: ch.total, difficulty: ch.difficulty, avgLatencyMs: ch.avgLatencyMs },
-        ])
-      ),
-      metadata: {
-        totalCorrect: body.totalCorrect,
-        totalAttempts: body.totalAttempts,
-        xpEarned: body.xpEarned || 0,
-        chapterResults: body.chapterResults,
-      },
-    }).returning();
-
-    return reply.send({
-      success: true,
-      assessmentId: attempt.id,
-      learnerId,
-      functioningLevel: learner.functioningLevel,
-      domainScores: attempt.domainScores,
-      brainCloneStatus: "awaiting_parent_consent",
-    });
   });
 
   app.get("/api/assessments/learner/baseline/:learnerId", {
