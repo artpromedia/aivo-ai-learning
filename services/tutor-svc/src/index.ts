@@ -8,6 +8,7 @@ import { registerHealthRoutes } from "./routes/health.js";
 import { registerStoreRoutes } from "./routes/store.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerHomeworkRoutes } from "./routes/homework.js";
+import { registerAuthHook } from "./lib/tenant.js";
 
 const logger = createLogger("tutor-svc");
 const PORT = parseInt(process.env.TUTOR_PORT || "3006", 10);
@@ -29,6 +30,7 @@ async function start() {
   await app.register(swaggerUI, { routePrefix: "/docs" });
 
   registerHealthRoutes(app);
+  registerAuthHook(app);
   registerStoreRoutes(app, db);
   registerChatRoutes(app, db);
   registerHomeworkRoutes(app, db);

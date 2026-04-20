@@ -75,16 +75,21 @@ export default function GradebookPage() {
   const [activeTab, setActiveTab] = useState<"gradebook" | "sessions" | "paths">("gradebook");
 
   useEffect(() => {
-    if (learnerId) {
-      fetch(`/api/learning/gradebook/${learnerId}`).then(r => r.json()).then(setGradebook).catch(() => {});
-      fetch(`/api/learning/sessions?learnerId=${learnerId}`).then(r => r.json()).then(setSessions).catch(() => {});
+    if (!learnerId || !accessToken) return;
+    const ctl = new AbortController();
+    const headers = { Authorization: `Bearer ${accessToken}` };
+    const opts = { headers, signal: ctl.signal };
 
-      const subjects = ["Mathematics", "English Language Arts", "Science", "History & Social Studies", "Coding & Computer Science", "Speech & Language", "Social-Emotional Learning"];
-      Promise.all(
-        subjects.map(s => fetch(`/api/learning/path/${learnerId}/${encodeURIComponent(s)}`).then(r => r.ok ? r.json() : null).catch(() => null))
-      ).then(results => setPaths(results.filter(Boolean)));
-    }
-  }, [learnerId]);
+    fetch(`/api/learning/gradebook/${learnerId}`, opts).then(r => r.ok ? r.json() : []).then(setGradebook).catch(() => {});
+    fetch(`/api/learning/sessions?learnerId=${learnerId}`, opts).then(r => r.ok ? r.json() : []).then(setSessions).catch(() => {});
+
+    const subjects = ["Mathematics", "English Language Arts", "Science", "History & Social Studies", "Coding & Computer Science", "Speech & Language", "Social-Emotional Learning"];
+    Promise.all(
+      subjects.map(s => fetch(`/api/learning/path/${learnerId}/${encodeURIComponent(s)}`, opts).then(r => r.ok ? r.json() : null).catch(() => null))
+    ).then(results => setPaths(results.filter(Boolean)));
+
+    return () => ctl.abort();
+  }, [learnerId, accessToken]);
 
   if (loading || !user) return null;
 

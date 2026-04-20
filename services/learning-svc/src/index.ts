@@ -6,6 +6,7 @@ import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerSessionRoutes } from "./routes/sessions.js";
+import { registerAuthHook } from "./lib/tenant.js";
 
 const logger = createLogger("learning-svc");
 const PORT = parseInt(process.env.LEARNING_PORT || "3005", 10);
@@ -27,6 +28,7 @@ async function start() {
   await app.register(swaggerUI, { routePrefix: "/docs" });
 
   registerHealthRoutes(app);
+  registerAuthHook(app);
   registerSessionRoutes(app, db);
 
   await app.listen({ port: PORT, host: "0.0.0.0" });

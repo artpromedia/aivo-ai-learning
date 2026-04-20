@@ -384,10 +384,18 @@ async def approve_brain(learner_id: str, request: BrainApproveRequest, db: Sessi
         fl = current.get("functioning_level_profile", {})
         if isinstance(fl, str):
             fl = json.loads(fl)
+        internal_token = os.environ.get("INTERNAL_SERVICE_TOKEN") or (
+            "" if os.environ.get("NODE_ENV") == "production" else "aivo-internal-dev-token"
+        )
+        headers = {
+            "x-internal-service": "brain-svc",
+            "x-service-token": internal_token,
+        }
         for subject in list(mastery.keys()):
             httpx.post(
                 f"{LEARNING_SVC_URL}/api/learning/path/{learner_id}/{subject}/init",
                 json={"functioning_level": fl.get("level", "STANDARD")},
+                headers=headers,
                 timeout=5.0,
             )
     except Exception:
@@ -479,10 +487,18 @@ async def amend_brain(learner_id: str, request: BrainAmendRequest, db: Session =
         fl = current.get("functioning_level_profile", {})
         if isinstance(fl, str):
             fl = json.loads(fl)
+        internal_token = os.environ.get("INTERNAL_SERVICE_TOKEN") or (
+            "" if os.environ.get("NODE_ENV") == "production" else "aivo-internal-dev-token"
+        )
+        headers = {
+            "x-internal-service": "brain-svc",
+            "x-service-token": internal_token,
+        }
         for subject in list(mastery.keys()):
             httpx.post(
                 f"{LEARNING_SVC_URL}/api/learning/path/{learner_id}/{subject}/init",
                 json={"functioning_level": fl.get("level", "STANDARD")},
+                headers=headers,
                 timeout=5.0,
             )
     except Exception:

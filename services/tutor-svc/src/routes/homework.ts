@@ -85,9 +85,16 @@ async function writeMasteryUpdate(
   try {
     const skill = `homework_${subject}`;
     const masteryScore = Math.round(completionQuality * 100);
+    const internalToken =
+      process.env.INTERNAL_SERVICE_TOKEN ||
+      (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-token");
     await fetch(`${LEARNING_SVC_URL}/api/learning/gradebook/update`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-internal-service": "tutor-svc" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-internal-service": "tutor-svc",
+        "x-service-token": internalToken,
+      },
       body: JSON.stringify({
         learnerId,
         skill,

@@ -136,6 +136,16 @@ export function MfaSettings({ accentColor = "violet" }: { accentColor?: string }
           {mfaEnabled ? tc("on") : tc("off")}
         </span>
       </div>
+      {mfaForced && (
+        <div role="note" className="flex items-start gap-2 p-3 mb-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800">
+          <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <p className="text-xs font-semibold">
+            {t("mfa_required_for_role") || "Two-factor authentication is required for your role and cannot be disabled."}
+          </p>
+        </div>
+      )}
       {mfaMsg && <p className="text-sm text-green-600 mb-3">{mfaMsg}</p>}
       {mfaErr && <p className="text-sm text-red-600 mb-3">{mfaErr}</p>}
 

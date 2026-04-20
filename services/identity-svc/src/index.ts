@@ -21,7 +21,21 @@ const PORT = parseInt(process.env.PORT || "3001", 10);
 async function start() {
   await initKeys();
 
-  const db = createDb(process.env.DATABASE_URL!);
+  const dbUrl = process.env.DATABASE_URL || "";
+  if (
+    process.env.NODE_ENV === "production" &&
+    dbUrl &&
+    !/[?&]sslmode=(require|verify-ca|verify-full)(?:&|$)/i.test(dbUrl)
+  ) {
+    logger.warn(
+      "DATABASE_URL is missing sslmode=require in production. PII " +
+      "(emails, password hashes, MFA codes) is being transmitted over " +
+      "an unencrypted database connection. Append `?sslmode=require` " +
+      "(or stronger) to your connection string immediately.",
+    );
+  }
+
+  const db = createDb(dbUrl);
 
   const app = Fastify({
     logger: false,

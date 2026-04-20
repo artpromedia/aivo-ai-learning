@@ -25,14 +25,13 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
       return reply.code(400).send({ error: "learnerId and tutorSku required" });
     }
 
+    const access = await requireLearnerAccess(request, reply, db, learnerId);
+    if (!access) return;
+    const tenantId = access.tenantId;
+
     const subject = getSubjectForTutor(tutorSku);
     const brainContext = await fetchBrainContext(learnerId);
     const functioningLevel = (brainContext as any).functioning_level_profile?.level || "STANDARD";
-
-    const tenantId = await resolveTenantId(request, db, learnerId);
-    if (!tenantId) {
-      return reply.code(400).send({ error: "Unable to resolve tenantId for learner" });
-    }
 
     const [session] = await db.insert(lessonSessions).values({
       tenantId,
@@ -99,6 +98,9 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     const [session] = await db.select().from(lessonSessions).where(eq(lessonSessions.id, sessionId));
     if (!session) return reply.code(404).send({ error: "Session not found" });
 
+    const access = await requireLearnerAccess(request, reply, db, session.learnerId);
+    if (!access) return;
+
     const durationSeconds = Math.floor((Date.now() - session.startedAt.getTime()) / 1000);
 
     // Compute multi-signal XP + quality unless caller supplied a final xpEarned.
@@ -164,26 +166,17 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
   });
 
   app.post("/api/learning/gradebook/update", async (request, reply) => {
-    const serviceToken = request.headers["x-service-token"];
-    const authHeader = request.headers.authorization;
-    const isInternalCall = request.headers["x-internal-service"] === "tutor-svc";
-
-    if (!serviceToken && !authHeader && !isInternalCall) {
-      const remoteIp = request.ip;
-      if (remoteIp && !remoteIp.startsWith("127.") && remoteIp !== "::1" && !remoteIp.startsWith("172.")) {
-        return reply.code(401).send({ error: "Authentication required" });
-      }
-    }
-
+    // Authentication is enforced by the global onRequest hook
+    // (registerAuthHook): JWT or x-service-token. Authorization
+    // (tenant match) is enforced per-call below via requireLearnerAccess.
     const { learnerId, skill, masteryScore, sessionType, xpEarned } = request.body as any;
     if (!learnerId || !skill) {
       return reply.code(400).send({ error: "learnerId and skill required" });
     }
 
-    const tenantId = await resolveTenantId(request, db, learnerId);
-    if (!tenantId) {
-      return reply.code(400).send({ error: "Unable to resolve tenantId for learner" });
-    }
+    const access = await requireLearnerAccess(request, reply, db, learnerId);
+    if (!access) return;
+    const tenantId = access.tenantId;
 
     const existing = await db.select().from(gradebookEntries).where(
       and(eq(gradebookEntries.learnerId, learnerId), eq(gradebookEntries.skill, skill))
@@ -212,9 +205,12 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     return { status: "updated", skill, masteryScore };
   });
 
-  app.get("/api/learning/sessions", async (request) => {
+  app.get("/api/learning/sessions", async (request, reply) => {
     const { learnerId } = request.query as any;
-    if (!learnerId) return [];
+    if (!learnerId) return reply.code(400).send({ error: "learnerId required" });
+
+    const access = await requireLearnerAccess(request, reply, db, learnerId);
+    if (!access) return;
 
     const sessions = await db.select().from(lessonSessions)
       .where(eq(lessonSessions.learnerId, learnerId))
@@ -223,8 +219,12 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     return sessions;
   });
 
-  app.get("/api/learning/gradebook/:learnerId", async (request) => {
+  app.get("/api/learning/gradebook/:learnerId", async (request, reply) => {
     const { learnerId } = request.params as any;
+
+    const access = await requireLearnerAccess(request, reply, db, learnerId);
+    if (!access) return;
+
     const entries = await db.select().from(gradebookEntries)
       .where(eq(gradebookEntries.learnerId, learnerId))
       .orderBy(desc(gradebookEntries.updatedAt));

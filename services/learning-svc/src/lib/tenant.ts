@@ -1,7 +1,61 @@
-import { FastifyRequest } from "fastify";
+import { FastifyRequest, FastifyReply, FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
 import { learners } from "@aivo/db";
 import { verifyJWT, JWTPayload } from "@aivo/security";
+
+const INTERNAL_SERVICE_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || "";
+
+declare module "fastify" {
+  interface FastifyRequest {
+    auth?: JWTPayload | { sub: string; role: "service"; tenantId: string };
+  }
+}
+
+/**
+ * Global authentication: every request must carry either a valid JWT
+ * (Bearer header / access_token cookie) or a matching x-service-token
+ * header for trusted internal callers (brain-svc, tutor-svc, etc).
+ *
+ * Skips healthcheck and swagger paths so probes / docs remain reachable.
+ * In production INTERNAL_SERVICE_TOKEN must be set; in dev a fallback
+ * keeps local hacking unblocked.
+ */
+export function registerAuthHook(app: FastifyInstance): void {
+  const expectedServiceToken =
+    INTERNAL_SERVICE_TOKEN ||
+    (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-token");
+
+  app.addHook("onRequest", async (req: FastifyRequest, reply: FastifyReply) => {
+    const url = req.url || "";
+    if (
+      req.method === "OPTIONS" ||
+      url === "/" ||
+      url.startsWith("/health") ||
+      url.startsWith("/docs") ||
+      url.startsWith("/json")
+    ) {
+      return;
+    }
+
+    const auth = await extractAuth(req);
+    if (auth?.sub) {
+      req.auth = auth;
+      return;
+    }
+
+    const serviceToken = req.headers["x-service-token"];
+    if (
+      expectedServiceToken &&
+      typeof serviceToken === "string" &&
+      serviceToken === expectedServiceToken
+    ) {
+      req.auth = { sub: "service", role: "service", tenantId: "" };
+      return;
+    }
+
+    reply.code(401).send({ error: "Authentication required" });
+  });
+}
 
 export async function extractAuth(request: FastifyRequest): Promise<JWTPayload | null> {
   const authHeader = request.headers.authorization;

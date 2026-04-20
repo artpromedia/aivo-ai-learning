@@ -382,10 +382,18 @@ def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
     try:
         import httpx
         subjects = list(brain_data["mastery_levels"].keys())
+        internal_token = os.environ.get("INTERNAL_SERVICE_TOKEN") or (
+            "" if os.environ.get("NODE_ENV") == "production" else "aivo-internal-dev-token"
+        )
+        headers = {
+            "x-internal-service": "brain-svc",
+            "x-service-token": internal_token,
+        }
         for subject in subjects:
             httpx.post(
                 f"{LEARNING_SVC_URL}/api/learning/path/{request.learner_id}/{subject}/init",
                 json={"functioning_level": request.functioning_level},
+                headers=headers,
                 timeout=5.0,
             )
     except Exception:
