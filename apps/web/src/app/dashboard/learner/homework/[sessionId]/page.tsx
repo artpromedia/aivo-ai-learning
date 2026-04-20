@@ -230,7 +230,7 @@ export default function HomeworkSessionPage() {
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isDone ? "bg-green-500 text-white" : "bg-purple-100 text-purple-700"}`}>
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isDone ? "bg-[hsl(var(--visual-science))] text-white" : "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]"}`}>
                       {isDone ? "✓" : p.problem_number}
                     </span>
                     <span className="font-bold text-slate-700 text-xs">{isDone ? tCommon("done") : `#${p.problem_number}`}</span>

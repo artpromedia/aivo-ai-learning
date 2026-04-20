@@ -35,11 +35,11 @@ const SUBJECT_ICONS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  PROCESSING: { label: "Processing...", color: "bg-amber-100 text-amber-700" },
-  READY: { label: "Ready", color: "bg-green-100 text-green-700" },
-  IN_PROGRESS: { label: "In Progress", color: "bg-blue-100 text-blue-700" },
-  COMPLETED: { label: "Done!", color: "bg-purple-100 text-purple-700" },
-  FAILED: { label: "Failed", color: "bg-red-100 text-red-700" },
+  PROCESSING: { label: "Processing...", color: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" },
+  READY: { label: "Ready", color: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" },
+  IN_PROGRESS: { label: "In Progress", color: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" },
+  COMPLETED: { label: "Done!", color: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" },
+  FAILED: { label: "Failed", color: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" },
 };
 
 export default function HomeworkPage() {

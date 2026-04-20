@@ -83,11 +83,11 @@ export default function LearnerTutorsPage() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${tutor.tier === "core" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>
+                      <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${tutor.tier === "core" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" : "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]"}`}>
                         {tutor.tier}
                       </span>
                       {active ? (
-                        <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 font-semibold">Active</span>
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))] font-semibold">Active</span>
                       ) : (
                         <span className="px-2 py-0.5 text-xs rounded-full bg-slate-200 text-slate-500 font-semibold">Locked</span>
                       )}

@@ -154,13 +154,13 @@ export default function ShopPage() {
                     <div className="flex gap-2 justify-center">
                       {item.coinPrice > 0 && (
                         <button onClick={() => purchase(item.id, "coins")}
-                          className="px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold hover:bg-amber-200 transition">
+                          className="px-3 py-1.5 rounded-full bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))] text-xs font-bold hover:bg-[hsl(var(--visual-sel)/0.28)] transition">
                           {item.coinPrice} coins
                         </button>
                       )}
                       {item.gemPrice > 0 && (
                         <button onClick={() => purchase(item.id, "gems")}
-                          className="px-3 py-1.5 rounded-full bg-purple-100 text-purple-700 text-xs font-bold hover:bg-purple-200 transition">
+                          className="px-3 py-1.5 rounded-full bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] text-xs font-bold hover:bg-[hsl(var(--visual-primary)/0.22)] transition">
                           {item.gemPrice} gems
                         </button>
                       )}

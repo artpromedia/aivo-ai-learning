@@ -153,9 +153,9 @@ export default function ChallengesPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    c.status === "ACTIVE" ? "bg-green-100 text-green-700" :
+                    c.status === "ACTIVE" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" :
                     c.status === "COMPLETED" ? "bg-slate-100 text-slate-500" :
-                    "bg-amber-100 text-amber-700"
+                    "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]"
                   }`}>{c.status}</span>
                   {c.inviteCode && (
                     <span className="text-xs font-mono bg-slate-100 px-3 py-1 rounded-full">{c.inviteCode}</span>
