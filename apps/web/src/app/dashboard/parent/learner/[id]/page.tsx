@@ -66,15 +66,15 @@ export default function LearnerHubPage() {
   if (loading || !user) return null;
 
   if (loadingLearner) {
-    return <div className="text-center py-20 text-slate-400 animate-pulse">{t("loading_learner")}</div>;
+    return <div className="text-center py-20 vi-text-muted animate-pulse">{t("loading_learner")}</div>;
   }
 
   if (!learner) {
     return (
       <div className="text-center py-20">
         <div className="text-4xl mb-3">🔍</div>
-        <p className="text-slate-500 font-semibold">{t("learner_not_found")}</p>
-        <Link href="/dashboard/parent" className="text-sm text-purple-600 font-semibold hover:underline mt-2 inline-block">{t("back_to_dashboard")}</Link>
+        <p className="vi-text-muted font-semibold">{t("learner_not_found")}</p>
+        <Link href="/dashboard/parent" className="text-sm text-[hsl(var(--visual-primary))] font-semibold hover:underline mt-2 inline-block">{t("back_to_dashboard")}</Link>
       </div>
     );
   }
@@ -83,34 +83,34 @@ export default function LearnerHubPage() {
   if (pendingReview) {
     RIGHT_NOW_CARDS.push({
       icon: "🧠", label: `Review ${learner.name}'s Brain Profile`, description: "AIVO updated the brain profile based on recent sessions.",
-      href: `/dashboard/parent/learner/${learnerId}/brain-review`, color: "bg-amber-50 border-amber-200 text-amber-800",
+      href: `/dashboard/parent/learner/${learnerId}/brain-review`, color: "bg-[hsl(var(--visual-sel)/0.12)] border-[hsl(var(--visual-sel)/0.3)] text-[hsl(var(--visual-sel))]",
     });
   }
   if (!baselineCompleted && !hasBrain) {
     RIGHT_NOW_CARDS.push({
       icon: "📝", label: "Complete the Assessment", description: "Help AIVO understand your child's learning needs (10 min).",
-      href: `/dashboard/parent/learner/${learnerId}/assessment`, color: "bg-cyan-50 border-cyan-200 text-cyan-800",
+      href: `/dashboard/parent/learner/${learnerId}/assessment`, color: "bg-[hsl(var(--visual-reading)/0.12)] border-[hsl(var(--visual-reading)/0.3)] text-[hsl(var(--visual-reading))]",
     });
   }
   if (RIGHT_NOW_CARDS.length === 0) {
     RIGHT_NOW_CARDS.push({
       icon: "🎉", label: `${learner.name} is on track!`, description: "Everything's looking great. Keep it up!",
-      href: "", color: "bg-green-50 border-green-200 text-green-800",
+      href: "", color: "bg-[hsl(var(--visual-science)/0.12)] border-[hsl(var(--visual-science)/0.3)] text-[hsl(var(--visual-science))]",
     });
   }
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-slate-100">
+      <div className="vi-card p-5 lg:p-6">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-2xl text-white font-bold shadow-lg flex-shrink-0">
+          <div className="w-16 h-16 rounded-full bg-[hsl(var(--visual-primary))] flex items-center justify-center text-2xl text-white font-bold shadow-lg flex-shrink-0">
             {learner.name.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl lg:text-2xl font-heading font-bold text-slate-900">{learner.name}</h1>
+            <h1 className="text-xl lg:text-2xl font-heading font-bold vi-text">{learner.name}</h1>
             <div className="flex items-center gap-2 flex-wrap mt-1">
               {streak && streak.currentStreak > 0 && (
-                <span className="text-sm text-orange-600 font-semibold">🔥 {streak.currentStreak}-day streak</span>
+                <span className="text-sm text-[hsl(var(--visual-sel))] font-semibold">🔥 {streak.currentStreak}-day streak</span>
               )}
             </div>
           </div>
@@ -118,7 +118,7 @@ export default function LearnerHubPage() {
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-lg font-heading font-bold text-slate-900">Right Now</h2>
+        <h2 className="text-lg font-heading font-bold vi-text">Right Now</h2>
         {RIGHT_NOW_CARDS.map((card, i) => (
           card.href ? (
             <Link key={i} href={card.href} className={`block rounded-xl p-4 border ${card.color} hover:shadow-md transition`}>
@@ -145,10 +145,10 @@ export default function LearnerHubPage() {
       </div>
 
       {accessToken && hasBrain && (
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div className="vi-card p-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-heading font-bold text-slate-900">Brain Profile</h2>
-            <Link href={`/dashboard/parent/learner/${learnerId}/brain`} className="text-sm text-purple-600 font-semibold hover:underline">
+            <h2 className="text-lg font-heading font-bold vi-text">Brain Profile</h2>
+            <Link href={`/dashboard/parent/learner/${learnerId}/brain`} className="text-sm text-[hsl(var(--visual-primary))] font-semibold hover:underline">
               View Full Profile →
             </Link>
           </div>
@@ -156,10 +156,10 @@ export default function LearnerHubPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+      <div className="vi-card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-heading font-bold text-slate-900">Active Tutors</h2>
-          <Link href="/dashboard/parent/store" className="text-sm text-purple-600 font-semibold hover:underline">
+          <h2 className="text-lg font-heading font-bold vi-text">Active Tutors</h2>
+          <Link href="/dashboard/parent/store" className="text-sm text-[hsl(var(--visual-primary))] font-semibold hover:underline">
             Visit Store →
           </Link>
         </div>
@@ -170,64 +170,64 @@ export default function LearnerHubPage() {
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 group-hover:scale-110 transition-transform shadow" style={{ borderColor: tutor.color }}>
                 <Image src={tutor.avatar} alt={tutor.name} width={48} height={48} className="object-cover" />
               </div>
-              <span className="text-[10px] font-heading font-bold text-slate-600 group-hover:text-purple-600 transition">{tutor.name}</span>
+              <span className="text-[10px] font-heading font-bold vi-text-muted group-hover:text-[hsl(var(--visual-primary))] transition">{tutor.name}</span>
             </button>
           ))}
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-        <h2 className="text-lg font-heading font-bold text-slate-900 mb-4">Explore</h2>
+      <div className="vi-card p-5">
+        <h2 className="text-lg font-heading font-bold vi-text mb-4">Explore</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">📚 Learning & Assessment</h3>
+            <h3 className="text-xs font-bold vi-text-muted uppercase tracking-wider mb-2">📚 Learning & Assessment</h3>
             <div className="space-y-1">
-              <Link href={`/dashboard/parent/learner/${learnerId}/progress`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+              <Link href={`/dashboard/parent/learner/${learnerId}/progress`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Progress & Grades
               </Link>
-              <Link href={`/dashboard/parent/learner/${learnerId}/assessment`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+              <Link href={`/dashboard/parent/learner/${learnerId}/assessment`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Assessments
               </Link>
-              <Link href={`/dashboard/parent/learner/${learnerId}/homework`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+              <Link href={`/dashboard/parent/learner/${learnerId}/homework`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Homework History
               </Link>
             </div>
           </div>
 
           <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">🧠 Brain & Accommodations</h3>
+            <h3 className="text-xs font-bold vi-text-muted uppercase tracking-wider mb-2">🧠 Brain & Accommodations</h3>
             <div className="space-y-1">
-              <Link href={`/dashboard/parent/learner/${learnerId}/brain`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+              <Link href={`/dashboard/parent/learner/${learnerId}/brain`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Brain Profile
               </Link>
-              <Link href={`/dashboard/parent/learner/${learnerId}/sensory`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+              <Link href={`/dashboard/parent/learner/${learnerId}/sensory`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Sensory Needs
               </Link>
-              <Link href={`/dashboard/parent/learner/${learnerId}/settings`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+              <Link href={`/dashboard/parent/learner/${learnerId}/settings`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Settings & Accommodations
               </Link>
             </div>
           </div>
 
           <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">🎯 IEP & Support</h3>
+            <h3 className="text-xs font-bold vi-text-muted uppercase tracking-wider mb-2">🎯 IEP & Support</h3>
             <div className="space-y-1">
-              <Link href={`/dashboard/parent/learner/${learnerId}/iep`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+              <Link href={`/dashboard/parent/learner/${learnerId}/iep`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 IEP Goals
               </Link>
-              <Link href={`/dashboard/parent/learner/${learnerId}/recommendations`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+              <Link href={`/dashboard/parent/learner/${learnerId}/recommendations`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Recommendations
               </Link>
-              <Link href={`/dashboard/parent/learner/${learnerId}/team`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+              <Link href={`/dashboard/parent/learner/${learnerId}/team`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Learning Team
               </Link>
             </div>
           </div>
 
           <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">🏆 Achievements</h3>
+            <h3 className="text-xs font-bold vi-text-muted uppercase tracking-wider mb-2">🏆 Achievements</h3>
             <div className="space-y-1">
-              <Link href={`/dashboard/parent/learner/${learnerId}/milestones`} className="block px-3 py-2.5 rounded-lg hover:bg-purple-50 text-sm font-semibold text-slate-700 hover:text-purple-700 transition" style={{ minHeight: 44 }}>
+              <Link href={`/dashboard/parent/learner/${learnerId}/milestones`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Milestones & Badges
               </Link>
             </div>

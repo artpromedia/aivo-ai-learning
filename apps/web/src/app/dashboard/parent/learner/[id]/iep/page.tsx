@@ -3,6 +3,8 @@ import { useAuth } from "@/providers/auth-provider";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Target, FileText, BarChart3, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { IconWell } from "@/components/discovery/_vi";
 
 interface GoalProgress {
   goalId: string;
@@ -104,36 +106,43 @@ export default function IepDashboardPage() {
 
   if (loading || !user) return null;
 
-  const TREND_ICONS: Record<string, string> = { improving: "📈", stable: "➡️", declining: "📉" };
+  const TREND_ICONS: Record<string, React.ReactNode> = {
+    improving: <TrendingUp className="w-4 h-4" />,
+    stable: <Minus className="w-4 h-4" />,
+    declining: <TrendingDown className="w-4 h-4" />,
+  };
   const TREND_COLORS: Record<string, string> = {
-    improving: "text-green-600", stable: "text-slate-500", declining: "text-red-600",
+    improving: "text-[hsl(var(--visual-science))]",
+    stable: "vi-text-muted",
+    declining: "text-[hsl(var(--visual-math))]",
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("iep_tracking")}</h1>
-          <p className="text-slate-500 mt-1">{t("iep_tracking_desc")}</p>
+          <h1 className="text-2xl font-heading font-bold vi-text">{t("iep_tracking")}</h1>
+          <p className="vi-text-muted mt-1">{t("iep_tracking_desc")}</p>
         </div>
         <div className="flex gap-3">
           {progress && (
-            <div className="text-center px-4 py-2 rounded-xl bg-purple-50">
-              <div className="text-2xl font-bold text-purple-600">{progress.activeGoals}</div>
-              <div className="text-xs text-slate-500 font-semibold">{t("active_goals")}</div>
+            <div className="text-center px-4 py-2 rounded-xl bg-[hsl(var(--visual-primary)/0.12)]">
+              <div className="text-2xl font-bold text-[hsl(var(--visual-primary))]">{progress.activeGoals}</div>
+              <div className="text-xs vi-text-muted font-semibold">{t("active_goals")}</div>
             </div>
           )}
           <button onClick={generateReport} disabled={generatingReport}
-            className="px-5 py-2.5 rounded-full bg-purple-600 text-white font-bold hover:bg-purple-700 transition disabled:opacity-50 text-sm">
+            style={{ minHeight: 44 }}
+            className="px-5 py-2.5 rounded-full bg-[hsl(var(--visual-primary))] text-white font-bold hover:bg-[hsl(var(--visual-primary)/0.9)] transition disabled:opacity-50 text-sm">
             {generatingReport ? t("generating") : t("generate_report")}
           </button>
         </div>
       </div>
 
-      <div className="flex gap-2 border-b border-slate-200 pb-1">
+      <div className="flex gap-2 border-b vi-border pb-1">
         {(["goals", "documents", "report"] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === tab ? "bg-white border border-b-white text-purple-600 -mb-[1px]" : "text-slate-400 hover:text-slate-600"}`}>
+            className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === tab ? "bg-[hsl(var(--visual-surface))] border vi-border border-b-[hsl(var(--visual-surface))] text-[hsl(var(--visual-primary))] -mb-[1px]" : "vi-text-muted hover:vi-text"}`}>
             {tab === "goals" ? t("goals") : tab === "documents" ? t("documents") : t("report")}
           </button>
         ))}
@@ -142,58 +151,58 @@ export default function IepDashboardPage() {
       {activeTab === "goals" && (
         <div className="space-y-4">
           {!progress || progress.goals.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-              <div className="text-5xl mb-3">🎯</div>
-              <p className="text-slate-500 font-semibold">{t("no_iep_goals")}</p>
+            <div className="vi-card p-12 text-center">
+              <div className="flex justify-center mb-3"><IconWell color="science"><Target className="w-7 h-7" /></IconWell></div>
+              <p className="vi-text-muted font-semibold">{t("no_iep_goals")}</p>
             </div>
           ) : (
             progress.goals.map(goal => (
-              <div key={goal.goalId} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+              <div key={goal.goalId} className="vi-card p-6">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       {goal.domain && (
-                        <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-600 font-bold">{goal.domain}</span>
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] font-bold">{goal.domain}</span>
                       )}
                       <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
-                        goal.status === "active" ? "bg-blue-100 text-blue-700" :
-                        goal.status === "met" ? "bg-green-100 text-green-700" :
-                        "bg-slate-100 text-slate-500"
+                        goal.status === "active" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" :
+                        goal.status === "met" ? "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]" :
+                        "vi-surface-soft vi-text-muted"
                       }`}>{goal.status}</span>
                     </div>
-                    <p className="text-sm text-slate-700 font-semibold leading-relaxed">{goal.goalText}</p>
+                    <p className="text-sm text-slate-800 font-semibold leading-relaxed">{goal.goalText}</p>
                   </div>
                   <div className={`flex items-center gap-1 ml-4 ${TREND_COLORS[goal.trend]}`}>
-                    <span>{TREND_ICONS[goal.trend]}</span>
+                    {TREND_ICONS[goal.trend]}
                     <span className="text-sm font-bold capitalize">{goal.trend}</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 mb-3 text-sm">
-                  <div className="p-2 rounded-lg bg-slate-50">
-                    <div className="text-xs text-slate-400 font-semibold">{t("baseline")}</div>
-                    <div className="font-bold text-slate-700">{goal.baseline || t("na")}</div>
+                  <div className="p-2 rounded-lg vi-surface-soft">
+                    <div className="text-xs vi-text-muted font-semibold">{t("baseline")}</div>
+                    <div className="font-bold text-slate-800">{goal.baseline || t("na")}</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-50">
-                    <div className="text-xs text-slate-400 font-semibold">{t("current_label") || "Current"}</div>
-                    <div className="font-bold text-purple-600">{goal.currentValue}%</div>
+                  <div className="p-2 rounded-lg vi-surface-soft">
+                    <div className="text-xs vi-text-muted font-semibold">{t("current_label") || "Current"}</div>
+                    <div className="font-bold text-[hsl(var(--visual-primary))]">{goal.currentValue}%</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-50">
-                    <div className="text-xs text-slate-400 font-semibold">{t("target")}</div>
-                    <div className="font-bold text-green-600">{goal.targetCriteria || t("na")}</div>
+                  <div className="p-2 rounded-lg vi-surface-soft">
+                    <div className="text-xs vi-text-muted font-semibold">{t("target")}</div>
+                    <div className="font-bold text-[hsl(var(--visual-science))]">{goal.targetCriteria || t("na")}</div>
                   </div>
                 </div>
 
-                <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-4 bg-[hsl(var(--visual-surface-soft))] rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all duration-700"
                     style={{
                       width: `${goal.progressPercent}%`,
-                      backgroundColor: goal.trend === "declining" ? "#EF4444" : goal.progressPercent >= 80 ? "#10B981" : "#6C5CE7",
+                      backgroundColor: goal.trend === "declining" ? "hsl(var(--visual-math))" : goal.progressPercent >= 80 ? "hsl(var(--visual-science))" : "hsl(var(--visual-primary))",
                     }} />
                 </div>
                 <div className="text-right text-xs font-bold mt-1"
                   style={{
-                    color: goal.trend === "declining" ? "#EF4444" : goal.progressPercent >= 80 ? "#10B981" : "#6C5CE7",
+                    color: goal.trend === "declining" ? "hsl(var(--visual-math))" : goal.progressPercent >= 80 ? "hsl(var(--visual-science))" : "hsl(var(--visual-primary))",
                   }}>
                   {goal.progressPercent}%
                 </div>
@@ -206,26 +215,24 @@ export default function IepDashboardPage() {
       {activeTab === "documents" && (
         <div className="space-y-3">
           {documents.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-              <div className="text-5xl mb-3">📄</div>
-              <p className="text-slate-500 font-semibold">{t("no_iep_documents")}</p>
+            <div className="vi-card p-12 text-center">
+              <div className="flex justify-center mb-3"><IconWell color="reading"><FileText className="w-7 h-7" /></IconWell></div>
+              <p className="vi-text-muted font-semibold">{t("no_iep_documents")}</p>
             </div>
           ) : (
             documents.map(doc => (
-              <div key={doc.id} className="bg-white rounded-xl p-4 border border-slate-100 flex items-center justify-between">
+              <div key={doc.id} className="vi-card p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm">
-                    IEP
-                  </div>
+                  <IconWell color="reading" size="sm"><FileText className="w-5 h-5" /></IconWell>
                   <div>
                     <div className="font-bold text-slate-800">{doc.fileName}</div>
-                    <div className="text-xs text-slate-400">{new Date(doc.uploadedAt).toLocaleDateString()}</div>
+                    <div className="text-xs vi-text-muted">{new Date(doc.uploadedAt).toLocaleDateString()}</div>
                   </div>
                 </div>
                 <span className={`px-3 py-1 text-xs rounded-full font-bold ${
-                  doc.status === "parsed" ? "bg-green-100 text-green-700" :
-                  doc.status === "uploaded" ? "bg-blue-100 text-blue-700" :
-                  "bg-slate-100 text-slate-500"
+                  doc.status === "parsed" ? "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]" :
+                  doc.status === "uploaded" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" :
+                  "vi-surface-soft vi-text-muted"
                 }`}>{doc.status}</span>
               </div>
             ))
@@ -234,45 +241,45 @@ export default function IepDashboardPage() {
       )}
 
       {activeTab === "report" && (
-        <div className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm">
+        <div className="vi-card p-8">
           {!report ? (
             <div className="text-center py-12">
-              <div className="text-5xl mb-3">📊</div>
-              <p className="text-slate-500 font-semibold">{t("generate_report_prompt")}</p>
+              <div className="flex justify-center mb-3"><IconWell color="primary"><BarChart3 className="w-7 h-7" /></IconWell></div>
+              <p className="vi-text-muted font-semibold">{t("generate_report_prompt")}</p>
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="border-b border-slate-200 pb-4">
-                <h2 className="text-2xl font-heading font-bold text-slate-900">{report.title}</h2>
-                <p className="text-sm text-slate-400 mt-1">{t("generated_at", { date: new Date(report.generatedAt).toLocaleString() })}</p>
+              <div className="border-b vi-border pb-4">
+                <h2 className="text-2xl font-heading font-bold vi-text">{report.title}</h2>
+                <p className="text-sm vi-text-muted mt-1">{t("generated_at", { date: new Date(report.generatedAt).toLocaleString() })}</p>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-3 rounded-xl bg-purple-50 text-center">
-                  <div className="text-2xl font-bold text-purple-600">{report.summary.totalGoals}</div>
-                  <div className="text-xs text-slate-500 font-semibold">{t("total_goals_label")}</div>
+                <div className="p-3 rounded-xl bg-[hsl(var(--visual-primary)/0.12)] text-center">
+                  <div className="text-2xl font-bold text-[hsl(var(--visual-primary))]">{report.summary.totalGoals}</div>
+                  <div className="text-xs vi-text-muted font-semibold">{t("total_goals_label")}</div>
                 </div>
-                <div className="p-3 rounded-xl bg-blue-50 text-center">
-                  <div className="text-2xl font-bold text-blue-600">{report.summary.activeGoals}</div>
-                  <div className="text-xs text-slate-500 font-semibold">{t("active_tab_label")}</div>
+                <div className="p-3 rounded-xl bg-[hsl(var(--visual-reading)/0.12)] text-center">
+                  <div className="text-2xl font-bold text-[hsl(var(--visual-reading))]">{report.summary.activeGoals}</div>
+                  <div className="text-xs vi-text-muted font-semibold">{t("active_tab_label")}</div>
                 </div>
-                <div className="p-3 rounded-xl bg-green-50 text-center">
-                  <div className="text-2xl font-bold text-green-600">{report.summary.metGoals}</div>
-                  <div className="text-xs text-slate-500 font-semibold">{t("met_label")}</div>
+                <div className="p-3 rounded-xl bg-[hsl(var(--visual-science)/0.12)] text-center">
+                  <div className="text-2xl font-bold text-[hsl(var(--visual-science))]">{report.summary.metGoals}</div>
+                  <div className="text-xs vi-text-muted font-semibold">{t("met_label")}</div>
                 </div>
-                <div className="p-3 rounded-xl bg-amber-50 text-center">
-                  <div className="text-2xl font-bold text-amber-600">{report.summary.averageProgress}%</div>
-                  <div className="text-xs text-slate-500 font-semibold">{t("avg_progress")}</div>
+                <div className="p-3 rounded-xl bg-[hsl(var(--visual-sel)/0.16)] text-center">
+                  <div className="text-2xl font-bold text-[hsl(var(--visual-sel))]">{report.summary.averageProgress}%</div>
+                  <div className="text-xs vi-text-muted font-semibold">{t("avg_progress")}</div>
                 </div>
               </div>
 
               {report.learner && (
-                <div className="p-4 rounded-xl bg-slate-50">
+                <div className="p-4 rounded-xl vi-surface-soft border vi-border">
                   <h3 className="font-heading font-bold text-slate-800 mb-2">{t("learner_profile_title")}</h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className="font-bold text-slate-500">{t("full_name")}:</span> {report.learner.name}</div>
-                    <div><span className="font-bold text-slate-500">{t("grade")}:</span> {report.learner.gradeLevel || t("na")}</div>
-                    <div><span className="font-bold text-slate-500">{t("functioning_level")}:</span> {report.learner.functioningLevel || t("na")}</div>
+                    <div><span className="font-bold vi-text-muted">{t("full_name")}:</span> {report.learner.name}</div>
+                    <div><span className="font-bold vi-text-muted">{t("grade")}:</span> {report.learner.gradeLevel || t("na")}</div>
+                    <div><span className="font-bold vi-text-muted">{t("functioning_level")}:</span> {report.learner.functioningLevel || t("na")}</div>
                   </div>
                 </div>
               )}
@@ -280,23 +287,23 @@ export default function IepDashboardPage() {
               <div className="space-y-4">
                 <h3 className="font-heading font-bold text-lg text-slate-800">{t("goal_analysis")}</h3>
                 {report.goals.map((g: ReportGoal, i: number) => (
-                  <div key={i} className="p-4 rounded-xl border border-slate-100">
+                  <div key={i} className="p-4 rounded-xl border vi-border">
                     <div className="flex items-center gap-2 mb-2">
-                      {g.domain && <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-600 font-bold">{g.domain}</span>}
+                      {g.domain && <span className="px-2 py-0.5 text-xs rounded-full bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] font-bold">{g.domain}</span>}
                       <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
-                        g.status === "active" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+                        g.status === "active" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" : "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]"
                       }`}>{g.status}</span>
                     </div>
-                    <p className="text-sm text-slate-700 font-semibold mb-2">{g.goalText}</p>
-                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-2">
-                      <div className="h-full rounded-full bg-purple-500 transition-all" style={{ width: `${g.progressPercent}%` }} />
+                    <p className="text-sm text-slate-800 font-semibold mb-2">{g.goalText}</p>
+                    <div className="h-3 bg-[hsl(var(--visual-surface-soft))] rounded-full overflow-hidden mb-2">
+                      <div className="h-full rounded-full bg-[hsl(var(--visual-primary))] transition-all" style={{ width: `${g.progressPercent}%` }} />
                     </div>
-                    <div className="flex justify-between text-xs text-slate-500">
+                    <div className="flex justify-between text-xs vi-text-muted">
                       <span>{t("baseline")}: {g.baseline || t("na")}</span>
-                      <span className="font-bold text-purple-600">{g.progressPercent}%</span>
+                      <span className="font-bold text-[hsl(var(--visual-primary))]">{g.progressPercent}%</span>
                       <span>{t("target")}: {g.target || t("na")}</span>
                     </div>
-                    {g.evidence && <p className="text-xs text-slate-400 mt-2 italic">{g.evidence}</p>}
+                    {g.evidence && <p className="text-xs vi-text-muted mt-2 italic">{g.evidence}</p>}
                   </div>
                 ))}
               </div>

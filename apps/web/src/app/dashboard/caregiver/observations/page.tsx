@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import LearnerCardSkeleton from "@/components/states/LearnerCardSkeleton";
 import FetchErrorState from "@/components/states/FetchErrorState";
+import { ClipboardList } from "lucide-react";
 
 interface ConnectedLearner {
   id: string;
@@ -124,17 +125,21 @@ export default function CaregiverObservationsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <h1 className="text-3xl font-heading font-bold text-slate-900">Observations</h1>
+      <h1 className="text-3xl font-heading font-bold vi-text">Observations</h1>
 
       {loadingData ? (
         <LearnerCardSkeleton count={3} />
       ) : fetchError ? (
         <FetchErrorState title="Unable to load data" onRetry={fetchData} />
       ) : learners.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-          <div className="text-5xl mb-4" aria-hidden="true">📝</div>
-          <p className="text-slate-700 font-heading font-bold text-xl">No learners connected yet</p>
-          <p className="text-sm text-slate-500 mt-2">Connect with learners to start recording observations.</p>
+        <div className="vi-card p-12 text-center">
+          <div className="flex justify-center mb-4">
+            <span className="w-14 h-14 rounded-2xl bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] flex items-center justify-center">
+              <ClipboardList size={28} strokeWidth={2.5} aria-hidden="true" />
+            </span>
+          </div>
+          <p className="vi-text font-heading font-bold text-xl">No learners connected yet</p>
+          <p className="text-sm vi-text-muted mt-2">Connect with learners to start recording observations.</p>
         </div>
       ) : (
         <>
@@ -142,7 +147,8 @@ export default function CaregiverObservationsPage() {
             {learners.length > 1 && (
               <select value={selectedLearner || ""} onChange={e => setSelectedLearner(e.target.value)}
                 aria-label="Select learner"
-                className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold bg-white shadow-sm">
+                style={{ minHeight: 44 }}
+                className="px-4 py-2 rounded-xl border vi-border text-sm font-semibold bg-[hsl(var(--visual-surface))] vi-text">
                 {learners.map(l => (
                   <option key={l.id} value={l.id}>{l.name}</option>
                 ))}
@@ -150,26 +156,28 @@ export default function CaregiverObservationsPage() {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl border border-green-100 shadow-sm p-6 space-y-4">
-            <h2 className="text-lg font-heading font-bold text-slate-900">New Observation</h2>
+          <div className="vi-card p-6 space-y-4">
+            <h2 className="text-lg font-heading font-bold vi-text">New Observation</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label htmlFor="obs-category" className="block text-sm font-semibold text-slate-700 mb-1">Category</label>
+                <label htmlFor="obs-category" className="block text-sm font-semibold vi-text mb-1">Category</label>
                 <select id="obs-category" value={obsCategory} onChange={e => setObsCategory(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white">
+                  style={{ minHeight: 44 }}
+                  className="w-full px-3 py-2 rounded-lg border vi-border text-sm bg-[hsl(var(--visual-surface))] vi-text">
                   {CATEGORIES.map(c => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label htmlFor="obs-date" className="block text-sm font-semibold text-slate-700 mb-1">Date</label>
+                <label htmlFor="obs-date" className="block text-sm font-semibold vi-text mb-1">Date</label>
                 <input id="obs-date" type="date" value={obsDate} onChange={e => setObsDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm" />
+                  style={{ minHeight: 44 }}
+                  className="w-full px-3 py-2 rounded-lg border vi-border text-sm bg-[hsl(var(--visual-surface))] vi-text" />
               </div>
               <div>
-                <span id="mood-label" className="block text-sm font-semibold text-slate-700 mb-1">Mood</span>
+                <span id="mood-label" className="block text-sm font-semibold vi-text mb-1">Mood</span>
                 <div className="flex gap-2" role="radiogroup" aria-labelledby="mood-label">
                   {MOOD_OPTIONS.map(m => (
                     <button
@@ -179,7 +187,8 @@ export default function CaregiverObservationsPage() {
                       aria-checked={obsMood === m.value}
                       onClick={() => setObsMood(m.value)}
                       title={m.label}
-                      className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition ${obsMood === m.value ? "bg-green-100 ring-2 ring-green-500" : "bg-slate-50 hover:bg-slate-100"}`}
+                      style={{ minHeight: 44, minWidth: 44 }}
+                      className={`w-11 h-11 rounded-lg text-lg flex items-center justify-center transition ${obsMood === m.value ? "bg-[hsl(var(--visual-science)/0.12)] ring-2 ring-[hsl(var(--visual-science))]" : "vi-surface-soft hover:bg-[hsl(var(--visual-surface-soft)/0.7)]"}`}
                     >
                       {m.emoji}
                     </button>
@@ -189,14 +198,14 @@ export default function CaregiverObservationsPage() {
             </div>
 
             <div>
-              <label htmlFor="obs-notes" className="block text-sm font-semibold text-slate-700 mb-1">Notes</label>
+              <label htmlFor="obs-notes" className="block text-sm font-semibold vi-text mb-1">Notes</label>
               <textarea id="obs-notes" value={obsNotes} onChange={e => setObsNotes(e.target.value)}
                 rows={4} placeholder="Describe what you observed..."
-                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm resize-none" />
+                className="w-full px-3 py-2 rounded-lg border vi-border text-sm resize-none bg-[hsl(var(--visual-surface))] vi-text" />
             </div>
 
             {submitMsg && (
-              <p className={`text-sm font-medium ${submitMsg.type === "success" ? "text-green-600" : "text-red-600"}`} role="alert">
+              <p className={`text-sm font-medium ${submitMsg.type === "success" ? "text-[hsl(var(--visual-science))]" : "text-[hsl(var(--visual-math))]"}`} role="alert">
                 {submitMsg.text}
               </p>
             )}
@@ -205,7 +214,8 @@ export default function CaregiverObservationsPage() {
               type="button"
               onClick={handleSubmit}
               disabled={submitting || !obsNotes.trim()}
-              className="px-6 py-2.5 rounded-xl bg-green-600 text-white font-bold text-sm hover:bg-green-700 transition disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
+              style={{ minHeight: 44 }}
+              className="px-6 py-2.5 rounded-xl bg-[hsl(var(--visual-primary))] text-white font-heading font-black uppercase tracking-wider text-sm hover:bg-[hsl(var(--visual-primary)/0.9)] transition disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--visual-primary))] focus-visible:ring-offset-2"
             >
               {submitting ? "Saving..." : "Save Observation"}
             </button>
@@ -213,13 +223,13 @@ export default function CaregiverObservationsPage() {
 
           {observations.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-lg font-heading font-bold text-slate-900">Recent Observations</h2>
+              <h2 className="text-lg font-heading font-bold vi-text">Recent Observations</h2>
               {observations.map(obs => (
-                <div key={obs.id} className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+                <div key={obs.id} className="vi-card p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-green-50 text-green-700 font-bold">{obs.category}</span>
-                      <span className="text-xs text-slate-400">{new Date(obs.date || obs.createdAt).toLocaleDateString()}</span>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] font-bold">{obs.category}</span>
+                      <span className="text-xs vi-text-muted">{new Date(obs.date || obs.createdAt).toLocaleDateString()}</span>
                     </div>
                     {obs.mood && (
                       <span className="text-lg" aria-label={`Mood: ${obs.mood}`}>
@@ -227,7 +237,7 @@ export default function CaregiverObservationsPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-slate-700">{obs.notes}</p>
+                  <p className="text-sm vi-text">{obs.notes}</p>
                 </div>
               ))}
             </div>

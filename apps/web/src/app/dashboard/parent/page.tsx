@@ -246,14 +246,14 @@ export default function ParentDashboard() {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="w-11 h-11 rounded-2xl bg-purple-100 text-primary flex items-center justify-center shadow-sm">
+          <span className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center shadow-sm">
             <Users size={22} strokeWidth={2.5} aria-hidden="true" />
           </span>
-          <h2 className="text-2xl font-heading font-bold text-slate-900">Your Children</h2>
+          <h2 className="text-2xl font-heading font-bold vi-text">Your Children</h2>
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-primary text-white font-heading font-black text-sm uppercase tracking-wider hover:bg-primary-dark transition shadow-lg shadow-purple-600/30"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[hsl(var(--visual-primary))] text-white font-heading font-black text-sm uppercase tracking-wider hover:bg-[hsl(var(--visual-primary)/0.9)] transition shadow-lg"
           style={{ minHeight: 44 }}
         >
           <Plus size={18} strokeWidth={3} aria-hidden="true" />
@@ -264,42 +264,42 @@ export default function ParentDashboard() {
       {showAddForm && (
         <form
           onSubmit={addLearner}
-          className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border-2 border-slate-100 space-y-6"
+          className="vi-card p-6 lg:p-8 space-y-6"
         >
           <div className="flex items-center gap-3">
-            <span className="w-11 h-11 rounded-2xl bg-purple-100 text-primary flex items-center justify-center shadow-sm">
+            <span className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center shadow-sm">
               <Sparkles size={22} strokeWidth={2.5} aria-hidden="true" />
             </span>
-            <h3 className="font-heading font-bold text-xl text-slate-900">{t("onboarding.add_learner_title")}</h3>
+            <h3 className="font-heading font-bold text-xl vi-text">{t("onboarding.add_learner_title")}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label htmlFor="learner-name" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.learner_name")}</label>
               <input id="learner-name" type="text" value={newLearner.name} onChange={(e) => setNewLearner({...newLearner, name: e.target.value})} required
-                className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body" />
+                className="w-full px-4 py-3 rounded-2xl border-2 vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body" />
             </div>
             <div>
               <label htmlFor="learner-grade" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.grade_level")}</label>
               <input id="learner-grade" type="text" value={newLearner.gradeLevel} onChange={(e) => setNewLearner({...newLearner, gradeLevel: e.target.value})}
-                className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body" placeholder={t("onboarding.grade_level_placeholder")} />
+                className="w-full px-4 py-3 rounded-2xl border-2 vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body" placeholder={t("onboarding.grade_level_placeholder")} />
             </div>
             <div>
               <label htmlFor="learner-pin" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.pin")}</label>
               <input id="learner-pin" type="text" value={newLearner.pin} onChange={(e) => setNewLearner({...newLearner, pin: e.target.value})} maxLength={6}
-                className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body" placeholder={t("onboarding.pin_placeholder")} />
+                className="w-full px-4 py-3 rounded-2xl border-2 vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body" placeholder={t("onboarding.pin_placeholder")} />
             </div>
           </div>
 
-          <div className="border-t-2 border-slate-100 pt-6">
+          <div className="border-t-2 vi-border pt-6">
             <div className="flex items-center gap-2 mb-4">
-              <MapPin size={18} strokeWidth={2.5} className="text-primary" aria-hidden="true" />
-              <h4 className="font-heading font-bold text-lg text-slate-900">{t("onboarding.location")}</h4>
+              <MapPin size={18} strokeWidth={2.5} className="text-[hsl(var(--visual-primary))]" aria-hidden="true" />
+              <h4 className="font-heading font-bold text-lg vi-text">{t("onboarding.location")}</h4>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label htmlFor="learner-country" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.country")}</label>
                 <select id="learner-country" value={newLearner.country} onChange={(e) => setNewLearner({...newLearner, country: e.target.value})}
-                  className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body">
+                  className="w-full px-4 py-3 rounded-2xl border-2 vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body">
                   {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
                 </select>
               </div>
@@ -308,19 +308,19 @@ export default function ParentDashboard() {
                   <label htmlFor="learner-zip" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.zip_code")}</label>
                   <input id="learner-zip" type="text" value={newLearner.zipCode} onChange={(e) => setNewLearner({...newLearner, zipCode: e.target.value})}
                     maxLength={5} placeholder={t("onboarding.zip_placeholder")}
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body" />
+                    className="w-full px-4 py-3 rounded-2xl border-2 vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body" />
                 </div>
               ) : (
                 <div>
                   <label htmlFor="learner-region" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.region")}</label>
                   <input id="learner-region" type="text" value={newLearner.region} onChange={(e) => setNewLearner({...newLearner, region: e.target.value})}
                     placeholder={t("onboarding.region_placeholder")}
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body" />
+                    className="w-full px-4 py-3 rounded-2xl border-2 vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body" />
                 </div>
               )}
               <div className="flex items-end">
                 {curriculumLoading && (
-                  <div className="inline-flex items-center gap-2 px-4 py-3 text-sm text-slate-500 font-bold">
+                  <div className="inline-flex items-center gap-2 px-4 py-3 text-sm vi-text-muted font-bold">
                     <Loader2 size={16} strokeWidth={2.5} className="motion-safe:animate-spin" aria-hidden="true" />
                     {t("common.loading")}
                   </div>
@@ -328,36 +328,36 @@ export default function ParentDashboard() {
               </div>
             </div>
             {curriculumInfo && (
-              <div className="mt-4 p-5 rounded-2xl bg-subject-science-soft border-2 border-green-200">
+              <div className="mt-4 p-5 rounded-2xl bg-[hsl(var(--visual-science)/0.08)] border-2 border-[hsl(var(--visual-science)/0.3)]">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="w-8 h-8 rounded-xl bg-white text-subject-science flex items-center justify-center shadow-sm">
+                  <span className="w-8 h-8 rounded-xl bg-[hsl(var(--visual-surface))] text-[hsl(var(--visual-science))] flex items-center justify-center shadow-sm">
                     <CheckCircle2 size={18} strokeWidth={2.5} aria-hidden="true" />
                   </span>
-                  <span className="font-heading font-bold text-subject-science">Curriculum Detected</span>
+                  <span className="font-heading font-bold text-[hsl(var(--visual-science))]">Curriculum Detected</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                  <div><span className="font-bold text-subject-science">Framework:</span> <span className="text-slate-800">{curriculumInfo.curriculumFramework}</span></div>
-                  <div><span className="font-bold text-subject-science">Standards:</span> <span className="text-slate-800">{curriculumInfo.standards}</span></div>
-                  {curriculumInfo.state && <div><span className="font-bold text-subject-science">State:</span> <span className="text-slate-800">{curriculumInfo.state}</span></div>}
-                  {curriculumInfo.districtName && <div><span className="font-bold text-subject-science">District:</span> <span className="text-slate-800">{curriculumInfo.districtName}</span></div>}
+                  <div><span className="font-bold text-[hsl(var(--visual-science))]">Framework:</span> <span className="text-slate-800">{curriculumInfo.curriculumFramework}</span></div>
+                  <div><span className="font-bold text-[hsl(var(--visual-science))]">Standards:</span> <span className="text-slate-800">{curriculumInfo.standards}</span></div>
+                  {curriculumInfo.state && <div><span className="font-bold text-[hsl(var(--visual-science))]">State:</span> <span className="text-slate-800">{curriculumInfo.state}</span></div>}
+                  {curriculumInfo.districtName && <div><span className="font-bold text-[hsl(var(--visual-science))]">District:</span> <span className="text-slate-800">{curriculumInfo.districtName}</span></div>}
                 </div>
               </div>
             )}
           </div>
 
-          <div className="border-t-2 border-slate-100 pt-6">
+          <div className="border-t-2 vi-border pt-6">
             <div className="flex items-center gap-2 mb-1">
-              <Languages size={18} strokeWidth={2.5} className="text-primary" aria-hidden="true" />
-              <h4 className="font-heading font-bold text-lg text-slate-900">{t("onboarding.preferred_language")}</h4>
+              <Languages size={18} strokeWidth={2.5} className="text-[hsl(var(--visual-primary))]" aria-hidden="true" />
+              <h4 className="font-heading font-bold text-lg vi-text">{t("onboarding.preferred_language")}</h4>
             </div>
-            <p className="text-sm text-slate-600 mb-4 font-body">{t("onboarding.language_description")}</p>
+            <p className="text-sm vi-text-muted mb-4 font-body">{t("onboarding.language_description")}</p>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {LEARNING_LANGUAGES.map((lang) => (
                 <button key={lang.code} type="button" onClick={() => setNewLearner({...newLearner, preferredLanguage: lang.code})}
                   className={`px-4 py-3 rounded-2xl border-2 text-sm font-bold transition text-left ${
                     newLearner.preferredLanguage === lang.code
-                      ? "border-primary bg-purple-50 text-primary shadow-md"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                      ? "border-[hsl(var(--visual-primary))] bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] shadow-md"
+                      : "vi-border bg-[hsl(var(--visual-surface))] vi-text hover:border-[hsl(var(--visual-primary)/0.4)]"
                   }`}>
                   {lang.label}
                 </button>
@@ -369,8 +369,8 @@ export default function ParentDashboard() {
             type="submit"
             disabled={submitting}
             aria-busy={submitting}
-            className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-heading font-black text-base uppercase tracking-wider transition shadow-lg shadow-purple-600/30 text-white ${
-              submitting ? "bg-primary/60 cursor-not-allowed" : "bg-primary hover:bg-primary-dark active:scale-[0.97]"
+            className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-heading font-black text-base uppercase tracking-wider transition shadow-lg text-white ${
+              submitting ? "bg-[hsl(var(--visual-primary)/0.6)] cursor-not-allowed" : "bg-[hsl(var(--visual-primary))] hover:bg-[hsl(var(--visual-primary)/0.9)] active:scale-[0.97]"
             }`}
             style={{ minHeight: 48 }}
           >
@@ -385,8 +385,8 @@ export default function ParentDashboard() {
           </button>
 
           {submitError && (
-            <div role="alert" aria-live="assertive" className="flex items-start gap-3 p-4 rounded-2xl bg-pink-50 border-2 border-pink-200 text-pink-800 text-sm font-bold">
-              <span className="w-8 h-8 rounded-xl bg-white text-pink-600 flex items-center justify-center shrink-0 shadow-sm">
+            <div role="alert" aria-live="assertive" className="flex items-start gap-3 p-4 rounded-2xl bg-[hsl(var(--visual-math)/0.08)] border-2 border-[hsl(var(--visual-math)/0.3)] text-[hsl(var(--visual-math))] text-sm font-bold">
+              <span className="w-8 h-8 rounded-xl bg-[hsl(var(--visual-surface))] text-[hsl(var(--visual-math))] flex items-center justify-center shrink-0 shadow-sm">
                 <AlertCircle size={18} strokeWidth={2.5} aria-hidden="true" />
               </span>
               <span className="pt-1">{submitError}</span>
@@ -394,8 +394,8 @@ export default function ParentDashboard() {
           )}
 
           {submitSuccess && (
-            <div role="status" aria-live="polite" className="flex items-start gap-3 p-4 rounded-2xl bg-subject-science-soft border-2 border-green-200 text-subject-science text-sm font-bold">
-              <span className="w-8 h-8 rounded-xl bg-white text-subject-science flex items-center justify-center shrink-0 shadow-sm">
+            <div role="status" aria-live="polite" className="flex items-start gap-3 p-4 rounded-2xl bg-[hsl(var(--visual-science)/0.08)] border-2 border-[hsl(var(--visual-science)/0.3)] text-[hsl(var(--visual-science))] text-sm font-bold">
+              <span className="w-8 h-8 rounded-xl bg-[hsl(var(--visual-surface))] text-[hsl(var(--visual-science))] flex items-center justify-center shrink-0 shadow-sm">
                 <CheckCircle2 size={18} strokeWidth={2.5} aria-hidden="true" />
               </span>
               <span className="pt-1">{submitSuccess}</span>
@@ -405,15 +405,15 @@ export default function ParentDashboard() {
       )}
 
       {learners.length === 0 && !showAddForm ? (
-        <div className="bg-white rounded-3xl p-12 lg:p-16 text-center border-2 border-slate-100 shadow-sm">
-          <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-purple-100 text-primary flex items-center justify-center shadow-sm">
+        <div className="vi-card p-12 lg:p-16 text-center">
+          <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center shadow-sm">
             <Sparkles size={40} strokeWidth={2.5} aria-hidden="true" />
           </div>
-          <h3 className="text-2xl font-heading font-bold text-slate-900 mb-2">Welcome to AIVO!</h3>
-          <p className="text-slate-600 font-body mb-6">Add your first child to get started with personalized learning.</p>
+          <h3 className="text-2xl font-heading font-bold vi-text mb-2">Welcome to AIVO!</h3>
+          <p className="vi-text-muted font-body mb-6">Add your first child to get started with personalized learning.</p>
           <button
             onClick={() => setShowAddForm(true)}
-            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-primary text-white font-heading font-black text-sm uppercase tracking-wider hover:bg-primary-dark transition shadow-lg shadow-purple-600/30"
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[hsl(var(--visual-primary))] text-white font-heading font-black text-sm uppercase tracking-wider hover:bg-[hsl(var(--visual-primary)/0.9)] transition shadow-lg"
             style={{ minHeight: 48 }}
           >
             <Plus size={18} strokeWidth={3} aria-hidden="true" />
@@ -439,20 +439,20 @@ export default function ParentDashboard() {
         </div>
       )}
 
-      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border-2 border-slate-100">
+      <div className="vi-card p-6 lg:p-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <span className="w-11 h-11 rounded-2xl bg-amber-100 text-subject-sel flex items-center justify-center shadow-sm">
+            <span className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))] flex items-center justify-center shadow-sm">
               <GraduationCap size={22} strokeWidth={2.5} aria-hidden="true" />
             </span>
             <div>
-              <h2 className="text-xl font-heading font-bold text-slate-900">{t("tutor.meet_tutors")}</h2>
-              <p className="text-xs text-slate-500 font-body font-semibold">7 core tutors + 7 expansion specialists</p>
+              <h2 className="text-xl font-heading font-bold vi-text">{t("tutor.meet_tutors")}</h2>
+              <p className="text-xs vi-text-muted font-body font-semibold">7 core tutors + 7 expansion specialists</p>
             </div>
           </div>
           <button
             onClick={() => router.push("/dashboard/parent/store")}
-            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm rounded-2xl bg-primary text-white font-heading font-black uppercase tracking-wider hover:bg-primary-dark transition shadow-md shadow-purple-600/20"
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm rounded-2xl bg-[hsl(var(--visual-primary))] text-white font-heading font-black uppercase tracking-wider hover:bg-[hsl(var(--visual-primary)/0.9)] transition shadow-md"
             style={{ minHeight: 44 }}
           >
             <Store size={16} strokeWidth={2.5} aria-hidden="true" />
@@ -464,7 +464,7 @@ export default function ParentDashboard() {
             <button
               key={key}
               onClick={() => router.push(`/dashboard/parent/store?tutor=${key}`)}
-              className="text-center p-3 rounded-2xl hover:bg-slate-50 transition cursor-pointer group"
+              className="text-center p-3 rounded-2xl hover:vi-surface-soft transition cursor-pointer group"
             >
               <div
                 className="relative w-14 h-14 mx-auto mb-1.5 rounded-full overflow-hidden border-[3px] group-hover:scale-110 transition-transform shadow-md"
@@ -473,7 +473,7 @@ export default function ParentDashboard() {
                 <Image src={tutor.avatar} alt={`${tutor.name} - ${tutor.domain}`} fill className="object-cover object-top" sizes="56px" />
               </div>
               <div className="font-heading font-bold text-xs" style={{ color: tutor.color }}>{tutor.name}</div>
-              <div className="text-[10px] text-slate-500 mt-0.5 leading-tight font-body font-semibold">{tutor.domain}</div>
+              <div className="text-[10px] vi-text-muted mt-0.5 leading-tight font-body font-semibold">{tutor.domain}</div>
             </button>
           ))}
         </div>

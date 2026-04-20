@@ -32,43 +32,43 @@ const TYPE_VISUAL: Record<
 > = {
   skill_mastered: {
     Icon: Target,
-    color: "text-subject-science",
-    bg: "bg-subject-science-soft",
+    color: "text-[hsl(var(--visual-science))]",
+    bg: "bg-[hsl(var(--visual-science)/0.12)]",
   },
   streak: {
     Icon: Flame,
-    color: "text-orange-600",
-    bg: "bg-orange-100",
+    color: "text-[hsl(var(--visual-sel))]",
+    bg: "bg-[hsl(var(--visual-sel)/0.12)]",
   },
   xp_milestone: {
     Icon: Star,
-    color: "text-subject-sel",
-    bg: "bg-subject-sel-soft",
+    color: "text-[hsl(var(--visual-sel))]",
+    bg: "bg-[hsl(var(--visual-sel)/0.12)]",
   },
   badge_earned: {
     Icon: Trophy,
-    color: "text-subject-sel",
-    bg: "bg-subject-sel-soft",
+    color: "text-[hsl(var(--visual-sel))]",
+    bg: "bg-[hsl(var(--visual-sel)/0.12)]",
   },
   session_completed: {
     Icon: BookOpen,
-    color: "text-subject-reading",
-    bg: "bg-subject-reading-soft",
+    color: "text-[hsl(var(--visual-reading))]",
+    bg: "bg-[hsl(var(--visual-reading)/0.12)]",
   },
   mastery_up: {
     Icon: TrendingUp,
-    color: "text-subject-math",
-    bg: "bg-subject-math-soft",
+    color: "text-[hsl(var(--visual-math))]",
+    bg: "bg-[hsl(var(--visual-math)/0.12)]",
   },
   team_change: {
     Icon: Users,
-    color: "text-primary",
-    bg: "bg-purple-100",
+    color: "text-[hsl(var(--visual-primary))]",
+    bg: "bg-[hsl(var(--visual-primary)/0.12)]",
   },
   default: {
     Icon: Megaphone,
-    color: "text-slate-600",
-    bg: "bg-slate-100",
+    color: "vi-text-muted",
+    bg: "vi-surface-soft",
   },
 };
 
@@ -81,13 +81,13 @@ export function WhileYouWereAway({ activities, lastVisit }: WhileYouWereAwayProp
   if (daysSince < 1) return null;
 
   return (
-    <div className="bg-white rounded-3xl p-5 lg:p-6 border-2 border-slate-100 shadow-sm">
-      <h2 className="text-lg font-heading font-bold text-slate-900 mb-4 flex items-center gap-2">
-        <span className="w-9 h-9 rounded-xl bg-purple-50 text-primary flex items-center justify-center shrink-0">
+    <div className="vi-card p-5 lg:p-6">
+      <h2 className="text-lg font-heading font-bold vi-text mb-4 flex items-center gap-2">
+        <span className="w-9 h-9 rounded-xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center shrink-0">
           <Newspaper size={18} strokeWidth={2.5} aria-hidden="true" />
         </span>
         While you were away
-        <span className="ml-auto text-xs font-bold text-slate-500 px-2.5 py-1 rounded-full bg-slate-100">
+        <span className="ml-auto text-xs font-bold vi-text-muted px-2.5 py-1 rounded-full vi-surface-soft">
           {daysSince} day{daysSince !== 1 ? "s" : ""}
         </span>
       </h2>
@@ -103,14 +103,14 @@ export function WhileYouWereAway({ activities, lastVisit }: WhileYouWereAwayProp
                 <v.Icon size={18} strokeWidth={2.5} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm text-slate-800 leading-snug">
+                <p className="text-sm vi-text leading-snug">
                   {a.learnerName && (
-                    <span className="font-bold text-slate-900">{a.learnerName}: </span>
+                    <span className="font-bold vi-text">{a.learnerName}: </span>
                   )}
                   <span className="font-medium">{a.title}</span>
                 </p>
                 {a.description && (
-                  <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                  <p className="text-xs vi-text-muted mt-0.5 font-medium">
                     {a.description}
                   </p>
                 )}

@@ -24,10 +24,10 @@ import {
 } from "lucide-react";
 
 const SUBJECTS = [
-  { Icon: Star, label: "Math", className: "bg-subject-math text-white" },
-  { Icon: BookOpen, label: "Reading", className: "bg-subject-reading text-white" },
-  { Icon: Sparkles, label: "Science", className: "bg-subject-science text-white" },
-  { Icon: Heart, label: "SEL", className: "bg-subject-sel text-white" },
+  { Icon: Star, label: "Math", token: "--visual-math" },
+  { Icon: BookOpen, label: "Reading", token: "--visual-reading" },
+  { Icon: Sparkles, label: "Science", token: "--visual-science" },
+  { Icon: Heart, label: "SEL", token: "--visual-sel" },
 ];
 
 export default function LoginPage() {
@@ -73,25 +73,24 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  const accent = mode === "email" ? "primary" : "subject-science";
   const submitClasses =
     mode === "email"
-      ? "bg-primary hover:bg-primary-dark active:bg-primary-dark shadow-purple-600/30"
-      : "bg-subject-science hover:opacity-90 active:opacity-80 shadow-green-500/30";
+      ? "bg-[hsl(var(--visual-primary))] hover:bg-[hsl(var(--visual-primary)/0.9)] active:bg-[hsl(var(--visual-primary)/0.9)]"
+      : "bg-[hsl(var(--visual-science))] hover:bg-[hsl(var(--visual-science)/0.9)] active:bg-[hsl(var(--visual-science)/0.9)]";
 
   return (
-    <div className="min-h-screen flex bg-slate-50">
+    <div className="min-h-screen flex vi-bg">
       <SkipLink />
 
       {/* Marketing Rail */}
       <aside
-        className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700"
+        className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-[hsl(var(--visual-primary))]"
         aria-hidden="true"
       >
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-pink-300 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-cyan-300 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-[hsl(var(--visual-math))] rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-[hsl(var(--visual-reading))] rounded-full blur-3xl" />
         </div>
 
         <div className="absolute inset-0 flex flex-col justify-between p-12 z-10">
@@ -114,7 +113,7 @@ export default function LoginPage() {
               <h2 className="text-4xl xl:text-5xl font-heading font-bold text-white leading-[1.05]">
                 Every child learns
                 <br />
-                <span className="text-amber-300">differently.</span>
+                <span className="text-[hsl(var(--visual-sel))]">differently.</span>
               </h2>
               <p className="text-lg text-white/80 font-body mt-5 max-w-md leading-relaxed">
                 AIVO&apos;s AI tutors adapt to your child&apos;s unique learning profile,
@@ -124,10 +123,11 @@ export default function LoginPage() {
 
             {/* Subject pictograms */}
             <div className="flex items-center gap-3">
-              {SUBJECTS.map(({ Icon, label, className }) => (
+              {SUBJECTS.map(({ Icon, label, token }) => (
                 <div
                   key={label}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-2xl ${className} shadow-lg`}
+                  className="flex items-center gap-2 px-3 py-2 rounded-2xl text-white shadow-lg"
+                  style={{ backgroundColor: `hsl(var(${token}))` }}
                 >
                   <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
                   <span className="text-xs font-black uppercase tracking-wider">
@@ -140,14 +140,15 @@ export default function LoginPage() {
             <div className="flex items-center gap-5">
               <div className="flex -space-x-3">
                 {[
-                  { color: "bg-amber-400", letter: "J" },
-                  { color: "bg-rose-400", letter: "M" },
-                  { color: "bg-emerald-400", letter: "K" },
-                  { color: "bg-sky-400", letter: "A" },
+                  { token: "--visual-sel", letter: "J" },
+                  { token: "--visual-math", letter: "M" },
+                  { token: "--visual-science", letter: "K" },
+                  { token: "--visual-reading", letter: "A" },
                 ].map((c) => (
                   <div
                     key={c.letter}
-                    className={`w-11 h-11 rounded-full ${c.color} border-[3px] border-white/30 flex items-center justify-center text-white text-sm font-black`}
+                    className="w-11 h-11 rounded-full border-[3px] border-white/30 flex items-center justify-center text-white text-sm font-black"
+                    style={{ backgroundColor: `hsl(var(${c.token}))` }}
                   >
                     {c.letter}
                   </div>
@@ -195,7 +196,7 @@ export default function LoginPage() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 flex flex-col bg-slate-50 min-h-screen"
+        className="flex-1 flex flex-col vi-bg min-h-screen"
       >
         <div className="flex items-center justify-between p-6 lg:p-8">
           <Link href="/" className="lg:hidden">
@@ -212,17 +213,17 @@ export default function LoginPage() {
         </div>
 
         <div className="flex-1 flex items-center justify-center px-6 pb-8">
-          <div className="w-full max-w-[440px]">
+          <div className="w-full max-w-[440px] vi-card p-8">
             {/* Header with welcome icon */}
             <div className="mb-8 flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-purple-100 text-primary flex items-center justify-center shadow-sm shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center shrink-0">
                 <Sparkles size={28} strokeWidth={2.5} aria-hidden="true" />
               </div>
               <div>
-                <h1 className="text-3xl font-heading font-bold text-slate-900 leading-tight">
+                <h1 className="text-3xl font-heading font-bold vi-text leading-tight">
                   {t("welcome_back")}
                 </h1>
-                <p className="text-slate-600 font-body mt-1.5">
+                <p className="vi-text-muted font-body mt-1.5">
                   {t("continue_description")}
                 </p>
               </div>
@@ -232,16 +233,17 @@ export default function LoginPage() {
             <div
               role="tablist"
               aria-label="Login method"
-              className="flex bg-white border-2 border-slate-100 rounded-2xl p-1.5 mb-6 shadow-sm"
+              className="flex vi-surface-soft border-2 vi-border rounded-2xl p-1.5 mb-6"
             >
               <button
                 role="tab"
                 aria-selected={mode === "email"}
                 onClick={() => setMode("email")}
+                style={{ minHeight: 44 }}
                 className={`flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
                   mode === "email"
-                    ? "bg-primary text-white shadow-md shadow-purple-600/20"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-[hsl(var(--visual-primary))] text-white shadow-md"
+                    : "vi-text-muted hover:vi-text"
                 }`}
               >
                 <Mail size={16} strokeWidth={2.5} aria-hidden="true" />
@@ -251,10 +253,11 @@ export default function LoginPage() {
                 role="tab"
                 aria-selected={mode === "pin"}
                 onClick={() => setMode("pin")}
+                style={{ minHeight: 44 }}
                 className={`flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
                   mode === "pin"
-                    ? "bg-subject-science text-white shadow-md shadow-green-500/20"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-[hsl(var(--visual-science))] text-white shadow-md"
+                    : "vi-text-muted hover:vi-text"
                 }`}
               >
                 <KeyRound size={16} strokeWidth={2.5} aria-hidden="true" />
@@ -266,9 +269,9 @@ export default function LoginPage() {
               <div
                 role="alert"
                 aria-live="assertive"
-                className="flex items-start gap-3 p-4 rounded-2xl bg-pink-50 border-2 border-pink-200 text-pink-800 text-sm font-bold mb-6"
+                className="flex items-start gap-3 p-4 rounded-2xl bg-[hsl(var(--visual-math)/0.08)] border-2 border-[hsl(var(--visual-math)/0.3)] text-[hsl(var(--visual-math))] text-sm font-bold mb-6"
               >
-                <span className="w-8 h-8 rounded-xl bg-white text-pink-600 flex items-center justify-center shrink-0 shadow-sm">
+                <span className="w-8 h-8 rounded-xl bg-white text-[hsl(var(--visual-math))] flex items-center justify-center shrink-0 shadow-sm">
                   <AlertCircle size={18} strokeWidth={2.5} aria-hidden="true" />
                 </span>
                 <span className="pt-1">{error}</span>
@@ -285,7 +288,7 @@ export default function LoginPage() {
                     {t("email")}
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-primary pointer-events-none">
+                    <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[hsl(var(--visual-primary))] pointer-events-none">
                       <Mail size={20} strokeWidth={2} aria-hidden="true" />
                     </span>
                     <input
@@ -295,7 +298,8 @@ export default function LoginPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       autoComplete="email"
-                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body"
+                      style={{ minHeight: 44 }}
+                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
                       placeholder="parent@example.com"
                     />
                   </div>
@@ -308,7 +312,7 @@ export default function LoginPage() {
                     {t("password")}
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-primary pointer-events-none">
+                    <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[hsl(var(--visual-primary))] pointer-events-none">
                       <Lock size={20} strokeWidth={2} aria-hidden="true" />
                     </span>
                     <input
@@ -318,13 +322,14 @@ export default function LoginPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       autoComplete="current-password"
-                      className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body"
+                      style={{ minHeight: 44 }}
+                      className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
                       placeholder="Enter your password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-primary transition"
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center vi-text-muted hover:text-[hsl(var(--visual-primary))] transition"
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? (
@@ -337,7 +342,7 @@ export default function LoginPage() {
                   <div className="mt-2 text-right">
                     <Link
                       href="/forgot-password"
-                      className="text-xs font-bold text-primary hover:text-primary-dark hover:underline"
+                      className="text-xs font-bold text-[hsl(var(--visual-primary))] hover:underline"
                     >
                       Forgot password?
                     </Link>
@@ -347,6 +352,7 @@ export default function LoginPage() {
                   type="submit"
                   disabled={loading}
                   aria-busy={loading}
+                  style={{ minHeight: 44 }}
                   className={`w-full py-4 rounded-2xl text-white font-heading font-black text-base uppercase tracking-wider transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${submitClasses}`}
                 >
                   {loading ? (
@@ -374,7 +380,7 @@ export default function LoginPage() {
                     {t("parent_email_or_id")}
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-subject-science pointer-events-none">
+                    <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[hsl(var(--visual-science))] pointer-events-none">
                       <User size={20} strokeWidth={2} aria-hidden="true" />
                     </span>
                     <input
@@ -384,7 +390,8 @@ export default function LoginPage() {
                       onChange={(e) => setParentId(e.target.value)}
                       required
                       autoComplete="username"
-                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-subject-science focus:ring-4 focus:ring-green-200 outline-none transition font-body"
+                      style={{ minHeight: 44 }}
+                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-science))] focus:ring-4 focus:ring-[hsl(var(--visual-science)/0.2)] outline-none transition font-body"
                       placeholder="parent@example.com"
                     />
                   </div>
@@ -397,7 +404,7 @@ export default function LoginPage() {
                     {t("learner_pin_label")}
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-subject-science pointer-events-none">
+                    <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[hsl(var(--visual-science))] pointer-events-none">
                       <KeyRound size={20} strokeWidth={2} aria-hidden="true" />
                     </span>
                     <input
@@ -408,7 +415,8 @@ export default function LoginPage() {
                       required
                       maxLength={6}
                       autoComplete="one-time-code"
-                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-subject-science focus:ring-4 focus:ring-green-200 outline-none transition font-body text-center text-2xl font-black tracking-[0.5em]"
+                      style={{ minHeight: 44 }}
+                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-science))] focus:ring-4 focus:ring-[hsl(var(--visual-science)/0.2)] outline-none transition font-body text-center text-2xl font-black tracking-[0.5em]"
                       placeholder="------"
                     />
                   </div>
@@ -417,6 +425,7 @@ export default function LoginPage() {
                   type="submit"
                   disabled={loading}
                   aria-busy={loading}
+                  style={{ minHeight: 44 }}
                   className={`w-full py-4 rounded-2xl text-white font-heading font-black text-base uppercase tracking-wider transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${submitClasses}`}
                 >
                   {loading ? (
@@ -436,12 +445,12 @@ export default function LoginPage() {
               </form>
             )}
 
-            <div className="mt-8 pt-6 border-t-2 border-slate-100 text-center">
-              <p className="text-sm text-slate-600 font-body">
+            <div className="mt-8 pt-6 border-t-2 vi-border text-center">
+              <p className="text-sm vi-text-muted font-body">
                 {t("no_account")}{" "}
                 <Link
                   href="/signup"
-                  className="text-primary font-bold hover:text-primary-dark transition hover:underline"
+                  className="text-[hsl(var(--visual-primary))] font-bold hover:underline transition"
                 >
                   {t("sign_up")}
                 </Link>
@@ -450,24 +459,24 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-6 pb-6 text-xs text-slate-500 font-body font-semibold">
+        <div className="flex items-center justify-center gap-6 pb-6 text-xs vi-text-muted font-body font-semibold">
           <Link
             href="/privacy-policy"
-            className="hover:text-primary transition"
+            className="hover:text-[hsl(var(--visual-primary))] transition"
           >
             {t("privacy")}
           </Link>
           <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
           <Link
             href="/terms-of-service"
-            className="hover:text-primary transition"
+            className="hover:text-[hsl(var(--visual-primary))] transition"
           >
             {t("terms")}
           </Link>
           <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
           <Link
             href="/coppa-compliance"
-            className="hover:text-primary transition"
+            className="hover:text-[hsl(var(--visual-primary))] transition"
           >
             COPPA
           </Link>

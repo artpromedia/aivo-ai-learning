@@ -15,6 +15,7 @@ import {
   Brain,
   ChevronDown,
   Sparkles,
+  Sprout,
 } from "lucide-react";
 
 interface ConnectedLearner {
@@ -34,11 +35,11 @@ interface IepGoal {
 }
 
 const LEVEL_STYLES: Record<string, string> = {
-  STANDARD: "bg-green-50 text-green-700 border-green-200",
-  SUPPORTED: "bg-blue-50 text-blue-700 border-blue-200",
-  LOW_VERBAL: "bg-amber-50 text-amber-700 border-amber-200",
-  NON_VERBAL: "bg-orange-50 text-orange-700 border-orange-200",
-  PRE_SYMBOLIC: "bg-pink-50 text-pink-700 border-pink-200",
+  STANDARD:     "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] border-[hsl(var(--visual-science)/0.3)]",
+  SUPPORTED:    "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] border-[hsl(var(--visual-reading)/0.3)]",
+  LOW_VERBAL:   "bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))] border-[hsl(var(--visual-sel)/0.3)]",
+  NON_VERBAL:   "bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))] border-[hsl(var(--visual-sel)/0.3)]",
+  PRE_SYMBOLIC: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))] border-[hsl(var(--visual-math)/0.3)]",
 };
 
 export default function CaregiverOverviewPage() {
@@ -95,14 +96,14 @@ export default function CaregiverOverviewPage() {
     <div className="p-6 lg:p-8 space-y-6 lg:space-y-8 max-w-7xl mx-auto">
       <header className="flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="w-14 h-14 rounded-2xl bg-subject-science-soft text-subject-science flex items-center justify-center shadow-sm shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] flex items-center justify-center shrink-0">
             <HandHeart size={28} strokeWidth={2.5} aria-hidden="true" />
           </div>
           <div>
-            <h1 className="text-2xl lg:text-3xl font-heading font-bold text-slate-900 leading-tight">
+            <h1 className="text-2xl lg:text-3xl font-heading font-bold vi-text leading-tight">
               {t("dashboard")}
             </h1>
-            <p className="text-sm text-slate-600 font-medium mt-1">
+            <p className="text-sm vi-text-muted font-medium mt-1">
               Supporting your learners' journey.
             </p>
           </div>
@@ -113,7 +114,8 @@ export default function CaregiverOverviewPage() {
               value={selectedLearner || ""}
               onChange={(e) => setSelectedLearner(e.target.value)}
               aria-label="Select learner"
-              className="appearance-none pl-4 pr-10 py-2.5 rounded-full border-2 border-green-200 text-sm font-bold bg-white shadow-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-green-200"
+              className="appearance-none pl-4 pr-10 py-2.5 rounded-full border vi-border text-sm font-bold bg-[hsl(var(--visual-surface))] vi-text focus:outline-none focus:ring-4 focus:ring-[hsl(var(--visual-science)/0.25)]"
+              style={{ minHeight: 44 }}
             >
               {learners.map((l) => (
                 <option key={l.id} value={l.id}>
@@ -124,7 +126,7 @@ export default function CaregiverOverviewPage() {
             <ChevronDown
               size={16}
               strokeWidth={2.5}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-subject-science pointer-events-none"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(var(--visual-science))] pointer-events-none"
               aria-hidden="true"
             />
           </div>
@@ -137,7 +139,8 @@ export default function CaregiverOverviewPage() {
         <FetchErrorState title="Unable to load data" onRetry={fetchData} />
       ) : learners.length === 0 ? (
         <EmptyLearnerState
-          icon="\uD83D\uDC9A"
+          Icon={Sprout}
+          tone="science"
           title="No learners connected yet"
           description="Parents can invite you to their learner's care team from the Collaboration page in their dashboard."
         />
@@ -145,59 +148,59 @@ export default function CaregiverOverviewPage() {
         activeLearner && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-subject-science-soft to-white rounded-3xl p-5 border-2 border-green-100 shadow-sm">
-                <div className="w-11 h-11 rounded-2xl bg-white shadow-sm flex items-center justify-center text-subject-science mb-3">
+              <div className="vi-card p-5">
+                <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] flex items-center justify-center mb-3">
                   <User size={22} strokeWidth={2.5} aria-hidden="true" />
                 </div>
-                <p className="text-xl font-black text-slate-900 leading-tight">
+                <p className="text-xl font-black vi-text leading-tight">
                   {activeLearner.name}
                 </p>
-                <p className="text-xs text-slate-600 font-bold uppercase tracking-wide mt-1.5">
+                <p className="text-xs vi-text-muted font-bold uppercase tracking-wide mt-1.5">
                   Grade {activeLearner.gradeLevel || "—"}
                 </p>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-white rounded-3xl p-5 border-2 border-purple-100 shadow-sm">
-                <div className="w-11 h-11 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary mb-3">
+              <div className="vi-card p-5">
+                <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center mb-3">
                   <Target size={22} strokeWidth={2.5} aria-hidden="true" />
                 </div>
-                <p className="text-xl font-black text-primary leading-tight">
+                <p className="text-xl font-black text-[hsl(var(--visual-primary))] leading-tight">
                   {activeLearner.functioningLevel || "Pending"}
                 </p>
-                <p className="text-xs text-slate-600 font-bold uppercase tracking-wide mt-1.5">
+                <p className="text-xs vi-text-muted font-bold uppercase tracking-wide mt-1.5">
                   Functioning Level
                 </p>
               </div>
 
-              <div className="bg-gradient-to-br from-subject-sel-soft to-white rounded-3xl p-5 border-2 border-amber-100 shadow-sm">
-                <div className="w-11 h-11 rounded-2xl bg-white shadow-sm flex items-center justify-center text-subject-sel mb-3">
+              <div className="vi-card p-5">
+                <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))] flex items-center justify-center mb-3">
                   <ClipboardCheck size={22} strokeWidth={2.5} aria-hidden="true" />
                 </div>
-                <p className="text-3xl font-black text-subject-sel leading-none">
+                <p className="text-3xl font-black text-[hsl(var(--visual-sel))] leading-none">
                   {learnerGoals.length}
                 </p>
-                <p className="text-xs text-slate-600 font-bold uppercase tracking-wide mt-1.5">
+                <p className="text-xs vi-text-muted font-bold uppercase tracking-wide mt-1.5">
                   IEP Goals · {activeGoalCount} active
                 </p>
               </div>
 
-              <div className="bg-gradient-to-br from-subject-reading-soft to-white rounded-3xl p-5 border-2 border-blue-100 shadow-sm">
-                <div className="w-11 h-11 rounded-2xl bg-white shadow-sm flex items-center justify-center text-subject-reading mb-3">
+              <div className="vi-card p-5">
+                <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] flex items-center justify-center mb-3">
                   <Users size={22} strokeWidth={2.5} aria-hidden="true" />
                 </div>
-                <p className="text-3xl font-black text-subject-reading leading-none">
+                <p className="text-3xl font-black text-[hsl(var(--visual-reading))] leading-none">
                   {learners.length}
                 </p>
-                <p className="text-xs text-slate-600 font-bold uppercase tracking-wide mt-1.5">
+                <p className="text-xs vi-text-muted font-bold uppercase tracking-wide mt-1.5">
                   Connected Learners
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-sm">
-                <h3 className="font-heading font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                  <span className="w-9 h-9 rounded-xl bg-purple-50 text-primary flex items-center justify-center shrink-0">
+              <div className="vi-card p-6">
+                <h3 className="font-heading font-bold text-lg vi-text mb-4 flex items-center gap-2">
+                  <span className="w-9 h-9 rounded-xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center shrink-0">
                     <Brain size={18} strokeWidth={2.5} aria-hidden="true" />
                   </span>
                   {t("progress_tracking")}
@@ -212,22 +215,22 @@ export default function CaregiverOverviewPage() {
                 )}
               </div>
 
-              <div className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-sm">
-                <h3 className="font-heading font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                  <span className="w-9 h-9 rounded-xl bg-subject-sel-soft text-subject-sel flex items-center justify-center shrink-0">
+              <div className="vi-card p-6">
+                <h3 className="font-heading font-bold text-lg vi-text mb-4 flex items-center gap-2">
+                  <span className="w-9 h-9 rounded-xl bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))] flex items-center justify-center shrink-0">
                     <ClipboardCheck size={18} strokeWidth={2.5} aria-hidden="true" />
                   </span>
                   {t("iep_goals")}
                 </h3>
                 {learnerGoals.length === 0 ? (
-                  <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div className="flex items-center gap-3 p-4 rounded-2xl vi-surface-soft border vi-border">
                     <Sparkles
                       size={18}
                       strokeWidth={2.5}
-                      className="text-slate-400 shrink-0"
+                      className="vi-text-muted shrink-0"
                       aria-hidden="true"
                     />
-                    <p className="text-sm text-slate-600 font-medium">
+                    <p className="text-sm vi-text-muted font-medium">
                       No IEP goals recorded for this learner.
                     </p>
                   </div>
@@ -239,12 +242,12 @@ export default function CaregiverOverviewPage() {
                           <p className="text-sm font-bold text-slate-800 truncate">
                             {g.title}
                           </p>
-                          <span className="text-xs text-subject-science font-black ml-2 shrink-0">
+                          <span className="text-xs text-[hsl(var(--visual-science))] font-black ml-2 shrink-0">
                             {g.progressPct}%
                           </span>
                         </div>
                         <div
-                          className="w-full bg-slate-100 rounded-full h-3 overflow-hidden"
+                          className="w-full bg-[hsl(var(--visual-surface-soft))] rounded-full h-3 overflow-hidden"
                           role="progressbar"
                           aria-valuenow={g.progressPct}
                           aria-valuemin={0}
@@ -252,7 +255,7 @@ export default function CaregiverOverviewPage() {
                           aria-label={`${g.title} progress`}
                         >
                           <div
-                            className="h-full rounded-full bg-subject-science transition-all"
+                            className="h-full rounded-full bg-[hsl(var(--visual-science))] transition-all"
                             style={{ width: `${g.progressPct}%` }}
                           />
                         </div>
@@ -264,9 +267,9 @@ export default function CaregiverOverviewPage() {
             </div>
 
             {learners.length > 1 && (
-              <div className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-sm">
-                <h3 className="font-heading font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                  <span className="w-9 h-9 rounded-xl bg-subject-science-soft text-subject-science flex items-center justify-center shrink-0">
+              <div className="vi-card p-6">
+                <h3 className="font-heading font-bold text-lg vi-text mb-4 flex items-center gap-2">
+                  <span className="w-9 h-9 rounded-xl bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] flex items-center justify-center shrink-0">
                     <Users size={18} strokeWidth={2.5} aria-hidden="true" />
                   </span>
                   {t("my_learners")}
@@ -278,27 +281,28 @@ export default function CaregiverOverviewPage() {
                       <button
                         key={l.id}
                         onClick={() => setSelectedLearner(l.id)}
+                        style={{ minHeight: 44 }}
                         className={`p-4 rounded-2xl border-2 text-left transition-all ${
                           isActive
-                            ? "border-subject-science bg-subject-science-soft shadow-md"
-                            : "border-slate-100 hover:border-green-200 bg-white hover:shadow-sm"
+                            ? "border-[hsl(var(--visual-science))] bg-[hsl(var(--visual-science)/0.08)] shadow-md"
+                            : "vi-border hover:border-[hsl(var(--visual-science)/0.5)] bg-[hsl(var(--visual-surface))] hover:shadow-sm"
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${
                               isActive
-                                ? "bg-subject-science text-white"
-                                : "bg-slate-100 text-slate-500"
+                                ? "bg-[hsl(var(--visual-science))] text-white"
+                                : "vi-surface-soft vi-text-muted"
                             }`}
                           >
                             {l.name.charAt(0)}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="font-bold text-slate-900 truncate">
+                            <p className="font-bold vi-text truncate">
                               {l.name}
                             </p>
-                            <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">
+                            <p className="text-xs vi-text-muted font-semibold mt-0.5 truncate">
                               Grade {l.gradeLevel || "—"} ·{" "}
                               {l.functioningLevel || "Pending"}
                             </p>

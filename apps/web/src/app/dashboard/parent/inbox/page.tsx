@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Brain, Lightbulb, ClipboardList, Trophy, TrendingUp, Users, Info, Bell, Inbox as InboxIcon, type LucideIcon } from "lucide-react";
 
 interface Notification {
   id: string;
@@ -15,14 +16,22 @@ interface Notification {
   learnerId?: string;
 }
 
-const TYPE_ICONS: Record<string, string> = {
-  brain_review: "🧠",
-  recommendation: "💡",
-  iep_reminder: "📋",
-  milestone: "🏆",
-  progress: "📈",
-  team: "🤝",
-  system: "ℹ️",
+const TYPE_META: Record<string, { Icon: LucideIcon; color: string }> = {
+  brain_review: { Icon: Brain, color: "primary" },
+  recommendation: { Icon: Lightbulb, color: "sel" },
+  iep_reminder: { Icon: ClipboardList, color: "reading" },
+  milestone: { Icon: Trophy, color: "sel" },
+  progress: { Icon: TrendingUp, color: "science" },
+  team: { Icon: Users, color: "reading" },
+  system: { Icon: Info, color: "primary" },
+};
+
+const WELL_CLASS: Record<string, string> = {
+  primary: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
+  math: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
+  reading: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  science: "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]",
+  sel: "bg-[hsl(var(--visual-sel)/0.12)] text-[hsl(var(--visual-sel))]",
 };
 
 const TABS = [
@@ -76,13 +85,13 @@ export default function InboxPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 lg:px-6 py-6">
-      <h1 className="text-2xl font-heading font-bold text-slate-900 mb-6">Inbox</h1>
+      <h1 className="text-2xl font-heading font-bold vi-text mb-6">Inbox</h1>
 
       <div className="flex gap-1 mb-6 overflow-x-auto">
         {TABS.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition ${
-              activeTab === tab.key ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              activeTab === tab.key ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "vi-surface-soft vi-text-muted hover:bg-[hsl(var(--visual-border))]"
             }`} style={{ minHeight: 44 }}>
             {tab.label}
           </button>
@@ -90,50 +99,58 @@ export default function InboxPage() {
       </div>
 
       {loadingData ? (
-        <div className="text-center py-16 text-slate-400 animate-pulse">Loading...</div>
+        <div className="text-center py-16 vi-text-muted animate-pulse">Loading...</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
-          <div className="text-4xl mb-3">📭</div>
-          <p className="text-slate-500 font-semibold">
+          <div className="w-14 h-14 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center mx-auto mb-3">
+            <InboxIcon size={24} aria-hidden="true" />
+          </div>
+          <p className="vi-text-muted font-semibold">
             {activeTab === "all" ? "Your inbox is empty. We'll let you know when something needs attention." : `No ${activeTab} items.`}
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map(n => (
-            <div key={n.id}
-              className={`bg-white rounded-xl p-4 border transition hover:shadow-md ${
-                !n.readAt ? "border-purple-200 border-l-4 border-l-purple-500" : "border-slate-100"
-              }`}>
-              <div className="flex items-start gap-3">
-                <span className="text-xl flex-shrink-0 mt-0.5">{TYPE_ICONS[n.type] || "📣"}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 justify-between">
-                    <p className={`text-sm ${!n.readAt ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>{n.title}</p>
-                    <span className="text-xs text-slate-400 flex-shrink-0">
-                      {new Date(n.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  {n.body && <p className="text-sm text-slate-500 mt-1">{n.body}</p>}
-                  <div className="flex items-center gap-2 mt-3">
-                    {n.actionUrl && (
-                      <a href={n.actionUrl} className="px-3 py-1.5 text-xs rounded-full bg-purple-50 text-purple-700 font-semibold hover:bg-purple-100 transition" style={{ minHeight: 32 }}>
-                        View →
-                      </a>
-                    )}
-                    {!n.readAt && (
-                      <button onClick={() => markAsRead(n.id)} className="px-3 py-1.5 text-xs rounded-full bg-slate-100 text-slate-600 font-semibold hover:bg-slate-200 transition" style={{ minHeight: 32 }}>
-                        Mark Read
+          {filtered.map(n => {
+            const meta = TYPE_META[n.type] || { Icon: Bell, color: "primary" };
+            const Icon = meta.Icon;
+            return (
+              <div key={n.id}
+                className={`vi-card p-4 transition hover:shadow-md ${
+                  !n.readAt ? "border-[hsl(var(--visual-primary)/0.3)] border-l-4 border-l-[hsl(var(--visual-primary))]" : ""
+                }`}>
+                <div className="flex items-start gap-3">
+                  <span className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${WELL_CLASS[meta.color] || WELL_CLASS.primary}`}>
+                    <Icon size={18} aria-hidden="true" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 justify-between">
+                      <p className={`text-sm ${!n.readAt ? "font-bold vi-text" : "font-semibold text-slate-800"}`}>{n.title}</p>
+                      <span className="text-xs vi-text-muted flex-shrink-0">
+                        {new Date(n.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {n.body && <p className="text-sm vi-text-muted mt-1">{n.body}</p>}
+                    <div className="flex items-center gap-2 mt-3">
+                      {n.actionUrl && (
+                        <a href={n.actionUrl} className="px-3 py-1.5 text-xs rounded-full bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] font-semibold hover:bg-[hsl(var(--visual-primary)/0.2)] transition" style={{ minHeight: 32 }}>
+                          View →
+                        </a>
+                      )}
+                      {!n.readAt && (
+                        <button onClick={() => markAsRead(n.id)} className="px-3 py-1.5 text-xs rounded-full vi-surface-soft vi-text-muted font-semibold hover:bg-[hsl(var(--visual-border))] transition" style={{ minHeight: 32 }}>
+                          Mark Read
+                        </button>
+                      )}
+                      <button onClick={() => dismiss(n.id)} className="px-3 py-1.5 text-xs rounded-full vi-text-muted hover:text-[hsl(var(--visual-math))] hover:bg-[hsl(var(--visual-math)/0.06)] transition" style={{ minHeight: 32 }}>
+                        Dismiss
                       </button>
-                    )}
-                    <button onClick={() => dismiss(n.id)} className="px-3 py-1.5 text-xs rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition" style={{ minHeight: 32 }}>
-                      Dismiss
-                    </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

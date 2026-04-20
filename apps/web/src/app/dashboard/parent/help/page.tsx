@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Mail, Search, ChevronDown } from "lucide-react";
 
 const FAQ_ITEMS = [
   {
@@ -50,43 +51,49 @@ export default function HelpPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 lg:px-6 py-6">
-      <h1 className="text-2xl font-heading font-bold text-slate-900 mb-2">Help Center</h1>
-      <p className="text-slate-500 mb-6">Find answers to common questions about AIVO.</p>
+      <h1 className="text-2xl font-heading font-bold vi-text mb-2">Help Center</h1>
+      <p className="vi-text-muted mb-6">Find answers to common questions about AIVO.</p>
 
-      <div className="mb-6">
+      <div className="mb-6 relative">
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[hsl(var(--visual-text-muted))]" aria-hidden="true" />
         <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
           placeholder="Search for help..."
-          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none text-sm" />
+          className="w-full pl-10 pr-4 py-3 rounded-xl border vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-2 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none text-sm" />
       </div>
 
       <div className="space-y-3 mb-8">
         {filtered.map((item, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+          <div key={i} className="vi-card overflow-hidden">
             <button onClick={() => setOpenIndex(openIndex === i ? null : i)}
               className="w-full text-left px-5 py-4 flex items-center justify-between gap-3" style={{ minHeight: 48 }}>
               <span className="text-sm font-semibold text-slate-800">{item.q}</span>
-              <span className={`text-slate-400 transition-transform ${openIndex === i ? "rotate-180" : ""}`}>▾</span>
+              <ChevronDown size={16} className={`text-[hsl(var(--visual-text-muted))] transition-transform ${openIndex === i ? "rotate-180" : ""}`} aria-hidden="true" />
             </button>
             {openIndex === i && (
-              <div className="px-5 pb-4 text-sm text-slate-600 leading-relaxed border-t border-slate-50 pt-3">
+              <div className="px-5 pb-4 text-sm vi-text-muted leading-relaxed border-t vi-border pt-3">
                 {item.a}
               </div>
             )}
           </div>
         ))}
         {filtered.length === 0 && (
-          <div className="text-center py-8 text-slate-400">
+          <div className="text-center py-8 vi-text-muted">
             <p className="font-semibold">No results found.</p>
             <p className="text-sm mt-1">Try different keywords or contact support below.</p>
           </div>
         )}
       </div>
 
-      <div className="bg-gradient-to-r from-purple-50 to-cyan-50 rounded-2xl p-6 border border-purple-100">
-        <h2 className="text-lg font-heading font-bold text-slate-900 mb-2">Need more help?</h2>
-        <p className="text-sm text-slate-600 mb-4">Our support team is here for you. We typically respond within 24 hours.</p>
-        <a href="mailto:support@aivo.learning" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-purple-600 text-white text-sm font-bold hover:bg-purple-700 transition" style={{ minHeight: 44 }}>
-          📧 Contact Support
+      <div className="vi-card p-6 bg-[hsl(var(--visual-primary)/0.06)] border-[hsl(var(--visual-primary)/0.3)]">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center">
+            <Mail size={20} aria-hidden="true" />
+          </span>
+          <h2 className="text-lg font-heading font-bold vi-text">Need more help?</h2>
+        </div>
+        <p className="text-sm vi-text-muted mb-4">Our support team is here for you. We typically respond within 24 hours.</p>
+        <a href="mailto:support@aivo.learning" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[hsl(var(--visual-primary))] text-white text-sm font-bold hover:bg-[hsl(var(--visual-primary)/0.9)] transition" style={{ minHeight: 44 }}>
+          <Mail size={16} aria-hidden="true" /> Contact Support
         </a>
       </div>
     </div>

@@ -53,61 +53,62 @@ export default function CaregiverSettingsPage() {
 
   return (
     <div className="p-8 max-w-2xl space-y-6">
-      <h1 className="text-3xl font-heading font-bold text-slate-900">Settings</h1>
+      <h1 className="text-3xl font-heading font-bold vi-text">Settings</h1>
 
-      <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{td("overview")}</h2>
+      <div className="vi-card p-6">
+        <h2 className="font-heading font-bold text-lg vi-text mb-4">{td("overview")}</h2>
         <div className="space-y-3">
           <div>
-            <p className="text-xs text-slate-500 font-semibold uppercase">Name</p>
-            <p className="text-slate-900 font-medium">{user.name}</p>
+            <p className="text-xs vi-text-muted font-semibold uppercase">Name</p>
+            <p className="vi-text font-medium">{user.name}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500 font-semibold uppercase">Email</p>
-            <p className="text-slate-900 font-medium">{user.email}</p>
+            <p className="text-xs vi-text-muted font-semibold uppercase">Email</p>
+            <p className="vi-text font-medium">{user.email}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500 font-semibold uppercase">Role</p>
-            <p className="text-green-600 font-semibold">Caregiver</p>
+            <p className="text-xs vi-text-muted font-semibold uppercase">Role</p>
+            <p className="text-[hsl(var(--visual-science))] font-semibold">Caregiver</p>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{tc("details")}</h2>
+      <div className="vi-card p-6">
+        <h2 className="font-heading font-bold text-lg vi-text mb-4">{tc("details")}</h2>
         {loadingPrefs ? (
           <div className="space-y-4">
-            {[1, 2, 3].map(i => <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse motion-reduce:animate-none" />)}
+            {[1, 2, 3].map(i => <div key={i} className="h-12 vi-surface-soft rounded-xl animate-pulse motion-reduce:animate-none" />)}
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-900" id="email-notifs-label">Email Notifications</p>
-                <p className="text-xs text-slate-500" id="email-notifs-desc">Receive email updates about your learners</p>
+                <p className="text-sm font-semibold vi-text" id="email-notifs-label">Email Notifications</p>
+                <p className="text-xs vi-text-muted" id="email-notifs-desc">Receive email updates about your learners</p>
               </div>
-              <AccessibleToggle id="email-notifs" value={emailNotifs} onChange={setEmailNotifs} label="Email Notifications" description="Receive email updates about your learners" color="bg-green-600" />
+              <AccessibleToggle id="email-notifs" value={emailNotifs} onChange={setEmailNotifs} label="Email Notifications" description="Receive email updates about your learners" color="bg-[hsl(var(--visual-science))]" />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-900" id="daily-summary-label">Daily Summary</p>
-                <p className="text-xs text-slate-500" id="daily-summary-desc">Daily overview of learner activities and progress</p>
+                <p className="text-sm font-semibold vi-text" id="daily-summary-label">Daily Summary</p>
+                <p className="text-xs vi-text-muted" id="daily-summary-desc">Daily overview of learner activities and progress</p>
               </div>
-              <AccessibleToggle id="daily-summary" value={dailySummary} onChange={setDailySummary} label="Daily Summary" description="Daily overview of learner activities and progress" color="bg-green-600" />
+              <AccessibleToggle id="daily-summary" value={dailySummary} onChange={setDailySummary} label="Daily Summary" description="Daily overview of learner activities and progress" color="bg-[hsl(var(--visual-science))]" />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-900" id="iep-alerts-label">IEP Goal Alerts</p>
-                <p className="text-xs text-slate-500" id="iep-alerts-desc">Notifications when IEP goals are updated or milestones reached</p>
+                <p className="text-sm font-semibold vi-text" id="iep-alerts-label">IEP Goal Alerts</p>
+                <p className="text-xs vi-text-muted" id="iep-alerts-desc">Notifications when IEP goals are updated or milestones reached</p>
               </div>
-              <AccessibleToggle id="iep-alerts" value={iepAlerts} onChange={setIepAlerts} label="IEP Goal Alerts" description="Notifications when IEP goals are updated or milestones reached" color="bg-green-600" />
+              <AccessibleToggle id="iep-alerts" value={iepAlerts} onChange={setIepAlerts} label="IEP Goal Alerts" description="Notifications when IEP goals are updated or milestones reached" color="bg-[hsl(var(--visual-science))]" />
             </div>
           </div>
         )}
-        {saveStatus === "success" && <p className="text-sm text-green-600 mt-3 font-medium" role="status" aria-live="polite">Settings saved!</p>}
-        {saveStatus === "error" && <p className="text-sm text-red-600 mt-3 font-medium" role="alert">Failed to save settings. Please try again.</p>}
+        {saveStatus === "success" && <p className="text-sm text-[hsl(var(--visual-science))] mt-3 font-medium" role="status" aria-live="polite">Settings saved!</p>}
+        {saveStatus === "error" && <p className="text-sm text-[hsl(var(--visual-math))] mt-3 font-medium" role="alert">Failed to save settings. Please try again.</p>}
         <button onClick={handleSaveSettings} disabled={saving} aria-busy={saving}
-          className="mt-4 px-6 py-2.5 rounded-xl bg-green-600 text-white font-bold text-sm hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          style={{ minHeight: 44 }}
+          className="mt-4 px-6 py-2.5 rounded-xl bg-[hsl(var(--visual-primary))] text-white font-heading font-black uppercase tracking-wider text-sm hover:bg-[hsl(var(--visual-primary)/0.9)] transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--visual-primary))] focus-visible:ring-offset-2">
           {saving ? "Saving..." : "Save Preferences"}
         </button>
       </div>

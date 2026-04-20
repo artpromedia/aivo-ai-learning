@@ -17,6 +17,7 @@ import {
   FileText,
   Settings,
   Target,
+  BookOpen,
 } from "lucide-react";
 
 interface ConnectedLearner {
@@ -32,11 +33,11 @@ interface ClassroomGroup {
 }
 
 const LEVEL_STYLES: Record<string, string> = {
-  STANDARD: "bg-green-50 text-green-700 border-green-200",
-  SUPPORTED: "bg-blue-50 text-blue-700 border-blue-200",
-  LOW_VERBAL: "bg-amber-50 text-amber-700 border-amber-200",
-  NON_VERBAL: "bg-orange-50 text-orange-700 border-orange-200",
-  PRE_SYMBOLIC: "bg-pink-50 text-pink-700 border-pink-200",
+  STANDARD: "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] border-[hsl(var(--visual-science)/0.3)]",
+  SUPPORTED: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] border-[hsl(var(--visual-reading)/0.3)]",
+  LOW_VERBAL: "bg-[hsl(var(--visual-sel)/0.12)] text-[hsl(var(--visual-sel))] border-[hsl(var(--visual-sel)/0.3)]",
+  NON_VERBAL: "bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))] border-[hsl(var(--visual-sel)/0.3)]",
+  PRE_SYMBOLIC: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))] border-[hsl(var(--visual-math)/0.3)]",
 };
 
 export default function TeacherOverviewPage() {
@@ -93,56 +94,56 @@ export default function TeacherOverviewPage() {
   return (
     <div className="p-6 lg:p-8 space-y-6 lg:space-y-8 max-w-7xl mx-auto">
       <header className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-subject-reading-soft text-subject-reading flex items-center justify-center shadow-sm shrink-0">
+        <div className="w-14 h-14 rounded-2xl bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] flex items-center justify-center shrink-0">
           <GraduationCap size={28} strokeWidth={2.5} aria-hidden="true" />
         </div>
         <div>
-          <h1 className="text-2xl lg:text-3xl font-heading font-bold text-slate-900 leading-tight">
+          <h1 className="text-2xl lg:text-3xl font-heading font-bold vi-text leading-tight">
             {t("my_classes")}
           </h1>
-          <p className="text-sm text-slate-600 font-medium mt-1">
+          <p className="text-sm vi-text-muted font-medium mt-1">
             Your classroom at a glance.
           </p>
         </div>
       </header>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-subject-reading-soft to-white rounded-3xl p-5 border-2 border-blue-100 shadow-sm">
-          <div className="w-11 h-11 rounded-2xl bg-white shadow-sm flex items-center justify-center text-subject-reading mb-3">
+        <div className="vi-card p-5">
+          <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] flex items-center justify-center mb-3">
             <Users size={22} strokeWidth={2.5} aria-hidden="true" />
           </div>
-          <p className="text-3xl font-black text-subject-reading leading-none">
+          <p className="text-3xl font-black text-[hsl(var(--visual-reading))] leading-none">
             {totalLearners}
           </p>
-          <p className="text-xs text-slate-600 font-bold uppercase tracking-wide mt-1.5">
+          <p className="text-xs vi-text-muted font-bold uppercase tracking-wide mt-1.5">
             Total Learners
           </p>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50 to-white rounded-3xl p-5 border-2 border-purple-100 shadow-sm">
-          <div className="w-11 h-11 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary mb-3">
+        <div className="vi-card p-5">
+          <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center mb-3">
             <Layers size={22} strokeWidth={2.5} aria-hidden="true" />
           </div>
-          <p className="text-3xl font-black text-primary leading-none">
+          <p className="text-3xl font-black text-[hsl(var(--visual-primary))] leading-none">
             {classrooms.length}
           </p>
-          <p className="text-xs text-slate-600 font-bold uppercase tracking-wide mt-1.5">
+          <p className="text-xs vi-text-muted font-bold uppercase tracking-wide mt-1.5">
             Grade Groups
           </p>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border-2 border-slate-100 shadow-sm col-span-2 lg:col-span-1">
-          <div className="w-11 h-11 rounded-2xl bg-purple-50 text-primary flex items-center justify-center mb-3">
+        <div className="vi-card p-5 col-span-2 lg:col-span-1">
+          <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center mb-3">
             <Target size={22} strokeWidth={2.5} aria-hidden="true" />
           </div>
-          <p className="text-xs text-slate-600 font-bold uppercase tracking-wide mb-2">
+          <p className="text-xs vi-text-muted font-bold uppercase tracking-wide mb-2">
             Functioning Levels
           </p>
           <div className="flex flex-wrap gap-1">
             {Object.entries(functioningLevels).map(([level, count]) => (
               <span
                 key={level}
-                className={`px-2 py-0.5 text-[11px] rounded-full font-bold border ${LEVEL_STYLES[level] || "bg-slate-50 text-slate-700 border-slate-200"}`}
+                className={`px-2 py-0.5 text-[11px] rounded-full font-bold border ${LEVEL_STYLES[level] || "vi-surface-soft vi-text-muted vi-border"}`}
               >
                 {level}: {count}
               </span>
@@ -150,24 +151,24 @@ export default function TeacherOverviewPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border-2 border-slate-100 shadow-sm col-span-2 lg:col-span-1">
-          <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+        <div className="vi-card p-5 col-span-2 lg:col-span-1">
+          <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))] flex items-center justify-center mb-3">
             <Sparkles size={22} strokeWidth={2.5} aria-hidden="true" />
           </div>
-          <p className="text-xs text-slate-600 font-bold uppercase tracking-wide mb-2">
+          <p className="text-xs vi-text-muted font-bold uppercase tracking-wide mb-2">
             Quick Actions
           </p>
           <div className="flex flex-col gap-1.5">
             <a
               href="/dashboard/teacher/reports"
-              className="inline-flex items-center gap-1.5 text-sm text-subject-reading hover:underline font-bold"
+              className="inline-flex items-center gap-1.5 text-sm text-[hsl(var(--visual-reading))] hover:underline font-bold"
             >
               <FileText size={14} strokeWidth={2.5} aria-hidden="true" />
               View Reports
             </a>
             <a
               href="/dashboard/teacher/settings"
-              className="inline-flex items-center gap-1.5 text-sm text-slate-700 hover:underline font-bold"
+              className="inline-flex items-center gap-1.5 text-sm vi-text hover:underline font-bold"
             >
               <Settings size={14} strokeWidth={2.5} aria-hidden="true" />
               Settings
@@ -181,27 +182,27 @@ export default function TeacherOverviewPage() {
       ) : fetchError ? (
         <FetchErrorState title="Unable to load learners" onRetry={fetchLearners} />
       ) : learners.length === 0 ? (
-        <EmptyLearnerState icon="\uD83D\uDCDA" />
+        <EmptyLearnerState Icon={BookOpen} tone="reading" />
       ) : (
         <div className="space-y-6">
           {classrooms.map((group) => (
             <div
               key={group.grade}
-              className="bg-white rounded-3xl border-2 border-slate-100 shadow-sm overflow-hidden"
+              className="vi-card overflow-hidden"
             >
-              <div className="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-blue-50/50 to-transparent flex items-center justify-between">
+              <div className="px-6 py-4 border-b vi-border vi-surface-soft flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span
-                    className="w-10 h-10 rounded-2xl bg-subject-reading-soft text-subject-reading flex items-center justify-center text-sm font-black"
+                    className="w-10 h-10 rounded-2xl bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] flex items-center justify-center text-sm font-black"
                     aria-hidden="true"
                   >
                     {group.grade.replace(/[^0-9KkPp]/g, "").toUpperCase() || "?"}
                   </span>
                   <div>
-                    <h3 className="font-heading font-bold text-slate-900">
+                    <h3 className="font-heading font-bold vi-text">
                       Grade {group.grade}
                     </h3>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wide">
+                    <p className="text-xs vi-text-muted font-bold uppercase tracking-wide">
                       {group.learners.length} learner
                       {group.learners.length !== 1 ? "s" : ""}
                     </p>
@@ -217,8 +218,8 @@ export default function TeacherOverviewPage() {
                         key={l.id}
                         className={`rounded-2xl border-2 transition-all ${
                           isOpen
-                            ? "border-subject-reading bg-blue-50/40 shadow-md"
-                            : "border-slate-100 bg-white hover:shadow-sm hover:border-slate-200"
+                            ? "border-[hsl(var(--visual-reading))] bg-[hsl(var(--visual-reading)/0.06)]"
+                            : "vi-border bg-[hsl(var(--visual-surface))] hover:shadow-sm"
                         }`}
                       >
                         <button
@@ -226,18 +227,18 @@ export default function TeacherOverviewPage() {
                           onClick={() => setExpandedLearner(isOpen ? null : l.id)}
                           aria-expanded={isOpen}
                           aria-controls={`learner-details-${l.id}`}
-                          className="w-full text-left p-4 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 rounded-2xl"
+                          className="w-full text-left p-4 focus:outline-none focus-visible:ring-4 focus-visible:ring-[hsl(var(--visual-reading)/0.3)] rounded-2xl"
                         >
                           <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center font-black text-sm shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-[hsl(var(--visual-reading))] text-white flex items-center justify-center font-black text-sm shrink-0">
                               {l.name.charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-slate-900 truncate">
+                              <h4 className="font-bold vi-text truncate">
                                 {l.name}
                               </h4>
                               {l.gradeLevel && (
-                                <p className="text-xs text-slate-500 font-semibold">
+                                <p className="text-xs vi-text-muted font-semibold">
                                   Grade {l.gradeLevel}
                                 </p>
                               )}
@@ -246,20 +247,20 @@ export default function TeacherOverviewPage() {
                               <ChevronUp
                                 size={18}
                                 strokeWidth={2.5}
-                                className="text-subject-reading shrink-0"
+                                className="text-[hsl(var(--visual-reading))] shrink-0"
                                 aria-hidden="true"
                               />
                             ) : (
                               <ChevronDown
                                 size={18}
                                 strokeWidth={2.5}
-                                className="text-slate-400 shrink-0"
+                                className="vi-text-muted shrink-0"
                                 aria-hidden="true"
                               />
                             )}
                           </div>
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] rounded-full font-bold border ${LEVEL_STYLES[l.functioningLevel] || "bg-purple-50 text-primary border-purple-200"}`}
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] rounded-full font-bold border ${LEVEL_STYLES[l.functioningLevel] || "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] border-[hsl(var(--visual-primary)/0.3)]"}`}
                           >
                             <Target
                               size={10}
@@ -272,7 +273,7 @@ export default function TeacherOverviewPage() {
                         {isOpen && accessToken && (
                           <div
                             id={`learner-details-${l.id}`}
-                            className="px-4 pb-4 border-t border-blue-100"
+                            className="px-4 pb-4 border-t vi-border"
                           >
                             <BrainVisualization
                               learnerId={l.id}

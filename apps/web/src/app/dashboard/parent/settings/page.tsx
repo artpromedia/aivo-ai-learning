@@ -185,66 +185,66 @@ export default function ParentSettingsPage() {
   if (loading || !user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
-      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+    <div className="vi-bg">
+      <header className="bg-[hsl(var(--visual-surface)/0.95)] backdrop-blur border-b vi-border px-8 py-4 flex items-center justify-between">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/parent" className="text-sm text-primary font-semibold hover:underline">{t("dashboard")}</Link>
-          <Link href="/dashboard/parent/billing" className="text-sm text-slate-500 font-semibold hover:text-primary">{t("billing_page_title")}</Link>
-          <span className="text-sm font-semibold text-slate-600">{user.name}</span>
-          <button onClick={logout} className="text-sm text-slate-500 hover:text-red-500 font-semibold transition">{t("logout")}</button>
+          <Link href="/dashboard/parent" className="text-sm text-[hsl(var(--visual-primary))] font-semibold hover:underline">{t("dashboard")}</Link>
+          <Link href="/dashboard/parent/billing" className="text-sm vi-text-muted font-semibold hover:text-[hsl(var(--visual-primary))]">{t("billing_page_title")}</Link>
+          <span className="text-sm font-semibold vi-text-muted">{user.name}</span>
+          <button onClick={logout} className="text-sm vi-text-muted hover:text-[hsl(var(--visual-math))] font-semibold transition">{t("logout")}</button>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-8 py-8 space-y-8">
-        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("account_settings")}</h1>
+        <h1 className="text-2xl font-heading font-bold vi-text">{t("account_settings")}</h1>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
-          <h2 className="text-lg font-heading font-bold text-slate-900">{t("profile_information")}</h2>
-          {profileMsg && <p className="text-sm text-green-600 bg-green-50 p-2 rounded">{profileMsg}</p>}
-          {profileErr && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{profileErr}</p>}
+        <div className="vi-card p-6 space-y-5">
+          <h2 className="text-lg font-heading font-bold vi-text">{t("profile_information")}</h2>
+          {profileMsg && <p className="text-sm text-[hsl(var(--visual-science))] bg-[hsl(var(--visual-science)/0.12)] p-2 rounded">{profileMsg}</p>}
+          {profileErr && <p className="text-sm text-[hsl(var(--visual-math))] bg-[hsl(var(--visual-math)/0.12)] p-2 rounded">{profileErr}</p>}
           <form onSubmit={handleProfileUpdate} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">{t("full_name")}</label>
+              <label className="block text-sm font-medium text-slate-800 mb-1">{t("full_name")}</label>
               <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)} required
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition" />
+                className="w-full px-4 py-2.5 rounded-lg border vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-2 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">{tc("email")}</label>
+              <label className="block text-sm font-medium text-slate-800 mb-1">{tc("email")}</label>
               <input type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)} required
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition" />
+                className="w-full px-4 py-2.5 rounded-lg border vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-2 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition" />
             </div>
             <button type="submit" disabled={profileLoading}
-              className="px-6 py-2.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition disabled:opacity-50 text-sm">
+              className="px-6 py-2.5 rounded-lg bg-[hsl(var(--visual-primary))] text-white font-semibold hover:bg-[hsl(var(--visual-primary)/0.9)] transition disabled:opacity-50 text-sm" style={{ minHeight: 44 }}>
               {profileLoading ? tc("saving") : tc("save")}
             </button>
           </form>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
-          <h2 className="text-lg font-heading font-bold text-slate-900">{t("change_password")}</h2>
-          {pwMsg && <p className="text-sm text-green-600 bg-green-50 p-2 rounded">{pwMsg}</p>}
-          {pwErr && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{pwErr}</p>}
+        <div className="vi-card p-6 space-y-5">
+          <h2 className="text-lg font-heading font-bold vi-text">{t("change_password")}</h2>
+          {pwMsg && <p className="text-sm text-[hsl(var(--visual-science))] bg-[hsl(var(--visual-science)/0.12)] p-2 rounded">{pwMsg}</p>}
+          {pwErr && <p className="text-sm text-[hsl(var(--visual-math))] bg-[hsl(var(--visual-math)/0.12)] p-2 rounded">{pwErr}</p>}
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">{t("current_password")}</label>
+              <label className="block text-sm font-medium text-slate-800 mb-1">{t("current_password")}</label>
               <input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} required
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition" />
+                className="w-full px-4 py-2.5 rounded-lg border vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-2 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t("new_password")}</label>
+                <label className="block text-sm font-medium text-slate-800 mb-1">{t("new_password")}</label>
                 <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} required minLength={8}
-                  className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition" />
+                  className="w-full px-4 py-2.5 rounded-lg border vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-2 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t("confirm_new_password")}</label>
+                <label className="block text-sm font-medium text-slate-800 mb-1">{t("confirm_new_password")}</label>
                 <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} required minLength={8}
-                  className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none transition" />
+                  className="w-full px-4 py-2.5 rounded-lg border vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-2 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition" />
               </div>
             </div>
             <button type="submit" disabled={pwLoading}
-              className="px-6 py-2.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition disabled:opacity-50 text-sm">
+              className="px-6 py-2.5 rounded-lg bg-[hsl(var(--visual-primary))] text-white font-semibold hover:bg-[hsl(var(--visual-primary)/0.9)] transition disabled:opacity-50 text-sm" style={{ minHeight: 44 }}>
               {pwLoading ? t("changing") : t("change_password")}
             </button>
           </form>
@@ -252,21 +252,21 @@ export default function ParentSettingsPage() {
 
         <MfaSettings accentColor="violet" />
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
-          <h2 className="text-lg font-heading font-bold text-slate-900">{t("notification_preferences")}</h2>
-          {notifMsg && <p className="text-sm text-green-600 bg-green-50 p-2 rounded">{notifMsg}</p>}
+        <div className="vi-card p-6 space-y-5">
+          <h2 className="text-lg font-heading font-bold vi-text">{t("notification_preferences")}</h2>
+          {notifMsg && <p className="text-sm text-[hsl(var(--visual-science))] bg-[hsl(var(--visual-science)/0.12)] p-2 rounded">{notifMsg}</p>}
           <div className="space-y-4">
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-slate-700">{t("email_notifications")}</h3>
+              <h3 className="text-sm font-semibold text-slate-800">{t("email_notifications")}</h3>
               <label className="flex items-center gap-3">
                 <input type="checkbox" checked={notifPrefs.emailEnabled} onChange={e => setNotifPrefs({ ...notifPrefs, emailEnabled: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
-                <span className="text-sm text-slate-600">{t("enable_email")}</span>
+                  className="w-4 h-4 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
+                <span className="text-sm vi-text-muted">{t("enable_email")}</span>
               </label>
               <div className="ml-7">
-                <label className="block text-xs text-slate-500 mb-1">{t("digest_frequency")}</label>
+                <label className="block text-xs vi-text-muted mb-1">{t("digest_frequency")}</label>
                 <select value={notifPrefs.emailDigest} onChange={e => setNotifPrefs({ ...notifPrefs, emailDigest: e.target.value })}
-                  className="px-3 py-1.5 rounded border border-slate-200 text-sm">
+                  className="px-3 py-1.5 rounded border vi-border bg-[hsl(var(--visual-surface))] text-sm">
                   <option value="realtime">{t("realtime")}</option>
                   <option value="daily">{t("daily")}</option>
                   <option value="weekly">{t("weekly")}</option>
@@ -274,58 +274,58 @@ export default function ParentSettingsPage() {
               </div>
               <label className="flex items-center gap-3">
                 <input type="checkbox" checked={notifPrefs.emailMarketing} onChange={e => setNotifPrefs({ ...notifPrefs, emailMarketing: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
-                <span className="text-sm text-slate-600">{t("product_updates")}</span>
+                  className="w-4 h-4 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
+                <span className="text-sm vi-text-muted">{t("product_updates")}</span>
               </label>
             </div>
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-slate-700">{t("push_notifications")}</h3>
+              <h3 className="text-sm font-semibold text-slate-800">{t("push_notifications")}</h3>
               <label className="flex items-center gap-3">
                 <input type="checkbox" checked={notifPrefs.pushEnabled} onChange={e => setNotifPrefs({ ...notifPrefs, pushEnabled: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
-                <span className="text-sm text-slate-600">{t("enable_push")}</span>
+                  className="w-4 h-4 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
+                <span className="text-sm vi-text-muted">{t("enable_push")}</span>
               </label>
               <label className="flex items-center gap-3 ml-7">
                 <input type="checkbox" checked={notifPrefs.pushSessionReminders} onChange={e => setNotifPrefs({ ...notifPrefs, pushSessionReminders: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
-                <span className="text-sm text-slate-600">{t("session_reminders")}</span>
+                  className="w-4 h-4 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
+                <span className="text-sm vi-text-muted">{t("session_reminders")}</span>
               </label>
               <label className="flex items-center gap-3 ml-7">
                 <input type="checkbox" checked={notifPrefs.pushProgressUpdates} onChange={e => setNotifPrefs({ ...notifPrefs, pushProgressUpdates: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
-                <span className="text-sm text-slate-600">{t("progress_updates")}</span>
+                  className="w-4 h-4 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
+                <span className="text-sm vi-text-muted">{t("progress_updates")}</span>
               </label>
             </div>
             <label className="flex items-center gap-3">
               <input type="checkbox" checked={notifPrefs.smsEnabled} onChange={e => setNotifPrefs({ ...notifPrefs, smsEnabled: e.target.checked })}
-                className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
-              <span className="text-sm text-slate-600">{t("sms_notifications")}</span>
+                className="w-4 h-4 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
+              <span className="text-sm vi-text-muted">{t("sms_notifications")}</span>
             </label>
             <button onClick={handleNotifSave}
-              className="px-6 py-2.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition text-sm">
+              className="px-6 py-2.5 rounded-lg bg-[hsl(var(--visual-primary))] text-white font-semibold hover:bg-[hsl(var(--visual-primary)/0.9)] transition text-sm" style={{ minHeight: 44 }}>
               {t("save_preferences")}
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-5">
-          <h2 className="text-lg font-heading font-bold text-slate-900">{t("data_privacy")}</h2>
-          <p className="text-sm text-slate-500">{t("data_privacy_desc")}</p>
+        <div className="vi-card p-6 space-y-5">
+          <h2 className="text-lg font-heading font-bold vi-text">{t("data_privacy")}</h2>
+          <p className="text-sm vi-text-muted">{t("data_privacy_desc")}</p>
 
-          {deleteLearnerMsg && <p className="text-sm text-green-600 bg-green-50 p-2 rounded">{deleteLearnerMsg}</p>}
+          {deleteLearnerMsg && <p className="text-sm text-[hsl(var(--visual-science))] bg-[hsl(var(--visual-science)/0.12)] p-2 rounded">{deleteLearnerMsg}</p>}
 
           {learners.length > 0 ? (
             <div className="space-y-3">
               {learners.map(l => (
-                <div key={l.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="font-medium text-sm text-slate-700">{l.name}</span>
+                <div key={l.id} className="flex items-center justify-between p-3 rounded-lg vi-surface-soft border vi-border">
+                  <span className="font-medium text-sm text-slate-800">{l.name}</span>
                   <div className="flex gap-2">
                     <button onClick={() => handleDownloadData(l.id)}
-                      className="px-3 py-1.5 text-xs rounded-lg bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 transition">
+                      className="px-3 py-1.5 text-xs rounded-lg bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] font-semibold hover:bg-[hsl(var(--visual-reading)/0.2)] transition">
                       {t("download_data")}
                     </button>
                     <button onClick={() => { setDeleteLearnerId(l.id); setDeleteLearnerConfirm(""); setDeleteLearnerMsg(""); }}
-                      className="px-3 py-1.5 text-xs rounded-lg bg-red-50 text-red-700 font-semibold hover:bg-red-100 transition">
+                      className="px-3 py-1.5 text-xs rounded-lg bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))] font-semibold hover:bg-[hsl(var(--visual-math)/0.2)] transition">
                       {t("remove_learner")}
                     </button>
                   </div>
@@ -333,24 +333,24 @@ export default function ParentSettingsPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-slate-400">{t("no_learners_found")}</p>
+            <p className="text-sm vi-text-muted">{t("no_learners_found")}</p>
           )}
 
           {deleteLearnerId && (
-            <div className="p-4 rounded-lg bg-red-50 border border-red-200 space-y-3">
-              <p className="text-sm text-red-700 font-medium">
+            <div className="p-4 rounded-lg bg-[hsl(var(--visual-math)/0.06)] border border-[hsl(var(--visual-math)/0.3)] space-y-3">
+              <p className="text-sm text-[hsl(var(--visual-math))] font-medium">
                 {t("confirm_remove_learner", { name: learners.find(l => l.id === deleteLearnerId)?.name || "" })}
               </p>
               <input type="text" value={deleteLearnerConfirm} onChange={e => setDeleteLearnerConfirm(e.target.value)}
                 placeholder={t("type_name_confirm")}
-                className="w-full px-4 py-2 rounded-lg border border-red-200 text-sm" />
+                className="w-full px-4 py-2 rounded-lg border border-[hsl(var(--visual-math)/0.3)] bg-[hsl(var(--visual-surface))] text-sm" />
               <div className="flex gap-2">
                 <button onClick={handleDeleteLearner}
-                  className="px-4 py-2 text-xs rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition">
+                  className="px-4 py-2 text-xs rounded-lg bg-[hsl(var(--visual-math))] text-white font-semibold hover:bg-[hsl(var(--visual-math)/0.9)] transition" style={{ minHeight: 44 }}>
                   {t("permanently_remove")}
                 </button>
                 <button onClick={() => setDeleteLearnerId(null)}
-                  className="px-4 py-2 text-xs rounded-lg bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition">
+                  className="px-4 py-2 text-xs rounded-lg vi-surface-soft vi-text font-semibold hover:bg-[hsl(var(--visual-border))] transition" style={{ minHeight: 44 }}>
                   {tc("cancel")}
                 </button>
               </div>
@@ -358,29 +358,29 @@ export default function ParentSettingsPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-red-100 space-y-4">
-          <h2 className="text-lg font-heading font-bold text-red-700">{t("danger_zone")}</h2>
-          <p className="text-sm text-slate-500">{t("delete_account_desc")}</p>
+        <div className="vi-card p-6 border-[hsl(var(--visual-math)/0.3)] space-y-4">
+          <h2 className="text-lg font-heading font-bold text-[hsl(var(--visual-math))]">{t("danger_zone")}</h2>
+          <p className="text-sm vi-text-muted">{t("delete_account_desc")}</p>
 
           {!showDeleteAccount ? (
             <button onClick={() => setShowDeleteAccount(true)}
-              className="px-6 py-2.5 rounded-lg border-2 border-red-300 text-red-700 font-semibold hover:bg-red-50 transition text-sm">
+              className="px-6 py-2.5 rounded-lg border-2 border-[hsl(var(--visual-math)/0.3)] text-[hsl(var(--visual-math))] font-semibold hover:bg-[hsl(var(--visual-math)/0.06)] transition text-sm" style={{ minHeight: 44 }}>
               {t("delete_my_account")}
             </button>
           ) : (
-            <div className="p-4 rounded-lg bg-red-50 border border-red-200 space-y-3">
-              <p className="text-sm text-red-700 font-medium">{t("delete_account_confirm")}</p>
-              {deleteAccErr && <p className="text-sm text-red-600 bg-red-100 p-2 rounded">{deleteAccErr}</p>}
+            <div className="p-4 rounded-lg bg-[hsl(var(--visual-math)/0.06)] border border-[hsl(var(--visual-math)/0.3)] space-y-3">
+              <p className="text-sm text-[hsl(var(--visual-math))] font-medium">{t("delete_account_confirm")}</p>
+              {deleteAccErr && <p className="text-sm text-[hsl(var(--visual-math))] bg-[hsl(var(--visual-math)/0.12)] p-2 rounded">{deleteAccErr}</p>}
               <input type="password" value={deleteAccPw} onChange={e => setDeleteAccPw(e.target.value)}
                 placeholder={t("enter_password")}
-                className="w-full px-4 py-2 rounded-lg border border-red-200 text-sm" />
+                className="w-full px-4 py-2 rounded-lg border border-[hsl(var(--visual-math)/0.3)] bg-[hsl(var(--visual-surface))] text-sm" />
               <div className="flex gap-2">
                 <button onClick={handleDeleteAccount} disabled={deleteAccLoading || !deleteAccPw}
-                  className="px-4 py-2 text-xs rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition disabled:opacity-50">
+                  className="px-4 py-2 text-xs rounded-lg bg-[hsl(var(--visual-math))] text-white font-semibold hover:bg-[hsl(var(--visual-math)/0.9)] transition disabled:opacity-50" style={{ minHeight: 44 }}>
                   {deleteAccLoading ? t("deleting") : t("permanently_delete")}
                 </button>
                 <button onClick={() => { setShowDeleteAccount(false); setDeleteAccPw(""); setDeleteAccErr(""); }}
-                  className="px-4 py-2 text-xs rounded-lg bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition">
+                  className="px-4 py-2 text-xs rounded-lg vi-surface-soft vi-text font-semibold hover:bg-[hsl(var(--visual-border))] transition" style={{ minHeight: 44 }}>
                   {tc("cancel")}
                 </button>
               </div>

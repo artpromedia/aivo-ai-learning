@@ -48,8 +48,8 @@ export function QuickActions({
         href: `/dashboard/parent/learner/${l.id}/brain-review`,
         Icon: Brain,
         priority: 1,
-        iconWrap: "bg-white text-amber-600",
-        card: "from-amber-50 to-orange-50 border-amber-200 hover:border-amber-300",
+        iconWrap: "bg-[hsl(var(--visual-surface))] text-[hsl(var(--visual-sel))]",
+        card: "bg-[hsl(var(--visual-sel)/0.08)] border-[hsl(var(--visual-sel)/0.3)] hover:border-[hsl(var(--visual-sel)/0.5)]",
       });
     }
 
@@ -61,8 +61,8 @@ export function QuickActions({
         href: `/dashboard/parent/learner/${l.id}/assessment`,
         Icon: ClipboardList,
         priority: 2,
-        iconWrap: "bg-white text-subject-reading",
-        card: "from-cyan-50 to-blue-50 border-cyan-200 hover:border-cyan-300",
+        iconWrap: "bg-[hsl(var(--visual-surface))] text-[hsl(var(--visual-reading))]",
+        card: "bg-[hsl(var(--visual-reading)/0.08)] border-[hsl(var(--visual-reading)/0.3)] hover:border-[hsl(var(--visual-reading)/0.5)]",
       });
     } else if (
       baselineCompleted[l.id] &&
@@ -75,8 +75,8 @@ export function QuickActions({
         href: `/dashboard/parent/learner/${l.id}`,
         Icon: Sparkles,
         priority: 3,
-        iconWrap: "bg-white text-subject-science",
-        card: "from-emerald-50 to-green-50 border-emerald-200 hover:border-emerald-300",
+        iconWrap: "bg-[hsl(var(--visual-surface))] text-[hsl(var(--visual-science))]",
+        card: "bg-[hsl(var(--visual-science)/0.08)] border-[hsl(var(--visual-science)/0.3)] hover:border-[hsl(var(--visual-science)/0.5)]",
       });
     }
   }
@@ -86,15 +86,15 @@ export function QuickActions({
 
   if (topActions.length === 0) {
     return (
-      <div className="flex items-center gap-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-3xl p-5 border-2 border-green-200">
-        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-subject-science shadow-sm shrink-0">
+      <div className="flex items-center gap-3 vi-card p-5 bg-[hsl(var(--visual-science)/0.08)] border-[hsl(var(--visual-science)/0.3)]">
+        <div className="w-12 h-12 rounded-2xl bg-[hsl(var(--visual-surface))] flex items-center justify-center text-[hsl(var(--visual-science))] shadow-sm shrink-0">
           <PartyPopper size={24} strokeWidth={2.5} aria-hidden="true" />
         </div>
         <div>
-          <p className="text-green-800 font-heading font-bold text-base">
+          <p className="text-[hsl(var(--visual-science))] font-heading font-bold text-base">
             All caught up!
           </p>
-          <p className="text-green-700 text-sm font-medium">
+          <p className="vi-text-muted text-sm font-medium">
             Everyone is on track.
           </p>
         </div>
@@ -104,9 +104,9 @@ export function QuickActions({
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-heading font-bold text-slate-900 flex items-center gap-2">
+      <h2 className="text-lg font-heading font-bold vi-text flex items-center gap-2">
         <Sparkles
-          className="text-primary"
+          className="text-[hsl(var(--visual-primary))]"
           size={20}
           strokeWidth={2.5}
           aria-hidden="true"
@@ -117,7 +117,7 @@ export function QuickActions({
         <button
           key={i}
           onClick={() => router.push(action.href)}
-          className={`group w-full text-left bg-gradient-to-r ${action.card} rounded-2xl p-4 border-2 hover:shadow-md transition-all`}
+          className={`group w-full text-left ${action.card} rounded-2xl p-4 border-2 hover:shadow-md transition-all`}
           style={{ minHeight: 44 }}
         >
           <div className="flex items-center gap-3">
@@ -127,15 +127,15 @@ export function QuickActions({
               <action.Icon size={22} strokeWidth={2.5} aria-hidden="true" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-heading font-bold text-slate-900">
+              <p className="text-sm font-heading font-bold vi-text">
                 {action.label}
               </p>
-              <p className="text-xs text-slate-700 mt-0.5 font-medium">
+              <p className="text-xs vi-text-muted mt-0.5 font-medium">
                 {action.description}
               </p>
             </div>
             <ChevronRight
-              className="text-slate-400 group-hover:text-slate-700 group-hover:translate-x-1 transition-all shrink-0"
+              className="vi-text-muted group-hover:vi-text group-hover:translate-x-1 transition-all shrink-0"
               size={20}
               strokeWidth={2.5}
               aria-hidden="true"

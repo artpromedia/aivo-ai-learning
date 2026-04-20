@@ -52,41 +52,41 @@ export default function SignupPage() {
       Icon: Brain,
       title: t("signup_feature_brain_clone"),
       desc: "Builds a unique AI model of how your child learns",
-      tint: "bg-subject-math text-white",
+      token: "--visual-math",
     },
     {
       Icon: Users,
       title: t("signup_feature_tutors"),
       desc: "Each with specialized teaching personalities",
-      tint: "bg-subject-reading text-white",
+      token: "--visual-reading",
     },
     {
       Icon: Zap,
       title: t("signup_feature_levels"),
       desc: "Adapts to every child's pace automatically",
-      tint: "bg-subject-sel text-white",
+      token: "--visual-sel",
     },
     {
       Icon: ShieldCheck,
       title: t("signup_feature_coppa"),
       desc: "COPPA, FERPA & GDPR compliant platform",
-      tint: "bg-subject-science text-white",
+      token: "--visual-science",
     },
   ];
 
   return (
-    <div className="min-h-screen flex bg-slate-50">
+    <div className="min-h-screen flex vi-bg">
       <SkipLink />
 
       {/* Marketing Rail */}
       <aside
-        className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700"
+        className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-[hsl(var(--visual-primary))]"
         aria-hidden="true"
       >
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-32 -left-10 w-80 h-80 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-0 w-96 h-96 bg-pink-300 rounded-full blur-3xl" />
-          <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-cyan-300 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 right-0 w-96 h-96 bg-[hsl(var(--visual-math))] rounded-full blur-3xl" />
+          <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-[hsl(var(--visual-reading))] rounded-full blur-3xl" />
         </div>
 
         <div className="absolute inset-0 flex flex-col justify-between p-12 z-10">
@@ -115,13 +115,14 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-3">
-              {features.map(({ Icon, title, desc, tint }) => (
+              {features.map(({ Icon, title, desc, token }) => (
                 <div
                   key={title}
                   className="flex items-start gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border-2 border-white/15 hover:bg-white/15 transition-colors"
                 >
                   <div
-                    className={`w-11 h-11 rounded-2xl ${tint} flex items-center justify-center shadow-lg flex-shrink-0`}
+                    className="w-11 h-11 rounded-2xl text-white flex items-center justify-center shadow-lg flex-shrink-0"
+                    style={{ backgroundColor: `hsl(var(${token}))` }}
                   >
                     <Icon size={22} strokeWidth={2.5} aria-hidden="true" />
                   </div>
@@ -139,11 +140,11 @@ export default function SignupPage() {
           </div>
 
           <div className="flex items-center gap-3 text-white/80 text-sm font-body font-semibold">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-400/20 border border-emerald-300/30">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(var(--visual-science)/0.25)] border border-[hsl(var(--visual-science)/0.4)]">
               <CheckCircle2
                 size={14}
                 strokeWidth={3}
-                className="text-emerald-300"
+                className="text-white"
                 aria-hidden="true"
               />
               {t("signup_free_trial")}
@@ -165,7 +166,7 @@ export default function SignupPage() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 flex flex-col bg-slate-50 min-h-screen"
+        className="flex-1 flex flex-col vi-bg min-h-screen"
       >
         <div className="flex items-center justify-between p-6 lg:p-8">
           <Link href="/" className="lg:hidden">
@@ -182,27 +183,27 @@ export default function SignupPage() {
         </div>
 
         <div className="flex-1 flex items-center justify-center px-6 pb-8">
-          <div className="w-full max-w-[440px]">
+          <div className="w-full max-w-[440px] vi-card p-8">
             <div className="mb-8">
               <div className="lg:hidden mb-6 flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(var(--visual-science)/0.12)] border border-[hsl(var(--visual-science)/0.3)] text-[hsl(var(--visual-science))] text-xs font-bold">
                   <CheckCircle2 size={14} strokeWidth={3} aria-hidden="true" />
                   {t("signup_free_trial")}
                 </span>
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold">
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full vi-surface-soft border vi-border vi-text-muted text-xs font-bold">
                   <CheckCircle2 size={14} strokeWidth={3} aria-hidden="true" />
                   {t("signup_no_credit_card")}
                 </span>
               </div>
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-purple-100 text-primary flex items-center justify-center shadow-sm shrink-0">
+                <div className="w-14 h-14 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center shrink-0">
                   <Sparkles size={28} strokeWidth={2.5} aria-hidden="true" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-heading font-bold text-slate-900 leading-tight">
+                  <h1 className="text-3xl font-heading font-bold vi-text leading-tight">
                     {t("create_account")}
                   </h1>
-                  <p className="text-slate-600 font-body mt-1.5">
+                  <p className="vi-text-muted font-body mt-1.5">
                     {t("signup_subtitle")}
                   </p>
                 </div>
@@ -213,9 +214,9 @@ export default function SignupPage() {
               <div
                 role="alert"
                 aria-live="assertive"
-                className="flex items-start gap-3 p-4 rounded-2xl bg-pink-50 border-2 border-pink-200 text-pink-800 text-sm font-bold mb-6"
+                className="flex items-start gap-3 p-4 rounded-2xl bg-[hsl(var(--visual-math)/0.08)] border-2 border-[hsl(var(--visual-math)/0.3)] text-[hsl(var(--visual-math))] text-sm font-bold mb-6"
               >
-                <span className="w-8 h-8 rounded-xl bg-white text-pink-600 flex items-center justify-center shrink-0 shadow-sm">
+                <span className="w-8 h-8 rounded-xl bg-white text-[hsl(var(--visual-math))] flex items-center justify-center shrink-0 shadow-sm">
                   <AlertCircle size={18} strokeWidth={2.5} aria-hidden="true" />
                 </span>
                 <span className="pt-1">{error}</span>
@@ -231,7 +232,7 @@ export default function SignupPage() {
                   {t("full_name")}
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-primary pointer-events-none">
+                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[hsl(var(--visual-primary))] pointer-events-none">
                     <User size={20} strokeWidth={2} aria-hidden="true" />
                   </span>
                   <input
@@ -241,7 +242,8 @@ export default function SignupPage() {
                     onChange={(e) => setName(e.target.value)}
                     required
                     autoComplete="name"
-                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body"
+                    style={{ minHeight: 44 }}
+                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
                     placeholder={t("name_placeholder")}
                   />
                 </div>
@@ -255,7 +257,7 @@ export default function SignupPage() {
                   {t("email")}
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-primary pointer-events-none">
+                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[hsl(var(--visual-primary))] pointer-events-none">
                     <Mail size={20} strokeWidth={2} aria-hidden="true" />
                   </span>
                   <input
@@ -265,7 +267,8 @@ export default function SignupPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     autoComplete="email"
-                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body"
+                    style={{ minHeight: 44 }}
+                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
                     placeholder="parent@example.com"
                   />
                 </div>
@@ -279,7 +282,7 @@ export default function SignupPage() {
                   {t("password")}
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-primary pointer-events-none">
+                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[hsl(var(--visual-primary))] pointer-events-none">
                     <Lock size={20} strokeWidth={2} aria-hidden="true" />
                   </span>
                   <input
@@ -290,13 +293,14 @@ export default function SignupPage() {
                     required
                     minLength={8}
                     autoComplete="new-password"
-                    className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-white border-2 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body"
+                    style={{ minHeight: 44 }}
+                    className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
                     placeholder="Min. 8 characters"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-primary transition"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center vi-text-muted hover:text-[hsl(var(--visual-primary))] transition"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
@@ -306,7 +310,7 @@ export default function SignupPage() {
                     )}
                   </button>
                 </div>
-                <p className="text-xs text-slate-500 mt-2 font-body font-semibold">
+                <p className="text-xs vi-text-muted mt-2 font-body font-semibold">
                   {t("password_hint")}
                 </p>
               </div>
@@ -315,7 +319,8 @@ export default function SignupPage() {
                 type="submit"
                 disabled={loading}
                 aria-busy={loading}
-                className="w-full py-4 rounded-2xl bg-primary text-white font-heading font-black text-base uppercase tracking-wider hover:bg-primary-dark active:bg-primary-dark transition-all shadow-lg shadow-purple-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ minHeight: 44 }}
+                className="w-full py-4 rounded-2xl bg-[hsl(var(--visual-primary))] text-white font-heading font-black text-base uppercase tracking-wider hover:bg-[hsl(var(--visual-primary)/0.9)] active:bg-[hsl(var(--visual-primary)/0.9)] transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -333,29 +338,29 @@ export default function SignupPage() {
               </button>
             </form>
 
-            <p className="text-xs text-slate-500 text-center mt-4 font-body font-semibold leading-relaxed">
+            <p className="text-xs vi-text-muted text-center mt-4 font-body font-semibold leading-relaxed">
               {t("agree_terms_prefix")}{" "}
               <Link
                 href="/terms-of-service"
-                className="text-primary hover:text-primary-dark transition font-bold hover:underline"
+                className="text-[hsl(var(--visual-primary))] hover:underline transition font-bold"
               >
                 {t("terms")}
               </Link>{" "}
               {t("and")}{" "}
               <Link
                 href="/privacy-policy"
-                className="text-primary hover:text-primary-dark transition font-bold hover:underline"
+                className="text-[hsl(var(--visual-primary))] hover:underline transition font-bold"
               >
                 {t("privacy")}
               </Link>
             </p>
 
-            <div className="mt-8 pt-6 border-t-2 border-slate-100 text-center">
-              <p className="text-sm text-slate-600 font-body">
+            <div className="mt-8 pt-6 border-t-2 vi-border text-center">
+              <p className="text-sm vi-text-muted font-body">
                 {t("have_account")}{" "}
                 <Link
                   href="/login"
-                  className="text-primary font-bold hover:text-primary-dark transition hover:underline"
+                  className="text-[hsl(var(--visual-primary))] font-bold hover:underline transition"
                 >
                   {t("sign_in")}
                 </Link>
@@ -364,24 +369,24 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-6 pb-6 text-xs text-slate-500 font-body font-semibold">
+        <div className="flex items-center justify-center gap-6 pb-6 text-xs vi-text-muted font-body font-semibold">
           <Link
             href="/privacy-policy"
-            className="hover:text-primary transition"
+            className="hover:text-[hsl(var(--visual-primary))] transition"
           >
             {t("privacy")}
           </Link>
           <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
           <Link
             href="/terms-of-service"
-            className="hover:text-primary transition"
+            className="hover:text-[hsl(var(--visual-primary))] transition"
           >
             {t("terms")}
           </Link>
           <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
           <Link
             href="/coppa-compliance"
-            className="hover:text-primary transition"
+            className="hover:text-[hsl(var(--visual-primary))] transition"
           >
             COPPA
           </Link>

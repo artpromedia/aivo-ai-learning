@@ -8,6 +8,8 @@ import { TUTORS, type TutorKey } from "@aivo/brand";
 import BrainSphere from "@/components/brain/BrainSphere";
 import BrainBuildingSequence from "@/components/brain/BrainBuildingSequence";
 import { useTranslations } from "next-intl";
+import { Brain, CheckCircle2, RefreshCw, RotateCcw, Compass, Search, BarChart3, Shield, GraduationCap, ClipboardList, Lock, Users2, BookOpen, Microscope, Landmark, Code2, MessageCircle, Heart, Puzzle, Home, Target, Palette, Wrench, Dna } from "lucide-react";
+import { IconWell } from "@/components/discovery/_vi";
 
 interface MasteryDecision {
   domain: string;
@@ -443,10 +445,10 @@ export default function BrainReviewPage() {
 
   if (pageMode === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen vi-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="text-5xl mb-4 animate-pulse">🧠</div>
-          <p className="text-slate-500 font-heading font-bold">{t("loading_brain_review")}</p>
+          <div className="flex justify-center mb-4 animate-pulse"><IconWell color="primary" size="lg"><Brain className="w-10 h-10" /></IconWell></div>
+          <p className="vi-text-muted font-heading font-bold">{t("loading_brain_review")}</p>
         </div>
       </div>
     );
@@ -454,20 +456,23 @@ export default function BrainReviewPage() {
 
   if (actionResult) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg text-center border border-slate-100">
-          <div className="text-6xl mb-4">
-            {actionResult.type === "approved" ? "✅" : actionResult.type === "rebuilt" ? "🔄" : "🔃"}
+      <div className="min-h-screen vi-bg flex items-center justify-center px-4">
+        <div className="vi-card p-8 max-w-lg text-center shadow-xl">
+          <div className="flex justify-center mb-4">
+            <IconWell color={actionResult.type === "approved" ? "science" : actionResult.type === "rebuilt" ? "reading" : "primary"} size="lg">
+              {actionResult.type === "approved" ? <CheckCircle2 className="w-10 h-10" /> : actionResult.type === "rebuilt" ? <RefreshCw className="w-10 h-10" /> : <RotateCcw className="w-10 h-10" />}
+            </IconWell>
           </div>
-          <h2 className="text-2xl font-heading font-bold text-slate-900 mb-3">
+          <h2 className="text-2xl font-heading font-bold vi-text mb-3">
             {actionResult.type === "approved" ? "Brain Approved!" : actionResult.type === "rebuilt" ? "Brain Rebuilding" : "Starting Over"}
           </h2>
-          <p className="text-slate-600 font-body mb-6">{actionResult.message}</p>
+          <p className="vi-text-muted font-body mb-6">{actionResult.message}</p>
           <Link
             href={actionResult.type === "start_over"
               ? `/dashboard/learner/assessment?learnerId=${learnerId}`
               : `/dashboard/parent/learner/${learnerId}`}
-            className="inline-block px-6 py-3 bg-gradient-to-r from-primary to-purple-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition"
+            style={{ minHeight: 44 }}
+            className="inline-block px-6 py-3 bg-[hsl(var(--visual-primary))] text-white font-heading font-bold rounded-xl hover:bg-[hsl(var(--visual-primary)/0.9)] transition"
           >
             {actionResult.type === "start_over" ? "Start New Assessment" : "View Learner Dashboard"}
           </Link>
@@ -480,29 +485,31 @@ export default function BrainReviewPage() {
     if (preCloneData && !preCloneData.baseline_assessment) {
       const learnerName = preCloneData.learner?.name || "your child";
       return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-3xl p-10 shadow-xl border border-slate-100 text-center max-w-lg space-y-6">
-            <div className="text-6xl">🧭</div>
-            <h1 className="text-2xl font-heading font-bold text-slate-900">Baseline Adventure Needed</h1>
-            <p className="text-slate-500">
+        <div className="min-h-screen vi-bg flex items-center justify-center px-4">
+          <div className="vi-card p-10 shadow-xl text-center max-w-lg space-y-6">
+            <div className="flex justify-center"><IconWell color="sel" size="lg"><Compass className="w-10 h-10" /></IconWell></div>
+            <h1 className="text-2xl font-heading font-bold vi-text">Baseline Adventure Needed</h1>
+            <p className="vi-text-muted">
               Before we can build {learnerName}&apos;s personalized Brain, they need to complete the Discovery Adventure so we can learn how they learn best.
             </p>
-            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-left">
-              <p className="text-sm font-bold text-amber-700 mb-1">Why this is required</p>
-              <p className="text-xs text-amber-600">
+            <div className="p-4 rounded-2xl bg-[hsl(var(--visual-sel)/0.12)] border border-[hsl(var(--visual-sel)/0.3)] text-left">
+              <p className="text-sm font-bold text-[hsl(var(--visual-sel))] mb-1">Why this is required</p>
+              <p className="text-xs text-[hsl(var(--visual-sel))]">
                 The Brain is built from real interaction data — reading, math, pattern recognition, and response timing — gathered during the adventure. Without it, there&apos;s nothing to personalize.
               </p>
             </div>
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => router.push(`/dashboard/learner/assessment?learnerId=${learnerId}`)}
-                className="px-8 py-3 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold hover:from-amber-500 hover:to-orange-600 transition shadow-lg shadow-amber-200"
+                style={{ minHeight: 44 }}
+                className="px-8 py-3 rounded-full bg-[hsl(var(--visual-sel))] text-white font-bold hover:bg-[hsl(var(--visual-sel)/0.9)] transition shadow-lg"
               >
                 Start Discovery Adventure
               </button>
               <button
                 onClick={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
-                className="px-8 py-3 rounded-full bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition"
+                style={{ minHeight: 44 }}
+                className="px-8 py-3 rounded-full vi-surface-soft border vi-border vi-text-muted font-bold hover:bg-[hsl(var(--visual-surface))] transition"
               >
                 Back to Profile
               </button>
@@ -530,7 +537,7 @@ export default function BrainReviewPage() {
             <div className="absolute inset-0 rounded-full border-2 border-dashed border-purple-400/40 animate-spin" style={{ animationDuration: "20s" }} />
             <div className="absolute inset-4 rounded-full border border-dashed border-cyan-400/30 animate-spin" style={{ animationDuration: "15s", animationDirection: "reverse" }} />
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-6xl animate-pulse">🧠</div>
+              <Brain className="w-16 h-16 text-purple-300 animate-pulse" />
             </div>
           </div>
           <h2 className="font-heading font-bold text-xl mb-2">Building the Brain...</h2>
@@ -562,11 +569,11 @@ export default function BrainReviewPage() {
 
   if (!review) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen vi-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="text-5xl mb-4">🔍</div>
-          <p className="text-slate-500 font-heading font-bold">{t("no_brain_found")}</p>
-          <Link href={`/dashboard/parent/learner/${learnerId}`} className="text-primary font-semibold hover:underline mt-4 inline-block">{t("back_to_profile")}</Link>
+          <div className="flex justify-center mb-4"><IconWell color="primary"><Search className="w-7 h-7" /></IconWell></div>
+          <p className="vi-text-muted font-heading font-bold">{t("no_brain_found")}</p>
+          <Link href={`/dashboard/parent/learner/${learnerId}`} className="text-[hsl(var(--visual-primary))] font-semibold hover:underline mt-4 inline-block">{t("back_to_profile")}</Link>
         </div>
       </div>
     );
@@ -577,41 +584,41 @@ export default function BrainReviewPage() {
   const modCount = buildModificationsArray().length;
 
   const TABS = [
-    { key: "overview" as const, label: tBrain("overview"), emoji: "🧠" },
-    { key: "mastery" as const, label: tBrain("learning_levels"), emoji: "📊" },
-    { key: "accommodations" as const, label: tBrain("supports"), emoji: "🛡️" },
-    { key: "tutors" as const, label: tBrain("ai_tutors"), emoji: "👩‍🏫" },
-    { key: "signals" as const, label: tBrain("learner_profile"), emoji: "📋" },
-    { key: "rai" as const, label: tBrain("ai_safety"), emoji: "🔒" },
+    { key: "overview" as const, label: tBrain("overview"), icon: <Brain className="w-4 h-4" /> },
+    { key: "mastery" as const, label: tBrain("learning_levels"), icon: <BarChart3 className="w-4 h-4" /> },
+    { key: "accommodations" as const, label: tBrain("supports"), icon: <Shield className="w-4 h-4" /> },
+    { key: "tutors" as const, label: tBrain("ai_tutors"), icon: <GraduationCap className="w-4 h-4" /> },
+    { key: "signals" as const, label: tBrain("learner_profile"), icon: <ClipboardList className="w-4 h-4" /> },
+    { key: "rai" as const, label: tBrain("ai_safety"), icon: <Lock className="w-4 h-4" /> },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
-      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen vi-bg">
+      <header className="bg-[hsl(var(--visual-surface)/0.95)] backdrop-blur border-b vi-border px-6 py-4 flex items-center justify-between">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         <div className="flex items-center gap-4">
-          <Link href={`/dashboard/parent/learner/${learnerId}`} className="text-sm text-primary font-semibold hover:underline">{t("back_to_profile")}</Link>
-          <span className="text-sm font-semibold text-slate-600">{user.name}</span>
+          <Link href={`/dashboard/parent/learner/${learnerId}`} className="text-sm text-[hsl(var(--visual-primary))] font-semibold hover:underline">{t("back_to_profile")}</Link>
+          <span className="text-sm font-semibold vi-text-muted">{user.name}</span>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
+        <div className="vi-card p-6 mb-6">
           <div className="flex items-center gap-4 mb-4">
             <BrainSphere visualIdentity={review.visual_identity} size={64} />
             <div className="flex-1">
-              <h1 className="text-2xl font-heading font-bold text-slate-900">
+              <h1 className="text-2xl font-heading font-bold vi-text">
                 {review.learner_name}&apos;s {tBrain("title")}
               </h1>
-              <p className="text-slate-500 font-body">
+              <p className="vi-text-muted font-body">
                 {isAlreadyResolved ? "Review your child's personalized learning Brain." : "Review the AI's recommendations. Adjust anything, then approve to activate learning."}
               </p>
             </div>
             {isAlreadyResolved && (
               <span className={`px-4 py-2 rounded-full text-sm font-bold ${
-                review.approval_status === "approved" ? "bg-green-100 text-green-700" :
-                review.approval_status === "amended" ? "bg-blue-100 text-blue-700" :
-                "bg-red-100 text-red-700"
+                review.approval_status === "approved" ? "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]" :
+                review.approval_status === "amended" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" :
+                "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]"
               }`}>
                 {review.approval_status.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
               </span>
@@ -619,8 +626,8 @@ export default function BrainReviewPage() {
           </div>
 
           {!isAlreadyResolved && modCount > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
-              <p className="text-sm text-amber-700 font-semibold">
+            <div className="bg-[hsl(var(--visual-sel)/0.12)] border border-[hsl(var(--visual-sel)/0.3)] rounded-xl p-3 mb-4">
+              <p className="text-sm text-[hsl(var(--visual-sel))] font-semibold">
                 You have {modCount} modification{modCount !== 1 ? "s" : ""} pending. These will be applied when you approve.
               </p>
             </div>
@@ -632,15 +639,15 @@ export default function BrainReviewPage() {
             return (
               <div className="space-y-3">
                 {strengths.length > 0 && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-                    <p className="text-sm font-semibold text-emerald-700 mb-1">
+                  <div className="bg-[hsl(var(--visual-science)/0.12)] border border-[hsl(var(--visual-science)/0.3)] rounded-xl p-4">
+                    <p className="text-sm font-semibold text-[hsl(var(--visual-science))] mb-1">
                       Strong engagement in {strengths.map(s => s.display_label.toLowerCase()).join(" and ")}!
                     </p>
                   </div>
                 )}
                 {growth.length > 0 && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                    <p className="text-sm text-amber-700">
+                  <div className="bg-[hsl(var(--visual-sel)/0.12)] border border-[hsl(var(--visual-sel)/0.3)] rounded-xl p-4">
+                    <p className="text-sm text-[hsl(var(--visual-sel))]">
                       Growth opportunities in {growth.map(g => g.display_label.toLowerCase()).join(" and ")} — content will start at their current level and build up.
                     </p>
                   </div>
@@ -655,13 +662,14 @@ export default function BrainReviewPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
+              style={{ minHeight: 44 }}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-heading font-bold whitespace-nowrap transition ${
                 activeTab === tab.key
-                  ? "bg-primary text-white shadow-md"
-                  : "bg-white text-slate-600 border border-slate-200 hover:border-purple-300"
+                  ? "bg-[hsl(var(--visual-primary))] text-white shadow-md"
+                  : "bg-[hsl(var(--visual-surface))] vi-text-muted border vi-border hover:border-[hsl(var(--visual-primary)/0.3)]"
               }`}
             >
-              <span>{tab.emoji}</span>
+              {tab.icon}
               {tab.label}
             </button>
           ))}
@@ -670,32 +678,32 @@ export default function BrainReviewPage() {
         <div className="space-y-4 mb-8">
           {activeTab === "overview" && (
             <>
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                <h2 className="font-heading font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">📊</span> Mastery Snapshot
+              <div className="vi-card p-6">
+                <h2 className="font-heading font-bold text-lg vi-text mb-4 flex items-center gap-3">
+                  <IconWell color="primary" size="sm"><BarChart3 className="w-5 h-5" /></IconWell> Mastery Snapshot
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {xai?.mastery_decisions?.map((m) => {
                     const overridden = masteryOverrides[m.domain] !== undefined && Math.abs(masteryOverrides[m.domain] - m.score) > 0.01;
                     const displayScore = masteryOverrides[m.domain] ?? m.score;
                     return (
-                      <div key={m.domain} className={`relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-50 to-white border p-4 ${overridden ? "border-amber-300 ring-1 ring-amber-200" : "border-slate-100"}`}>
+                      <div key={m.domain} className={`relative overflow-hidden rounded-xl vi-surface-soft border p-4 ${overridden ? "border-[hsl(var(--visual-sel)/0.5)] ring-1 ring-[hsl(var(--visual-sel)/0.3)]" : "vi-border"}`}>
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-xl">{MASTERY_EMOJIS[m.domain] || "📚"}</span>
-                          <span className="font-heading font-bold text-sm text-slate-700">{m.display_label}</span>
+                          <span className="font-heading font-bold text-sm text-slate-800">{m.display_label}</span>
                         </div>
-                        <div className="text-2xl font-heading font-bold text-slate-900 mb-1">
+                        <div className="text-2xl font-heading font-bold vi-text mb-1">
                           {Math.round(displayScore * 100)}%
-                          {overridden && <span className="text-xs text-amber-600 ml-1">(modified)</span>}
+                          {overridden && <span className="text-xs text-[hsl(var(--visual-sel))] ml-1">(modified)</span>}
                         </div>
-                        <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                        <div className="w-full bg-[hsl(var(--visual-surface-soft))] rounded-full h-2.5 overflow-hidden">
                           <div
                             className={`h-full rounded-full bg-gradient-to-r ${MASTERY_COLORS[m.domain] || "from-purple-500 to-purple-600"} transition-all duration-1000`}
                             style={{ width: `${Math.max(4, displayScore * 100)}%` }}
                           />
                         </div>
                         {m.source && (
-                          <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${SOURCE_BADGES[m.source]?.color || "bg-slate-100 text-slate-500"}`}>
+                          <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${SOURCE_BADGES[m.source]?.color || "vi-surface-soft vi-text-muted"}`}>
                             {SOURCE_BADGES[m.source]?.label || m.source}
                           </span>
                         )}
@@ -706,40 +714,40 @@ export default function BrainReviewPage() {
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                  <h3 className="font-heading font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    <span className="text-xl">👩‍🏫</span> Active Tutors
+                <div className="vi-card p-6">
+                  <h3 className="font-heading font-bold vi-text mb-3 flex items-center gap-3">
+                    <IconWell color="primary" size="sm"><GraduationCap className="w-5 h-5" /></IconWell> Active Tutors
                   </h3>
                   <div className="flex flex-wrap gap-3">
                     {Object.entries(tutorToggles).filter(([, v]) => v).map(([key]) => {
                       const tutor = TUTORS[key as TutorKey];
                       if (!tutor) return null;
                       return (
-                        <div key={key} className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2">
+                        <div key={key} className="flex items-center gap-2 vi-surface-soft rounded-xl px-3 py-2">
                           <div className="w-8 h-8 rounded-full overflow-hidden border-2" style={{ borderColor: tutor.color }}>
                             <Image src={tutor.avatar} alt={tutor.name} width={32} height={32} className="object-cover" />
                           </div>
-                          <span className="text-sm font-heading font-bold text-slate-700">{tutor.name}</span>
+                          <span className="text-sm font-heading font-bold text-slate-800">{tutor.name}</span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                  <h3 className="font-heading font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    <span className="text-xl">🛡️</span> Active Supports
+                <div className="vi-card p-6">
+                  <h3 className="font-heading font-bold vi-text mb-3 flex items-center gap-3">
+                    <IconWell color="science" size="sm"><Shield className="w-5 h-5" /></IconWell> Active Supports
                   </h3>
                   {Object.entries(accommodationToggles).filter(([, v]) => v).length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {Object.entries(accommodationToggles).filter(([, v]) => v).map(([acc]) => (
-                        <span key={acc} className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm font-semibold border border-green-100">
+                        <span key={acc} className="px-3 py-1.5 bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] rounded-lg text-sm font-semibold border border-[hsl(var(--visual-science)/0.3)]">
                           {acc.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-400">No accommodations active</p>
+                    <p className="text-sm vi-text-muted">No accommodations active</p>
                   )}
                 </div>
               </div>
@@ -747,11 +755,11 @@ export default function BrainReviewPage() {
           )}
 
           {activeTab === "mastery" && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-2 flex items-center gap-2">
-                <span className="text-2xl">📊</span> Learning Levels
+            <div className="vi-card p-6">
+              <h2 className="font-heading font-bold text-lg vi-text mb-2 flex items-center gap-3">
+                <IconWell color="primary" size="sm"><BarChart3 className="w-5 h-5" /></IconWell> Learning Levels
               </h2>
-              <p className="text-sm text-slate-500 mb-6">
+              <p className="text-sm vi-text-muted mb-6">
                 {isAlreadyResolved
                   ? "These are the current mastery levels for each learning domain."
                   : "Review and adjust mastery levels. Drag the slider to change the starting level for any domain."}
@@ -761,21 +769,21 @@ export default function BrainReviewPage() {
                   const currentVal = masteryOverrides[m.domain] ?? m.score;
                   const isModified = Math.abs(currentVal - m.score) > 0.01;
                   return (
-                    <div key={m.domain} className={`border rounded-xl p-4 transition ${isModified ? "border-amber-300 bg-amber-50/30" : "border-slate-100 hover:bg-slate-50"}`}>
+                    <div key={m.domain} className={`border rounded-xl p-4 transition ${isModified ? "border-[hsl(var(--visual-sel)/0.5)] bg-[hsl(var(--visual-sel)/0.06)]" : "vi-border hover:bg-[hsl(var(--visual-surface-soft))]"}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
                           <span className="text-2xl">{MASTERY_EMOJIS[m.domain] || "📚"}</span>
                           <div>
-                            <p className="font-heading font-bold text-slate-900">{m.display_label}</p>
+                            <p className="font-heading font-bold vi-text">{m.display_label}</p>
                             {m.raw_score && (
-                              <p className="text-xs text-slate-400">Raw: {m.raw_score}{m.difficulty ? ` (${m.difficulty})` : ""}</p>
+                              <p className="text-xs vi-text-muted">Raw: {m.raw_score}{m.difficulty ? ` (${m.difficulty})` : ""}</p>
                             )}
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-2xl font-heading font-bold text-slate-900">{Math.round(currentVal * 100)}%</p>
-                          {isModified && <p className="text-xs text-amber-600 font-semibold">was {Math.round(m.score * 100)}%</p>}
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${SOURCE_BADGES[m.source]?.color || "bg-slate-100 text-slate-500"}`}>
+                          <p className="text-2xl font-heading font-bold vi-text">{Math.round(currentVal * 100)}%</p>
+                          {isModified && <p className="text-xs text-[hsl(var(--visual-sel))] font-semibold">was {Math.round(m.score * 100)}%</p>}
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${SOURCE_BADGES[m.source]?.color || "vi-surface-soft vi-text-muted"}`}>
                             {SOURCE_BADGES[m.source]?.label || m.source}
                           </span>
                         </div>
@@ -791,9 +799,9 @@ export default function BrainReviewPage() {
                             onChange={(e) => {
                               setMasteryOverrides(prev => ({ ...prev, [m.domain]: parseInt(e.target.value) / 100 }));
                             }}
-                            className="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-purple-600"
+                            className="w-full h-2 bg-[hsl(var(--visual-surface-soft))] rounded-full appearance-none cursor-pointer accent-[hsl(var(--visual-primary))]"
                           />
-                          <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                          <div className="flex justify-between text-[10px] vi-text-muted mt-1">
                             <span>0%</span>
                             <span>50%</span>
                             <span>100%</span>
@@ -801,15 +809,15 @@ export default function BrainReviewPage() {
                         </div>
                       )}
 
-                      <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden mt-2 mb-2">
+                      <div className="w-full bg-[hsl(var(--visual-surface-soft))] rounded-full h-3 overflow-hidden mt-2 mb-2">
                         <div
                           className={`h-full rounded-full bg-gradient-to-r ${MASTERY_COLORS[m.domain] || "from-purple-500 to-purple-600"}`}
                           style={{ width: `${Math.max(4, currentVal * 100)}%` }}
                         />
                       </div>
 
-                      <p className="text-sm text-slate-600 bg-slate-50 rounded-lg p-3 leading-relaxed">
-                        <span className="font-semibold text-slate-700">Why this score: </span>
+                      <p className="text-sm vi-text-muted vi-surface-soft rounded-lg p-3 leading-relaxed">
+                        <span className="font-semibold text-slate-800">Why this score: </span>
                         {m.reasoning}
                       </p>
 
@@ -820,7 +828,7 @@ export default function BrainReviewPage() {
                             placeholder="Add a note about this change (optional)"
                             value={modNotes[`mastery.${m.domain}`] || ""}
                             onChange={(e) => setModNotes(prev => ({ ...prev, [`mastery.${m.domain}`]: e.target.value }))}
-                            className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-amber-50/50 font-body"
+                            className="w-full border border-[hsl(var(--visual-sel)/0.3)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--visual-sel)/0.3)] bg-[hsl(var(--visual-sel)/0.06)] font-body"
                           />
                         </div>
                       )}
@@ -832,11 +840,11 @@ export default function BrainReviewPage() {
           )}
 
           {activeTab === "accommodations" && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-2 flex items-center gap-2">
-                <span className="text-2xl">🛡️</span> Learning Supports
+            <div className="vi-card p-6">
+              <h2 className="font-heading font-bold text-lg vi-text mb-2 flex items-center gap-3">
+                <IconWell color="science" size="sm"><Shield className="w-5 h-5" /></IconWell> Learning Supports
               </h2>
-              <p className="text-sm text-slate-500 mb-6">
+              <p className="text-sm vi-text-muted mb-6">
                 {isAlreadyResolved
                   ? "These supports are currently active for every lesson and activity."
                   : "Toggle supports on or off. These will be applied to every lesson automatically."}
@@ -844,37 +852,37 @@ export default function BrainReviewPage() {
 
               {xai?.accommodation_decisions?.length > 0 && (
                 <div className="space-y-3 mb-6">
-                  <h3 className="text-sm font-heading font-bold text-slate-700">AI-Recommended Supports</h3>
+                  <h3 className="text-sm font-heading font-bold text-slate-800">AI-Recommended Supports</h3>
                   {xai.accommodation_decisions.map((a) => {
                     const isOn = accommodationToggles[a.accommodation] ?? true;
                     const wasOn = (review.active_accommodations || []).includes(a.accommodation);
                     const isModified = isOn !== wasOn;
                     return (
-                      <div key={a.accommodation} className={`border rounded-xl p-4 transition ${isModified ? "border-amber-300 bg-amber-50/30" : "border-slate-100 hover:bg-green-50/50"}`}>
+                      <div key={a.accommodation} className={`border rounded-xl p-4 transition ${isModified ? "border-[hsl(var(--visual-sel)/0.5)] bg-[hsl(var(--visual-sel)/0.06)]" : "vi-border hover:bg-[hsl(var(--visual-science)/0.06)]"}`}>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="font-heading font-bold text-slate-900">{a.display_label}</p>
+                          <p className="font-heading font-bold vi-text">{a.display_label}</p>
                           <div className="flex items-center gap-3">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${SOURCE_BADGES[a.source]?.color || "bg-slate-100 text-slate-500"}`}>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${SOURCE_BADGES[a.source]?.color || "vi-surface-soft vi-text-muted"}`}>
                               {SOURCE_BADGES[a.source]?.label || a.source}
                             </span>
                             {!isAlreadyResolved && (
                               <button
                                 onClick={() => setAccommodationToggles(prev => ({ ...prev, [a.accommodation]: !isOn }))}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isOn ? "bg-emerald-500" : "bg-slate-300"}`}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isOn ? "bg-[hsl(var(--visual-science))]" : "bg-slate-300"}`}
                               >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isOn ? "translate-x-6" : "translate-x-1"}`} />
                               </button>
                             )}
                           </div>
                         </div>
-                        <p className="text-sm text-slate-600 leading-relaxed">{a.reasoning}</p>
+                        <p className="text-sm vi-text-muted leading-relaxed">{a.reasoning}</p>
                         {!isAlreadyResolved && isModified && (
                           <input
                             type="text"
                             placeholder="Add a note (optional)"
                             value={modNotes[`acc.${a.accommodation}`] || ""}
                             onChange={(e) => setModNotes(prev => ({ ...prev, [`acc.${a.accommodation}`]: e.target.value }))}
-                            className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-amber-50/50 font-body"
+                            className="mt-2 w-full border border-[hsl(var(--visual-sel)/0.3)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--visual-sel)/0.3)] bg-[hsl(var(--visual-sel)/0.06)] font-body"
                           />
                         )}
                       </div>
@@ -885,7 +893,7 @@ export default function BrainReviewPage() {
 
               {!isAlreadyResolved && (
                 <div>
-                  <h3 className="text-sm font-heading font-bold text-slate-700 mb-3">Add More Supports</h3>
+                  <h3 className="text-sm font-heading font-bold text-slate-800 mb-3">Add More Supports</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {AVAILABLE_ACCOMMODATIONS
                       .filter(acc => !xai?.accommodation_decisions?.find(a => a.accommodation === acc))
@@ -897,8 +905,8 @@ export default function BrainReviewPage() {
                             onClick={() => setAccommodationToggles(prev => ({ ...prev, [acc]: !isOn }))}
                             className={`text-left px-3 py-2 rounded-lg text-sm font-semibold border transition ${
                               isOn
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-white text-slate-500 border-slate-200 hover:border-emerald-300"
+                                ? "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] border-[hsl(var(--visual-science)/0.3)]"
+                                : "bg-[hsl(var(--visual-surface))] vi-text-muted vi-border hover:border-[hsl(var(--visual-science)/0.3)]"
                             }`}
                           >
                             <span className="mr-1">{isOn ? "✓" : "+"}</span>
@@ -913,11 +921,11 @@ export default function BrainReviewPage() {
           )}
 
           {activeTab === "tutors" && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-2 flex items-center gap-2">
-                <span className="text-2xl">👩‍🏫</span> AI Tutors
+            <div className="vi-card p-6">
+              <h2 className="font-heading font-bold text-lg vi-text mb-2 flex items-center gap-3">
+                <IconWell color="primary" size="sm"><GraduationCap className="w-5 h-5" /></IconWell> AI Tutors
               </h2>
-              <p className="text-sm text-slate-500 mb-6">
+              <p className="text-sm vi-text-muted mb-6">
                 {isAlreadyResolved
                   ? "These tutors are assigned to your child."
                   : "Toggle tutors on or off. Each tutor specializes in a different subject area."}
@@ -929,36 +937,36 @@ export default function BrainReviewPage() {
                   const wasOn = (review.active_tutors || []).includes(td.tutor_key);
                   const isModified = isOn !== wasOn;
                   return (
-                    <div key={td.tutor_key} className={`border rounded-xl p-4 transition flex items-center gap-4 ${isModified ? "border-amber-300 bg-amber-50/30" : "border-slate-100 hover:bg-purple-50/50"}`}>
+                    <div key={td.tutor_key} className={`border rounded-xl p-4 transition flex items-center gap-4 ${isModified ? "border-[hsl(var(--visual-sel)/0.5)] bg-[hsl(var(--visual-sel)/0.06)]" : "vi-border hover:bg-[hsl(var(--visual-primary)/0.06)]"}`}>
                       {tutor ? (
                         <div className="w-14 h-14 rounded-full overflow-hidden border-3 shadow-md flex-shrink-0" style={{ borderColor: tutor.color }}>
                           <Image src={tutor.avatar} alt={tutor.name} width={56} height={56} className="object-cover" />
                         </div>
                       ) : (
-                        <div className="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center text-2xl flex-shrink-0">🤖</div>
+                        <div className="w-14 h-14 rounded-full bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center flex-shrink-0"><GraduationCap className="w-7 h-7" /></div>
                       )}
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <p className="font-heading font-bold text-slate-900">{tutor?.name || td.tutor_key}</p>
+                          <p className="font-heading font-bold vi-text">{tutor?.name || td.tutor_key}</p>
                           {tutor?.domain && (
-                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">{tutor.domain}</span>
+                            <span className="text-xs bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] px-2 py-0.5 rounded-full font-semibold">{tutor.domain}</span>
                           )}
                         </div>
-                        <p className="text-sm text-slate-600">{td.reasoning}</p>
+                        <p className="text-sm vi-text-muted">{td.reasoning}</p>
                         {!isAlreadyResolved && isModified && (
                           <input
                             type="text"
                             placeholder="Add a note (optional)"
                             value={modNotes[`tutor.${td.tutor_key}`] || ""}
                             onChange={(e) => setModNotes(prev => ({ ...prev, [`tutor.${td.tutor_key}`]: e.target.value }))}
-                            className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-amber-50/50 font-body"
+                            className="mt-2 w-full border border-[hsl(var(--visual-sel)/0.3)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--visual-sel)/0.3)] bg-[hsl(var(--visual-sel)/0.06)] font-body"
                           />
                         )}
                       </div>
                       {!isAlreadyResolved && (
                         <button
                           onClick={() => setTutorToggles(prev => ({ ...prev, [td.tutor_key]: !isOn }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${isOn ? "bg-purple-500" : "bg-slate-300"}`}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${isOn ? "bg-[hsl(var(--visual-primary))]" : "bg-slate-300"}`}
                         >
                           <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isOn ? "translate-x-6" : "translate-x-1"}`} />
                         </button>
@@ -971,28 +979,28 @@ export default function BrainReviewPage() {
           )}
 
           {activeTab === "signals" && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-2 flex items-center gap-2">
-                <span className="text-2xl">📋</span> Learner Profile
+            <div className="vi-card p-6">
+              <h2 className="font-heading font-bold text-lg vi-text mb-2 flex items-center gap-3">
+                <IconWell color="reading" size="sm"><ClipboardList className="w-5 h-5" /></IconWell> Learner Profile
               </h2>
-              <p className="text-sm text-slate-500 mb-6">Signals detected from assessments that inform the Brain&apos;s decisions.</p>
+              <p className="text-sm vi-text-muted mb-6">Signals detected from assessments that inform the Brain&apos;s decisions.</p>
               {xai?.signal_decisions?.length > 0 ? (
                 <div className="space-y-3">
                   {xai.signal_decisions.map((s) => (
-                    <div key={s.signal} className="border border-slate-100 rounded-xl p-4">
+                    <div key={s.signal} className="border vi-border rounded-xl p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="font-heading font-bold text-slate-900">{s.display_label}</p>
-                        <span className="text-sm font-semibold text-purple-600 bg-purple-50 px-3 py-1 rounded-full">{s.value}</span>
+                        <p className="font-heading font-bold vi-text">{s.display_label}</p>
+                        <span className="text-sm font-semibold text-[hsl(var(--visual-primary))] bg-[hsl(var(--visual-primary)/0.12)] px-3 py-1 rounded-full">{s.value}</span>
                       </div>
-                      <p className="text-sm text-slate-600 leading-relaxed">{s.reasoning}</p>
+                      <p className="text-sm vi-text-muted leading-relaxed">{s.reasoning}</p>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <div className="text-4xl mb-3">✅</div>
-                  <p className="text-slate-500 font-semibold">Standard learner profile</p>
-                  <p className="text-xs text-slate-400 mt-1">No additional signals detected.</p>
+                  <div className="flex justify-center mb-3"><IconWell color="science"><CheckCircle2 className="w-7 h-7" /></IconWell></div>
+                  <p className="vi-text-muted font-semibold">Standard learner profile</p>
+                  <p className="text-xs vi-text-muted mt-1">No additional signals detected.</p>
                 </div>
               )}
             </div>
@@ -1000,39 +1008,39 @@ export default function BrainReviewPage() {
 
           {activeTab === "rai" && (
             <div className="space-y-4">
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                <h2 className="font-heading font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">🔒</span> AI Safety & Transparency
+              <div className="vi-card p-6">
+                <h2 className="font-heading font-bold text-lg vi-text mb-4 flex items-center gap-3">
+                  <IconWell color="primary" size="sm"><Lock className="w-5 h-5" /></IconWell> AI Safety & Transparency
                 </h2>
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4">
-                  <p className="text-sm font-semibold text-emerald-700 mb-1">Transparency</p>
-                  <p className="text-sm text-emerald-600">{xai?.rai_compliance?.transparency}</p>
+                <div className="bg-[hsl(var(--visual-science)/0.12)] border border-[hsl(var(--visual-science)/0.3)] rounded-xl p-4 mb-4">
+                  <p className="text-sm font-semibold text-[hsl(var(--visual-science))] mb-1">Transparency</p>
+                  <p className="text-sm text-[hsl(var(--visual-science))]">{xai?.rai_compliance?.transparency}</p>
                 </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                  <p className="text-sm font-semibold text-blue-700 mb-1">Human Oversight</p>
-                  <p className="text-sm text-blue-600">{xai?.rai_compliance?.human_oversight}</p>
+                <div className="bg-[hsl(var(--visual-reading)/0.12)] border border-[hsl(var(--visual-reading)/0.3)] rounded-xl p-4">
+                  <p className="text-sm font-semibold text-[hsl(var(--visual-reading))] mb-1">Human Oversight</p>
+                  <p className="text-sm text-[hsl(var(--visual-reading))]">{xai?.rai_compliance?.human_oversight}</p>
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                <h3 className="font-heading font-bold text-slate-900 mb-3">Data Sources</h3>
+              <div className="vi-card p-6">
+                <h3 className="font-heading font-bold vi-text mb-3">Data Sources</h3>
                 <div className="space-y-2">
                   {xai?.rai_compliance?.data_sources?.map((src, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-slate-50 rounded-xl px-4 py-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-bold">{i + 1}</div>
-                      <p className="text-sm font-semibold text-slate-700">{src}</p>
+                    <div key={i} className="flex items-center gap-3 vi-surface-soft rounded-xl px-4 py-3">
+                      <div className="w-8 h-8 rounded-full bg-[hsl(var(--visual-reading)/0.12)] flex items-center justify-center text-[hsl(var(--visual-reading))] text-sm font-bold">{i + 1}</div>
+                      <p className="text-sm font-semibold text-slate-800">{src}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                <h3 className="font-heading font-bold text-slate-900 mb-3">Bias Mitigations</h3>
+              <div className="vi-card p-6">
+                <h3 className="font-heading font-bold vi-text mb-3">Bias Mitigations</h3>
                 <div className="space-y-2">
                   {xai?.rai_compliance?.bias_mitigations?.map((mit, i) => (
-                    <div key={i} className="flex items-start gap-3 bg-emerald-50 rounded-xl px-4 py-3">
-                      <span className="text-emerald-500 mt-0.5">✓</span>
-                      <p className="text-sm text-emerald-700">{mit}</p>
+                    <div key={i} className="flex items-start gap-3 bg-[hsl(var(--visual-science)/0.12)] rounded-xl px-4 py-3">
+                      <CheckCircle2 className="w-4 h-4 text-[hsl(var(--visual-science))] mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-[hsl(var(--visual-science))]">{mit}</p>
                     </div>
                   ))}
                 </div>
@@ -1042,9 +1050,9 @@ export default function BrainReviewPage() {
         </div>
 
         {!isAlreadyResolved && (
-          <div className="bg-white rounded-2xl shadow-xl border border-purple-100 p-6 sticky bottom-4">
-            <h3 className="font-heading font-bold text-lg text-slate-900 mb-2">Your Decision</h3>
-            <p className="text-sm text-slate-500 font-body mb-4">
+          <div className="vi-card p-6 sticky bottom-4 shadow-xl">
+            <h3 className="font-heading font-bold text-lg vi-text mb-2">Your Decision</h3>
+            <p className="text-sm vi-text-muted font-body mb-4">
               You have final authority over {review.learner_name}&apos;s learning Brain. No learning happens until you approve.
             </p>
 
@@ -1054,64 +1062,64 @@ export default function BrainReviewPage() {
                   type="checkbox"
                   checked={consentChecked}
                   onChange={(e) => setConsentChecked(e.target.checked)}
-                  className="mt-0.5 w-5 h-5 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                  className="mt-0.5 w-5 h-5 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]"
                 />
-                <span className="text-sm text-slate-700 leading-relaxed">
+                <span className="text-sm text-slate-800 leading-relaxed">
                   I consent to AIVO creating a personalized learning profile (Brain) for {review.learner_name} based on the assessment data shown above.
                   I understand this data will be used to personalize their learning experience and can be deleted at any time.
-                  <span className="text-slate-400 text-xs block mt-1">COPPA Consent v1.0</span>
+                  <span className="vi-text-muted text-xs block mt-1">COPPA Consent v1.0</span>
                 </span>
               </label>
             </div>
 
             {showContextForm ? (
               <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-2">
-                  <p className="text-sm font-semibold text-blue-700 mb-1">Add Context & Rebuild</p>
-                  <p className="text-xs text-blue-600">Provide additional information and the Brain will be rebuilt with your context.</p>
+                <div className="bg-[hsl(var(--visual-reading)/0.12)] border border-[hsl(var(--visual-reading)/0.3)] rounded-xl p-4 mb-2">
+                  <p className="text-sm font-semibold text-[hsl(var(--visual-reading))] mb-1">Add Context & Rebuild</p>
+                  <p className="text-xs text-[hsl(var(--visual-reading))]">Provide additional information and the Brain will be rebuilt with your context.</p>
                 </div>
 
                 <div>
-                  <label htmlFor="learning-context" className="block text-sm font-semibold text-slate-700 mb-1">Learning Context</label>
+                  <label htmlFor="learning-context" className="block text-sm font-semibold text-slate-800 mb-1">Learning Context</label>
                   <textarea
                     id="learning-context"
                     value={learningContext}
                     onChange={(e) => setLearningContext(e.target.value)}
                     placeholder="e.g., 'He is really interested in dinosaurs.' 'She does better in the morning.'"
-                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[70px] focus:outline-none focus:ring-2 focus:ring-blue-400 font-body"
+                    className="w-full border vi-border rounded-xl p-3 text-sm min-h-[70px] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--visual-reading)/0.5)] font-body"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="clinical-context" className="block text-sm font-semibold text-slate-700 mb-1">Clinical Context</label>
+                  <label htmlFor="clinical-context" className="block text-sm font-semibold text-slate-800 mb-1">Clinical Context</label>
                   <textarea
                     id="clinical-context"
                     value={clinicalContext}
                     onChange={(e) => setClinicalContext(e.target.value)}
                     placeholder="e.g., 'He has been making progress with his speech therapist on the /r/ sound.'"
-                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[70px] focus:outline-none focus:ring-2 focus:ring-blue-400 font-body"
+                    className="w-full border vi-border rounded-xl p-3 text-sm min-h-[70px] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--visual-reading)/0.5)] font-body"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="assessment-concerns" className="block text-sm font-semibold text-slate-700 mb-1">Assessment Concerns</label>
+                  <label htmlFor="assessment-concerns" className="block text-sm font-semibold text-slate-800 mb-1">Assessment Concerns</label>
                   <textarea
                     id="assessment-concerns"
                     value={assessmentConcerns}
                     onChange={(e) => setAssessmentConcerns(e.target.value)}
                     placeholder="e.g., 'I think the reading score is too low, she was tired during that part.'"
-                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[70px] focus:outline-none focus:ring-2 focus:ring-blue-400 font-body"
+                    className="w-full border vi-border rounded-xl p-3 text-sm min-h-[70px] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--visual-reading)/0.5)] font-body"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="missing-info" className="block text-sm font-semibold text-slate-700 mb-1">Missing Information</label>
+                  <label htmlFor="missing-info" className="block text-sm font-semibold text-slate-800 mb-1">Missing Information</label>
                   <textarea
                     id="missing-info"
                     value={missingInfo}
                     onChange={(e) => setMissingInfo(e.target.value)}
                     placeholder="e.g., 'She also speaks Spanish at home.' 'He uses a communication device.'"
-                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[70px] focus:outline-none focus:ring-2 focus:ring-blue-400 font-body"
+                    className="w-full border vi-border rounded-xl p-3 text-sm min-h-[70px] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--visual-reading)/0.5)] font-body"
                   />
                 </div>
 
@@ -1119,7 +1127,8 @@ export default function BrainReviewPage() {
                   <button
                     onClick={handleAddContext}
                     disabled={submitting || (!learningContext.trim() && !clinicalContext.trim() && !assessmentConcerns.trim() && !missingInfo.trim())}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
+                    style={{ minHeight: 44 }}
+                    className="flex-1 px-6 py-3 bg-[hsl(var(--visual-reading))] text-white font-heading font-bold rounded-xl hover:bg-[hsl(var(--visual-reading)/0.9)] transition disabled:opacity-50"
                   >
                     {submitting ? "Rebuilding..." : "Submit & Rebuild"}
                   </button>
@@ -1131,7 +1140,8 @@ export default function BrainReviewPage() {
                       setAssessmentConcerns("");
                       setMissingInfo("");
                     }}
-                    className="px-6 py-3 border border-slate-200 text-slate-600 font-heading font-bold rounded-xl hover:bg-slate-50 transition"
+                    style={{ minHeight: 44 }}
+                    className="px-6 py-3 border vi-border vi-text-muted font-heading font-bold rounded-xl hover:bg-[hsl(var(--visual-surface-soft))] transition"
                   >
                     {tCommon("cancel")}
                   </button>
@@ -1139,33 +1149,35 @@ export default function BrainReviewPage() {
               </div>
             ) : showStartOverConfirm ? (
               <div className="space-y-4">
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                  <p className="text-sm font-semibold text-slate-700 mb-1">Start Over</p>
-                  <p className="text-sm text-slate-500">
+                <div className="vi-surface-soft border vi-border rounded-xl p-4">
+                  <p className="text-sm font-semibold text-slate-800 mb-1">Start Over</p>
+                  <p className="text-sm vi-text-muted">
                     This will reset the assessment. {review.learner_name} will need to take the Discovery Adventure again.
                   </p>
                 </div>
                 <div>
-                  <label htmlFor="start-over-reason" className="block text-sm font-semibold text-slate-700 mb-1">Reason (optional)</label>
+                  <label htmlFor="start-over-reason" className="block text-sm font-semibold text-slate-800 mb-1">Reason (optional)</label>
                   <textarea
                     id="start-over-reason"
                     value={startOverReason}
                     onChange={(e) => setStartOverReason(e.target.value)}
                     placeholder="e.g., 'She was having a bad day.' 'The environment was too distracting.'"
-                    className="w-full border border-slate-200 rounded-xl p-3 text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-slate-400 font-body"
+                    className="w-full border vi-border rounded-xl p-3 text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-slate-400 font-body"
                   />
                 </div>
                 <div className="flex gap-3">
                   <button
                     onClick={handleStartOver}
                     disabled={submitting}
+                    style={{ minHeight: 44 }}
                     className="flex-1 px-6 py-3 bg-slate-500 text-white font-heading font-bold rounded-xl hover:bg-slate-600 transition disabled:opacity-50"
                   >
                     {submitting ? "Processing..." : "Confirm Start Over"}
                   </button>
                   <button
                     onClick={() => { setShowStartOverConfirm(false); setStartOverReason(""); }}
-                    className="px-6 py-3 border border-slate-200 text-slate-600 font-heading font-bold rounded-xl hover:bg-slate-50 transition"
+                    style={{ minHeight: 44 }}
+                    className="px-6 py-3 border vi-border vi-text-muted font-heading font-bold rounded-xl hover:bg-[hsl(var(--visual-surface-soft))] transition"
                   >
                     {tCommon("cancel")}
                   </button>
@@ -1176,21 +1188,24 @@ export default function BrainReviewPage() {
                 <button
                   onClick={handleApprove}
                   disabled={submitting || !consentChecked}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
+                  style={{ minHeight: 44 }}
+                  className="flex-1 px-6 py-3 bg-[hsl(var(--visual-science))] text-white font-heading font-bold rounded-xl hover:bg-[hsl(var(--visual-science)/0.9)] transition disabled:opacity-50"
                 >
                   {submitting ? "Approving..." : `Approve${modCount > 0 ? ` (${modCount} changes)` : ""}`}
                 </button>
                 <button
                   onClick={() => setShowContextForm(true)}
                   disabled={submitting}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50"
+                  style={{ minHeight: 44 }}
+                  className="flex-1 px-6 py-3 bg-[hsl(var(--visual-reading))] text-white font-heading font-bold rounded-xl hover:bg-[hsl(var(--visual-reading)/0.9)] transition disabled:opacity-50"
                 >
                   Add Context & Rebuild
                 </button>
                 <button
                   onClick={() => setShowStartOverConfirm(true)}
                   disabled={submitting}
-                  className="px-6 py-3 bg-slate-100 text-slate-600 font-heading font-bold rounded-xl hover:bg-slate-200 transition disabled:opacity-50 border border-slate-200"
+                  style={{ minHeight: 44 }}
+                  className="px-6 py-3 vi-surface-soft vi-text-muted font-heading font-bold rounded-xl hover:bg-slate-200 transition disabled:opacity-50 border vi-border"
                 >
                   Start Over
                 </button>
@@ -1225,73 +1240,73 @@ function PreCloneReview({
   const baselineScores = preCloneData?.baseline_assessment?.domain_scores;
   const parentAssessment = preCloneData?.parent_assessment;
 
-  const steps = [
-    { emoji: "📋", title: "Load Assessment Data", desc: `Pull ${learnerName}'s baseline and parent assessment results` },
-    { emoji: "🧬", title: "Select Brain Template", desc: `Use the ${fl.replace(/_/g, " ")} template as a starting point` },
-    { emoji: "📊", title: "Set Learning Levels", desc: "Calculate mastery percentages for each subject from assessment scores" },
-    { emoji: "🛡️", title: "Configure Supports", desc: "Activate accommodations based on parent-reported needs and assessment signals" },
-    { emoji: "👩‍🏫", title: "Assign AI Tutors", desc: "Match each subject with a specialized AI tutor character" },
-    { emoji: "🎯", title: "Map Learning Paths", desc: "Plot step-by-step goals from current level toward grade-level objectives" },
-    { emoji: "🔐", title: "Save & Encrypt", desc: "Store the Brain securely with full versioning and rollback capability" },
+  const steps: Array<{ icon: React.ReactNode; title: string; desc: string }> = [
+    { icon: <ClipboardList className="w-5 h-5" />, title: "Load Assessment Data", desc: `Pull ${learnerName}'s baseline and parent assessment results` },
+    { icon: <Dna className="w-5 h-5" />, title: "Select Brain Template", desc: `Use the ${fl.replace(/_/g, " ")} template as a starting point` },
+    { icon: <BarChart3 className="w-5 h-5" />, title: "Set Learning Levels", desc: "Calculate mastery percentages for each subject from assessment scores" },
+    { icon: <Shield className="w-5 h-5" />, title: "Configure Supports", desc: "Activate accommodations based on parent-reported needs and assessment signals" },
+    { icon: <GraduationCap className="w-5 h-5" />, title: "Assign AI Tutors", desc: "Match each subject with a specialized AI tutor character" },
+    { icon: <Target className="w-5 h-5" />, title: "Map Learning Paths", desc: "Plot step-by-step goals from current level toward grade-level objectives" },
+    { icon: <Lock className="w-5 h-5" />, title: "Save & Encrypt", desc: "Store the Brain securely with full versioning and rollback capability" },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
-      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen vi-bg">
+      <header className="bg-[hsl(var(--visual-surface)/0.95)] backdrop-blur border-b vi-border px-6 py-4 flex items-center justify-between">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         <div className="flex items-center gap-4">
-          <Link href={`/dashboard/parent/learner/${learnerId}`} className="text-sm text-primary font-semibold hover:underline">Back to Profile</Link>
-          <span className="text-sm font-semibold text-slate-600">{userName}</span>
+          <Link href={`/dashboard/parent/learner/${learnerId}`} className="text-sm text-[hsl(var(--visual-primary))] font-semibold hover:underline">Back to Profile</Link>
+          <span className="text-sm font-semibold vi-text-muted">{userName}</span>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <div className="text-6xl mb-4">🧠</div>
-          <h1 className="text-3xl font-heading font-bold text-slate-900 mb-2">
+          <div className="flex justify-center mb-4"><IconWell color="primary"><Brain className="w-8 h-8" /></IconWell></div>
+          <h1 className="text-3xl font-heading font-bold vi-text mb-2">
             Build {learnerName}&apos;s Learning Brain
           </h1>
-          <p className="text-slate-500 font-body max-w-xl mx-auto">
+          <p className="vi-text-muted font-body max-w-xl mx-auto">
             Review the assessment data below. When you approve, we&apos;ll build a personalized learning profile (Brain) that powers everything {learnerName} experiences on AIVO.
           </p>
         </div>
 
         {parentAssessment && (
-          <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 mb-6">
-            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-              <span className="text-2xl">👨‍👩‍👧</span> Your Parent Assessment
+          <div className="vi-card p-6 mb-6">
+            <h2 className="font-heading font-bold text-lg vi-text mb-4 flex items-center gap-3">
+              <IconWell color="primary" size="sm"><Users2 className="w-5 h-5" /></IconWell> Your Parent Assessment
             </h2>
             <div className="grid grid-cols-2 gap-4">
               {parentAssessment.communication_mode && (
-                <div className="bg-purple-50 rounded-xl p-3">
-                  <p className="text-xs font-bold text-purple-500 uppercase">Communication</p>
+                <div className="bg-[hsl(var(--visual-primary)/0.08)] rounded-xl p-3">
+                  <p className="text-xs font-bold text-[hsl(var(--visual-primary))] uppercase">Communication</p>
                   <p className="text-sm font-semibold text-slate-800">{parentAssessment.communication_mode.replace(/_/g, " ")}</p>
                 </div>
               )}
               {parentAssessment.device_interaction && (
-                <div className="bg-purple-50 rounded-xl p-3">
-                  <p className="text-xs font-bold text-purple-500 uppercase">Device Interaction</p>
+                <div className="bg-[hsl(var(--visual-primary)/0.08)] rounded-xl p-3">
+                  <p className="text-xs font-bold text-[hsl(var(--visual-primary))] uppercase">Device Interaction</p>
                   <p className="text-sm font-semibold text-slate-800">{parentAssessment.device_interaction.replace(/_/g, " ")}</p>
                 </div>
               )}
               {parentAssessment.attention_span && (
-                <div className="bg-purple-50 rounded-xl p-3">
-                  <p className="text-xs font-bold text-purple-500 uppercase">Attention Span</p>
+                <div className="bg-[hsl(var(--visual-primary)/0.08)] rounded-xl p-3">
+                  <p className="text-xs font-bold text-[hsl(var(--visual-primary))] uppercase">Attention Span</p>
                   <p className="text-sm font-semibold text-slate-800">{parentAssessment.attention_span.replace(/_/g, " ")}</p>
                 </div>
               )}
               {parentAssessment.response_method && (
-                <div className="bg-purple-50 rounded-xl p-3">
-                  <p className="text-xs font-bold text-purple-500 uppercase">Response Method</p>
+                <div className="bg-[hsl(var(--visual-primary)/0.08)] rounded-xl p-3">
+                  <p className="text-xs font-bold text-[hsl(var(--visual-primary))] uppercase">Response Method</p>
                   <p className="text-sm font-semibold text-slate-800">{parentAssessment.response_method.replace(/_/g, " ")}</p>
                 </div>
               )}
               {parentAssessment.diagnoses?.length > 0 && (
-                <div className="bg-purple-50 rounded-xl p-3 col-span-2">
-                  <p className="text-xs font-bold text-purple-500 uppercase mb-1">Diagnoses</p>
+                <div className="bg-[hsl(var(--visual-primary)/0.08)] rounded-xl p-3 col-span-2">
+                  <p className="text-xs font-bold text-[hsl(var(--visual-primary))] uppercase mb-1">Diagnoses</p>
                   <div className="flex flex-wrap gap-1">
                     {parentAssessment.diagnoses.map((d: string) => (
-                      <span key={d} className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-semibold">{d}</span>
+                      <span key={d} className="px-2 py-0.5 bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] rounded text-xs font-semibold">{d}</span>
                     ))}
                   </div>
                 </div>
@@ -1301,35 +1316,35 @@ function PreCloneReview({
         )}
 
         {baselineScores && Object.keys(baselineScores).length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-blue-100 p-6 mb-6">
-            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-              <span className="text-2xl">📊</span> Baseline Assessment Results
+          <div className="vi-card p-6 mb-6">
+            <h2 className="font-heading font-bold text-lg vi-text mb-4 flex items-center gap-3">
+              <IconWell color="reading" size="sm"><BarChart3 className="w-5 h-5" /></IconWell> Baseline Assessment Results
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {Object.entries(baselineScores).map(([domain, score]) => (
-                <div key={domain} className="bg-blue-50 rounded-xl p-3 text-center">
+                <div key={domain} className="bg-[hsl(var(--visual-reading)/0.08)] rounded-xl p-3 text-center">
                   <p className="text-xl mb-1">{MASTERY_EMOJIS[domain] || "📚"}</p>
-                  <p className="text-xs font-bold text-slate-500 uppercase">{domain.replace(/_/g, " ")}</p>
-                  <p className="text-lg font-heading font-bold text-slate-900">{Math.round(Number(score) * 100)}%</p>
+                  <p className="text-xs font-bold vi-text-muted uppercase">{domain.replace(/_/g, " ")}</p>
+                  <p className="text-lg font-heading font-bold vi-text">{Math.round(Number(score) * 100)}%</p>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
-          <h2 className="font-heading font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-            <span className="text-2xl">🔧</span> What the Brain Builder Will Do
+        <div className="vi-card p-6 mb-6">
+          <h2 className="font-heading font-bold text-lg vi-text mb-4 flex items-center gap-3">
+            <IconWell color="primary" size="sm"><Wrench className="w-5 h-5" /></IconWell> What the Brain Builder Will Do
           </h2>
           <div className="space-y-3">
             {steps.map((step, i) => (
-              <div key={i} className="flex items-start gap-4 bg-slate-50 rounded-xl p-4">
-                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-xl flex-shrink-0">
-                  {step.emoji}
+              <div key={i} className="flex items-start gap-4 vi-surface-soft rounded-xl p-4">
+                <div className="w-10 h-10 rounded-full bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center flex-shrink-0">
+                  {step.icon}
                 </div>
                 <div>
-                  <p className="font-heading font-bold text-sm text-slate-900">Step {i + 1}: {step.title}</p>
-                  <p className="text-xs text-slate-500 font-body">{step.desc}</p>
+                  <p className="font-heading font-bold text-sm vi-text">Step {i + 1}: {step.title}</p>
+                  <p className="text-xs vi-text-muted font-body">{step.desc}</p>
                 </div>
               </div>
             ))}
@@ -1337,44 +1352,44 @@ function PreCloneReview({
         </div>
 
         {preCloneData?.template_preview && (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
-            <h2 className="font-heading font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-              <span className="text-2xl">🧬</span> Template Preview
+          <div className="vi-card p-6 mb-6">
+            <h2 className="font-heading font-bold text-lg vi-text mb-4 flex items-center gap-3">
+              <IconWell color="primary" size="sm"><Dna className="w-5 h-5" /></IconWell> Template Preview
             </h2>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 rounded-xl p-3">
-                <p className="text-xs font-bold text-slate-500 uppercase">Functioning Level</p>
+              <div className="vi-surface-soft rounded-xl p-3">
+                <p className="text-xs font-bold vi-text-muted uppercase">Functioning Level</p>
                 <p className="text-sm font-semibold text-slate-800">{fl.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</p>
               </div>
-              <div className="bg-slate-50 rounded-xl p-3">
-                <p className="text-xs font-bold text-slate-500 uppercase">Domains</p>
+              <div className="vi-surface-soft rounded-xl p-3">
+                <p className="text-xs font-bold vi-text-muted uppercase">Domains</p>
                 <p className="text-sm font-semibold text-slate-800">{preCloneData.template_preview.domains.length} subjects</p>
               </div>
-              <div className="bg-slate-50 rounded-xl p-3">
-                <p className="text-xs font-bold text-slate-500 uppercase">Accommodations</p>
+              <div className="vi-surface-soft rounded-xl p-3">
+                <p className="text-xs font-bold vi-text-muted uppercase">Accommodations</p>
                 <p className="text-sm font-semibold text-slate-800">{preCloneData.template_preview.accommodations.length} supports</p>
               </div>
-              <div className="bg-slate-50 rounded-xl p-3">
-                <p className="text-xs font-bold text-slate-500 uppercase">AI Tutors</p>
+              <div className="vi-surface-soft rounded-xl p-3">
+                <p className="text-xs font-bold vi-text-muted uppercase">AI Tutors</p>
                 <p className="text-sm font-semibold text-slate-800">{preCloneData.template_preview.tutors.length} tutors</p>
               </div>
             </div>
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-xl border border-purple-200 p-6">
+        <div className="vi-card p-6 shadow-xl">
           <div className="mb-4">
             <label className="flex items-start gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={consentChecked}
                 onChange={(e) => setConsentChecked(e.target.checked)}
-                className="mt-0.5 w-5 h-5 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                className="mt-0.5 w-5 h-5 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]"
               />
-              <span className="text-sm text-slate-700 leading-relaxed">
+              <span className="text-sm text-slate-800 leading-relaxed">
                 I consent to AIVO creating a personalized learning profile (Brain) for {learnerName} based on the assessment data shown above.
                 I understand this data will be used to personalize their learning experience and can be deleted at any time.
-                <span className="text-slate-400 text-xs block mt-1">COPPA Parental Consent v1.0</span>
+                <span className="vi-text-muted text-xs block mt-1">COPPA Parental Consent v1.0</span>
               </span>
             </label>
           </div>
@@ -1383,13 +1398,15 @@ function PreCloneReview({
             <button
               onClick={onCloneAndBuild}
               disabled={submitting || !consentChecked}
-              className="flex-1 px-6 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-heading font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50 text-lg"
+              style={{ minHeight: 44 }}
+              className="flex-1 px-6 py-4 bg-[hsl(var(--visual-primary))] text-white font-heading font-bold rounded-xl hover:bg-[hsl(var(--visual-primary)/0.9)] transition disabled:opacity-50 text-lg"
             >
               {submitting ? "Building..." : "Approve & Build Brain"}
             </button>
             <Link
               href={`/dashboard/parent/learner/${learnerId}`}
-              className="px-6 py-4 bg-slate-100 text-slate-600 font-heading font-bold rounded-xl hover:bg-slate-200 transition border border-slate-200 text-center"
+              style={{ minHeight: 44 }}
+              className="px-6 py-4 vi-surface-soft vi-text-muted font-heading font-bold rounded-xl hover:bg-slate-200 transition border vi-border text-center"
             >
               Not Yet
             </Link>

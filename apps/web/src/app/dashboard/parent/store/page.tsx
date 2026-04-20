@@ -31,39 +31,39 @@ interface ActiveSub {
 
 function StoreLoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
-      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+    <div className="vi-bg">
+      <header className="bg-[hsl(var(--visual-surface)/0.95)] backdrop-blur border-b vi-border px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="h-4 w-32 bg-slate-200 rounded animate-pulse" />
-          <div className="h-9 w-28 bg-slate-200 rounded animate-pulse" />
+          <div className="h-4 w-32 vi-surface-soft rounded animate-pulse" />
+          <div className="h-9 w-28 vi-surface-soft rounded animate-pulse" />
         </div>
-        <div className="h-7 w-24 bg-slate-200 rounded-full animate-pulse" />
+        <div className="h-7 w-24 vi-surface-soft rounded-full animate-pulse" />
       </header>
       <main className="max-w-6xl mx-auto px-8 py-8 space-y-10">
         <div className="text-center space-y-2">
-          <div className="h-8 w-48 bg-slate-200 rounded animate-pulse mx-auto" />
-          <div className="h-4 w-64 bg-slate-200 rounded animate-pulse mx-auto" />
+          <div className="h-8 w-48 vi-surface-soft rounded animate-pulse mx-auto" />
+          <div className="h-4 w-64 vi-surface-soft rounded animate-pulse mx-auto" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="p-6 rounded-2xl border-2 border-slate-100 bg-white">
-              <div className="h-5 w-32 bg-slate-200 rounded animate-pulse mb-2" />
-              <div className="h-4 w-24 bg-slate-200 rounded animate-pulse mb-3" />
-              <div className="h-8 w-20 bg-slate-200 rounded animate-pulse" />
+            <div key={i} className="vi-card p-6">
+              <div className="h-5 w-32 vi-surface-soft rounded animate-pulse mb-2" />
+              <div className="h-4 w-24 vi-surface-soft rounded animate-pulse mb-3" />
+              <div className="h-8 w-20 vi-surface-soft rounded animate-pulse" />
             </div>
           ))}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-            <div key={i} className="bg-white rounded-2xl p-5 border-2 border-slate-100">
+            <div key={i} className="vi-card p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-14 h-14 rounded-full bg-slate-200 animate-pulse" />
+                <div className="w-14 h-14 rounded-full vi-surface-soft animate-pulse" />
                 <div>
-                  <div className="h-4 w-20 bg-slate-200 rounded animate-pulse mb-1" />
-                  <div className="h-3 w-16 bg-slate-200 rounded animate-pulse" />
+                  <div className="h-4 w-20 vi-surface-soft rounded animate-pulse mb-1" />
+                  <div className="h-3 w-16 vi-surface-soft rounded animate-pulse" />
                 </div>
               </div>
-              <div className="h-9 w-full bg-slate-200 rounded-full animate-pulse" />
+              <div className="h-9 w-full vi-surface-soft rounded-full animate-pulse" />
             </div>
           ))}
         </div>
@@ -123,8 +123,8 @@ function TutorStoreContent() {
         const el = document.getElementById(`tutor-card-${highlightTutor}`);
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
-          el.classList.add("ring-4", "ring-purple-400", "ring-offset-2");
-          setTimeout(() => el.classList.remove("ring-4", "ring-purple-400", "ring-offset-2"), 3000);
+          el.classList.add("ring-4", "ring-[hsl(var(--visual-primary))]", "ring-offset-2");
+          setTimeout(() => el.classList.remove("ring-4", "ring-[hsl(var(--visual-primary))]", "ring-offset-2"), 3000);
         }
       }, 300);
     }
@@ -176,16 +176,16 @@ function TutorStoreContent() {
   const activeCount = activeSubs.filter(s => s.status === "active").length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
-      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+    <div className="vi-bg">
+      <header className="bg-[hsl(var(--visual-surface)/0.95)] backdrop-blur border-b vi-border px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/dashboard/parent")} className="text-sm text-slate-500 hover:text-primary font-semibold">
+          <button onClick={() => router.push("/dashboard/parent")} className="text-sm vi-text-muted hover:text-[hsl(var(--visual-primary))] font-semibold">
             {t("back_to_dashboard")}
           </button>
           <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
         </div>
         <div className="flex items-center gap-3">
-          <span className="px-3 py-1 text-sm rounded-full bg-green-100 text-green-700 font-bold">
+          <span className="px-3 py-1 text-sm rounded-full bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] font-bold">
             {t("active_tutors_count", { count: activeCount })}
           </span>
         </div>
@@ -193,20 +193,20 @@ function TutorStoreContent() {
 
       <main className="max-w-6xl mx-auto px-8 py-8 space-y-10">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-heading font-bold text-slate-900">{t("tutor_store")}</h1>
-          <p className="text-slate-500 font-semibold">{t("choose_tutors_or_bundles")}</p>
+          <h1 className="text-3xl font-heading font-bold vi-text">{t("tutor_store")}</h1>
+          <p className="vi-text-muted font-semibold">{t("choose_tutors_or_bundles")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {Object.entries(bundles).filter(([k]) => k !== "individual").map(([key, bundle]) => (
             <button key={key}
               onClick={() => setSelectedBundle(selectedBundle === key ? null : key)}
-              className={`p-6 rounded-2xl border-2 text-left transition ${selectedBundle === key ? "border-primary bg-purple-50 shadow-lg" : "border-slate-200 bg-white hover:border-purple-200"}`}>
-              <h3 className="font-heading font-bold text-lg text-slate-900">{bundle.name}</h3>
-              <p className="text-sm text-slate-500 mt-1">{t("tutors_included", { count: bundle.tutors.length })}</p>
+              className={`p-6 rounded-2xl border-2 text-left transition ${selectedBundle === key ? "border-[hsl(var(--visual-primary))] bg-[hsl(var(--visual-primary)/0.06)] shadow-lg" : "vi-border bg-[hsl(var(--visual-surface))] hover:border-[hsl(var(--visual-primary)/0.3)]"}`}>
+              <h3 className="font-heading font-bold text-lg vi-text">{bundle.name}</h3>
+              <p className="text-sm vi-text-muted mt-1">{t("tutors_included", { count: bundle.tutors.length })}</p>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-primary">${(bundle.price / 100).toFixed(2)}</span>
-                <span className="text-sm text-slate-400">/month</span>
+                <span className="text-2xl font-bold text-[hsl(var(--visual-primary))]">${(bundle.price / 100).toFixed(2)}</span>
+                <span className="text-sm vi-text-muted">/month</span>
               </div>
               <div className="mt-3 flex flex-wrap gap-1">
                 {bundle.tutors.map(t => {
@@ -221,7 +221,7 @@ function TutorStoreContent() {
               {selectedBundle === key && (
                 <button onClick={(e) => { e.stopPropagation(); subscribeBundle(key); }}
                   disabled={subscribing === key}
-                  className="mt-4 w-full px-4 py-2.5 rounded-full bg-primary text-white font-bold hover:bg-primary-dark transition disabled:opacity-50">
+                  className="mt-4 w-full px-4 py-2.5 rounded-full bg-[hsl(var(--visual-primary))] text-white font-bold hover:bg-[hsl(var(--visual-primary)/0.9)] transition disabled:opacity-50" style={{ minHeight: 44 }}>
                   {subscribing === key ? t("activating") : t("subscribe_to_bundle")}
                 </button>
               )}
@@ -230,28 +230,28 @@ function TutorStoreContent() {
         </div>
 
         <div>
-          <h2 className="text-xl font-heading font-bold text-slate-900 mb-4">{t("core_tutors")}</h2>
+          <h2 className="text-xl font-heading font-bold vi-text mb-4">{t("core_tutors")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {coreTutors.map(t => {
               const active = isActive(t.sku);
               return (
-                <div key={t.key} id={`tutor-card-${t.key}`} className={`bg-white rounded-2xl p-5 border-2 transition ${active ? "border-green-300 shadow-md" : "border-slate-100 hover:border-purple-200"}`}>
+                <div key={t.key} id={`tutor-card-${t.key}`} className={`bg-[hsl(var(--visual-surface))] rounded-2xl p-5 border-2 transition ${active ? "border-[hsl(var(--visual-science)/0.4)] shadow-md" : "vi-border hover:border-[hsl(var(--visual-primary)/0.3)]"}`}>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 shadow" style={{ borderColor: t.color }}>
                       <Image src={t.avatar} alt={t.name} fill className="object-cover object-top" sizes="56px" />
                     </div>
                     <div>
                       <h3 className="font-heading font-bold" style={{ color: t.color }}>{t.name}</h3>
-                      <p className="text-xs text-slate-500">{t.domain}</p>
+                      <p className="text-xs vi-text-muted">{t.domain}</p>
                     </div>
                   </div>
                   {active ? (
-                    <div className="px-4 py-2 text-center rounded-full bg-green-50 text-green-700 font-bold text-sm">
+                    <div className="px-4 py-2 text-center rounded-full bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] font-bold text-sm">
                       {tc("active")}
                     </div>
                   ) : (
                     <button onClick={() => subscribe(t.sku)} disabled={subscribing === t.sku}
-                      className="w-full px-4 py-2 rounded-full bg-primary text-white font-bold text-sm hover:bg-primary-dark transition disabled:opacity-50">
+                      className="w-full px-4 py-2 rounded-full bg-[hsl(var(--visual-primary))] text-white font-bold text-sm hover:bg-[hsl(var(--visual-primary)/0.9)] transition disabled:opacity-50" style={{ minHeight: 44 }}>
                       {subscribing === t.sku ? "..." : `$${(t.price / 100).toFixed(2)}/mo`}
                     </button>
                   )}
@@ -263,30 +263,30 @@ function TutorStoreContent() {
 
         {expansionTutors.length > 0 && (
           <div>
-            <h2 className="text-xl font-heading font-bold text-slate-900 mb-1">{t("expansion_tutors")}</h2>
-            <p className="text-sm text-slate-400 mb-4">{t("expansion_tutors_desc")}</p>
+            <h2 className="text-xl font-heading font-bold vi-text mb-1">{t("expansion_tutors")}</h2>
+            <p className="text-sm vi-text-muted mb-4">{t("expansion_tutors_desc")}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {expansionTutors.map(t => {
                 const active = isActive(t.sku);
                 return (
-                  <div key={t.key} id={`tutor-card-${t.key}`} className={`bg-white rounded-2xl p-5 border-2 transition ${active ? "border-green-300 shadow-md" : "border-slate-100 hover:border-amber-200"}`}>
+                  <div key={t.key} id={`tutor-card-${t.key}`} className={`bg-[hsl(var(--visual-surface))] rounded-2xl p-5 border-2 transition ${active ? "border-[hsl(var(--visual-science)/0.4)] shadow-md" : "vi-border hover:border-[hsl(var(--visual-sel)/0.3)]"}`}>
                     <div className="flex items-center gap-3 mb-3">
                       <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 shadow" style={{ borderColor: t.color }}>
                         <Image src={t.avatar} alt={t.name} fill className="object-cover object-top" sizes="56px" />
                       </div>
                       <div>
                         <h3 className="font-heading font-bold" style={{ color: t.color }}>{t.name}</h3>
-                        <p className="text-xs text-slate-500">{t.domain}</p>
-                        <span className="inline-block mt-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-50 text-amber-600">{tc("more").toUpperCase()}</span>
+                        <p className="text-xs vi-text-muted">{t.domain}</p>
+                        <span className="inline-block mt-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[hsl(var(--visual-sel)/0.12)] text-[hsl(var(--visual-sel))]">{tc("more").toUpperCase()}</span>
                       </div>
                     </div>
                     {active ? (
-                      <div className="px-4 py-2 text-center rounded-full bg-green-50 text-green-700 font-bold text-sm">
+                      <div className="px-4 py-2 text-center rounded-full bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] font-bold text-sm">
                         {tc("active")}
                       </div>
                     ) : (
                       <button onClick={() => subscribe(t.sku)} disabled={subscribing === t.sku}
-                        className="w-full px-4 py-2 rounded-full bg-amber-500 text-white font-bold text-sm hover:bg-amber-600 transition disabled:opacity-50">
+                        className="w-full px-4 py-2 rounded-full bg-[hsl(var(--visual-sel))] text-white font-bold text-sm hover:bg-[hsl(var(--visual-sel)/0.9)] transition disabled:opacity-50" style={{ minHeight: 44 }}>
                         {subscribing === t.sku ? "..." : `$${(t.price / 100).toFixed(2)}/mo`}
                       </button>
                     )}

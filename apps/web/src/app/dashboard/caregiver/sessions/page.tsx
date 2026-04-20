@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import LearnerCardSkeleton from "@/components/states/LearnerCardSkeleton";
 import FetchErrorState from "@/components/states/FetchErrorState";
+import { Calendar } from "lucide-react";
 
 interface ConnectedLearner {
   id: string;
@@ -84,11 +85,12 @@ export default function CaregiverSessionsPage() {
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center gap-6 flex-wrap">
-        <h1 className="text-3xl font-heading font-bold text-slate-900">Session History</h1>
+        <h1 className="text-3xl font-heading font-bold vi-text">Session History</h1>
         {learners.length > 1 && (
           <select value={selectedLearner || ""} onChange={e => setSelectedLearner(e.target.value)}
             aria-label="Select learner"
-            className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold bg-white shadow-sm">
+            style={{ minHeight: 44 }}
+            className="px-4 py-2 rounded-xl border vi-border text-sm font-semibold bg-[hsl(var(--visual-surface))] vi-text">
             {learners.map(l => (
               <option key={l.id} value={l.id}>{l.name}</option>
             ))}
@@ -101,58 +103,62 @@ export default function CaregiverSessionsPage() {
       ) : fetchError ? (
         <FetchErrorState title="Unable to load data" onRetry={fetchData} />
       ) : learners.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-          <div className="text-5xl mb-4" aria-hidden="true">📅</div>
-          <p className="text-slate-700 font-heading font-bold text-xl">No learners connected yet</p>
-          <p className="text-sm text-slate-500 mt-2">Connect with learners to view their session history.</p>
+        <div className="vi-card p-12 text-center">
+          <div className="flex justify-center mb-4">
+            <span className="w-14 h-14 rounded-2xl bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] flex items-center justify-center">
+              <Calendar size={28} strokeWidth={2.5} aria-hidden="true" />
+            </span>
+          </div>
+          <p className="vi-text font-heading font-bold text-xl">No learners connected yet</p>
+          <p className="text-sm vi-text-muted mt-2">Connect with learners to view their session history.</p>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-              <p className="text-xs text-slate-500 font-semibold uppercase mb-1">Completed Sessions</p>
-              <p className="text-3xl font-bold text-green-600">{completedCount}</p>
+            <div className="vi-card p-5">
+              <p className="text-xs vi-text-muted font-semibold uppercase mb-1">Completed Sessions</p>
+              <p className="text-3xl font-bold text-[hsl(var(--visual-science))]">{completedCount}</p>
             </div>
-            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-              <p className="text-xs text-slate-500 font-semibold uppercase mb-1">Total XP Earned</p>
-              <p className="text-3xl font-bold text-slate-900">{totalXp}</p>
+            <div className="vi-card p-5">
+              <p className="text-xs vi-text-muted font-semibold uppercase mb-1">Total XP Earned</p>
+              <p className="text-3xl font-bold vi-text">{totalXp}</p>
             </div>
-            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-              <p className="text-xs text-slate-500 font-semibold uppercase mb-1">Avg Duration</p>
-              <p className="text-3xl font-bold text-slate-900">{avgDuration > 0 ? `${avgDuration}m` : "—"}</p>
+            <div className="vi-card p-5">
+              <p className="text-xs vi-text-muted font-semibold uppercase mb-1">Avg Duration</p>
+              <p className="text-3xl font-bold vi-text">{avgDuration > 0 ? `${avgDuration}m` : "—"}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="vi-card overflow-hidden p-0">
             {loadingSessions ? (
               <div className="p-12 text-center">
-                <div className="animate-pulse text-slate-400" role="status">Loading sessions...</div>
+                <div className="animate-pulse vi-text-muted" role="status">Loading sessions...</div>
               </div>
             ) : sessions.length === 0 ? (
               <div className="p-12 text-center">
-                <p className="text-slate-500 text-sm">No learning sessions recorded yet.</p>
+                <p className="vi-text-muted text-sm">No learning sessions recorded yet.</p>
               </div>
             ) : (
               <table className="w-full text-sm">
                 <caption className="sr-only">Learning session history</caption>
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/50">
-                    <th scope="col" className="text-left px-6 py-3 font-semibold text-slate-700">Date</th>
-                    <th scope="col" className="text-left px-6 py-3 font-semibold text-slate-700">Subject</th>
-                    <th scope="col" className="text-left px-6 py-3 font-semibold text-slate-700">Duration</th>
-                    <th scope="col" className="text-left px-6 py-3 font-semibold text-slate-700">XP</th>
-                    <th scope="col" className="text-left px-6 py-3 font-semibold text-slate-700">Status</th>
+                  <tr className="border-b vi-border vi-surface-soft">
+                    <th scope="col" className="text-left px-6 py-3 font-semibold vi-text">Date</th>
+                    <th scope="col" className="text-left px-6 py-3 font-semibold vi-text">Subject</th>
+                    <th scope="col" className="text-left px-6 py-3 font-semibold vi-text">Duration</th>
+                    <th scope="col" className="text-left px-6 py-3 font-semibold vi-text">XP</th>
+                    <th scope="col" className="text-left px-6 py-3 font-semibold vi-text">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sessions.map(s => (
-                    <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50/30">
-                      <td className="px-6 py-3 text-slate-600">{new Date(s.startedAt).toLocaleDateString()}</td>
-                      <td className="px-6 py-3 text-slate-900 font-medium">{s.subject}</td>
-                      <td className="px-6 py-3 text-slate-600">{formatDuration(s.durationSeconds)}</td>
-                      <td className="px-6 py-3 text-slate-600">{s.xpEarned || 0}</td>
+                    <tr key={s.id} className="border-b vi-border hover:bg-[hsl(var(--visual-surface-soft)/0.5)]">
+                      <td className="px-6 py-3 vi-text-muted">{new Date(s.startedAt).toLocaleDateString()}</td>
+                      <td className="px-6 py-3 vi-text font-medium">{s.subject}</td>
+                      <td className="px-6 py-3 vi-text-muted">{formatDuration(s.durationSeconds)}</td>
+                      <td className="px-6 py-3 vi-text-muted">{s.xpEarned || 0}</td>
                       <td className="px-6 py-3">
-                        <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${s.status === "COMPLETED" ? "bg-green-50 text-green-700" : s.status === "CONTENT_READY" ? "bg-blue-50 text-blue-700" : "bg-yellow-50 text-yellow-700"}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full font-bold ${s.status === "COMPLETED" ? "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]" : s.status === "CONTENT_READY" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" : "bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))]"}`}>
                           {s.status.replace(/_/g, " ")}
                         </span>
                       </td>

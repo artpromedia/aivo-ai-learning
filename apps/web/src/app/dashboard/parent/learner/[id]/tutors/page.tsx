@@ -37,32 +37,32 @@ export default function ParentLearnerTutorsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900 mb-2">{t("tutors_title", { name: "" }).trim()}</h1>
-        <p className="text-sm text-slate-500">{t("tutors_manage_desc")} {t("visit_store")} <Link href="/dashboard/parent/store" className="text-purple-600 hover:underline font-semibold">{t("tutor_store_link")}</Link> {t("to_add_more")}</p>
+        <h1 className="text-2xl font-heading font-bold vi-text mb-2">{t("tutors_title", { name: "" }).trim()}</h1>
+        <p className="text-sm vi-text-muted">{t("tutors_manage_desc")} {t("visit_store")} <Link href="/dashboard/parent/store" className="text-[hsl(var(--visual-primary))] hover:underline font-semibold">{t("tutor_store_link")}</Link> {t("to_add_more")}</p>
       </div>
 
       {loadingData ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 animate-pulse text-slate-400">{t("loading_tutors")}</div>
+        <div className="vi-card p-12 text-center animate-pulse vi-text-muted">{t("loading_tutors")}</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {tutorEntries.map(([key, tutor]) => {
             const active = isActive(key);
             return (
-              <div key={key} className={`rounded-2xl border-2 overflow-hidden transition ${active ? "border-purple-200 bg-white shadow-sm" : "border-slate-200 bg-slate-50/50 opacity-60"}`}>
+              <div key={key} className={`rounded-2xl border-2 overflow-hidden transition ${active ? "border-[hsl(var(--visual-primary)/0.3)] bg-white shadow-sm" : "vi-border bg-slate-50/50 opacity-60"}`}>
                 <div className="p-5">
                   <div className="flex items-center gap-3 mb-3">
                     <Image src={tutor.avatar} alt={tutor.name} width={48} height={48} className="rounded-xl" />
                     <div>
-                      <h3 className="font-heading font-bold text-slate-900">{tutor.name}</h3>
-                      <p className="text-xs text-slate-500">{tutor.domain}</p>
+                      <h3 className="font-heading font-bold vi-text">{tutor.name}</h3>
+                      <p className="text-xs vi-text-muted">{tutor.domain}</p>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${tutor.tier === "core" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>
+                    <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${tutor.tier === "core" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" : "bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))]"}`}>
                       {tutor.tier}
                     </span>
                     {active ? (
-                      <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-semibold">{tc("active")}</span>
+                      <span className="px-3 py-1 text-xs rounded-full bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] font-semibold">{tc("active")}</span>
                     ) : (
                       <span className="px-3 py-1 text-xs rounded-full bg-slate-200 text-slate-500 font-semibold">{t("not_subscribed")}</span>
                     )}
@@ -75,12 +75,12 @@ export default function ParentLearnerTutorsPage() {
         </div>
       )}
 
-      <div className="p-5 rounded-2xl bg-purple-50 border border-purple-100">
-        <p className="text-sm text-slate-700">
+      <div className="p-5 rounded-2xl vi-surface-soft border vi-border">
+        <p className="text-sm vi-text">
           <span className="font-semibold">{t("want_more_tutors")}</span> {t("visit_store")}{" "}
-          <Link href="/dashboard/parent/store" className="text-purple-600 font-bold hover:underline">{t("tutor_store_link")}</Link>{" "}
+          <Link href="/dashboard/parent/store" className="text-[hsl(var(--visual-primary))] font-bold hover:underline">{t("tutor_store_link")}</Link>{" "}
           {tc("or")}{" "}
-          <Link href="/dashboard/parent/billing" className="text-purple-600 font-bold hover:underline">{t("billing_link")}</Link>{" "}
+          <Link href="/dashboard/parent/billing" className="text-[hsl(var(--visual-primary))] font-bold hover:underline">{t("billing_link")}</Link>{" "}
           {t("manage_addons_desc")}
         </p>
       </div>

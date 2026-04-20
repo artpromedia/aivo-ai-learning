@@ -3,6 +3,8 @@ import { useAuth } from "@/providers/auth-provider";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { CheckCircle2, ClipboardList } from "lucide-react";
+import { IconWell } from "@/components/discovery/_vi";
 
 interface Recommendation {
   id: string;
@@ -39,11 +41,11 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  regression_alert: "bg-red-50 border-red-200 text-red-700",
-  brain_upgrade: "bg-green-50 border-green-200 text-green-700",
-  iep_goal_met: "bg-green-50 border-green-200 text-green-700",
-  accommodation_add: "bg-blue-50 border-blue-200 text-blue-700",
-  goal_suggestion: "bg-purple-50 border-purple-200 text-purple-700",
+  regression_alert: "bg-[hsl(var(--visual-math)/0.06)] border-[hsl(var(--visual-math)/0.3)] text-[hsl(var(--visual-math))]",
+  brain_upgrade: "bg-[hsl(var(--visual-science)/0.06)] border-[hsl(var(--visual-science)/0.3)] text-[hsl(var(--visual-science))]",
+  iep_goal_met: "bg-[hsl(var(--visual-science)/0.06)] border-[hsl(var(--visual-science)/0.3)] text-[hsl(var(--visual-science))]",
+  accommodation_add: "bg-[hsl(var(--visual-reading)/0.06)] border-[hsl(var(--visual-reading)/0.3)] text-[hsl(var(--visual-reading))]",
+  goal_suggestion: "bg-[hsl(var(--visual-primary)/0.06)] border-[hsl(var(--visual-primary)/0.3)] text-[hsl(var(--visual-primary))]",
 };
 
 export default function RecommendationsPage() {
@@ -103,29 +105,29 @@ export default function RecommendationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("recommendation_inbox")}</h1>
-        <p className="text-slate-500 mt-1">{t("recommendation_desc")}</p>
+        <h1 className="text-2xl font-heading font-bold vi-text">{t("recommendation_inbox")}</h1>
+        <p className="vi-text-muted mt-1">{t("recommendation_desc")}</p>
       </div>
 
       {conflicts.length > 0 && (
-        <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200">
-          <h3 className="font-heading font-bold text-amber-800 mb-2">{t("conflicts_detected")}</h3>
-          <p className="text-sm text-amber-700 mb-3">{t("conflicts_desc")}</p>
+        <div className="rounded-2xl p-5 border bg-[hsl(var(--visual-sel)/0.08)] border-[hsl(var(--visual-sel)/0.3)]">
+          <h3 className="font-heading font-bold text-[hsl(var(--visual-sel))] mb-2">{t("conflicts_detected")}</h3>
+          <p className="text-sm text-[hsl(var(--visual-sel))] mb-3">{t("conflicts_desc")}</p>
           {conflicts.map((c, i) => (
-            <div key={i} className="p-3 rounded-xl bg-amber-100/50 mb-2 text-sm text-amber-800">
+            <div key={i} className="p-3 rounded-xl bg-[hsl(var(--visual-sel)/0.12)] mb-2 text-sm text-[hsl(var(--visual-sel))]">
               <span className="font-bold">{c.domain}:</span> {c.description}
             </div>
           ))}
         </div>
       )}
 
-      <div className="flex gap-2 border-b border-slate-200 pb-1">
+      <div className="flex gap-2 border-b vi-border pb-1">
         <button onClick={() => setActiveTab("pending")}
-          className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === "pending" ? "bg-white border border-b-white text-purple-600 -mb-[1px]" : "text-slate-400 hover:text-slate-600"}`}>
+          className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === "pending" ? "bg-white border vi-border border-b-white text-[hsl(var(--visual-primary))] -mb-[1px]" : "vi-text-muted hover:vi-text"}`}>
           {t("pending_count", { count: pendingRecs.length })}
         </button>
         <button onClick={() => setActiveTab("history")}
-          className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === "history" ? "bg-white border border-b-white text-purple-600 -mb-[1px]" : "text-slate-400 hover:text-slate-600"}`}>
+          className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === "history" ? "bg-white border vi-border border-b-white text-[hsl(var(--visual-primary))] -mb-[1px]" : "vi-text-muted hover:vi-text"}`}>
           {t("history_count", { count: resolvedRecs.length })}
         </button>
       </div>
@@ -133,13 +135,15 @@ export default function RecommendationsPage() {
       {activeTab === "pending" && (
         <div className="space-y-4">
           {pendingRecs.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-              <div className="text-5xl mb-3">✅</div>
-              <p className="text-slate-500 font-semibold">{t("no_pending")}</p>
+            <div className="vi-card p-12 text-center">
+              <div className="flex justify-center mb-3">
+                <IconWell color="science" size="lg"><CheckCircle2 className="w-10 h-10" /></IconWell>
+              </div>
+              <p className="vi-text-muted font-semibold">{t("no_pending")}</p>
             </div>
           ) : (
             pendingRecs.map(rec => (
-              <div key={rec.id} className={`rounded-2xl p-5 border shadow-sm ${TYPE_COLORS[rec.type] || "bg-white border-slate-100"}`}>
+              <div key={rec.id} className={`rounded-2xl p-5 border shadow-sm ${TYPE_COLORS[rec.type] || "vi-card"}`}>
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wide opacity-70">
@@ -147,7 +151,7 @@ export default function RecommendationsPage() {
                     </span>
                     <h3 className="font-heading font-bold text-lg mt-1">{rec.title}</h3>
                   </div>
-                  <span className="text-xs text-slate-400">{new Date(rec.createdAt).toLocaleDateString()}</span>
+                  <span className="text-xs vi-text-muted">{new Date(rec.createdAt).toLocaleDateString()}</span>
                 </div>
                 {rec.description && <p className="text-sm mb-4 opacity-80">{rec.description}</p>}
 
@@ -155,29 +159,34 @@ export default function RecommendationsPage() {
                   <div className="space-y-3 mt-3 p-3 rounded-xl bg-white/50">
                     <textarea value={responseNotes} onChange={(e) => setResponseNotes(e.target.value)}
                       placeholder={t("add_notes")}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none text-sm font-body resize-none h-20" />
+                      className="w-full px-4 py-2.5 rounded-xl border vi-border outline-none text-sm font-body resize-none h-20" />
                     <div className="flex gap-2">
                       <button onClick={() => respondToRec(rec.id, "APPROVED")}
-                        className="px-4 py-2 rounded-full bg-green-600 text-white font-bold text-sm hover:bg-green-700 transition">
+                        className="px-4 py-2 rounded-full bg-[hsl(var(--visual-science))] text-white font-bold text-sm hover:bg-[hsl(var(--visual-science)/0.9)] transition"
+                        style={{ minHeight: 44 }}>
                         {t("approve")}
                       </button>
                       <button onClick={() => respondToRec(rec.id, "ADJUSTED")}
-                        className="px-4 py-2 rounded-full bg-amber-500 text-white font-bold text-sm hover:bg-amber-600 transition">
+                        className="px-4 py-2 rounded-full bg-[hsl(var(--visual-sel))] text-white font-bold text-sm hover:bg-[hsl(var(--visual-sel)/0.9)] transition"
+                        style={{ minHeight: 44 }}>
                         {t("adjust")}
                       </button>
                       <button onClick={() => respondToRec(rec.id, "DECLINED")}
-                        className="px-4 py-2 rounded-full bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition">
+                        className="px-4 py-2 rounded-full bg-[hsl(var(--visual-math))] text-white font-bold text-sm hover:bg-[hsl(var(--visual-math)/0.9)] transition"
+                        style={{ minHeight: 44 }}>
                         {t("decline")}
                       </button>
                       <button onClick={() => setRespondingTo(null)}
-                        className="px-4 py-2 rounded-full bg-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-300 transition">
+                        className="px-4 py-2 rounded-full bg-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-300 transition"
+                        style={{ minHeight: 44 }}>
                         {tCommon("cancel")}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <button onClick={() => setRespondingTo(rec.id)}
-                    className="px-5 py-2 rounded-full bg-purple-600 text-white font-bold text-sm hover:bg-purple-700 transition">
+                    className="px-5 py-2 rounded-full bg-[hsl(var(--visual-primary))] text-white font-heading font-black uppercase tracking-wider text-sm hover:bg-[hsl(var(--visual-primary)/0.9)] transition"
+                    style={{ minHeight: 44 }}>
                     {t("respond")}
                   </button>
                 )}
@@ -190,25 +199,27 @@ export default function RecommendationsPage() {
       {activeTab === "history" && (
         <div className="space-y-3">
           {resolvedRecs.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-              <div className="text-5xl mb-3">📋</div>
-              <p className="text-slate-500 font-semibold">{t("no_resolved")}</p>
+            <div className="vi-card p-12 text-center">
+              <div className="flex justify-center mb-3">
+                <IconWell color="primary" size="lg"><ClipboardList className="w-10 h-10" /></IconWell>
+              </div>
+              <p className="vi-text-muted font-semibold">{t("no_resolved")}</p>
             </div>
           ) : (
             resolvedRecs.map(rec => (
-              <div key={rec.id} className="bg-white rounded-xl p-4 border border-slate-100 flex items-center justify-between">
+              <div key={rec.id} className="vi-card p-4 flex items-center justify-between">
                 <div>
-                  <span className="text-xs text-slate-400 font-bold uppercase">{TYPE_LABELS[rec.type] || rec.type}</span>
+                  <span className="text-xs vi-text-muted font-bold uppercase">{TYPE_LABELS[rec.type] || rec.type}</span>
                   <div className="font-heading font-bold text-slate-800">{rec.title}</div>
-                  {rec.parentNotes && <p className="text-xs text-slate-400 mt-1">{t("note_label")}: {rec.parentNotes}</p>}
+                  {rec.parentNotes && <p className="text-xs vi-text-muted mt-1">{t("note_label")}: {rec.parentNotes}</p>}
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`px-3 py-1 text-xs rounded-full font-bold ${
-                    rec.status === "APPROVED" ? "bg-green-100 text-green-700" :
-                    rec.status === "DECLINED" ? "bg-red-100 text-red-700" :
-                    "bg-amber-100 text-amber-700"
+                    rec.status === "APPROVED" ? "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]" :
+                    rec.status === "DECLINED" ? "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" :
+                    "bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))]"
                   }`}>{rec.status}</span>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs vi-text-muted">
                     {rec.resolvedAt ? new Date(rec.resolvedAt).toLocaleDateString() : ""}
                   </span>
                 </div>
