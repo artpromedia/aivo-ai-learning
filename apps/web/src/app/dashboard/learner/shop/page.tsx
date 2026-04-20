@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { ShoppingCart, Store, Scissors, Shirt, Sparkles, Image as ImageIcon, Smile, Palette, Package, type LucideIcon } from "lucide-react";
 
 interface AvatarItem {
   id: string;
@@ -22,13 +23,13 @@ interface CurrencyBalance {
   gems: number;
 }
 
-const CATEGORY_ICONS: Record<string, string> = {
-  hair: "💇",
-  outfits: "👕",
-  accessories: "🎀",
-  backgrounds: "🖼️",
-  emotes: "😎",
-  skin_tones: "🎨",
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  hair: Scissors,
+  outfits: Shirt,
+  accessories: Sparkles,
+  backgrounds: ImageIcon,
+  emotes: Smile,
+  skin_tones: Palette,
 };
 
 const RARITY_COLORS: Record<string, string> = {
@@ -109,36 +110,49 @@ export default function ShopPage() {
 
       <main className="max-w-5xl mx-auto px-8 py-12 space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-heading font-bold text-slate-900">🛒 {t("shop")}</h1>
+          <h1 className="text-4xl font-heading font-bold text-slate-900 inline-flex items-center justify-center gap-3">
+            <span className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <ShoppingCart className="w-6 h-6" strokeWidth={2} aria-hidden />
+            </span>
+            {t("shop")}
+          </h1>
           <p className="text-slate-500 font-semibold mt-2">{tLearner("shop_description")}</p>
         </div>
 
         <div className="flex gap-2 justify-center flex-wrap">
-          {categories.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition ${
-                category === c ? "bg-primary text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {c === "all" ? "All" : `${CATEGORY_ICONS[c] || "📦"} ${c}`}
-            </button>
-          ))}
+          {categories.map((c) => {
+            const Icon = CATEGORY_ICONS[c] || Package;
+            return (
+              <button
+                key={c}
+                onClick={() => setCategory(c)}
+                className={`px-4 py-2 rounded-full text-sm font-bold transition inline-flex items-center gap-1.5 ${
+                  category === c ? "bg-primary text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                {c === "all" ? "All" : (<><Icon className="w-4 h-4" strokeWidth={2} aria-hidden /> {c}</>)}
+              </button>
+            );
+          })}
         </div>
 
         {filtered.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-            <div className="text-4xl mb-4">🏪</div>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center">
+              <Store className="w-8 h-8" strokeWidth={2} aria-hidden />
+            </div>
             <p className="text-slate-500 font-semibold">{tLearner("no_items")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filtered.map((item) => {
               const isOwned = owned.includes(item.id);
+              const ItemIcon = CATEGORY_ICONS[item.category] || Package;
               return (
                 <div key={item.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm text-center space-y-2">
-                  <div className="text-4xl">{CATEGORY_ICONS[item.category] || "📦"}</div>
+                  <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <ItemIcon className="w-6 h-6" strokeWidth={2} aria-hidden />
+                  </div>
                   <div className="font-heading font-bold text-sm text-slate-900">{item.name}</div>
                   <div className="text-xs font-semibold capitalize" style={{ color: RARITY_COLORS[item.rarity] || "#94a3b8" }}>
                     {item.rarity}

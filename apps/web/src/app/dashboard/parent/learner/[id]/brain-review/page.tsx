@@ -8,7 +8,8 @@ import { TUTORS, type TutorKey } from "@aivo/brand";
 import BrainSphere from "@/components/brain/BrainSphere";
 import BrainBuildingSequence from "@/components/brain/BrainBuildingSequence";
 import { useTranslations } from "next-intl";
-import { Brain, CheckCircle2, RefreshCw, RotateCcw, Compass, Search, BarChart3, Shield, GraduationCap, ClipboardList, Lock, Users2, BookOpen, Microscope, Landmark, Code2, MessageCircle, Heart, Puzzle, Home, Target, Palette, Wrench, Dna } from "lucide-react";
+import { Brain, CheckCircle2, RefreshCw, RotateCcw, Compass, Search, BarChart3, Shield, GraduationCap, ClipboardList, Lock, Users2, BookOpen, Microscope, Landmark, Code2, MessageCircle, Heart, Puzzle, Home, Target, Palette, Wrench, Dna, Plus, Check, type LucideIcon } from "lucide-react";
+import { subjectIcon } from "@/lib/subject-icons";
 import { IconWell } from "@/components/discovery/_vi";
 
 interface MasteryDecision {
@@ -125,12 +126,10 @@ const MASTERY_BAR: Record<string, string> = {
   social_awareness: "bg-[hsl(var(--visual-math))]",
 };
 
-const MASTERY_EMOJIS: Record<string, string> = {
-  math: "🔢", ela: "📖", science: "🔬", history: "🏛️", coding: "💻",
-  social: "🤝", sel: "💜", speech: "💬", executive_function: "🧩",
-  communication: "💬", daily_living: "🏠",
-  cause_effect: "🎯", sensory_engagement: "🎨", social_awareness: "👥",
-};
+function MasteryIcon({ domain, className }: { domain: string; className?: string }) {
+  const Icon: LucideIcon = subjectIcon(domain);
+  return <Icon className={className || "w-5 h-5"} strokeWidth={2} aria-hidden />;
+}
 
 const SOURCE_BADGES: Record<string, { label: string; color: string }> = {
   discovery_adventure: { label: "From Assessment", color: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" },
@@ -689,7 +688,7 @@ export default function BrainReviewPage() {
                     return (
                       <div key={m.domain} className={`relative overflow-hidden rounded-xl vi-surface-soft border p-4 ${overridden ? "border-[hsl(var(--visual-sel)/0.5)] ring-1 ring-[hsl(var(--visual-sel)/0.3)]" : "vi-border"}`}>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xl">{MASTERY_EMOJIS[m.domain] || "📚"}</span>
+                          <span className="w-7 h-7 rounded-lg vi-surface-soft flex items-center justify-center text-slate-600"><MasteryIcon domain={m.domain} className="w-4 h-4" /></span>
                           <span className="font-heading font-bold text-sm text-slate-800">{m.display_label}</span>
                         </div>
                         <div className="text-2xl font-heading font-bold vi-text mb-1">
@@ -772,7 +771,7 @@ export default function BrainReviewPage() {
                     <div key={m.domain} className={`border rounded-xl p-4 transition ${isModified ? "border-[hsl(var(--visual-sel)/0.5)] bg-[hsl(var(--visual-sel)/0.06)]" : "vi-border hover:bg-[hsl(var(--visual-surface-soft))]"}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{MASTERY_EMOJIS[m.domain] || "📚"}</span>
+                          <span className="w-9 h-9 rounded-xl vi-surface-soft flex items-center justify-center text-slate-600"><MasteryIcon domain={m.domain} className="w-5 h-5" /></span>
                           <div>
                             <p className="font-heading font-bold vi-text">{m.display_label}</p>
                             {m.raw_score && (
@@ -909,7 +908,7 @@ export default function BrainReviewPage() {
                                 : "bg-[hsl(var(--visual-surface))] vi-text-muted vi-border hover:border-[hsl(var(--visual-science)/0.3)]"
                             }`}
                           >
-                            <span className="mr-1">{isOn ? "✓" : "+"}</span>
+                            <span className="mr-1 inline-flex">{isOn ? <Check className="w-3.5 h-3.5" strokeWidth={3} aria-hidden /> : <Plus className="w-3.5 h-3.5" strokeWidth={3} aria-hidden />}</span>
                             {acc.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
                           </button>
                         );
@@ -1323,7 +1322,7 @@ function PreCloneReview({
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {Object.entries(baselineScores).map(([domain, score]) => (
                 <div key={domain} className="bg-[hsl(var(--visual-reading)/0.08)] rounded-xl p-3 text-center">
-                  <p className="text-xl mb-1">{MASTERY_EMOJIS[domain] || "📚"}</p>
+                  <span className="w-8 h-8 rounded-lg bg-white/60 mx-auto mb-1 flex items-center justify-center text-[hsl(var(--visual-reading))]"><MasteryIcon domain={domain} className="w-5 h-5" /></span>
                   <p className="text-xs font-bold vi-text-muted uppercase">{domain.replace(/_/g, " ")}</p>
                   <p className="text-lg font-heading font-bold vi-text">{Math.round(Number(score) * 100)}%</p>
                 </div>

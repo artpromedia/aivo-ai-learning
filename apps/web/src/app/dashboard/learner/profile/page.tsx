@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { GraduationCap, Flame, Award, Map, ShoppingBag, Settings } from "lucide-react";
 
 interface LearnerProfile {
   id: string;
@@ -87,8 +88,8 @@ export default function LearnerProfilePage() {
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
               <div className="relative">
                 <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center text-4xl">
-                    🧑‍🎓
+                  <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center text-white">
+                    <GraduationCap size={40} strokeWidth={2.5} aria-hidden="true" />
                   </div>
                   <div>
                     <h1 className="text-3xl font-heading font-bold">{profile.name}</h1>
@@ -114,7 +115,10 @@ export default function LearnerProfilePage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm text-center">
-                <p className="text-3xl font-bold text-orange-500">🔥 {profile.streakDays}</p>
+                <div className="inline-flex items-center justify-center gap-1.5 text-3xl font-bold text-orange-500">
+                  <Flame size={28} strokeWidth={2.5} aria-hidden="true" />
+                  {profile.streakDays}
+                </div>
                 <p className="text-xs text-slate-400 font-semibold uppercase mt-1">{tGamification("streak")}</p>
               </div>
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm text-center">
@@ -122,7 +126,10 @@ export default function LearnerProfilePage() {
                 <p className="text-xs text-slate-400 font-semibold uppercase mt-1">{t("sessions")}</p>
               </div>
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm text-center">
-                <p className="text-3xl font-bold text-amber-500">🏅 {profile.badgesEarned}</p>
+                <div className="inline-flex items-center justify-center gap-1.5 text-3xl font-bold text-amber-500">
+                  <Award size={28} strokeWidth={2.5} aria-hidden="true" />
+                  {profile.badgesEarned}
+                </div>
                 <p className="text-xs text-slate-400 font-semibold uppercase mt-1">{tGamification("badges")}</p>
               </div>
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm text-center">
@@ -156,19 +163,27 @@ export default function LearnerProfilePage() {
               <h2 className="font-heading font-bold text-lg text-slate-900 mb-3">{t("quick_links")}</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Link href="/dashboard/learner/badges" className="p-4 rounded-xl border border-slate-200 hover:border-primary hover:shadow-sm transition text-center">
-                  <span className="text-2xl">🏅</span>
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+                    <Award size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </div>
                   <p className="text-sm font-semibold text-slate-700 mt-1">{tGamification("badges")}</p>
                 </Link>
                 <Link href="/dashboard/learner/quests" className="p-4 rounded-xl border border-slate-200 hover:border-primary hover:shadow-sm transition text-center">
-                  <span className="text-2xl">🗺️</span>
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                    <Map size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </div>
                   <p className="text-sm font-semibold text-slate-700 mt-1">{t("quests")}</p>
                 </Link>
                 <Link href="/dashboard/learner/shop" className="p-4 rounded-xl border border-slate-200 hover:border-primary hover:shadow-sm transition text-center">
-                  <span className="text-2xl">🛍️</span>
+                  <div className="w-10 h-10 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center mx-auto">
+                    <ShoppingBag size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </div>
                   <p className="text-sm font-semibold text-slate-700 mt-1">{tGamification("shop")}</p>
                 </Link>
                 <Link href="/dashboard/learner/settings" className="p-4 rounded-xl border border-slate-200 hover:border-primary hover:shadow-sm transition text-center">
-                  <span className="text-2xl">⚙️</span>
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center mx-auto">
+                    <Settings size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </div>
                   <p className="text-sm font-semibold text-slate-700 mt-1">{t("settings")}</p>
                 </Link>
               </div>

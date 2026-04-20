@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useState } from "react";
+import { Home, Heart, HelpCircle, Cloud } from "lucide-react";
 import { TUTORS } from "@aivo/brand";
 import type { TutorKey } from "@aivo/brand";
 import type { Beat, TutorState, SensoryAdaptations, SessionPhase } from "./types";
@@ -82,7 +83,7 @@ export function StageLayout({
               aria-label="Back home"
               style={{ minHeight: "var(--learner-hit-target, 36px)", minWidth: "var(--learner-hit-target, 36px)" }}
             >
-              🏠
+              <Home className="w-4 h-4" strokeWidth={2.5} aria-hidden />
             </button>
           )}
           <div className="w-8 h-8 rounded-full overflow-hidden border-2" style={{ borderColor: accentColor }}>
@@ -105,7 +106,7 @@ export function StageLayout({
         <div className="flex items-center gap-2">
           {isParentWatching && (
             <div className="flex items-center gap-1.5 vi-surface-soft rounded-full px-3 py-1">
-              <span className="text-xs" aria-hidden="true">❤️</span>
+              <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" aria-hidden />
               <span className="vi-text-muted text-xs font-bold hidden md:inline">Your grown-up is watching too</span>
             </div>
           )}
@@ -120,7 +121,7 @@ export function StageLayout({
               }}
               aria-label="I need help"
             >
-              <span aria-hidden="true">🙋</span>
+              <HelpCircle className="w-4 h-4" strokeWidth={2.5} aria-hidden />
               <span className="hidden md:inline">Help</span>
             </button>
           )}
@@ -130,7 +131,7 @@ export function StageLayout({
             aria-label="Take a break"
             style={{ minHeight: "var(--learner-hit-target, 36px)" }}
           >
-            <span aria-hidden="true">☁️</span>
+            <Cloud className="w-4 h-4" strokeWidth={2} aria-hidden />
             <span className="hidden md:inline">Break</span>
           </button>
         </div>

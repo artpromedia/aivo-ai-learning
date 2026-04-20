@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { BookOpen, Hand, Eye, PartyPopper, ArrowRight, type LucideIcon } from "lucide-react";
 import type { Beat } from "./types";
 
 interface BeatPreviewProps {
@@ -35,12 +36,12 @@ export function BeatPreview({ beat, tutorName, accentColor, autoAdvanceMs = 2000
     return "Next";
   })();
 
-  const beatIcon = (() => {
-    if (beat.type === "narration") return "📖";
-    if (beat.type === "interaction") return "✋";
-    if (beat.type === "demonstration") return "👀";
-    if (beat.type === "celebration") return "🎉";
-    return "➡️";
+  const BeatIcon: LucideIcon = (() => {
+    if (beat.type === "narration") return BookOpen;
+    if (beat.type === "interaction") return Hand;
+    if (beat.type === "demonstration") return Eye;
+    if (beat.type === "celebration") return PartyPopper;
+    return ArrowRight;
   })();
 
   return (
@@ -50,7 +51,9 @@ export function BeatPreview({ beat, tutorName, accentColor, autoAdvanceMs = 2000
         role="alert"
         aria-label={`Coming up: ${beatTitle}`}
       >
-        <div className="text-5xl mb-3" aria-hidden="true">{beatIcon}</div>
+        <div className="w-16 h-16 mx-auto mb-3 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${accentColor}1f`, color: accentColor }} aria-hidden="true">
+          <BeatIcon className="w-8 h-8" strokeWidth={2} />
+        </div>
         <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Coming up</p>
         <h3 className="text-xl font-heading font-bold mb-1" style={{ color: accentColor }}>
           {beatTitle}

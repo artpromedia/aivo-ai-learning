@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { Camera, Pencil, BookMarked } from "lucide-react";
+import { subjectIcon } from "@/lib/subject-icons";
 
 interface HomeworkAssignment {
   id: string;
@@ -23,15 +25,6 @@ const SUBJECT_COLORS: Record<string, string> = {
   history: "#E17055",
   coding: "#0984E3",
   other: "#636E72",
-};
-
-const SUBJECT_ICONS: Record<string, string> = {
-  math: "🔢",
-  ela: "📖",
-  science: "🔬",
-  history: "🏛️",
-  coding: "💻",
-  other: "📝",
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -214,7 +207,9 @@ export default function HomeworkPage() {
               </>
             ) : (
               <>
-                <div className="text-5xl">📸</div>
+                <div className="w-14 h-14 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                  <Camera className="w-7 h-7" strokeWidth={2} aria-hidden />
+                </div>
                 <p className="text-slate-700 font-bold text-lg">{t("upload_photo")}</p>
                 <p className="text-slate-400 text-sm">{t("drag_drop")}</p>
                 <p className="text-slate-300 text-xs">{t("supported_formats")}</p>
@@ -223,7 +218,7 @@ export default function HomeworkPage() {
           </div>
 
           <div className="bg-white rounded-2xl p-8 border-2 border-slate-200 flex flex-col min-h-[200px] space-y-4">
-            <p className="text-slate-700 font-bold text-lg text-center">✍️ {t("paste_text")}</p>
+            <p className="text-slate-700 font-bold text-lg text-center inline-flex items-center justify-center gap-2"><Pencil className="w-5 h-5 text-purple-600" strokeWidth={2.5} aria-hidden /> {t("paste_text")}</p>
             <textarea
               value={pastedText}
               onChange={(e) => setPastedText(e.target.value)}
@@ -246,7 +241,9 @@ export default function HomeworkPage() {
           </div>
         ) : assignments.length === 0 ? (
           <div className="text-center py-12 text-slate-400">
-            <div className="text-6xl mb-4">📚</div>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center">
+              <BookMarked className="w-8 h-8" strokeWidth={2} aria-hidden />
+            </div>
             <p className="font-semibold text-lg">{t("no_homework")}</p>
             <p className="text-sm">{t("upload_to_start")}</p>
           </div>
@@ -256,6 +253,7 @@ export default function HomeworkPage() {
             {assignments.map((hw) => {
               const subjectLower = hw.subject?.toLowerCase() || "other";
               const status = STATUS_LABELS[hw.status] || STATUS_LABELS.PROCESSING;
+              const SubjectIcon = subjectIcon(subjectLower);
               return (
                 <button
                   key={hw.id}
@@ -280,10 +278,13 @@ export default function HomeworkPage() {
                   className="w-full bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition flex items-center gap-4 text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
-                    style={{ backgroundColor: `${SUBJECT_COLORS[subjectLower] || SUBJECT_COLORS.other}20` }}
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{
+                      backgroundColor: `${SUBJECT_COLORS[subjectLower] || SUBJECT_COLORS.other}20`,
+                      color: SUBJECT_COLORS[subjectLower] || SUBJECT_COLORS.other,
+                    }}
                   >
-                    {SUBJECT_ICONS[subjectLower] || SUBJECT_ICONS.other}
+                    <SubjectIcon className="w-6 h-6" strokeWidth={2} aria-hidden />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-slate-800 capitalize">{subjectLower} Homework</p>

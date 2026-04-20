@@ -1,4 +1,5 @@
 "use client";
+import { Sprout, Leaf, TreePine, Star, Trophy, type LucideIcon } from "lucide-react";
 
 interface ProgressPathProps {
   progress: number;
@@ -8,7 +9,7 @@ interface ProgressPathProps {
   beatsUntilBreak?: number;
 }
 
-const LANDMARKS = ["🌱", "🌿", "🌳", "⭐", "🏆"];
+const LANDMARKS: LucideIcon[] = [Sprout, Leaf, TreePine, Star, Trophy];
 
 export function ProgressPath({ progress, totalSteps, currentStep, accentColor, beatsUntilBreak }: ProgressPathProps) {
   const steps = Math.min(totalSteps, 5);
@@ -16,7 +17,7 @@ export function ProgressPath({ progress, totalSteps, currentStep, accentColor, b
     x: (i / (steps - 1 || 1)) * 100,
     active: i <= Math.floor(progress * (steps - 1)),
     current: i === Math.floor(progress * (steps - 1)),
-    emoji: LANDMARKS[i % LANDMARKS.length],
+    Icon: LANDMARKS[i % LANDMARKS.length],
   }));
 
   return (
@@ -43,7 +44,7 @@ export function ProgressPath({ progress, totalSteps, currentStep, accentColor, b
                 boxShadow: p.current ? `0 0 12px ${accentColor}` : "none",
               }}
             >
-              <span className={p.active ? "" : "grayscale opacity-50"}>{p.emoji}</span>
+              <p.Icon className={`w-3.5 h-3.5 ${p.active ? "text-white" : "text-white/60"}`} strokeWidth={2.5} aria-hidden />
             </div>
           </div>
         ))}

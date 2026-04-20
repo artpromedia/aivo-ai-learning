@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { Cloud } from "lucide-react";
 import { TUTORS } from "@aivo/brand";
 import type { NextAction } from "@aivo/learner-ui";
 
@@ -37,7 +38,7 @@ export function NonVerbalView({ action, onStart, onBreak }: NonVerbalViewProps) 
         className="w-full max-w-sm rounded-2xl p-6 bg-sky-50 border-2 border-sky-200 text-center hover:bg-sky-100 transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-sky-400"
         style={{ minHeight: "var(--learner-hit-target, 88px)" }}
       >
-        <span className="text-4xl block mb-2" aria-hidden="true">☁️</span>
+        <Cloud className="w-12 h-12 mx-auto mb-2 text-sky-400" strokeWidth={2} aria-hidden="true" />
         <span className="text-xl font-heading font-bold text-sky-700">Take a break</span>
       </button>
     </div>

@@ -1,6 +1,7 @@
 import {
   ArrowLeft, MessageCircle, Hand, GraduationCap, ListChecks,
   Sparkles, ChevronLeft, ChevronRight, Check, HelpCircle, Heart,
+  Frown, Annoyed, Meh, Smile, Star, type LucideIcon,
 } from "lucide-react";
 import { ViTokens } from "../_tokens";
 
@@ -15,10 +16,10 @@ const totalAnswered = categories.reduce((s, c) => s + c.answered, 0);
 const totalQuestions = categories.reduce((s, c) => s + c.total, 0);
 const progress = Math.round((totalAnswered / totalQuestions) * 100);
 
-const scale = [
-  { e: "😟", n: 1, label: "Rarely" }, { e: "😕", n: 2, label: "Sometimes" },
-  { e: "😐", n: 3, label: "Often"  }, { e: "🙂", n: 4, label: "Most days" },
-  { e: "🌟", n: 5, label: "Always" },
+const scale: { Icon: LucideIcon; n: number; label: string }[] = [
+  { Icon: Frown, n: 1, label: "Rarely" }, { Icon: Annoyed, n: 2, label: "Sometimes" },
+  { Icon: Meh, n: 3, label: "Often"  }, { Icon: Smile, n: 4, label: "Most days" },
+  { Icon: Star, n: 5, label: "Always" },
 ];
 const choices = ["Reading aloud together", "Watching short videos", "Hands-on activities", "Quiet solo time"];
 const selected = "Hands-on activities";
@@ -152,7 +153,9 @@ export default function ParentAssessmentPreview() {
                     <button key={s.n} role="radio" aria-checked={isSel} aria-label={`${s.label} (${s.n} of 5)`}
                       className="flex flex-col items-center gap-1 p-3 rounded-2xl"
                       style={isSel ? { backgroundColor: tintMap[cat.color] } : undefined}>
-                      <span className={`text-3xl ${isSel ? "scale-110" : "grayscale opacity-50"}`} aria-hidden>{s.e}</span>
+                      <span className={`flex items-center justify-center ${isSel ? "scale-110" : "opacity-40"}`} aria-hidden style={{ color: isSel ? colorMap[cat.color] : "rgb(148 163 184)" }}>
+                        <s.Icon className="w-7 h-7" strokeWidth={2} />
+                      </span>
                       <span className="text-[10px] font-extrabold" style={{ color: isSel ? colorMap[cat.color] : "rgb(148 163 184)" }}>{s.label}</span>
                     </button>
                   );

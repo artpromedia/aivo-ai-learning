@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { Check, Mic } from "lucide-react";
 import type { Beat, FunctioningLevel, SensoryAdaptations } from "./types";
 import { CHOICE_COUNTS } from "./types";
 
@@ -149,7 +150,7 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
                 style={{ borderColor: draggedId ? accentColor : undefined }}
               >
                 {Object.entries(droppedItems).find(([_, z]) => z === zone.id)?.[0]
-                  ? <span className="text-slate-900 font-extrabold">✓</span>
+                  ? <Check className="w-5 h-5 text-slate-900" strokeWidth={3} aria-hidden />
                   : zone.label
                 }
               </div>
@@ -172,7 +173,7 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
           onClick={() => onAnswer(true)}
           aria-label="Tap to speak your answer"
         >
-          <span aria-hidden="true">🎤</span>
+          <Mic className="w-7 h-7 text-slate-700" strokeWidth={2} aria-hidden="true" />
         </button>
         <p className="vi-text-muted text-xs font-body" aria-hidden="true">Tap to speak your answer</p>
       </div>

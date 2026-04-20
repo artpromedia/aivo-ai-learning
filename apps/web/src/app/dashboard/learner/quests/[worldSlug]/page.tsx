@@ -4,13 +4,14 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { Lock, Check, Calculator, BookOpen, FlaskConical, Globe2, type LucideIcon } from "lucide-react";
 
 interface QuestWorld {
   slug: string;
   name: string;
   description: string;
   theme: string;
-  icon: string;
+  icon: LucideIcon;
   quests: Quest[];
 }
 
@@ -30,7 +31,7 @@ const SAMPLE_WORLDS: Record<string, QuestWorld> = {
     name: "Mathlands",
     description: "Conquer the realm of numbers and equations",
     theme: "from-blue-500 to-indigo-600",
-    icon: "🔢",
+    icon: Calculator,
     quests: [
       { id: "q1", title: "Number Basics", description: "Master addition and subtraction", xpReward: 100, status: "completed", progressPct: 100, steps: [{ title: "Addition", completed: true }, { title: "Subtraction", completed: true }, { title: "Mixed Practice", completed: true }] },
       { id: "q2", title: "Multiplication Mission", description: "Learn your times tables", xpReward: 150, status: "in_progress", progressPct: 60, steps: [{ title: "Tables 1-5", completed: true }, { title: "Tables 6-10", completed: true }, { title: "Tables 11-12", completed: false }, { title: "Speed Challenge", completed: false }] },
@@ -43,7 +44,7 @@ const SAMPLE_WORLDS: Record<string, QuestWorld> = {
     name: "Word World",
     description: "Explore the magic of language and reading",
     theme: "from-green-500 to-emerald-600",
-    icon: "📖",
+    icon: BookOpen,
     quests: [
       { id: "q5", title: "Phonics Path", description: "Sound out the basics", xpReward: 100, status: "completed", progressPct: 100, steps: [{ title: "Vowel Sounds", completed: true }, { title: "Consonant Blends", completed: true }] },
       { id: "q6", title: "Reading Rally", description: "Build fluency and comprehension", xpReward: 150, status: "in_progress", progressPct: 40, steps: [{ title: "Sight Words", completed: true }, { title: "Short Stories", completed: false }, { title: "Comprehension Quiz", completed: false }] },
@@ -55,7 +56,7 @@ const SAMPLE_WORLDS: Record<string, QuestWorld> = {
     name: "Science Station",
     description: "Experiment and discover the natural world",
     theme: "from-orange-500 to-red-600",
-    icon: "🔬",
+    icon: FlaskConical,
     quests: [
       { id: "q8", title: "Lab Basics", description: "Learn the scientific method", xpReward: 100, status: "available", progressPct: 0, steps: [{ title: "Observation", completed: false }, { title: "Hypothesis", completed: false }, { title: "Experiment", completed: false }] },
     ],
@@ -104,7 +105,7 @@ export default function QuestWorldPage() {
         <div className={`bg-gradient-to-r ${world.theme} rounded-3xl p-8 text-white mb-8 relative overflow-hidden`}>
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="relative">
-            <span className="text-5xl mb-3 block">{world.icon}</span>
+            <span className="w-16 h-16 mb-3 rounded-2xl bg-white/20 text-white flex items-center justify-center"><world.icon className="w-9 h-9" strokeWidth={2} aria-hidden /></span>
             <h1 className="text-3xl font-heading font-bold">{world.name}</h1>
             <p className="text-white/80 mt-1">{world.description}</p>
             <div className="flex gap-6 mt-4">
@@ -129,7 +130,7 @@ export default function QuestWorldPage() {
                   quest.status === "in_progress" ? "bg-blue-500 text-white" :
                   quest.status === "available" ? "bg-slate-200 text-slate-600" : "bg-slate-100 text-slate-400"
                 }`}>
-                  {quest.status === "completed" ? "✓" : quest.status === "locked" ? "🔒" : index + 1}
+                  {quest.status === "completed" ? <Check className="w-5 h-5" strokeWidth={3} aria-hidden /> : quest.status === "locked" ? <Lock className="w-4 h-4" strokeWidth={2.5} aria-hidden /> : index + 1}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
@@ -152,7 +153,7 @@ export default function QuestWorldPage() {
                         {quest.steps.map((step, si) => (
                           <div key={si} className="flex items-center gap-2 text-sm">
                             <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${step.completed ? "bg-green-500 text-white" : "bg-slate-200 text-slate-400"}`}>
-                              {step.completed ? "✓" : si + 1}
+                              {step.completed ? <Check className="w-3 h-3" strokeWidth={3} aria-hidden /> : si + 1}
                             </span>
                             <span className={step.completed ? "text-slate-400 line-through" : "text-slate-700"}>{step.title}</span>
                           </div>

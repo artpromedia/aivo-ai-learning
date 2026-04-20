@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Heart, X } from "lucide-react";
+import { Heart, X, Smile, Meh, Frown, Angry, Moon, Sparkles } from "lucide-react";
 import { useFlVariant, LearnerCard } from "@aivo/learner-ui";
 
 interface SelExercise {
@@ -9,13 +9,13 @@ interface SelExercise {
   durationMinutes: number;
 }
 
-const EMOTIONS = [
-  { emoji: "😊", label: "Happy", value: "happy" },
-  { emoji: "😐", label: "Okay", value: "okay" },
-  { emoji: "😢", label: "Sad", value: "sad" },
-  { emoji: "😤", label: "Frustrated", value: "frustrated" },
-  { emoji: "😴", label: "Tired", value: "tired" },
-  { emoji: "🤩", label: "Excited", value: "excited" },
+const EMOTIONS: { Icon: typeof Smile; label: string; value: string; tint: string }[] = [
+  { Icon: Smile, label: "Happy", value: "happy", tint: "text-emerald-500" },
+  { Icon: Meh, label: "Okay", value: "okay", tint: "text-slate-500" },
+  { Icon: Frown, label: "Sad", value: "sad", tint: "text-sky-500" },
+  { Icon: Angry, label: "Frustrated", value: "frustrated", tint: "text-rose-500" },
+  { Icon: Moon, label: "Tired", value: "tired", tint: "text-indigo-500" },
+  { Icon: Sparkles, label: "Excited", value: "excited", tint: "text-amber-500" },
 ];
 
 interface SelCheckInProps {
@@ -78,22 +78,25 @@ export function SelCheckIn({ onCheckin }: SelCheckInProps) {
       </button>
       {isOpen && (
         <div className="flex gap-2 flex-wrap justify-center vi-card p-3" role="radiogroup" aria-label="How are you feeling?">
-          {visibleEmotions.map((e) => (
-            <button
-              key={e.value}
-              onClick={() => handleSelect(e.value)}
-              role="radio"
-              aria-checked={false}
-              className={`hover:scale-110 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--visual-sel))] rounded-2xl bg-slate-50 hover:bg-white border border-slate-100 ${
-                isLow ? "text-4xl p-3" : "text-2xl p-2"
-              }`}
-              title={e.label}
-              aria-label={e.label}
-              style={{ minHeight: "var(--learner-hit-target, 48px)", minWidth: "var(--learner-hit-target, 48px)" }}
-            >
-              <span aria-hidden>{e.emoji}</span>
-            </button>
-          ))}
+          {visibleEmotions.map((e) => {
+            const Icon = e.Icon;
+            return (
+              <button
+                key={e.value}
+                onClick={() => handleSelect(e.value)}
+                role="radio"
+                aria-checked={false}
+                className={`hover:scale-110 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--visual-sel))] rounded-2xl bg-slate-50 hover:bg-white border border-slate-100 flex items-center justify-center ${e.tint} ${
+                  isLow ? "p-3" : "p-2"
+                }`}
+                title={e.label}
+                aria-label={e.label}
+                style={{ minHeight: "var(--learner-hit-target, 48px)", minWidth: "var(--learner-hit-target, 48px)" }}
+              >
+                <Icon className={isLow ? "w-9 h-9" : "w-6 h-6"} strokeWidth={2.25} aria-hidden />
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

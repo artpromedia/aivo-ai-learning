@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
+import { Brain, Star, FileText, Check, Lock, ClipboardList, Undo2, Dumbbell, Sprout, Target, BarChart3, RefreshCw } from "lucide-react";
+import { subjectIcon } from "@/lib/subject-icons";
 
 interface MasteryDecision {
   domain: string;
@@ -73,19 +75,6 @@ const DOMAIN_LABELS: Record<string, string> = {
   communication: "Communication",
   history: "History",
   coding: "Coding",
-};
-
-const DOMAIN_EMOJIS: Record<string, string> = {
-  ela: "📖",
-  math: "🔢",
-  science: "🔬",
-  sel: "💜",
-  speech: "💬",
-  executive_function: "🧩",
-  social: "🤝",
-  communication: "💬",
-  history: "🏛️",
-  coding: "💻",
 };
 
 function scoreToGradeEquiv(score: number, enrolledGrade: number): number {
@@ -220,8 +209,8 @@ export default function BrainBuildingSequence({
       <div className="max-w-3xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-cyan-400 flex items-center justify-center text-lg font-bold">
-              🧠
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-cyan-400 flex items-center justify-center text-white">
+              <Brain className="w-5 h-5" strokeWidth={2.5} aria-hidden />
             </div>
             <div>
               <h1 className="font-heading font-bold text-lg">Building {learnerName}&apos;s Brain</h1>
@@ -338,7 +327,7 @@ function StageTemplate({ learnerName, gradeLevel, functioningLevel }: {
           <div className="absolute inset-0 rounded-full border-2 border-dashed border-purple-400/40 animate-spin" style={{ animationDuration: "20s" }} />
           <div className="absolute inset-4 rounded-full border border-dashed border-cyan-400/30 animate-spin" style={{ animationDuration: "15s", animationDirection: "reverse" }} />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-6xl animate-pulse">🧠</div>
+            <Brain className="w-16 h-16 text-white animate-pulse" strokeWidth={1.5} aria-hidden />
           </div>
         </div>
 
@@ -368,7 +357,7 @@ function GradeLadder({ domain, score, enrolled, label, color, revealed }: {
       revealed ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
     }`}>
       <div className="flex items-center gap-3 mb-3">
-        <span className="text-xl">{DOMAIN_EMOJIS[domain] || "📚"}</span>
+        {(() => { const I = subjectIcon(domain); return <I className="w-5 h-5" style={{ color }} strokeWidth={2.5} aria-hidden />; })()}
         <span className="font-heading font-bold text-sm text-white">{label}</span>
       </div>
 
@@ -457,7 +446,7 @@ function StageAccommodations({ learnerName, accommodationDecisions, accommodatio
 
       {accommodationDecisions.length === 0 ? (
         <div className="text-center py-8">
-          <div className="text-4xl mb-3">✨</div>
+          <Star className="w-12 h-12 mx-auto mb-3 text-amber-400 fill-amber-300" strokeWidth={2} aria-hidden />
           <p className="text-white/50 font-body">No additional accommodations needed at this level.</p>
         </div>
       ) : (
@@ -516,7 +505,7 @@ function StageGoals({ learnerName, enrolled, masteryDecisions, goalsRevealed }: 
 
       {domainsWithGaps.length === 0 ? (
         <div className="text-center py-8">
-          <div className="text-4xl mb-3">🌟</div>
+          <Star className="w-12 h-12 mx-auto mb-3 text-amber-400 fill-amber-300" strokeWidth={2} aria-hidden />
           <p className="text-white/50 font-body">All domains are performing at or near grade level!</p>
         </div>
       ) : (
@@ -536,7 +525,7 @@ function StageGoals({ learnerName, enrolled, masteryDecisions, goalsRevealed }: 
                 }`}
               >
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg">{DOMAIN_EMOJIS[m.domain] || "📚"}</span>
+                  {(() => { const I = subjectIcon(m.domain); return <I className="w-4 h-4" style={{ color }} strokeWidth={2.5} aria-hidden />; })()}
                   <span className="font-heading font-bold text-sm text-white">
                     {m.display_label || DOMAIN_LABELS[m.domain] || m.domain}
                   </span>
@@ -604,9 +593,7 @@ function StageActivation({ learnerName, activationPulse }: {
           activationPulse ? "bg-gradient-to-br from-cyan-500/50 to-purple-500/50 scale-100" : "bg-white/5 scale-100"
         }`} />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className={`text-6xl transition-all duration-500 ${activationPulse ? "scale-110" : "scale-100"}`}>
-            🧠
-          </div>
+          <Brain className={`text-white transition-all duration-500 ${activationPulse ? "scale-110" : "scale-100"}`} style={{ width: 64, height: 64 }} strokeWidth={1.5} aria-hidden />
         </div>
         {activationPulse && (
           <>
@@ -631,13 +618,13 @@ function StageActivation({ learnerName, activationPulse }: {
 
       <div className="flex items-center justify-center gap-4 text-xs text-white/40 font-body">
         <div className="flex items-center gap-1.5">
-          <span>🔐</span> Encrypted (AES-256)
+          <Lock className="w-3.5 h-3.5" aria-hidden /> Encrypted (AES-256)
         </div>
         <div className="flex items-center gap-1.5">
-          <span>📋</span> Brain v1.0
+          <ClipboardList className="w-3.5 h-3.5" aria-hidden /> Brain v1.0
         </div>
         <div className="flex items-center gap-1.5">
-          <span>↩️</span> Full rollback available
+          <Undo2 className="w-3.5 h-3.5" aria-hidden /> Full rollback available
         </div>
       </div>
 
@@ -720,7 +707,7 @@ function StageComplete({ learnerName, onContinue }: {
       <div className="relative mx-auto w-32 h-32 mb-6">
         <div className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 animate-pulse" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-5xl">🧠</div>
+          <Brain className="w-16 h-16 text-white" strokeWidth={1.5} aria-hidden />
         </div>
       </div>
 

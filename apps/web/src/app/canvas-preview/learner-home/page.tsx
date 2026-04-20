@@ -2,6 +2,7 @@ import {
   Sparkles, Star, Trophy, Flame, Coins, Gem, Settings, LogOut,
   Play, Map, Gift, Backpack, Heart, BookOpen, Beaker,
   Brain, Zap, Target, ChevronRight, Smile, Cloud,
+  Frown, Annoyed, Meh, type LucideIcon,
 } from "lucide-react";
 import { ViTokens } from "../_tokens";
 
@@ -21,9 +22,9 @@ const missions = [
   { id: "m1", title: "Finish 1 session with Nova", color: "math",    xp: 25, progress: 0, target: 1 },
   { id: "m2", title: "Practice reading with Atlas", color: "reading", xp: 25, progress: 1, target: 2 },
 ];
-const moods = [
-  { e: "😟", label: "Tough" }, { e: "😕", label: "Meh" }, { e: "😐", label: "Okay" },
-  { e: "🙂", label: "Good" }, { e: "🌟", label: "Great" },
+const moods: { Icon: LucideIcon; label: string }[] = [
+  { Icon: Frown, label: "Tough" }, { Icon: Annoyed, label: "Meh" }, { Icon: Meh, label: "Okay" },
+  { Icon: Smile, label: "Good" }, { Icon: Star, label: "Great" },
 ];
 
 const wellMap: Record<string, string> = {
@@ -83,7 +84,7 @@ export default function LearnerHomePreview() {
               <IconWell color="math"><Star className="w-6 h-6" strokeWidth={2.5} /></IconWell>
               <div className="flex-1">
                 <p className="text-xs font-bold uppercase tracking-wider text-[hsl(340_82%_52%)] mb-1">Up Next · Math with Nova</p>
-                <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Counting Adventure 🌟</h2>
+                <h2 className="text-2xl font-extrabold text-slate-900 mb-2 inline-flex items-center gap-2">Counting Adventure <Star className="w-5 h-5 text-amber-500 fill-amber-500" aria-hidden /></h2>
                 <p className="text-sm text-slate-600 mb-4">Pick up where you left off — just 5 friendly questions.</p>
                 <div className="flex items-center gap-3 flex-wrap">
                   <button className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold shadow-lg shadow-[hsl(262_83%_58%/0.25)]">
@@ -157,7 +158,7 @@ export default function LearnerHomePreview() {
                 {moods.map((m, i) => (
                   <button key={m.label} aria-label={`Mood: ${m.label}`} aria-pressed={i === 3}
                           className="flex flex-col items-center gap-1 p-2 rounded-2xl">
-                    <span className="text-3xl" aria-hidden>{m.e}</span>
+                    <span className="text-slate-700" aria-hidden><m.Icon className="w-7 h-7" strokeWidth={2} /></span>
                     <span className="text-[10px] font-bold text-slate-500">{m.label}</span>
                   </button>
                 ))}

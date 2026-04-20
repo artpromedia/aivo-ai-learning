@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { Trophy, Medal, Award } from "lucide-react";
 
 interface LeaderboardEntry {
   id: string;
@@ -39,7 +40,8 @@ export default function LeaderboardPage() {
 
   if (loading || !user) return null;
 
-  const MEDAL = ["🥇", "🥈", "🥉"];
+  const MEDAL_ICONS = [Trophy, Medal, Award];
+  const MEDAL_TINTS = ["text-amber-500", "text-slate-400", "text-orange-600"];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-yellow-50">
@@ -54,7 +56,12 @@ export default function LeaderboardPage() {
 
       <main className="max-w-3xl mx-auto px-8 py-12 space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-heading font-bold text-slate-900">🏆 {t("leaderboard")}</h1>
+          <h1 className="text-4xl font-heading font-bold text-slate-900 inline-flex items-center justify-center gap-3">
+            <span className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center">
+              <Trophy className="w-6 h-6" strokeWidth={2} aria-hidden />
+            </span>
+            {t("leaderboard")}
+          </h1>
           <p className="text-slate-500 font-semibold mt-2">{t("leaderboard_desc")}</p>
         </div>
 
@@ -75,7 +82,9 @@ export default function LeaderboardPage() {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           {entries.length === 0 ? (
             <div className="p-12 text-center">
-              <div className="text-4xl mb-4">🏆</div>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                <Trophy className="w-8 h-8" strokeWidth={2} aria-hidden />
+              </div>
               <p className="text-slate-500 font-semibold">{t("no_leaderboard_entries")}</p>
             </div>
           ) : (
@@ -87,8 +96,10 @@ export default function LeaderboardPage() {
                     key={entry.id}
                     className={`flex items-center gap-4 px-6 py-4 ${isMe ? "bg-purple-50" : ""}`}
                   >
-                    <div className="w-10 text-center text-xl font-heading font-bold">
-                      {idx < 3 ? MEDAL[idx] : <span className="text-slate-400">{idx + 1}</span>}
+                    <div className="w-10 text-center text-xl font-heading font-bold flex items-center justify-center">
+                      {idx < 3
+                        ? (() => { const Icon = MEDAL_ICONS[idx]; return <Icon className={`w-7 h-7 ${MEDAL_TINTS[idx]}`} strokeWidth={2} aria-hidden />; })()
+                        : <span className="text-slate-400">{idx + 1}</span>}
                     </div>
                     <div className="flex-1">
                       <div className="font-heading font-bold text-slate-900">

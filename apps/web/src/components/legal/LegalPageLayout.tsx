@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 interface Section {
   title: string;
@@ -12,7 +13,7 @@ interface LegalPageLayoutProps {
   badge: string;
   title: string;
   subtitle: string;
-  icon: string;
+  icon: ReactNode;
   accentColor: string;
   lastUpdated: string;
   sections: Section[];
@@ -79,8 +80,8 @@ export function LegalPageLayout({
         <div className="max-w-4xl mx-auto px-6 md:px-8 relative z-10">
           <div className="flex items-center gap-3 mb-6">
             <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg"
-              style={{ backgroundColor: `${accentColor}15` }}
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg"
+              style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
             >
               {icon}
             </div>

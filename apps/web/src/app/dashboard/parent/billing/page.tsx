@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { TUTORS, type TutorKey } from "@aivo/brand";
 import { useTranslations } from "next-intl";
+import { Check } from "lucide-react";
 
 interface Plan {
   id: string;
@@ -266,7 +267,7 @@ export default function ParentBillingPage() {
                   <ul className="mt-3 space-y-2 flex-1">
                     {plan.features.map((f, i) => (
                       <li key={i} className="text-sm vi-text-muted flex items-start gap-2">
-                        <span className="text-[hsl(var(--visual-science))] mt-0.5 flex-shrink-0">✓</span> {f}
+                        <Check size={16} strokeWidth={3} aria-hidden="true" className="text-[hsl(var(--visual-science))] mt-0.5 flex-shrink-0" /> {f}
                       </li>
                     ))}
                   </ul>

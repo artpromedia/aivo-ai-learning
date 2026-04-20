@@ -3,6 +3,8 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import { Lightbulb, Check } from "lucide-react";
+import { subjectIcon } from "@/lib/subject-icons";
 
 interface AdaptedProblem {
   problem_number: number;
@@ -20,15 +22,6 @@ interface ChatMessage {
   content: string;
   timestamp: string;
 }
-
-const SUBJECT_ICONS: Record<string, string> = {
-  math: "🔢",
-  ela: "📖",
-  science: "🔬",
-  history: "🏛️",
-  coding: "💻",
-  other: "📝",
-};
 
 export default function HomeworkSessionPage() {
   const { user, accessToken, loading: authLoading } = useAuth();
@@ -184,7 +177,7 @@ export default function HomeworkSessionPage() {
           <button onClick={() => router.push("/dashboard/learner/homework")} className="text-slate-400 hover:text-slate-600 font-bold text-sm">
             ← {tCommon("back")}
           </button>
-          <span className="text-2xl">{SUBJECT_ICONS[subjectLower] || "📝"}</span>
+          {(() => { const Icon = subjectIcon(subjectLower); return <Icon className="w-6 h-6 text-purple-600" strokeWidth={2} aria-hidden />; })()}
           <span className="font-heading font-bold text-slate-800 capitalize">{subjectLower} Homework</span>
           {adaptedProblems.length > 0 && (
             <span className="text-xs text-slate-400">
@@ -231,7 +224,7 @@ export default function HomeworkSessionPage() {
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isDone ? "bg-[hsl(var(--visual-science))] text-white" : "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]"}`}>
-                      {isDone ? "✓" : p.problem_number}
+                      {isDone ? <Check className="w-4 h-4" strokeWidth={3} aria-hidden /> : p.problem_number}
                     </span>
                     <span className="font-bold text-slate-700 text-xs">{isDone ? tCommon("done") : `#${p.problem_number}`}</span>
                     {!isDone && (
@@ -245,7 +238,7 @@ export default function HomeworkSessionPage() {
                   </div>
                   <p className="text-slate-600 text-xs line-clamp-3">{p.adapted || p.original}</p>
                   {p.scaffolding && (
-                    <p className="text-purple-500 text-xs mt-1 italic line-clamp-2">💡 {p.scaffolding}</p>
+                    <p className="text-purple-500 text-xs mt-1 italic line-clamp-2 inline-flex items-start gap-1"><Lightbulb className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={2.5} aria-hidden /> {p.scaffolding}</p>
                   )}
                 </button>
               );

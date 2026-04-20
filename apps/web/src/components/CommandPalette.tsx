@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
+import { Search } from "lucide-react";
 
 interface SearchResults {
   users: { id: string; name: string; email: string }[];
@@ -94,7 +95,7 @@ export default function CommandPalette() {
     >
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
-          <span className="text-slate-400">🔍</span>
+          <Search className="w-4 h-4 text-slate-400" strokeWidth={2} aria-hidden />
           <input
             ref={inputRef}
             type="text"

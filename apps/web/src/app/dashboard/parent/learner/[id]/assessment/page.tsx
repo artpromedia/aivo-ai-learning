@@ -6,12 +6,13 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Check, HelpCircle, Heart,
-  Sparkles, Compass, CheckCircle2,
+  Sparkles, Compass, CheckCircle2, Frown, Annoyed, Meh, Smile, Star,
+  type LucideIcon,
 } from "lucide-react";
 import { IconWell } from "@/components/discovery/_vi";
 import { PARENT_ASSESSMENT_CATEGORIES, TOTAL_QUESTIONS, type AssessmentQuestion } from "@/lib/assessment-questions";
 
-const SCALE_EMOJIS = ["😟", "😕", "😐", "🙂", "🌟"];
+const SCALE_ICONS: LucideIcon[] = [Frown, Annoyed, Meh, Smile, Star];
 
 function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
   const m = hex.replace("#", "");
@@ -584,7 +585,7 @@ function QuestionInput({
           {Array.from({ length: (q.scaleMax ?? 5) - (q.scaleMin ?? 1) + 1 }).map((_, i) => {
             const val = (q.scaleMin ?? 1) + i;
             const selected = value === val;
-            const emoji = SCALE_EMOJIS[Math.min(i, SCALE_EMOJIS.length - 1)];
+            const Icon = SCALE_ICONS[Math.min(i, SCALE_ICONS.length - 1)];
             return (
               <button
                 key={val}
@@ -596,7 +597,9 @@ function QuestionInput({
                 className="flex flex-col items-center gap-1 p-3 rounded-2xl transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 style={selected ? { backgroundColor: tintBg } : undefined}
               >
-                <span className={`text-3xl transition-all ${selected ? "scale-110" : "grayscale opacity-50"}`} aria-hidden>{emoji}</span>
+                <span className={`transition-all flex items-center justify-center ${selected ? "scale-110" : "opacity-40"}`} aria-hidden style={{ color: selected ? categoryColor : "rgb(148 163 184)" }}>
+                  <Icon className="w-8 h-8" strokeWidth={2} />
+                </span>
                 <span className="text-[10px] font-extrabold tabular-nums" style={{ color: selected ? categoryColor : "rgb(148 163 184)" }}>{val}</span>
               </button>
             );

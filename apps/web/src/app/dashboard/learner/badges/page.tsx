@@ -4,12 +4,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { Footprints, BookOpen, Wand2, Flame, FlaskConical, HandHeart, Brain, Star, Trophy, Shield, type LucideIcon } from "lucide-react";
 
 interface Badge {
   id: string;
   name: string;
   description: string;
-  icon: string;
+  icon: LucideIcon;
   category: string;
   earnedAt?: string;
   rarity: "common" | "rare" | "epic" | "legendary";
@@ -30,16 +31,16 @@ const RARITY_GLOW = {
 };
 
 const SAMPLE_BADGES: Badge[] = [
-  { id: "1", name: "First Steps", description: "Complete your first lesson", icon: "👣", category: "milestone", earnedAt: "2025-01-15", rarity: "common" },
-  { id: "2", name: "Bookworm", description: "Read 10 lessons in ELA", icon: "📚", category: "subject", earnedAt: "2025-02-01", rarity: "common" },
-  { id: "3", name: "Math Wizard", description: "Score 100% on 5 math quizzes", icon: "🧙", category: "subject", earnedAt: "2025-02-20", rarity: "rare" },
-  { id: "4", name: "Streak Master", description: "Maintain a 7-day streak", icon: "🔥", category: "engagement", earnedAt: "2025-03-05", rarity: "rare" },
-  { id: "5", name: "Science Explorer", description: "Complete all Level 1 science lessons", icon: "🔬", category: "subject", earnedAt: "2025-03-15", rarity: "epic" },
-  { id: "6", name: "Team Player", description: "Help 3 peers in challenges", icon: "🤝", category: "social", rarity: "rare" },
-  { id: "7", name: "Brain Builder", description: "Unlock all brain profile dimensions", icon: "🧠", category: "milestone", rarity: "epic" },
-  { id: "8", name: "Legend of AIVO", description: "Reach Level 50", icon: "⭐", category: "milestone", rarity: "legendary" },
-  { id: "9", name: "Quest Champion", description: "Complete 10 quests", icon: "🏆", category: "engagement", earnedAt: "2025-04-01", rarity: "epic" },
-  { id: "10", name: "Daily Hero", description: "Log in 30 days in a row", icon: "🦸", category: "engagement", rarity: "legendary" },
+  { id: "1", name: "First Steps", description: "Complete your first lesson", icon: Footprints, category: "milestone", earnedAt: "2025-01-15", rarity: "common" },
+  { id: "2", name: "Bookworm", description: "Read 10 lessons in ELA", icon: BookOpen, category: "subject", earnedAt: "2025-02-01", rarity: "common" },
+  { id: "3", name: "Math Wizard", description: "Score 100% on 5 math quizzes", icon: Wand2, category: "subject", earnedAt: "2025-02-20", rarity: "rare" },
+  { id: "4", name: "Streak Master", description: "Maintain a 7-day streak", icon: Flame, category: "engagement", earnedAt: "2025-03-05", rarity: "rare" },
+  { id: "5", name: "Science Explorer", description: "Complete all Level 1 science lessons", icon: FlaskConical, category: "subject", earnedAt: "2025-03-15", rarity: "epic" },
+  { id: "6", name: "Team Player", description: "Help 3 peers in challenges", icon: HandHeart, category: "social", rarity: "rare" },
+  { id: "7", name: "Brain Builder", description: "Unlock all brain profile dimensions", icon: Brain, category: "milestone", rarity: "epic" },
+  { id: "8", name: "Legend of AIVO", description: "Reach Level 50", icon: Star, category: "milestone", rarity: "legendary" },
+  { id: "9", name: "Quest Champion", description: "Complete 10 quests", icon: Trophy, category: "engagement", earnedAt: "2025-04-01", rarity: "epic" },
+  { id: "10", name: "Daily Hero", description: "Log in 30 days in a row", icon: Shield, category: "engagement", rarity: "legendary" },
 ];
 
 export default function BadgesPage() {
@@ -77,10 +78,14 @@ export default function BadgesPage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {filtered.map(badge => (
+          {filtered.map(badge => {
+            const BadgeIcon = badge.icon;
+            return (
             <div key={badge.id}
               className={`relative p-4 rounded-2xl border-2 text-center transition hover:scale-105 ${badge.earnedAt ? `bg-gradient-to-b ${RARITY_COLORS[badge.rarity]} shadow-lg ${RARITY_GLOW[badge.rarity]}` : "bg-slate-50 border-slate-200 opacity-50 grayscale"}`}>
-              <div className="text-4xl mb-2">{badge.icon}</div>
+              <div className="w-14 h-14 mx-auto mb-2 rounded-2xl bg-white/60 flex items-center justify-center">
+                <BadgeIcon className="w-7 h-7" strokeWidth={2} aria-hidden />
+              </div>
               <p className="font-heading font-bold text-sm">{badge.name}</p>
               <p className="text-xs mt-1 opacity-70">{badge.description}</p>
               {badge.earnedAt && (
@@ -90,7 +95,8 @@ export default function BadgesPage() {
                 {badge.rarity}
               </span>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

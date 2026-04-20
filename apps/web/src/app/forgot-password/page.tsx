@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Mail } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -44,7 +45,9 @@ export default function ForgotPasswordPage() {
 
         {submitted ? (
           <div className="mt-6 text-center">
-            <div className="text-4xl mb-3">✉️</div>
+            <div className="w-14 h-14 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center mx-auto mb-3">
+              <Mail size={28} strokeWidth={2.5} aria-hidden="true" />
+            </div>
             <p className="text-slate-700 font-semibold">Check your inbox</p>
             <p className="text-sm text-slate-500 mt-2">
               If an account exists for <strong>{email}</strong>, a reset link is on its way. The link expires in 1 hour.

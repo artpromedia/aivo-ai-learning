@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { IconWell } from "@/components/discovery/_vi";
-import { Plug, School, Circle, Link2, Palette, BookOpen, Zap, type LucideIcon } from "lucide-react";
+import { Plug, School, Circle, Link2, Palette, BookOpen, Zap, Check, type LucideIcon } from "lucide-react";
 
 interface Connector {
   id: string;
@@ -604,7 +604,9 @@ export default function IntegrationsPage() {
             {requestSubmitted ? (
               <>
                 <div className="text-center py-4">
-                  <div className="w-14 h-14 bg-[hsl(var(--visual-science)/0.14)] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
+                  <div className="w-14 h-14 bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check size={28} strokeWidth={3} aria-hidden="true" />
+                  </div>
                   <h3 className="font-heading font-bold text-lg vi-text mb-2">Request Submitted</h3>
                   <p className="text-sm vi-text-muted">Thank you! We&apos;ll review your request and keep you updated on its status.</p>
                 </div>

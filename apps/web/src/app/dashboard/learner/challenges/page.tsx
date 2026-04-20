@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { Swords } from "lucide-react";
 
 interface Challenge {
   id: string;
@@ -88,7 +89,12 @@ export default function ChallengesPage() {
 
       <main className="max-w-4xl mx-auto px-8 py-12 space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-heading font-bold text-slate-900">⚔️ {t("challenges")}</h1>
+          <h1 className="text-4xl font-heading font-bold text-slate-900 inline-flex items-center justify-center gap-3">
+            <span className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center">
+              <Swords className="w-6 h-6" strokeWidth={2} aria-hidden />
+            </span>
+            {t("challenges")}
+          </h1>
           <p className="text-slate-500 font-semibold mt-2">{t("challenge_friends")}</p>
         </div>
 
@@ -141,7 +147,9 @@ export default function ChallengesPage() {
         <div className="space-y-4">
           {challenges.length === 0 ? (
             <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-              <div className="text-4xl mb-4">⚔️</div>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center">
+                <Swords className="w-8 h-8" strokeWidth={2} aria-hidden />
+              </div>
               <p className="text-slate-500 font-semibold">{t("no_challenges")}</p>
             </div>
           ) : (

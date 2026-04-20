@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { Brain, ClipboardEdit, Check, Dumbbell, Sprout, Target, BarChart3, RefreshCw, type LucideIcon } from "lucide-react";
 
 interface BrainState {
   masteryLevels: Record<string, number>;
@@ -220,7 +221,7 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
         <div className="text-center py-8">
           {awaitingReview ? (
             <>
-              <div className="text-4xl mb-3">📝</div>
+              <ClipboardEdit className="w-12 h-12 mx-auto mb-3 text-slate-400" strokeWidth={2} aria-hidden />
               <p className="text-slate-700 font-heading font-bold">Awaiting Your Review</p>
               <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
                 The Brain Clone has been built and is ready for your review. Approve it to activate personalized learning.
@@ -234,7 +235,7 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
             </>
           ) : readyToBuild ? (
             <>
-              <div className="text-4xl mb-3">🧠</div>
+              <Brain className="w-12 h-12 mx-auto mb-3 text-purple-500" strokeWidth={2} aria-hidden />
               <p className="text-slate-700 font-heading font-bold">Ready to Build Brain Clone</p>
               <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
                 Baseline assessment is complete. Review the assessment summary, provide COPPA parental consent, and approve to build the Brain Clone.
@@ -248,13 +249,13 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
             </>
           ) : notReady ? (
             <>
-              <div className="text-4xl mb-3">🧠</div>
+              <Brain className="w-12 h-12 mx-auto mb-3 text-slate-300" strokeWidth={2} aria-hidden />
               <p className="text-slate-500 font-semibold">Brain not initialized yet</p>
               <p className="text-xs text-slate-400 mt-1">Complete the parent assessment and baseline adventure to initialize the Brain Clone</p>
             </>
           ) : (
             <>
-              <div className="text-4xl mb-3">🧠</div>
+              <Brain className="w-12 h-12 mx-auto mb-3 text-slate-300" strokeWidth={2} aria-hidden />
               <p className="text-slate-500 font-semibold">{error || "Brain not initialized yet"}</p>
               <p className="text-xs text-slate-400 mt-1">Please try again in a moment</p>
             </>
@@ -268,7 +269,7 @@ export default function BrainVisualization({ learnerId, learnerName, accessToken
     <div className={`bg-white rounded-2xl border border-slate-200 overflow-hidden ${compact ? "" : "shadow-lg"}`} role="region" aria-label={`${learnerName}'s Brain Clone visualization`}>
       <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-cyan-50">
         <div className="flex items-center gap-3">
-          <span className="text-xl" aria-hidden="true">🧠</span>
+          <Brain className="w-5 h-5 text-purple-500" strokeWidth={2.5} aria-hidden="true" />
           <div>
             <h3 className="font-heading font-bold text-slate-900 text-sm">{learnerName}&apos;s Brain Clone</h3>
             <span className="text-xs text-slate-500">v{brainState.version} &middot; Updated {new Date(brainState.updatedAt).toLocaleDateString()}</span>
@@ -499,7 +500,7 @@ function RAIView({
   return (
     <div className={`space-y-4 ${compact ? "text-xs" : "text-sm"}`}>
       <div className="flex items-center gap-2 mb-3">
-        <span className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-lg font-bold">✓</span>
+        <span className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600"><Check className="w-4 h-4" strokeWidth={3} aria-hidden /></span>
         <div>
           <h4 className="font-heading font-bold text-slate-900">Responsible AI Status</h4>
           <p className="text-xs text-slate-400">Safety, compliance & ethical guardrails</p>
@@ -509,7 +510,7 @@ function RAIView({
       <div className="grid grid-cols-2 gap-2">
         {checks.map((c) => (
           <div key={c.label} className="flex items-start gap-2 p-2.5 rounded-xl bg-green-50 border border-green-100">
-            <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>
+            <Check className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" strokeWidth={3} aria-hidden />
             <div>
               <p className="font-bold text-slate-700 text-xs">{c.label}</p>
               <p className="text-[10px] text-slate-400">{c.detail}</p>
@@ -578,11 +579,11 @@ function XAIView({
   const avgMastery = entries.length > 0 ? entries.reduce((s, [, v]) => s + v, 0) / entries.length : 0;
   const signalEntries = Object.entries(signals).filter(([, v]) => v > 0.3);
 
-  const explanations: { icon: string; title: string; detail: string; type: "insight" | "caution" | "info" }[] = [];
+  const explanations: { Icon: LucideIcon; title: string; detail: string; type: "insight" | "caution" | "info" }[] = [];
 
   if (strengths.length > 0) {
     explanations.push({
-      icon: "💪",
+      Icon: Dumbbell,
       title: `Strong in ${strengths.length} domain${strengths.length > 1 ? "s" : ""}`,
       detail: `Highest: ${strengths[0][0].replace(/_/g, " ")} at ${Math.round(strengths[0][1])}%. These domains show consistent mastery and readiness for advancement.`,
       type: "insight",
@@ -591,7 +592,7 @@ function XAIView({
 
   if (emerging.length > 0) {
     explanations.push({
-      icon: "🌱",
+      Icon: Sprout,
       title: `${emerging.length} domain${emerging.length > 1 ? "s" : ""} emerging`,
       detail: `${emerging.map(([d]) => d.replace(/_/g, " ")).join(", ")} — below 30% mastery. The Brain is focusing additional scaffolding and review on these areas.`,
       type: "caution",
@@ -600,7 +601,7 @@ function XAIView({
 
   if (funcLevel !== "STANDARD") {
     explanations.push({
-      icon: "🎯",
+      Icon: Target,
       title: `Adapted for ${funcLevel.replace(/_/g, " ").toLowerCase()} learner`,
       detail: "Content delivery, interaction modes, and session lengths are automatically adjusted based on the functioning level profile in the Brain Clone.",
       type: "info",
@@ -609,7 +610,7 @@ function XAIView({
 
   if (signalEntries.length > 0) {
     explanations.push({
-      icon: "📊",
+      Icon: BarChart3,
       title: "Behavioral signals detected",
       detail: `The Brain has identified patterns in: ${signalEntries.map(([k]) => k.replace(/_/g, " ")).join(", ")}. These influence accommodation recommendations.`,
       type: "info",
@@ -617,7 +618,7 @@ function XAIView({
   }
 
   explanations.push({
-    icon: "🔄",
+    Icon: RefreshCw,
     title: "Continuous adaptation",
     detail: `Average mastery: ${Math.round(avgMastery)}% across ${entries.length} domains. The Brain adjusts difficulty, pacing, and tutor strategies after each session.`,
     type: "insight",
@@ -644,7 +645,7 @@ function XAIView({
             }`}
           >
             <div className="flex items-start gap-2">
-              <span className="text-base flex-shrink-0">{exp.icon}</span>
+              <exp.Icon className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-600" strokeWidth={2} aria-hidden />
               <div>
                 <p className="font-bold text-slate-800 text-xs">{exp.title}</p>
                 <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{exp.detail}</p>

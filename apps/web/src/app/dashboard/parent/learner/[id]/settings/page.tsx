@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useParams } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import { Check, Sun, CloudSun, Moon } from "lucide-react";
 
 interface Settings {
   accommodations: {
@@ -148,7 +149,11 @@ export default function ParentLearnerSettingsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-heading font-bold vi-text">{t("settings_title", { name: learnerName })}</h1>
         {saveStatus === "saving" && <span className="text-xs vi-text-muted animate-pulse">Saving...</span>}
-        {saveStatus === "saved" && <span className="text-xs text-[hsl(var(--visual-science))] font-semibold">✓ Saved</span>}
+        {saveStatus === "saved" && (
+          <span className="inline-flex items-center gap-1 text-xs text-[hsl(var(--visual-science))] font-semibold">
+            <Check size={12} strokeWidth={3} aria-hidden="true" /> Saved
+          </span>
+        )}
         {saveStatus === "error" && <span className="text-xs text-[hsl(var(--visual-math))] font-semibold">Save failed — try again</span>}
       </div>
 
@@ -223,13 +228,17 @@ export default function ParentLearnerSettingsPage() {
               <div>
                 <span className="text-sm font-semibold vi-text">Preferred Time</span>
                 <div className="flex gap-2 mt-2">
-                  {(["morning", "afternoon", "evening"] as const).map(time => (
-                    <button key={time} onClick={() => updateGoals("preferredSessionTime", time)}
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition capitalize ${settings.learningGoals.preferredSessionTime === time ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "vi-surface-soft vi-text-muted hover:bg-[hsl(var(--visual-border))]"}`}
-                      style={{ minHeight: 44 }}>
-                      {time === "morning" ? "☀️ " : time === "afternoon" ? "🌤️ " : "🌙 "}{time}
-                    </button>
-                  ))}
+                  {(["morning", "afternoon", "evening"] as const).map(time => {
+                    const TimeIcon = time === "morning" ? Sun : time === "afternoon" ? CloudSun : Moon;
+                    return (
+                      <button key={time} onClick={() => updateGoals("preferredSessionTime", time)}
+                        className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition capitalize ${settings.learningGoals.preferredSessionTime === time ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "vi-surface-soft vi-text-muted hover:bg-[hsl(var(--visual-border))]"}`}
+                        style={{ minHeight: 44 }}>
+                        <TimeIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+                        {time}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

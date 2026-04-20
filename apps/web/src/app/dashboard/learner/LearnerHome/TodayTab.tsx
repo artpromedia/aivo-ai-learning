@@ -48,7 +48,7 @@ export function TodayTab({ missions, onSelCheckin }: TodayTabProps) {
                     style={{ backgroundColor: tutor ? `${tutor.color}1f` : "#f1f5f9", color: tutor?.color }}
                     aria-hidden
                   >
-                    {tutor?.icon || "🎯"}
+                    {tutor?.icon || <Target className="w-5 h-5" strokeWidth={2.5} aria-hidden />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-extrabold text-slate-900 truncate">{mission.title}</p>

@@ -1,9 +1,10 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { Sparkles, BookOpen, FlaskConical, Castle, Code2, Globe2, Map as MapIcon } from "lucide-react";
 
 interface QuestWorld {
   key: string;
@@ -14,12 +15,13 @@ interface QuestWorld {
   chapters: number;
 }
 
-const WORLD_ICONS: Record<string, string> = {
-  nova_number_galaxy: "🌌",
-  sage_story_kingdom: "📖",
-  spark_science_lab: "🧪",
-  chrono_time_tower: "🏰",
-  pixel_code_forge: "💻",
+type IconCmp = ComponentType<{ className?: string; strokeWidth?: number; "aria-hidden"?: boolean }>;
+const WORLD_ICONS: Record<string, IconCmp> = {
+  nova_number_galaxy: Sparkles,
+  sage_story_kingdom: BookOpen,
+  spark_science_lab: FlaskConical,
+  chrono_time_tower: Castle,
+  pixel_code_forge: Code2,
 };
 
 const WORLD_COLORS: Record<string, string> = {
@@ -66,7 +68,12 @@ export default function QuestsPage() {
 
       <main className="max-w-4xl mx-auto px-8 py-12 space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-heading font-bold text-slate-900">🗺️ {t("quest_worlds")}</h1>
+          <h1 className="text-4xl font-heading font-bold text-slate-900 inline-flex items-center justify-center gap-3">
+            <span className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+              <MapIcon className="w-6 h-6" strokeWidth={2} aria-hidden />
+            </span>
+            {t("quest_worlds")}
+          </h1>
           <p className="text-slate-500 font-semibold mt-2">{t("quest_worlds_desc")}</p>
         </div>
 
@@ -82,7 +89,12 @@ export default function QuestsPage() {
               onClick={() => router.push(`/dashboard/learner/quests/${world.key}`)}
             >
               <div className="flex items-center gap-4 mb-3">
-                <div className="text-4xl">{WORLD_ICONS[world.key] || "🌍"}</div>
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                  style={{ backgroundColor: `${WORLD_COLORS[world.key] || "#7c3aed"}1f`, color: WORLD_COLORS[world.key] || "#7c3aed" }}
+                >
+                  {(() => { const Icon = WORLD_ICONS[world.key] || Globe2; return <Icon className="w-7 h-7" strokeWidth={2} aria-hidden />; })()}
+                </div>
                 <div>
                   <h3 className="text-xl font-heading font-bold" style={{ color: WORLD_COLORS[world.key] }}>
                     {world.name}

@@ -15,6 +15,7 @@ import {
   type FunctioningLevel,
   type SensoryProfile,
 } from "@aivo/learner-ui";
+import { Backpack, Map as MapIcon, Gift, Play, Brain as BrainIcon } from "lucide-react";
 import { TopBar } from "./TopBar";
 import { TutorShelf } from "./TutorShelf";
 import { QuietProgressStrip } from "./QuietProgressStrip";
@@ -35,14 +36,14 @@ interface EngagementProfile {
 }
 
 const TABS = [
-  { id: "today", label: "Today", icon: <span>🎒</span> },
-  { id: "adventures", label: "Adventures", icon: <span>🗺️</span> },
-  { id: "rewards", label: "Rewards", icon: <span>🎁</span> },
+  { id: "today", label: "Today", icon: <Backpack className="w-5 h-5" aria-hidden /> },
+  { id: "adventures", label: "Adventures", icon: <MapIcon className="w-5 h-5" aria-hidden /> },
+  { id: "rewards", label: "Rewards", icon: <Gift className="w-5 h-5" aria-hidden /> },
 ];
 
 const TABS_LOW = [
-  { id: "today", label: "Play", icon: <span>▶️</span> },
-  { id: "rewards", label: "Gifts", icon: <span>🎁</span> },
+  { id: "today", label: "Play", icon: <Play className="w-5 h-5" aria-hidden /> },
+  { id: "rewards", label: "Gifts", icon: <Gift className="w-5 h-5" aria-hidden /> },
 ];
 
 export function LearnerHome() {
@@ -187,7 +188,9 @@ export function LearnerHome() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-950 via-indigo-950 to-slate-950 flex flex-col items-center justify-center px-6">
         <main id="main-content" tabIndex={-1} className="max-w-md text-center">
-          <div className="text-7xl mb-6 animate-pulse" aria-hidden="true">🧠</div>
+          <div className="w-24 h-24 rounded-3xl bg-purple-500/20 text-purple-200 flex items-center justify-center mx-auto mb-6 animate-pulse" aria-hidden="true">
+            <BrainIcon className="w-12 h-12" strokeWidth={2} />
+          </div>
           <h1 className="text-3xl font-heading font-bold text-white mb-3">Your Brain is Ready!</h1>
           <p className="text-white/60 font-body leading-relaxed mb-6">
             Your learning brain has been built! A grown-up needs to review it before you can start learning.

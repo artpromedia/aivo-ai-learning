@@ -1,5 +1,6 @@
 "use client";
 import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+import { Lock } from "lucide-react";
 
 export default function PrivacyPolicyPage() {
   return (
@@ -7,7 +8,7 @@ export default function PrivacyPolicyPage() {
       badge="Privacy"
       title="Privacy Policy"
       subtitle="Your privacy matters. Here's how AIVO Learning collects, uses, and protects your personal information and your child's data."
-      icon="🔒"
+      icon={<Lock size={22} strokeWidth={2.5} aria-hidden="true" />}
       accentColor="#7c3aed"
       lastUpdated="April 1, 2026"
       contactEmail="privacy@aivo.education"

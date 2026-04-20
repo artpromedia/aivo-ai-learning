@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 
 function ResetPasswordInner() {
   const searchParams = useSearchParams();
@@ -61,7 +62,9 @@ function ResetPasswordInner() {
 
         {success ? (
           <div className="mt-6 text-center">
-            <div className="text-4xl mb-3">✅</div>
+            <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+              <CheckCircle2 size={28} strokeWidth={2.5} aria-hidden="true" />
+            </div>
             <p className="text-slate-700 font-semibold">Password updated</p>
             <p className="text-sm text-slate-500 mt-2">Redirecting you to sign in...</p>
           </div>

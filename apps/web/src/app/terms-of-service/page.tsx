@@ -1,5 +1,6 @@
 "use client";
 import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+import { ScrollText } from "lucide-react";
 
 export default function TermsOfServicePage() {
   return (
@@ -7,7 +8,7 @@ export default function TermsOfServicePage() {
       badge="Legal"
       title="Terms of Service"
       subtitle="The terms and conditions governing your use of the AIVO Learning Platform. Please read these terms carefully before using our services."
-      icon="📜"
+      icon={<ScrollText size={22} strokeWidth={2.5} aria-hidden="true" />}
       accentColor="#2563eb"
       lastUpdated="April 1, 2026"
       contactEmail="legal@aivo.education"

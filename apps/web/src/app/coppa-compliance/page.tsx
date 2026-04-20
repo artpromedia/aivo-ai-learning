@@ -1,5 +1,6 @@
 "use client";
 import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
+import { ShieldCheck } from "lucide-react";
 
 export default function CoppaCompliancePage() {
   return (
@@ -7,7 +8,7 @@ export default function CoppaCompliancePage() {
       badge="Children's Privacy"
       title="COPPA Compliance"
       subtitle="How AIVO Learning protects children's online privacy in full compliance with the Children's Online Privacy Protection Act."
-      icon="🛡️"
+      icon={<ShieldCheck size={22} strokeWidth={2.5} aria-hidden="true" />}
       accentColor="#059669"
       lastUpdated="April 1, 2026"
       contactEmail="privacy@aivo.education"
