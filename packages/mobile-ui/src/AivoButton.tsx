@@ -63,11 +63,13 @@ export function AivoButton({
               {
                 fontSize: fontSizes[size],
                 color:
-                  isPrimary || isSecondary
+                  isPrimary
                     ? '#FFFFFF'
-                    : isGhost
-                      ? theme.colors.textSecondary
-                      : theme.colors.primary,
+                    : isSecondary
+                      ? theme.colors.text
+                      : isGhost
+                        ? theme.colors.textSecondary
+                        : theme.colors.primary,
                 marginLeft: icon ? 8 : 0,
               },
             ]}
