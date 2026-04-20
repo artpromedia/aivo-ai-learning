@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
-import { users, sessions, tenants, learners, mfaCodes, passwordResetTokens, webauthnCredentials, mfaRecoveryCodes, auditEvents, appendAudit, adminSessions } from "@aivo/db";
+import { users, sessions, tenants, learners, mfaCodes, passwordResetTokens, webauthnCredentials, mfaRecoveryCodes, auditEvents, appendAudit, adminSessions, passwordHistory } from "@aivo/db";
+import { evaluatePassword, isPasswordRotationDue, isInternalRoleForPolicy, PASSWORD_HISTORY_DEPTH } from "@aivo/security";
 import {
   signJWT, verifyJWT,
   ADMIN_ENTERPRISE,
@@ -286,13 +287,27 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       type: "B2C_FAMILY",
     }).returning();
 
+    const policy = await evaluatePassword(password, { role, email, name });
+    if (!policy.ok) {
+      // We created a tenant a few lines up; tear it back down so we don't
+      // leak orphan rows on a rejected registration.
+      await db.delete(tenants).where(eq(tenants.id, tenant.id));
+      return reply.status(400).send({
+        error: "Password does not meet our policy",
+        reasons: policy.reasons,
+        strengthScore: policy.strengthScore,
+      });
+    }
+    const newHash = await hashPassword(password);
     const [user] = await db.insert(users).values({
       tenantId: tenant.id,
       email,
-      passwordHash: await hashPassword(password),
+      passwordHash: newHash,
       name,
       role,
-    }).returning();
+      passwordChangedAt: new Date(),
+    } as any).returning();
+    await db.insert(passwordHistory).values({ userId: user.id, passwordHash: newHash });
 
     const accessToken = await signJWT({
       sub: user.id,
@@ -841,6 +856,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       await bumpAdminActivity(db, hashedToken);
     }
 
+    // Sprint 7: surface mustChangePassword + rotation-due so the SPA can
+    // redirect the user to /dashboard/change-password before doing anything
+    // else. We do NOT block refresh on this — the user must be able to
+    // load the change-password page itself.
+    const rotationDue = isPasswordRotationDue(user.passwordChangedAt as any, user.role);
+
     const accessToken = await signJWT({
       sub: user.id,
       tenantId: user.tenantId,
@@ -849,7 +870,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       name: user.name,
     });
 
-    return { accessToken };
+    return {
+      accessToken,
+      mustChangePassword: !!user.mustChangePassword || rotationDue,
+      passwordRotationDue: rotationDue,
+    };
   });
 
   /**
@@ -982,13 +1007,53 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: "Invalid or expired reset link" });
     }
 
+    const [user] = await db.select().from(users).where(eq(users.id, record.userId)).limit(1);
+    if (!user) return reply.status(400).send({ error: "Invalid or expired reset link" });
+
+    const recent = await db.select().from(passwordHistory)
+      .where(eq(passwordHistory.userId, user.id))
+      .orderBy(sql`${passwordHistory.createdAt} DESC`)
+      .limit(PASSWORD_HISTORY_DEPTH);
+    const policy = await evaluatePassword(newPassword, {
+      role: user.role,
+      email: user.email,
+      name: user.name,
+      historyVerifier: async (cand) => {
+        for (const h of recent) {
+          try { if (await verifyPassword(h.passwordHash, cand)) return true; } catch {/*skip*/}
+        }
+        return false;
+      },
+    });
+    if (!policy.ok) {
+      return reply.status(400).send({
+        error: "Password does not meet our policy",
+        reasons: policy.reasons,
+        strengthScore: policy.strengthScore,
+      });
+    }
+
     const newHash = await hashPassword(newPassword);
-    await db.update(users).set({ passwordHash: newHash, updatedAt: new Date() }).where(eq(users.id, record.userId));
+    await db.update(users).set({
+      passwordHash: newHash,
+      passwordChangedAt: new Date(),
+      mustChangePassword: false,
+      updatedAt: new Date(),
+    } as any).where(eq(users.id, record.userId));
+    await db.insert(passwordHistory).values({ userId: user.id, passwordHash: newHash });
+    // Trim history beyond the depth so we don't grow forever.
+    await db.execute(sql`
+      DELETE FROM password_history
+      WHERE user_id = ${user.id}
+        AND id NOT IN (
+          SELECT id FROM password_history
+          WHERE user_id = ${user.id}
+          ORDER BY created_at DESC
+          LIMIT ${PASSWORD_HISTORY_DEPTH}
+        )
+    `);
     await db.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, record.id));
-
-    // Invalidate any existing sessions for security
     await db.delete(sessions).where(eq(sessions.userId, record.userId));
-
     return { ok: true };
   });
 
@@ -1020,7 +1085,46 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const valid = await verifyPassword(user.passwordHash, currentPassword);
     if (!valid) return reply.status(400).send({ error: "Current password is incorrect" });
 
-    await db.update(users).set({ passwordHash: await hashPassword(newPassword) }).where(eq(users.id, payload.sub));
+    const recent = await db.select().from(passwordHistory)
+      .where(eq(passwordHistory.userId, user.id))
+      .orderBy(sql`${passwordHistory.createdAt} DESC`)
+      .limit(PASSWORD_HISTORY_DEPTH);
+    const policy = await evaluatePassword(newPassword, {
+      role: user.role,
+      email: user.email,
+      name: user.name,
+      historyVerifier: async (cand) => {
+        for (const h of recent) {
+          try { if (await verifyPassword(h.passwordHash, cand)) return true; } catch {/*skip*/}
+        }
+        try { if (await verifyPassword(user.passwordHash, cand)) return true; } catch {/*skip*/}
+        return false;
+      },
+    });
+    if (!policy.ok) {
+      return reply.status(400).send({
+        error: "Password does not meet our policy",
+        reasons: policy.reasons,
+        strengthScore: policy.strengthScore,
+      });
+    }
+    const newHash = await hashPassword(newPassword);
+    await db.update(users).set({
+      passwordHash: newHash,
+      passwordChangedAt: new Date(),
+      mustChangePassword: false,
+    } as any).where(eq(users.id, payload.sub));
+    await db.insert(passwordHistory).values({ userId: user.id, passwordHash: newHash });
+    await db.execute(sql`
+      DELETE FROM password_history
+      WHERE user_id = ${user.id}
+        AND id NOT IN (
+          SELECT id FROM password_history
+          WHERE user_id = ${user.id}
+          ORDER BY created_at DESC
+          LIMIT ${PASSWORD_HISTORY_DEPTH}
+        )
+    `);
     await db.delete(sessions).where(eq(sessions.userId, payload.sub));
     return { success: true };
   });

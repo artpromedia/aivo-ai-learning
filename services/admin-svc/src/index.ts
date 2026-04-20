@@ -13,6 +13,8 @@ import Fastify from "fastify";
   import { registerLeadRoutes } from "./routes/leads.js";
   import { registerModerationRoutes } from "./routes/moderation.js";
   import { registerComplianceRoutes } from "./routes/compliance.js";
+  import { registerApiKeyRoutes } from "./routes/api-keys.js";
+  import { registerScimTokenRoutes } from "./routes/scim-tokens.js";
 
   const logger = createLogger("admin-svc");
   const PORT = parseInt(process.env.ADMIN_SVC_PORT || "3013", 10);
@@ -43,6 +45,8 @@ import Fastify from "fastify";
     registerLeadRoutes(app, db);
     registerModerationRoutes(app, db);
     registerComplianceRoutes(app, db);
+    registerApiKeyRoutes(app, db);
+    registerScimTokenRoutes(app, db);
 
     await app.listen({ port: PORT, host: "0.0.0.0" });
     logger.info(`AIVO Admin Service listening on port ${PORT}`);

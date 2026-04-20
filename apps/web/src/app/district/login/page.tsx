@@ -6,6 +6,8 @@ import Image from "next/image";
 
 const DISTRICT_ROLES = ["DISTRICT_ADMIN", "PLATFORM_ADMIN"];
 
+interface DiscoverResult { mode: "password" | "sso"; ssoLoginUrl?: string; idpLabel?: string; requireSso?: boolean; }
+
 export default function DistrictLoginPage() {
   const { user, loading: authLoading, refreshToken } = useAuth();
   const router = useRouter();
@@ -14,12 +16,35 @@ export default function DistrictLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [discover, setDiscover] = useState<DiscoverResult | null>(null);
+  const [discovering, setDiscovering] = useState(false);
 
   useEffect(() => {
     if (!authLoading && user && DISTRICT_ROLES.includes(user.role)) {
       router.push("/dashboard/district");
     }
   }, [user, authLoading, router]);
+
+  // Sprint 6: home-realm discovery. As soon as the user finishes typing
+  // a plausible email we ask the server whether their domain is wired up
+  // for SAML SSO. Debounce so we're not flooding /discover on every keystroke.
+  useEffect(() => {
+    if (!email.includes("@") || email.length < 5) { setDiscover(null); return; }
+    const handle = setTimeout(async () => {
+      setDiscovering(true);
+      try {
+        const res = await fetch("/api/auth/discover", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        if (res.ok) setDiscover(await res.json());
+        else setDiscover(null);
+      } catch { setDiscover(null); }
+      setDiscovering(false);
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [email]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,6 +194,21 @@ export default function DistrictLoginPage() {
                 </div>
               </div>
 
+              {discover?.mode === "sso" && discover.ssoLoginUrl && (
+                <a
+                  href={discover.ssoLoginUrl}
+                  className="block w-full py-3.5 rounded-xl bg-slate-900 text-white font-bold text-base text-center hover:bg-slate-800 active:bg-slate-700 transition-all shadow-lg"
+                >
+                  Continue with {discover.idpLabel || "your identity provider"}
+                </a>
+              )}
+              {discover?.mode === "sso" && discover.requireSso && (
+                <p className="text-xs text-slate-500 text-center">
+                  Your district requires SSO — password sign-in is disabled for this email domain.
+                </p>
+              )}
+
+              {!(discover?.mode === "sso" && discover.requireSso) && (
               <div>
                 <label htmlFor="district-password" className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
                 <div className="relative">
@@ -206,10 +246,11 @@ export default function DistrictLoginPage() {
                   </button>
                 </div>
               </div>
+              )}
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || discovering || (discover?.mode === "sso" && !!discover.requireSso)}
                 className="w-full py-3.5 rounded-xl bg-violet-700 text-white font-bold text-base hover:bg-violet-800 active:bg-violet-900 transition-all shadow-lg shadow-violet-900/25 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (

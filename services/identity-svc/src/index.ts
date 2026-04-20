@@ -16,6 +16,8 @@ import { registerCurriculumRoutes } from "./routes/curriculum.js";
 import { registerAdminRoutes } from "./routes/admin.js";
 import { registerStepUpRoutes } from "./routes/step-up.js";
 import { registerDistrictRoutes } from "./routes/district.js";
+import { registerSsoRoutes } from "./routes/sso.js";
+import { registerScimRoutes } from "./routes/scim.js";
 
 const logger = createLogger("identity-svc");
 const PORT = parseInt(process.env.PORT || "3001", 10);
@@ -116,6 +118,8 @@ async function start() {
   await registerStepUpRoutes(app);
   await registerAdminRoutes(app);
   await registerDistrictRoutes(app);
+  await registerSsoRoutes(app);
+  await registerScimRoutes(app);
   registerTestHelperRoutes(app);
 
   await app.listen({ port: PORT, host: "0.0.0.0" });

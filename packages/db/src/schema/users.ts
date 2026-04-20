@@ -25,9 +25,30 @@ export const users = pgTable("users", {
   lastLoginIp: varchar("last_login_ip", { length: 45 }),
   schoolId: uuid("school_id"),
   lastDashboardVisit: timestamp("last_dashboard_visit"),
+  /** Sprint 7: drives 365-day rotation enforcement for internal roles. */
+  passwordChangedAt: timestamp("password_changed_at").defaultNow(),
+  /** Sprint 7: invited team members must change their temp password before any
+   *  refresh/heartbeat succeeds. Cleared by a successful change-password call. */
+  mustChangePassword: boolean("must_change_password").default(false).notNull(),
+  /** Sprint 6: set when this user was auto-provisioned through SCIM or SAML JIT. */
+  provisionedBy: varchar("provisioned_by", { length: 20 }),
+  externalId: varchar("external_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+/**
+ * Sprint 7: prior password hashes. We keep the last N (default 5) so a user
+ * cannot rotate back into a recently-used credential.
+ */
+export const passwordHistory = pgTable("password_history", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_password_history_user").on(table.userId, table.createdAt),
+]);
 
 export const mfaCodes = pgTable("mfa_codes", {
   id: uuid("id").defaultRandom().primaryKey(),

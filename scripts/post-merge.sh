@@ -115,6 +115,43 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_admin_sessions_user ON admin_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_admin_sessions_activity ON admin_sessions(last_activity_at);
+
+-- Sprint 6: SCIM tokens + SAML/SCIM provenance markers.
+CREATE TABLE IF NOT EXISTS scim_tokens (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  tenant_id uuid NOT NULL REFERENCES tenants(id),
+  token_hash varchar(64) NOT NULL UNIQUE,
+  prefix varchar(16) NOT NULL,
+  name varchar(255) NOT NULL,
+  created_by uuid REFERENCES users(id),
+  last_used_at timestamp,
+  revoked_at timestamp,
+  created_at timestamp DEFAULT now() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_scim_tokens_tenant ON scim_tokens(tenant_id);
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS provisioned_by varchar(20);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS external_id varchar(255);
+
+-- Sprint 7: password policy + rotation + history.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at timestamp DEFAULT now();
+ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password boolean NOT NULL DEFAULT false;
+UPDATE users SET password_changed_at = COALESCE(password_changed_at, created_at)
+  WHERE password_changed_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS password_history (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid NOT NULL REFERENCES users(id),
+  password_hash text NOT NULL,
+  created_at timestamp DEFAULT now() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_password_history_user ON password_history(user_id, created_at);
+
+-- Sprint 7: API key rotation grace window.
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS rotated_from_id uuid;
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS grace_period_ends_at timestamp;
+CREATE INDEX IF NOT EXISTS idx_api_keys_prefix ON api_keys(key_prefix);
+CREATE INDEX IF NOT EXISTS idx_api_keys_tenant ON api_keys(tenant_id);
 SQL
 fi
 

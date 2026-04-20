@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { fetchWithStepUp } from "@/lib/step-up";
 
 interface User {
@@ -36,6 +37,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [originalAdmin, setOriginalAdmin] = useState<User | null>(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
   const refreshToken = useCallback(async (): Promise<string | null> => {
     try {
@@ -43,6 +47,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setAccessToken(data.accessToken);
+        // Sprint 7: surface the gate so the SPA can route the user to the
+        // forced change-password screen before letting them touch anything
+        // else.
+        setMustChangePassword(!!data.mustChangePassword);
         const meRes = await fetch("/api/users/me", {
           headers: { Authorization: `Bearer ${data.accessToken}` },
         });
@@ -66,6 +74,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => { refreshToken(); }, [refreshToken]);
+
+  // Sprint 7: enforce mustChangePassword by redirecting to the change-
+  // password page from anywhere in the dashboard. We allow the user to
+  // hit /dashboard/change-password itself and the auth pages so they can
+  // actually complete the change.
+  useEffect(() => {
+    if (loading || !user || !mustChangePassword) return;
+    const allowed = ["/dashboard/change-password", "/login", "/district/login", "/admin/login", "/logout"];
+    if (allowed.some((p) => pathname?.startsWith(p))) return;
+    router.push("/dashboard/change-password");
+  }, [loading, user, mustChangePassword, pathname, router]);
 
   const login = async (email: string, password: string) => {
     const res = await fetch("/api/auth/login", {

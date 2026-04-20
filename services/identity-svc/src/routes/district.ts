@@ -438,12 +438,19 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return settings || { notificationPrefs: {}, ssoConfig: {}, branding: {}, featureOverrides: {} };
   });
 
-  app.put("/api/district/settings", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.put("/api/district/settings", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const body = req.body as any;
     const updates: any = { updatedAt: new Date() };
     if (body.notificationPrefs !== undefined) updates.notificationPrefs = body.notificationPrefs;
-    if (body.ssoConfig !== undefined) updates.ssoConfig = body.ssoConfig;
+    // SSO config writes MUST go through `/api/district/sso` so the IdP cert
+    // and SP private key are encrypted via @aivo/sso. Reject ssoConfig
+    // payloads on this generic endpoint to prevent bypassing encryption.
+    if (body.ssoConfig !== undefined) {
+      return reply.status(400).send({
+        error: "ssoConfig must be updated via PUT /api/district/sso (encryption required).",
+      });
+    }
     if (body.branding !== undefined) updates.branding = body.branding;
     if (body.featureOverrides !== undefined) updates.featureOverrides = body.featureOverrides;
 
@@ -456,6 +463,86 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     }
     await logActivity(db, tid, "settings.updated", req.user.sub, req.user.name || req.user.email, "settings", tid, { fields: Object.keys(updates) });
     return result;
+  });
+
+  // Sprint 6: dedicated SSO config GET/PUT that handles encryption of the
+  // IdP cert + SP private key. Reading the config never returns plaintext
+  // — the UI gets `*Set: true` markers instead so it can render "stored,
+  // paste a new value to replace" placeholders.
+  app.get("/api/district/sso", { preHandler: requireDistrictAdmin }, async (req: any) => {
+    const [settings] = await db.select().from(districtSettings)
+      .where(eq(districtSettings.tenantId, req.tenantId)).limit(1);
+    const stored = (settings?.ssoConfig || {}) as any;
+    const { idpCertEnvelope, spPrivateKeyEnvelope, ...safe } = stored;
+    return {
+      config: {
+        ...safe,
+        idpCertSet: !!idpCertEnvelope,
+        spPrivateKeySet: !!spPrivateKeyEnvelope,
+      },
+    };
+  });
+
+  app.put("/api/district/sso", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+    const tid = req.tenantId;
+    const body = req.body as any;
+    const { encryptSsoConfig, IDP_PRESETS } = await import("@aivo/sso");
+
+    const [existing] = await db.select().from(districtSettings)
+      .where(eq(districtSettings.tenantId, tid)).limit(1);
+    const prior = (existing?.ssoConfig || {}) as any;
+
+    // Apply preset defaults first, then overlay the user's input so they
+    // can still customize.
+    const preset = IDP_PRESETS[body.preset as string] || {};
+    const merged: any = {
+      enabled: !!body.enabled,
+      idpLabel: body.idpLabel || preset.idpLabel,
+      emailDomains: Array.isArray(body.emailDomains) ? body.emailDomains : [],
+      requireSso: !!body.requireSso,
+      entryPoint: body.entryPoint || prior.entryPoint,
+      logoutUrl: body.logoutUrl || prior.logoutUrl,
+      issuer: body.issuer || prior.issuer,
+      identifierFormat: body.identifierFormat || preset.identifierFormat || prior.identifierFormat,
+      emailAttribute: body.emailAttribute || preset.emailAttribute || prior.emailAttribute,
+      nameAttribute: body.nameAttribute || preset.nameAttribute || prior.nameAttribute,
+      roleAttribute: body.roleAttribute || preset.roleAttribute || prior.roleAttribute,
+      defaultRole: body.defaultRole || prior.defaultRole || "TEACHER",
+      roleMap: body.roleMap || prior.roleMap || {},
+    };
+    // Only re-encrypt cert/key if the user actually supplied new plaintext.
+    const decryptedInput: any = { ...merged };
+    if (typeof body.idpCert === "string" && body.idpCert.trim()) {
+      decryptedInput.idpCert = body.idpCert.trim();
+    }
+    if (typeof body.spPrivateKey === "string" && body.spPrivateKey.trim()) {
+      decryptedInput.spPrivateKey = body.spPrivateKey.trim();
+    }
+    const encrypted = encryptSsoConfig(decryptedInput);
+    // Preserve existing envelopes when the user didn't supply replacements.
+    if (!encrypted.idpCertEnvelope && prior.idpCertEnvelope) encrypted.idpCertEnvelope = prior.idpCertEnvelope;
+    if (!encrypted.spPrivateKeyEnvelope && prior.spPrivateKeyEnvelope) encrypted.spPrivateKeyEnvelope = prior.spPrivateKeyEnvelope;
+
+    if (encrypted.enabled && !encrypted.entryPoint) {
+      return reply.status(400).send({ error: "entryPoint is required to enable SSO" });
+    }
+    if (encrypted.enabled && !encrypted.idpCertEnvelope) {
+      return reply.status(400).send({ error: "IdP signing certificate is required to enable SSO" });
+    }
+
+    const updates: any = { ssoConfig: encrypted, updatedAt: new Date() };
+    let result;
+    if (existing) {
+      [result] = await db.update(districtSettings).set(updates)
+        .where(eq(districtSettings.tenantId, tid)).returning();
+    } else {
+      [result] = await db.insert(districtSettings).values({ tenantId: tid, ...updates }).returning();
+    }
+    await logActivity(db, tid, "sso.updated", req.user.sub, req.user.name || req.user.email,
+      "sso_config", tid, { enabled: encrypted.enabled, requireSso: encrypted.requireSso });
+    const { idpCertEnvelope: _a, spPrivateKeyEnvelope: _b, ...safe } = encrypted;
+    void _a; void _b;
+    return { ok: true, config: { ...safe, idpCertSet: !!encrypted.idpCertEnvelope, spPrivateKeySet: !!encrypted.spPrivateKeyEnvelope } };
   });
 
   app.get("/api/district/activity", { preHandler: requireDistrictAdmin }, async (req: any) => {

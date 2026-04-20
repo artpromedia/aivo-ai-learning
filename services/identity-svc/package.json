@@ -15,6 +15,7 @@
     "@aivo/events": "workspace:*",
     "@aivo/observability": "workspace:*",
     "@aivo/security": "workspace:*",
+    "@aivo/sso": "workspace:*",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.0.0",
     "@fastify/rate-limit": "^10.2.2",
