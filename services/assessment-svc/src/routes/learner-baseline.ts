@@ -259,13 +259,56 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
 
       app.log.info({ learnerId, attemptId: attempt.id }, "[discovery/complete] attempt inserted");
 
+      let brainCloneStatus: string = "pending";
+      let brainCloneError: string | null = null;
+      let brainStateId: string | null = null;
+      try {
+        const cloneRes = await fetch(`${BRAIN_SVC_URL}/api/brain/clone`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: req.headers.authorization as string,
+          },
+          body: JSON.stringify({
+            learner_id: learner.id,
+            tenant_id: learner.tenantId,
+            assessment_id: attempt.id,
+            functioning_level: learner.functioningLevel || "STANDARD",
+            discovery_results: {
+              chapterResults: body.chapterResults || [],
+              totalCorrect: body.totalCorrect || 0,
+              totalAttempts: body.totalAttempts || 0,
+              xpEarned: body.xpEarned || 0,
+              responseLatencies: body.responseLatencies || [],
+            },
+          }),
+        });
+
+        if (cloneRes.ok) {
+          const cloneData = await cloneRes.json() as any;
+          brainCloneStatus = cloneData?.approval_status || cloneData?.approvalStatus || "cloned";
+          brainStateId = cloneData?.brain_state_id || cloneData?.id || null;
+          app.log.info({ learnerId, attemptId: attempt.id, brainStateId, brainCloneStatus }, "[discovery/complete] brain clone succeeded");
+        } else {
+          brainCloneError = await cloneRes.text();
+          brainCloneStatus = "failed";
+          app.log.error({ learnerId, attemptId: attempt.id, status: cloneRes.status, brainCloneError }, "[discovery/complete] brain clone failed");
+        }
+      } catch (cloneErr: any) {
+        brainCloneError = cloneErr?.message || String(cloneErr);
+        brainCloneStatus = "failed";
+        app.log.error({ learnerId, attemptId: attempt.id, err: brainCloneError }, "[discovery/complete] brain clone request error");
+      }
+
       return reply.send({
         success: true,
         assessmentId: attempt.id,
         learnerId,
         functioningLevel: learner.functioningLevel,
         domainScores: attempt.domainScores,
-        brainCloneStatus: "awaiting_parent_consent",
+        brainCloneStatus,
+        brainStateId,
+        brainCloneError,
       });
     } catch (err: any) {
       app.log.error({ err: err?.message, stack: err?.stack, learnerId }, "[discovery/complete] FAILED");

@@ -48,7 +48,7 @@ export default function DiscoveryAdventurePageWrapper() {
 }
 
 function DiscoveryAdventurePage() {
-  const { user, accessToken, loading } = useAuth();
+  const { user, accessToken, loading, refreshToken } = useAuth();
   const router = useRouter();
   const t = useTranslations("assessment");
   const searchParams = useSearchParams();
@@ -188,18 +188,20 @@ function DiscoveryAdventurePage() {
       learnerName={learnerName}
       functioningLevel={learnerFL}
       accessToken={accessToken}
+      refreshToken={refreshToken}
       postBaselineHref={postBaselineHref}
     />
   );
 }
 
 function DiscoveryAdventureInner({
-  learnerId, learnerName, functioningLevel, accessToken, postBaselineHref,
+  learnerId, learnerName, functioningLevel, accessToken, refreshToken, postBaselineHref,
 }: {
   learnerId: string;
   learnerName: string;
   functioningLevel: FunctioningLevel;
   accessToken: string | null;
+  refreshToken: () => Promise<string | null>;
   postBaselineHref: string;
 }) {
   const router = useRouter();
@@ -208,7 +210,7 @@ function DiscoveryAdventureInner({
     state, chapters, getCurrentActivity, getCurrentActivities,
     startAdventure, beginFirstChapter, startChapterActivities, handleAnswer,
     advanceToNextChapter, resumeAfterBreak, exitToHome, hasSavedProgress, submitResults,
-  } = useDiscoveryEngine({ learnerId, learnerName, functioningLevel, accessToken });
+  } = useDiscoveryEngine({ learnerId, learnerName, functioningLevel, accessToken, refreshToken });
 
   useEffect(() => {
     if (!hasSavedProgress()) startAdventure();

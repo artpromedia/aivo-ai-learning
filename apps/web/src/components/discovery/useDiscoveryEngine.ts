@@ -135,6 +135,7 @@ interface UseDiscoveryEngineProps {
   learnerName: string;
   functioningLevel: FunctioningLevel;
   accessToken: string | null;
+  refreshToken?: () => Promise<string | null>;
 }
 
 const STORAGE_KEY_PREFIX = "aivo_discovery_";
@@ -166,7 +167,7 @@ function clearSavedState(learnerId: string) {
   } catch {}
 }
 
-export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, accessToken }: UseDiscoveryEngineProps) {
+export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, accessToken, refreshToken }: UseDiscoveryEngineProps) {
   const config = FUNCTIONING_LEVEL_CONFIG[functioningLevel] || FUNCTIONING_LEVEL_CONFIG.STANDARD;
   const chapters = ADVENTURE_CHAPTERS.slice(0, config.chaptersCount);
 
@@ -412,20 +413,35 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
   }, [learnerId]);
 
   const submitResults = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
-    if (!accessToken) return { success: false, error: "No auth token" };
+    const payload = JSON.stringify({
+      chapterResults: state.chapterResults,
+      totalCorrect: state.totalCorrect,
+      totalAttempts: state.totalAttempts,
+      xpEarned: state.xpEarned,
+      responseLatencies: state.responseLatencies,
+    });
+
+    const doPost = async (token: string) => {
+      return fetch(`/api/assessments/learner/discovery/${learnerId}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: payload,
+      });
+    };
 
     try {
-      const res = await fetch(`/api/assessments/learner/discovery/${learnerId}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({
-          chapterResults: state.chapterResults,
-          totalCorrect: state.totalCorrect,
-          totalAttempts: state.totalAttempts,
-          xpEarned: state.xpEarned,
-          responseLatencies: state.responseLatencies,
-        }),
-      });
+      let token = accessToken;
+      if (!token && refreshToken) token = await refreshToken();
+      if (!token) return { success: false, error: "No auth token" };
+
+      let res = await doPost(token);
+
+      if (res.status === 401 && refreshToken) {
+        const fresh = await refreshToken();
+        if (fresh) {
+          res = await doPost(fresh);
+        }
+      }
 
       if (res.ok) {
         clearSavedState(learnerId);
@@ -437,7 +453,7 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     } catch (e: any) {
       return { success: false, error: e.message };
     }
-  }, [accessToken, learnerId, state.chapterResults, state.totalCorrect, state.totalAttempts, state.xpEarned, state.responseLatencies]);
+  }, [accessToken, refreshToken, learnerId, state.chapterResults, state.totalCorrect, state.totalAttempts, state.xpEarned, state.responseLatencies]);
 
   return {
     state,
