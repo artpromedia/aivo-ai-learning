@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import LearnerCardSkeleton from "@/components/states/LearnerCardSkeleton";
 import FetchErrorState from "@/components/states/FetchErrorState";
 import EmptyLearnerState from "@/components/states/EmptyLearnerState";
+import { StatIconWell } from "@/components/discovery/_vi";
 import {
   HandHeart,
   User,
@@ -149,9 +150,9 @@ export default function CaregiverOverviewPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="vi-card p-5">
-                <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] flex items-center justify-center mb-3">
+                <StatIconWell color="science" className="mb-3">
                   <User size={22} strokeWidth={2.5} aria-hidden="true" />
-                </div>
+                </StatIconWell>
                 <p className="text-xl font-black vi-text leading-tight">
                   {activeLearner.name}
                 </p>
@@ -161,9 +162,9 @@ export default function CaregiverOverviewPage() {
               </div>
 
               <div className="vi-card p-5">
-                <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center mb-3">
+                <StatIconWell color="primary" className="mb-3">
                   <Target size={22} strokeWidth={2.5} aria-hidden="true" />
-                </div>
+                </StatIconWell>
                 <p className="text-xl font-black text-[hsl(var(--visual-primary))] leading-tight">
                   {activeLearner.functioningLevel || "Pending"}
                 </p>
@@ -173,9 +174,9 @@ export default function CaregiverOverviewPage() {
               </div>
 
               <div className="vi-card p-5">
-                <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))] flex items-center justify-center mb-3">
+                <StatIconWell color="sel" className="mb-3">
                   <ClipboardCheck size={22} strokeWidth={2.5} aria-hidden="true" />
-                </div>
+                </StatIconWell>
                 <p className="text-3xl font-black text-[hsl(var(--visual-sel))] leading-none">
                   {learnerGoals.length}
                 </p>
@@ -185,9 +186,9 @@ export default function CaregiverOverviewPage() {
               </div>
 
               <div className="vi-card p-5">
-                <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] flex items-center justify-center mb-3">
+                <StatIconWell color="reading" className="mb-3">
                   <Users size={22} strokeWidth={2.5} aria-hidden="true" />
-                </div>
+                </StatIconWell>
                 <p className="text-3xl font-black text-[hsl(var(--visual-reading))] leading-none">
                   {learners.length}
                 </p>

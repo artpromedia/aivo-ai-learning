@@ -10,6 +10,7 @@ import { WelcomeHero } from "./components/WelcomeHero";
 import { LearnerSummaryCard } from "./components/LearnerSummaryCard";
 import { QuickActions } from "./components/QuickActions";
 import { WhileYouWereAway } from "./components/WhileYouWereAway";
+import { StatIconWell } from "@/components/discovery/_vi";
 import {
   Users,
   Plus,
@@ -246,9 +247,9 @@ export default function ParentDashboard() {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center shadow-sm">
+          <StatIconWell color="primary" className="shadow-sm">
             <Users size={22} strokeWidth={2.5} aria-hidden="true" />
-          </span>
+          </StatIconWell>
           <h2 className="text-2xl font-heading font-bold vi-text">Your Children</h2>
         </div>
         <button
@@ -267,9 +268,9 @@ export default function ParentDashboard() {
           className="vi-card p-6 lg:p-8 space-y-6"
         >
           <div className="flex items-center gap-3">
-            <span className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center shadow-sm">
+            <StatIconWell color="primary" className="shadow-sm">
               <Sparkles size={22} strokeWidth={2.5} aria-hidden="true" />
-            </span>
+            </StatIconWell>
             <h3 className="font-heading font-bold text-xl vi-text">{t("onboarding.add_learner_title")}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -442,9 +443,9 @@ export default function ParentDashboard() {
       <div className="vi-card p-6 lg:p-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <span className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))] flex items-center justify-center shadow-sm">
+            <StatIconWell color="sel" className="shadow-sm">
               <GraduationCap size={22} strokeWidth={2.5} aria-hidden="true" />
-            </span>
+            </StatIconWell>
             <div>
               <h2 className="text-xl font-heading font-bold vi-text">{t("tutor.meet_tutors")}</h2>
               <p className="text-xs vi-text-muted font-body font-semibold">7 core tutors + 7 expansion specialists</p>

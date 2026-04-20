@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState, useCallback } from "react";
-import { IconWell } from "@/components/discovery/_vi";
+import { IconWell, StatIconWell } from "@/components/discovery/_vi";
 import { Settings, Lock } from "lucide-react";
 
 interface DistrictSettingsData {
@@ -143,9 +143,9 @@ export default function DistrictSettingsPage() {
 
       <div className="vi-surface-soft rounded-2xl border border-[hsl(var(--visual-primary)/0.3)] p-6">
         <div className="flex items-start gap-3">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex-shrink-0">
+          <StatIconWell color="primary" className="flex-shrink-0">
             <Lock size={22} strokeWidth={2.5} aria-hidden="true" />
-          </div>
+          </StatIconWell>
           <div>
             <h3 className="font-semibold text-violet-900">Advanced Settings</h3>
             <p className="text-sm text-[hsl(var(--visual-primary))] mt-1">

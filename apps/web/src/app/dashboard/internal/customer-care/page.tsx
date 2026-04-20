@@ -2,7 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { IconWell } from "@/components/discovery/_vi";
+import { IconWell, StatIconWell } from "@/components/discovery/_vi";
 import { Headphones, Inbox, RefreshCw, CheckCircle2, Star, type LucideIcon } from "lucide-react";
 
 export default function CustomerCareDashboard() {
@@ -69,9 +69,9 @@ export default function CustomerCareDashboard() {
           { label: "CSAT Score", value: `${ticketMetrics.csat}%`, Icon: Star, color: "bg-[hsl(var(--visual-primary))]" },
         ] as Array<{label: string; value: any; Icon: LucideIcon; color: string}>).map((m) => (
           <div key={m.label} className={`${m.color} rounded-2xl p-5 text-white`}>
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-white/20">
+            <StatIconWell color="overlay">
               <m.Icon size={22} strokeWidth={2.5} aria-hidden="true" />
-            </div>
+            </StatIconWell>
             <p className="text-3xl font-bold mt-2">{m.value}</p>
             <p className="text-sm opacity-80 mt-1">{m.label}</p>
           </div>

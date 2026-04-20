@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Mail, Search, ChevronDown } from "lucide-react";
+import { StatIconWell } from "@/components/discovery/_vi";
 
 const FAQ_ITEMS = [
   {
@@ -86,9 +87,9 @@ export default function HelpPage() {
 
       <div className="vi-card p-6 bg-[hsl(var(--visual-primary)/0.06)] border-[hsl(var(--visual-primary)/0.3)]">
         <div className="flex items-center gap-3 mb-2">
-          <span className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center">
+          <StatIconWell color="primary">
             <Mail size={20} aria-hidden="true" />
-          </span>
+          </StatIconWell>
           <h2 className="text-lg font-heading font-bold vi-text">Need more help?</h2>
         </div>
         <p className="text-sm vi-text-muted mb-4">Our support team is here for you. We typically respond within 24 hours.</p>

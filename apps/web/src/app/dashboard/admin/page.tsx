@@ -3,7 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { IconWell } from "@/components/discovery/_vi";
+import { IconWell, StatIconWell } from "@/components/discovery/_vi";
 import {
   LayoutDashboard,
   User,
@@ -140,9 +140,9 @@ export default function AdminOverview() {
             <Link key={c.title} href={c.link} className="group">
               <div className={`${c.bg} rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all group-hover:scale-[1.02]`}>
                 <div className="flex items-center justify-between mb-3">
-                  <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center">
+                  <StatIconWell color="overlay">
                     <Icon size={22} strokeWidth={2.5} aria-hidden="true" />
-                  </div>
+                  </StatIconWell>
                   <span className="text-xs opacity-75 group-hover:opacity-100">View →</span>
                 </div>
                 <div className="text-3xl font-bold">{c.value}</div>

@@ -55,3 +55,38 @@ export function IconWell({
     "w-14 h-14 rounded-2xl";
   return <div className={`${sz} flex items-center justify-center ${WELL[color] || WELL.primary}`}>{children}</div>;
 }
+
+const STAT_WELL: Record<string, string> = {
+  primary: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
+  math: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
+  reading: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  science: "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]",
+  sel: "bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))]",
+  amber: "bg-amber-100 text-amber-700",
+  red: "bg-red-100 text-red-700",
+  overlay: "bg-white/20",
+};
+
+export type StatIconWellColor = keyof typeof STAT_WELL;
+
+export function StatIconWell({
+  children,
+  color = "primary",
+  size = "md",
+  className = "",
+  wellClass,
+}: {
+  children: ReactNode;
+  color?: StatIconWellColor;
+  size?: "sm" | "md";
+  className?: string;
+  wellClass?: string;
+}) {
+  const sz = size === "sm" ? "w-10 h-10 rounded-xl" : "w-11 h-11 rounded-2xl";
+  const palette = wellClass ?? STAT_WELL[color] ?? STAT_WELL.primary;
+  return (
+    <div className={`${sz} flex items-center justify-center ${palette}${className ? ` ${className}` : ""}`}>
+      {children}
+    </div>
+  );
+}

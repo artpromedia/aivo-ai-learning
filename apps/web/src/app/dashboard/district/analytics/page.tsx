@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
-import { IconWell } from "@/components/discovery/_vi";
+import { IconWell, StatIconWell } from "@/components/discovery/_vi";
 import { BarChart3, GraduationCap, UserCog, School, ClipboardList, TrendingUp, Trophy, Bell, type LucideIcon } from "lucide-react";
 
 interface Cohort {
@@ -148,9 +148,9 @@ function StatCard({ label, value, Icon, well }: { label: string; value: number; 
   return (
     <div className="vi-card p-5 hover:shadow-md transition">
       <div className="flex items-center gap-3 mb-2">
-        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${well}`}>
+        <StatIconWell wellClass={well}>
           <Icon size={22} strokeWidth={2.5} aria-hidden="true" />
-        </div>
+        </StatIconWell>
         <span className="text-xs vi-text-muted font-medium uppercase">{label}</span>
       </div>
       <p className="text-3xl font-bold vi-text">{value}</p>

@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import LearnerCardSkeleton from "@/components/states/LearnerCardSkeleton";
 import FetchErrorState from "@/components/states/FetchErrorState";
 import EmptyLearnerState from "@/components/states/EmptyLearnerState";
-import { IconWell } from "@/components/discovery/_vi";
+import { IconWell, StatIconWell } from "@/components/discovery/_vi";
 import {
   HeartPulse,
   Users,
@@ -120,9 +120,9 @@ export default function TherapistCaseloadPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="vi-card p-5">
-          <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))] flex items-center justify-center mb-3">
+          <StatIconWell color="math" className="mb-3">
             <Users size={22} strokeWidth={2.5} aria-hidden="true" />
-          </div>
+          </StatIconWell>
           <p className="text-3xl font-black text-[hsl(var(--visual-math))] leading-none">
             {learners.length}
           </p>
@@ -132,9 +132,9 @@ export default function TherapistCaseloadPage() {
         </div>
 
         <div className="vi-card p-5">
-          <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center mb-3">
+          <StatIconWell color="primary" className="mb-3">
             <Target size={22} strokeWidth={2.5} aria-hidden="true" />
-          </div>
+          </StatIconWell>
           <p className="text-3xl font-black text-[hsl(var(--visual-primary))] leading-none">
             {activeGoals.length}
           </p>
@@ -144,9 +144,9 @@ export default function TherapistCaseloadPage() {
         </div>
 
         <div className="vi-card p-5">
-          <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] flex items-center justify-center mb-3">
+          <StatIconWell color="science" className="mb-3">
             <CheckCircle2 size={22} strokeWidth={2.5} aria-hidden="true" />
-          </div>
+          </StatIconWell>
           <p className="text-3xl font-black text-[hsl(var(--visual-science))] leading-none">
             {completedGoals.length}
           </p>
@@ -156,9 +156,9 @@ export default function TherapistCaseloadPage() {
         </div>
 
         <div className="vi-card p-5 col-span-2 lg:col-span-1">
-          <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center mb-3">
+          <StatIconWell color="primary" className="mb-3">
             <Layers size={22} strokeWidth={2.5} aria-hidden="true" />
-          </div>
+          </StatIconWell>
           <p className="text-xs vi-text-muted font-bold uppercase tracking-wide mb-2">
             Functioning Levels
           </p>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Pagination from "@/components/Pagination";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { IconWell } from "@/components/discovery/_vi";
+import { IconWell, StatIconWell } from "@/components/discovery/_vi";
 import { Building2, School, Users, ClipboardList, Plus, type LucideIcon } from "lucide-react";
 
 interface Tenant {
@@ -125,9 +125,9 @@ export default function AdminTenantsPage() {
               }`}
             >
               <div className="flex items-center gap-3 mb-2">
-                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${config.well}`}>
+                <StatIconWell wellClass={config.well}>
                   <Icon size={22} strokeWidth={2.5} aria-hidden="true" />
-                </div>
+                </StatIconWell>
                 <div>
                   <p className="text-2xl font-bold vi-text">{typeCounts[type] || 0}</p>
                   <p className="text-xs vi-text-muted font-semibold">{config.label} Accounts</p>

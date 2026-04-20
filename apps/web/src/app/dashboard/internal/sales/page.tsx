@@ -2,7 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { IconWell } from "@/components/discovery/_vi";
+import { IconWell, StatIconWell } from "@/components/discovery/_vi";
 import { Briefcase, Building2, GraduationCap, DollarSign, Target, type LucideIcon } from "lucide-react";
 
 export default function SalesDashboard() {
@@ -57,9 +57,9 @@ export default function SalesDashboard() {
         ] as Array<{label: string; value: any; Icon: LucideIcon; well: string; trend: string}>).map((m) => (
           <div key={m.label} className="vi-card p-5">
             <div className="flex items-center justify-between mb-2">
-              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${m.well}`}>
+              <StatIconWell wellClass={m.well}>
                 <m.Icon size={22} strokeWidth={2.5} aria-hidden="true" />
-              </div>
+              </StatIconWell>
               <span className="text-xs text-green-600 font-semibold">{m.trend}</span>
             </div>
             <p className="text-2xl font-bold vi-text">{m.value}</p>

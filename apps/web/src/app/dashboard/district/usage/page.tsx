@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
-import { IconWell } from "@/components/discovery/_vi";
+import { IconWell, StatIconWell } from "@/components/discovery/_vi";
 import { Gauge, Users, GraduationCap, UserCog, School, Lightbulb, type LucideIcon } from "lucide-react";
 
 interface UsageData {
@@ -82,9 +82,9 @@ export default function DistrictUsagePage() {
 
       <div className="vi-surface-soft rounded-2xl border border-[hsl(var(--visual-primary)/0.3)] p-6">
         <div className="flex items-start gap-3">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex-shrink-0">
+          <StatIconWell color="primary" className="flex-shrink-0">
             <Lightbulb size={22} strokeWidth={2.5} aria-hidden="true" />
-          </div>
+          </StatIconWell>
           <div>
             <h3 className="font-semibold text-violet-900">Need higher limits?</h3>
             <p className="text-sm text-[hsl(var(--visual-primary))] mt-1">
@@ -104,9 +104,9 @@ function UsageCard({ label, used, limit, Icon, well }: { label: string; used: nu
   return (
     <div className="vi-card p-5 hover:shadow-md transition">
       <div className="flex items-center gap-3 mb-3">
-        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${well}`}>
+        <StatIconWell wellClass={well}>
           <Icon size={22} strokeWidth={2.5} aria-hidden="true" />
-        </div>
+        </StatIconWell>
         <span className="text-sm vi-text-muted font-medium">{label}</span>
       </div>
       <div className="flex items-baseline gap-1 mb-2">

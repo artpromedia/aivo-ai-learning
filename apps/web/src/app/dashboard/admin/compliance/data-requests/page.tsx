@@ -2,7 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useState } from "react";
 import Link from "next/link";
-import { IconWell } from "@/components/discovery/_vi";
+import { IconWell, StatIconWell } from "@/components/discovery/_vi";
 import { ClipboardList, Clock, Loader2, CheckCircle2, Plus, type LucideIcon } from "lucide-react";
 
 interface DataRequest {
@@ -95,9 +95,9 @@ export default function DataRequestsPage() {
           const Icon = m.Icon;
           return (
             <div key={m.label} className="bg-white rounded-xl p-4 shadow-sm border vi-border flex items-center gap-3">
-              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${m.well}`}>
+              <StatIconWell wellClass={m.well}>
                 <Icon size={22} strokeWidth={2.5} aria-hidden="true" />
-              </div>
+              </StatIconWell>
               <div>
                 <p className="text-xl font-bold vi-text leading-tight">{m.value}</p>
                 <p className="text-xs vi-text-muted font-semibold">{m.label}</p>
