@@ -72,8 +72,8 @@ export default function AdminLearnersPage() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">{td("learners")}</h1>
-        <p className="text-sm text-slate-500 mt-1">View and manage all learner profiles across the platform.</p>
+        <h1 className="text-2xl font-heading font-bold vi-text">{td("learners")}</h1>
+        <p className="text-sm vi-text-muted mt-1">View and manage all learner profiles across the platform.</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -85,37 +85,37 @@ export default function AdminLearnersPage() {
               key={level}
               onClick={() => setLevelFilter(levelFilter === level ? "ALL" : level)}
               className={`p-4 rounded-2xl border transition text-left ${
-                levelFilter === level ? "border-purple-300 bg-purple-50 shadow-sm" : "border-slate-200 bg-white hover:border-slate-300"
+                levelFilter === level ? "border-purple-300 vi-surface-soft shadow-sm" : "vi-border bg-white hover:border-slate-300"
               }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold ${config.bg} ${config.color}`}>{config.label}</span>
-                <span className="text-lg font-bold text-slate-900">{count}</span>
+                <span className="text-lg font-bold vi-text">{count}</span>
               </div>
-              <div className="bg-slate-100 rounded-full h-1.5 overflow-hidden">
+              <div className="vi-surface-soft rounded-full h-1.5 overflow-hidden">
                 <div className={`h-full rounded-full ${config.bg.replace("100", "400")}`} style={{ width: `${pct}%` }} />
               </div>
-              <p className="text-[10px] text-slate-400 mt-2">{config.desc}</p>
+              <p className="text-[10px] vi-text-muted mt-2">{config.desc}</p>
             </button>
           );
         })}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="font-heading font-bold text-lg text-slate-900">
+      <div className="vi-card overflow-hidden">
+        <div className="p-5 border-b vi-border flex items-center justify-between">
+          <h2 className="font-heading font-bold text-lg vi-text">
             {levelFilter === "ALL" ? "All Learners" : `${LEVEL_CONFIG[levelFilter]?.label} Learners`}
           </h2>
-          <p className="text-sm text-slate-400">{filtered.length} learners</p>
+          <p className="text-sm vi-text-muted">{filtered.length} learners</p>
         </div>
 
         {loading ? (
-          <div className="p-10 text-center text-slate-400 animate-pulse">Loading learners...</div>
+          <div className="p-10 text-center vi-text-muted animate-pulse">Loading learners...</div>
         ) : (
           <>
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
+                <tr className="text-left vi-text-muted border-b vi-border vi-bg/50">
                   <th className="px-5 py-3 font-semibold">{tc("name")}</th>
                   <th className="px-5 py-3 font-semibold">Functioning Level</th>
                   <th className="px-5 py-3 font-semibold">{tc("type")}</th>
@@ -124,22 +124,22 @@ export default function AdminLearnersPage() {
               </thead>
               <tbody>
                 {paginatedLearners.map((l) => {
-                  const lc = LEVEL_CONFIG[l.functioningLevel || ""] || { label: "N/A", color: "text-slate-500", bg: "bg-slate-100" };
+                  const lc = LEVEL_CONFIG[l.functioningLevel || ""] || { label: "N/A", color: "vi-text-muted", bg: "vi-surface-soft" };
                   return (
-                    <tr key={l.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+                    <tr key={l.id} className="border-b vi-border hover:vi-bg/50 transition">
                       <td className="px-5 py-3 font-medium">
-                        <Link href={`/dashboard/admin/learners/${l.id}`} className="text-purple-600 hover:text-purple-700">{l.name}</Link>
+                        <Link href={`/dashboard/admin/learners/${l.id}`} className="text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))]">{l.name}</Link>
                       </td>
                       <td className="px-5 py-3">
                         <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${lc.bg} ${lc.color}`}>{lc.label}</span>
                       </td>
-                      <td className="px-5 py-3 text-slate-500">{l.gradeLevel || "—"}</td>
-                      <td className="px-5 py-3 text-slate-400">{new Date(l.createdAt).toLocaleDateString()}</td>
+                      <td className="px-5 py-3 vi-text-muted">{l.gradeLevel || "—"}</td>
+                      <td className="px-5 py-3 vi-text-muted">{new Date(l.createdAt).toLocaleDateString()}</td>
                     </tr>
                   );
                 })}
                 {paginatedLearners.length === 0 && (
-                  <tr><td colSpan={4} className="px-5 py-10 text-center text-slate-400">No learners found</td></tr>
+                  <tr><td colSpan={4} className="px-5 py-10 text-center vi-text-muted">No learners found</td></tr>
                 )}
               </tbody>
             </table>

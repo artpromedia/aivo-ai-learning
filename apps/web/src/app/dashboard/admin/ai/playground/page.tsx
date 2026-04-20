@@ -85,29 +85,29 @@ export default function AIPlaygroundPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center gap-3 text-sm text-slate-500">
-        <Link href="/dashboard/admin/ai" className="hover:text-purple-600 transition">AI & Brain Models</Link>
+      <div className="flex items-center gap-3 text-sm vi-text-muted">
+        <Link href="/dashboard/admin/ai" className="hover:text-[hsl(var(--visual-primary))] transition">AI & Brain Models</Link>
         <span>/</span>
-        <span className="text-slate-900 font-medium">Prompt Playground</span>
+        <span className="vi-text font-medium">Prompt Playground</span>
       </div>
 
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">AI Prompt Playground</h1>
-        <p className="text-sm text-slate-500 mt-1">Test and refine AI tutor prompts with different models and configurations.</p>
+        <h1 className="text-2xl font-heading font-bold vi-text">AI Prompt Playground</h1>
+        <p className="text-sm vi-text-muted mt-1">Test and refine AI tutor prompts with different models and configurations.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-            <h3 className="font-heading font-bold text-slate-900">Configuration</h3>
+          <div className="vi-card p-5 space-y-4">
+            <h3 className="font-heading font-bold vi-text">Configuration</h3>
 
             <div>
-              <label htmlFor="pg-tutor" className="block text-sm font-medium text-slate-700 mb-1">Tutor</label>
+              <label htmlFor="pg-tutor" className="block text-sm font-medium vi-text mb-1">Tutor</label>
               <select
                 id="pg-tutor"
                 value={selectedTutor}
                 onChange={(e) => setSelectedTutor(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:border-purple-400 outline-none"
+                className="w-full px-3 py-2 rounded-xl border vi-border text-sm bg-white focus:border-purple-400 outline-none"
               >
                 {TUTORS.map((t) => (
                   <option key={t.key} value={t.key}>{t.name} — {t.desc}</option>
@@ -116,12 +116,12 @@ export default function AIPlaygroundPage() {
             </div>
 
             <div>
-              <label htmlFor="pg-model" className="block text-sm font-medium text-slate-700 mb-1">Model</label>
+              <label htmlFor="pg-model" className="block text-sm font-medium vi-text mb-1">Model</label>
               <select
                 id="pg-model"
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:border-purple-400 outline-none"
+                className="w-full px-3 py-2 rounded-xl border vi-border text-sm bg-white focus:border-purple-400 outline-none"
               >
                 {MODELS.map((m) => (
                   <option key={m.id} value={m.id}>{m.label} ({m.provider})</option>
@@ -130,7 +130,7 @@ export default function AIPlaygroundPage() {
             </div>
 
             <div>
-              <label htmlFor="pg-temp" className="block text-sm font-medium text-slate-700 mb-1">Temperature: {temperature}</label>
+              <label htmlFor="pg-temp" className="block text-sm font-medium vi-text mb-1">Temperature: {temperature}</label>
               <input
                 id="pg-temp"
                 type="range"
@@ -144,7 +144,7 @@ export default function AIPlaygroundPage() {
             </div>
 
             <div>
-              <label htmlFor="pg-tokens" className="block text-sm font-medium text-slate-700 mb-1">Max Tokens: {maxTokens}</label>
+              <label htmlFor="pg-tokens" className="block text-sm font-medium vi-text mb-1">Max Tokens: {maxTokens}</label>
               <input
                 id="pg-tokens"
                 type="range"
@@ -158,28 +158,28 @@ export default function AIPlaygroundPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3">
-            <h3 className="font-heading font-bold text-slate-900">System Prompt</h3>
+          <div className="vi-card p-5 space-y-3">
+            <h3 className="font-heading font-bold vi-text">System Prompt</h3>
             <textarea
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
               rows={6}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-purple-400 outline-none resize-none"
+              className="w-full px-3 py-2 rounded-xl border vi-border text-sm focus:border-purple-400 outline-none resize-none"
             />
           </div>
         </div>
 
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[600px]">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="vi-card flex flex-col h-[600px]">
+            <div className="p-4 border-b vi-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-lg">🧠</span>
-                <span className="font-semibold text-slate-900">{tutor?.name}</span>
-                <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{selectedModel}</span>
+                <span className="font-semibold vi-text">{tutor?.name}</span>
+                <span className="text-xs vi-surface-soft vi-text-muted px-2 py-0.5 rounded-full">{selectedModel}</span>
               </div>
               <button
                 onClick={() => setMessages([])}
-                className="text-xs text-slate-400 hover:text-slate-600 transition"
+                className="text-xs vi-text-muted hover:vi-text-muted transition"
               >
                 Clear Chat
               </button>
@@ -187,7 +187,7 @@ export default function AIPlaygroundPage() {
 
             <div className="flex-1 overflow-auto p-4 space-y-4">
               {messages.length === 0 && (
-                <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+                <div className="flex items-center justify-center h-full vi-text-muted text-sm">
                   Start a conversation to test the AI tutor prompt...
                 </div>
               )}
@@ -196,7 +196,7 @@ export default function AIPlaygroundPage() {
                   <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
                     msg.role === "user"
                       ? "bg-purple-600 text-white"
-                      : "bg-slate-100 text-slate-900"
+                      : "vi-surface-soft vi-text"
                   }`}>
                     <p className="whitespace-pre-wrap">{msg.content}</p>
                   </div>
@@ -204,14 +204,14 @@ export default function AIPlaygroundPage() {
               ))}
               {loading && (
                 <div className="flex justify-start">
-                  <div className="bg-slate-100 rounded-2xl px-4 py-3 text-sm text-slate-400 animate-pulse">
+                  <div className="vi-surface-soft rounded-2xl px-4 py-3 text-sm vi-text-muted animate-pulse">
                     Thinking...
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="p-4 border-t border-slate-100">
+            <div className="p-4 border-t vi-border">
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -219,7 +219,7 @@ export default function AIPlaygroundPage() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                   placeholder="Type a message..."
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                  className="flex-1 px-4 py-2.5 rounded-xl border vi-border text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
                 />
                 <button
                   onClick={handleSend}

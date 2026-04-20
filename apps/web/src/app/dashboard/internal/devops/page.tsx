@@ -69,8 +69,8 @@ export default function DevOpsDashboard() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("overview")}</h1>
-          <p className="text-sm text-slate-500 mt-1">Infrastructure monitoring, deployments, and system performance.</p>
+          <h1 className="text-2xl font-heading font-bold vi-text">{t("overview")}</h1>
+          <p className="text-sm vi-text-muted mt-1">Infrastructure monitoring, deployments, and system performance.</p>
         </div>
         <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
           overallStatus === "operational" ? "bg-green-100 text-green-700" :
@@ -89,24 +89,24 @@ export default function DevOpsDashboard() {
           <p className="text-3xl font-bold text-green-700">{healthyCount}/{totalServices}</p>
           <p className="text-xs text-green-600 font-semibold mt-1">Services Healthy</p>
         </div>
-        <div className="bg-white rounded-xl p-5 border border-slate-200 text-center">
-          <p className="text-3xl font-bold text-slate-900">{uptime?.uptime?.overall ?? "99.9"}%</p>
-          <p className="text-xs text-slate-500 font-semibold mt-1">30d Uptime</p>
+        <div className="bg-white rounded-xl p-5 border vi-border text-center">
+          <p className="text-3xl font-bold vi-text">{uptime?.uptime?.overall ?? "99.9"}%</p>
+          <p className="text-xs vi-text-muted font-semibold mt-1">30d Uptime</p>
         </div>
-        <div className="bg-white rounded-xl p-5 border border-slate-200 text-center">
-          <p className="text-3xl font-bold text-slate-900">{deployments.length}</p>
-          <p className="text-xs text-slate-500 font-semibold mt-1">Active Deployments</p>
+        <div className="bg-white rounded-xl p-5 border vi-border text-center">
+          <p className="text-3xl font-bold vi-text">{deployments.length}</p>
+          <p className="text-xs vi-text-muted font-semibold mt-1">Active Deployments</p>
         </div>
-        <div className="bg-white rounded-xl p-5 border border-slate-200 text-center">
-          <p className="text-3xl font-bold text-slate-900">{alerts.filter((a) => !a.acked).length}</p>
-          <p className="text-xs text-slate-500 font-semibold mt-1">Unacked Alerts</p>
+        <div className="bg-white rounded-xl p-5 border vi-border text-center">
+          <p className="text-3xl font-bold vi-text">{alerts.filter((a) => !a.acked).length}</p>
+          <p className="text-xs vi-text-muted font-semibold mt-1">Unacked Alerts</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-5 border-b border-slate-100">
-            <h2 className="font-heading font-bold text-lg text-slate-900">Service Health</h2>
+        <div className="vi-card overflow-hidden">
+          <div className="p-5 border-b vi-border">
+            <h2 className="font-heading font-bold text-lg vi-text">Service Health</h2>
           </div>
           <div className="divide-y divide-slate-50">
             {(statusOverview?.services || []).map((svc: any) => (
@@ -115,7 +115,7 @@ export default function DevOpsDashboard() {
                   <span className={`w-2.5 h-2.5 rounded-full ${
                     svc.status === "healthy" ? "bg-green-500" : svc.status === "degraded" ? "bg-amber-500 animate-pulse" : "bg-red-500"
                   }`} />
-                  <span className="text-sm font-medium text-slate-700">{svc.name}</span>
+                  <span className="text-sm font-medium vi-text">{svc.name}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`text-xs font-medium ${
@@ -130,19 +130,19 @@ export default function DevOpsDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-5 border-b border-slate-100">
-            <h2 className="font-heading font-bold text-lg text-slate-900">Infrastructure</h2>
+        <div className="vi-card overflow-hidden">
+          <div className="p-5 border-b vi-border">
+            <h2 className="font-heading font-bold text-lg vi-text">Infrastructure</h2>
           </div>
           <div className="divide-y divide-slate-50">
             {infrastructure.map((infra) => (
               <div key={infra.name} className="flex items-center justify-between px-5 py-3">
                 <div>
-                  <p className="text-sm font-medium text-slate-700">{infra.name}</p>
-                  <p className="text-xs text-slate-400">{infra.type} &middot; {infra.region}</p>
+                  <p className="text-sm font-medium vi-text">{infra.name}</p>
+                  <p className="text-xs vi-text-muted">{infra.type} &middot; {infra.region}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400">{infra.uptime}</span>
+                  <span className="text-xs vi-text-muted">{infra.uptime}</span>
                   <span className="px-2 py-0.5 text-xs rounded-full font-semibold bg-green-100 text-green-700">{infra.status}</span>
                 </div>
               </div>
@@ -159,25 +159,25 @@ export default function DevOpsDashboard() {
             <p className={`text-lg font-bold ${pm.status === "good" ? "text-green-700" : pm.status === "warning" ? "text-amber-700" : "text-red-700"}`}>
               {pm.value}
             </p>
-            <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{pm.metric}</p>
+            <p className="text-[10px] vi-text-muted font-semibold mt-0.5">{pm.metric}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-5 border-b border-slate-100">
-            <h2 className="font-heading font-bold text-lg text-slate-900">Recent Deployments</h2>
+        <div className="vi-card overflow-hidden">
+          <div className="p-5 border-b vi-border">
+            <h2 className="font-heading font-bold text-lg vi-text">Recent Deployments</h2>
           </div>
           <div className="divide-y divide-slate-50">
             {deployments.map((d) => (
               <div key={d.service} className="flex items-center justify-between px-5 py-3">
                 <div>
-                  <p className="text-sm font-medium text-slate-700">{d.service}</p>
-                  <p className="text-xs text-slate-400">{d.env} &middot; {d.deployedAt}</p>
+                  <p className="text-sm font-medium vi-text">{d.service}</p>
+                  <p className="text-xs vi-text-muted">{d.env} &middot; {d.deployedAt}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-slate-500">{d.version}</span>
+                  <span className="font-mono text-xs vi-text-muted">{d.version}</span>
                   <span className="px-2 py-0.5 text-xs rounded-full font-semibold bg-green-100 text-green-700">{d.status}</span>
                 </div>
               </div>
@@ -185,9 +185,9 @@ export default function DevOpsDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-5 border-b border-slate-100">
-            <h2 className="font-heading font-bold text-lg text-slate-900">Alerts</h2>
+        <div className="vi-card overflow-hidden">
+          <div className="p-5 border-b vi-border">
+            <h2 className="font-heading font-bold text-lg vi-text">Alerts</h2>
           </div>
           <div className="divide-y divide-slate-50">
             {alerts.map((a, i) => (
@@ -197,8 +197,8 @@ export default function DevOpsDashboard() {
                     a.severity === "warning" ? "bg-amber-500" : a.severity === "info" ? "bg-blue-500" : "bg-green-500"
                   }`} />
                   <div>
-                    <p className="text-sm text-slate-700">{a.message}</p>
-                    <p className="text-xs text-slate-400">{a.time}</p>
+                    <p className="text-sm vi-text">{a.message}</p>
+                    <p className="text-xs vi-text-muted">{a.time}</p>
                   </div>
                 </div>
                 {!a.acked && (

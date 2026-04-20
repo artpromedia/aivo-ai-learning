@@ -34,10 +34,10 @@ export default function AdminBillingPage() {
   }
 
   const plans = [
-    { name: "Free Trial", price: "$0", period: "14 days", features: ["1 learner", "3 AI tutors", "Basic assessments", "Limited sessions"], color: "from-slate-500 to-slate-600" },
-    { name: "Family", price: "$29", period: "/month", features: ["Up to 3 learners", "All 14 AI tutors", "Full assessments", "Brain clone", "Recommendations"], color: "from-purple-500 to-purple-600" },
-    { name: "Family Plus", price: "$49", period: "/month", features: ["Up to 6 learners", "All 14 AI tutors", "IEP integration", "Priority support", "Learning team"], color: "from-cyan-500 to-cyan-600" },
-    { name: "Enterprise", price: "Custom", period: "", features: ["Unlimited learners", "District management", "SSO/SAML", "Custom branding", "Dedicated support", "API access"], color: "from-amber-500 to-amber-600" },
+    { name: "Free Trial", price: "$0", period: "14 days", features: ["1 learner", "3 AI tutors", "Basic assessments", "Limited sessions"], color: "bg-slate-600" },
+    { name: "Family", price: "$29", period: "/month", features: ["Up to 3 learners", "All 14 AI tutors", "Full assessments", "Brain clone", "Recommendations"], color: "bg-[hsl(var(--visual-primary))]" },
+    { name: "Family Plus", price: "$49", period: "/month", features: ["Up to 6 learners", "All 14 AI tutors", "IEP integration", "Priority support", "Learning team"], color: "bg-[hsl(var(--visual-science))]" },
+    { name: "Enterprise", price: "Custom", period: "", features: ["Unlimited learners", "District management", "SSO/SAML", "Custom branding", "Dedicated support", "API access"], color: "bg-amber-600" },
   ];
 
   const billingMetrics = [
@@ -55,26 +55,26 @@ export default function AdminBillingPage() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">{tp("services")}</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage subscription plans, payment gateways, and licensing.</p>
+        <h1 className="text-2xl font-heading font-bold vi-text">{tp("services")}</h1>
+        <p className="text-sm vi-text-muted mt-1">Manage subscription plans, payment gateways, and licensing.</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {billingMetrics.map((m) => (
-          <div key={m.label} className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 text-center">
+          <div key={m.label} className="bg-white rounded-xl p-5 shadow-sm border vi-border text-center">
             <span className="text-2xl">{m.icon}</span>
-            <p className="text-2xl font-bold text-slate-900 mt-2">{m.value}</p>
-            <p className="text-xs text-slate-500 font-semibold mt-1">{m.label}</p>
+            <p className="text-2xl font-bold vi-text mt-2">{m.value}</p>
+            <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
           </div>
         ))}
       </div>
 
       <div>
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Subscription Plans</h2>
+        <h2 className="font-heading font-bold text-lg vi-text mb-4">Subscription Plans</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {plans.map((plan) => (
-            <div key={plan.name} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className={`bg-gradient-to-r ${plan.color} p-4 text-white`}>
+            <div key={plan.name} className="vi-card overflow-hidden">
+              <div className={`${plan.color} p-4 text-white`}>
                 <p className="font-heading font-bold text-lg">{plan.name}</p>
                 <div className="flex items-baseline gap-1 mt-1">
                   <span className="text-2xl font-bold">{plan.price}</span>
@@ -84,7 +84,7 @@ export default function AdminBillingPage() {
               <div className="p-4">
                 <ul className="space-y-2">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
+                    <li key={f} className="flex items-center gap-2 text-sm vi-text-muted">
                       <span className="text-green-500 text-xs">✓</span>
                       {f}
                     </li>
@@ -96,16 +96,16 @@ export default function AdminBillingPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Payment Gateways</h2>
+      <div className="vi-card p-6">
+        <h2 className="font-heading font-bold text-lg vi-text mb-4">Payment Gateways</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {gateways.map((gw) => (
-            <div key={gw.name} className="flex items-center justify-between p-4 rounded-xl border border-slate-100">
+            <div key={gw.name} className="flex items-center justify-between p-4 rounded-xl border vi-border">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{gw.icon}</span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">{gw.name}</p>
-                  <p className="text-xs text-slate-400">{gw.desc}</p>
+                  <p className="text-sm font-semibold vi-text">{gw.name}</p>
+                  <p className="text-xs vi-text-muted">{gw.desc}</p>
                 </div>
               </div>
               <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${
@@ -118,19 +118,19 @@ export default function AdminBillingPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Usage Metering</h2>
-        <p className="text-sm text-slate-500 mb-4">Track AI API calls, storage, and compute usage per tenant for billing purposes.</p>
+      <div className="vi-card p-6">
+        <h2 className="font-heading font-bold text-lg vi-text mb-4">Usage Metering</h2>
+        <p className="text-sm vi-text-muted mb-4">Track AI API calls, storage, and compute usage per tenant for billing purposes.</p>
         <div className="grid grid-cols-3 gap-4">
           {[
             { label: "AI API Calls", value: "—", desc: "Total LLM inference requests" },
             { label: "Storage", value: "—", desc: "Brain states, assessments, media" },
             { label: "Sessions", value: "—", desc: "Total learning sessions completed" },
           ].map((m) => (
-            <div key={m.label} className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center">
-              <p className="text-xl font-bold text-slate-900">{m.value}</p>
-              <p className="text-sm font-semibold text-slate-700 mt-1">{m.label}</p>
-              <p className="text-xs text-slate-400">{m.desc}</p>
+            <div key={m.label} className="p-4 rounded-xl vi-bg border vi-border text-center">
+              <p className="text-xl font-bold vi-text">{m.value}</p>
+              <p className="text-sm font-semibold vi-text mt-1">{m.label}</p>
+              <p className="text-xs vi-text-muted">{m.desc}</p>
             </div>
           ))}
         </div>

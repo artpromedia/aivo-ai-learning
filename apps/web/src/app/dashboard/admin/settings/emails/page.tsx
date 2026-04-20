@@ -29,23 +29,23 @@ export default function EmailTemplatesPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center gap-3 text-sm text-slate-500">
-        <Link href="/dashboard/admin/settings" className="hover:text-purple-600 transition">Settings</Link>
+      <div className="flex items-center gap-3 text-sm vi-text-muted">
+        <Link href="/dashboard/admin/settings" className="hover:text-[hsl(var(--visual-primary))] transition">Settings</Link>
         <span>/</span>
-        <span className="text-slate-900 font-medium">Email Templates</span>
+        <span className="vi-text font-medium">Email Templates</span>
       </div>
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Email Templates</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage transactional and notification email templates.</p>
+          <h1 className="text-2xl font-heading font-bold vi-text">Email Templates</h1>
+          <p className="text-sm vi-text-muted mt-1">Manage transactional and notification email templates.</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="vi-card overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
+            <tr className="text-left vi-text-muted border-b vi-border vi-bg/50">
               <th className="px-5 py-3 font-semibold">Template</th>
               <th className="px-5 py-3 font-semibold">Subject</th>
               <th className="px-5 py-3 font-semibold">Variables</th>
@@ -55,20 +55,20 @@ export default function EmailTemplatesPage() {
           </thead>
           <tbody>
             {templates.map((tmpl) => (
-              <tr key={tmpl.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+              <tr key={tmpl.id} className="border-b vi-border hover:vi-bg/50 transition">
                 <td className="px-5 py-3">
-                  <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded">{tmpl.key}</span>
+                  <span className="font-mono text-xs vi-surface-soft px-2 py-1 rounded">{tmpl.key}</span>
                 </td>
-                <td className="px-5 py-3 font-medium text-slate-900">{tmpl.subject}</td>
+                <td className="px-5 py-3 font-medium vi-text">{tmpl.subject}</td>
                 <td className="px-5 py-3">
                   <div className="flex flex-wrap gap-1">
                     {tmpl.variables.map((v) => (
-                      <span key={v} className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">{`{{${v}}}`}</span>
+                      <span key={v} className="text-xs vi-surface-soft text-[hsl(var(--visual-primary))] px-2 py-0.5 rounded-full">{`{{${v}}}`}</span>
                     ))}
                   </div>
                 </td>
                 <td className="px-5 py-3">
-                  <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${tmpl.active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
+                  <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${tmpl.active ? "bg-green-100 text-green-700" : "vi-surface-soft vi-text-muted"}`}>
                     {tmpl.active ? "Active" : "Inactive"}
                   </span>
                 </td>
@@ -76,13 +76,13 @@ export default function EmailTemplatesPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setPreview(tmpl)}
-                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 transition"
+                      className="px-3 py-1.5 text-xs font-semibold rounded-lg vi-bg vi-text-muted hover:vi-surface-soft border vi-border transition"
                     >
                       Preview
                     </button>
                     <button
                       onClick={() => setEditing(tmpl)}
-                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition"
+                      className="px-3 py-1.5 text-xs font-semibold rounded-lg vi-surface-soft text-[hsl(var(--visual-primary))] hover:bg-[hsl(var(--visual-primary)/0.12)] border border-[hsl(var(--visual-primary)/0.3)] transition"
                     >
                       Edit
                     </button>
@@ -98,13 +98,13 @@ export default function EmailTemplatesPage() {
         <div className="fixed inset-0 z-[9998] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" role="presentation" onClick={() => setPreview(null)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] overflow-auto">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-lg font-heading font-bold text-slate-900">Preview: {preview.key}</h2>
-              <button onClick={() => setPreview(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+            <div className="p-6 border-b vi-border flex items-center justify-between">
+              <h2 className="text-lg font-heading font-bold vi-text">Preview: {preview.key}</h2>
+              <button onClick={() => setPreview(null)} className="vi-text-muted hover:vi-text-muted text-xl">&times;</button>
             </div>
             <div className="p-6">
-              <p className="text-sm text-slate-500 mb-2">Subject: <strong>{preview.subject}</strong></p>
-              <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+              <p className="text-sm vi-text-muted mb-2">Subject: <strong>{preview.subject}</strong></p>
+              <div className="border vi-border rounded-xl p-4 vi-bg">
                 <div dangerouslySetInnerHTML={{ __html: preview.bodyHtml }} />
               </div>
             </div>
@@ -116,32 +116,32 @@ export default function EmailTemplatesPage() {
         <div className="fixed inset-0 z-[9998] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" role="presentation" onClick={() => setEditing(null)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] overflow-auto">
-            <div className="p-6 border-b border-slate-100">
-              <h2 className="text-lg font-heading font-bold text-slate-900">Edit Template: {editing.key}</h2>
+            <div className="p-6 border-b vi-border">
+              <h2 className="text-lg font-heading font-bold vi-text">Edit Template: {editing.key}</h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label htmlFor="edit-subject" className="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+                <label htmlFor="edit-subject" className="block text-sm font-medium vi-text mb-1">Subject</label>
                 <input
                   id="edit-subject"
                   type="text"
                   value={editing.subject}
                   onChange={(e) => setEditing({ ...editing, subject: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl border vi-border text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
                 />
               </div>
               <div>
-                <label htmlFor="edit-body" className="block text-sm font-medium text-slate-700 mb-1">HTML Body</label>
+                <label htmlFor="edit-body" className="block text-sm font-medium vi-text mb-1">HTML Body</label>
                 <textarea
                   id="edit-body"
                   value={editing.bodyHtml}
                   onChange={(e) => setEditing({ ...editing, bodyHtml: e.target.value })}
                   rows={10}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl border vi-border text-sm font-mono focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
                 />
               </div>
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setEditing(null)} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition">Cancel</button>
+                <button onClick={() => setEditing(null)} className="flex-1 py-2.5 rounded-xl border vi-border vi-text-muted font-semibold hover:vi-bg transition">Cancel</button>
                 <button
                   onClick={() => {
                     setTemplates(templates.map((t) => t.id === editing.id ? editing : t));

@@ -68,23 +68,23 @@ export default function DistrictDashboardPage() {
     <div className="p-8 space-y-6">
       <header className="space-y-1">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-heading font-bold bg-gradient-to-r from-violet-600 to-violet-500 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-heading font-bold text-[hsl(var(--visual-primary))]">
             District Dashboard
           </h1>
           {tenant && (
-            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-violet-100 text-violet-700">
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]">
               {tenant.name}
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
             </span>
           )}
         </div>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm vi-text-muted">
           Manage your district&apos;s learners, teachers, and content. View progress reports and coordinate accommodations.
         </p>
       </header>
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Active Learners" value={stats?.totalLearners ?? 0} helper="Students enrolled" icon="🎓" accent="bg-violet-100 text-violet-600" />
+        <MetricCard label="Active Learners" value={stats?.totalLearners ?? 0} helper="Students enrolled" icon="🎓" accent="bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" />
         <MetricCard label="Staff" value={stats?.totalStaff ?? 0} helper="Teachers, therapists, caregivers" icon="👩‍🏫" accent="bg-blue-100 text-blue-600" />
         <MetricCard label="Schools" value={stats?.totalSchools ?? 0} helper="Active campuses" icon="🏫" accent="bg-emerald-100 text-emerald-600" />
         <MetricCard label="Active IEPs" value={stats?.activeIeps ?? 0} helper="Individualized plans" icon="📋" accent="bg-amber-100 text-amber-600" />
@@ -92,7 +92,7 @@ export default function DistrictDashboardPage() {
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Parents" value={stats?.totalParents ?? 0} helper="Family accounts" icon="👨‍👩‍👧" accent="bg-pink-100 text-pink-600" />
-        <MetricCard label="Total Users" value={stats?.totalUsers ?? 0} helper="All platform users" icon="👥" accent="bg-slate-100 text-slate-600" />
+        <MetricCard label="Total Users" value={stats?.totalUsers ?? 0} helper="All platform users" icon="👥" accent="vi-surface-soft vi-text-muted" />
         {stats?.roleCounts?.filter(r => r.role === "TEACHER").map(r => (
           <MetricCard key="teachers" label="Teachers" value={Number(r.count)} helper="Educators on platform" icon="📚" accent="bg-green-100 text-green-600" />
         ))}
@@ -102,17 +102,17 @@ export default function DistrictDashboardPage() {
       </section>
 
       {flCounts.length > 0 && (
-        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h2 className="text-lg font-heading font-semibold text-slate-900 mb-4">Functioning Level Distribution</h2>
+        <section className="vi-card p-6">
+          <h2 className="text-lg font-heading font-semibold vi-text mb-4">Functioning Level Distribution</h2>
           <div className="flex items-end gap-4 h-48">
             {flCounts.map((d) => (
               <div key={d.level} className="flex-1 flex flex-col items-center gap-2">
-                <span className="text-sm font-bold text-slate-900">{d.count}</span>
+                <span className="text-sm font-bold vi-text">{d.count}</span>
                 <div
-                  className="w-full rounded-t-lg bg-gradient-to-t from-violet-500 to-violet-400 transition-all"
+                  className="w-full rounded-t-lg bg-[hsl(var(--visual-primary))] transition-all"
                   style={{ height: `${Math.max(8, (Number(d.count) / maxFL) * 100)}%` }}
                 />
-                <span className="text-[10px] text-slate-500 font-medium text-center">{String(d.level).replace(/_/g, " ")}</span>
+                <span className="text-[10px] vi-text-muted font-medium text-center">{String(d.level).replace(/_/g, " ")}</span>
               </div>
             ))}
           </div>
@@ -127,8 +127,8 @@ export default function DistrictDashboardPage() {
       </section>
 
       {tenant && (
-        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <h2 className="text-lg font-heading font-semibold text-slate-900">Organization Info</h2>
+        <section className="vi-card p-6 space-y-4">
+          <h2 className="text-lg font-heading font-semibold vi-text">Organization Info</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <InfoRow label="Organization" value={tenant.name} />
             <InfoRow label="Type" value={tenant.type} />
@@ -145,13 +145,13 @@ function MetricCard({ label, value, helper, icon, accent }: {
   label: string; value: number; helper: string; icon: string; accent: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 transition-all hover:shadow-md hover:border-violet-200">
+    <div className="vi-card p-5 transition-all hover:shadow-md hover:border-[hsl(var(--visual-primary)/0.3)]">
       <div className="flex items-center gap-2 mb-2">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${accent}`}>{icon}</div>
-        <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{label}</p>
+        <p className="text-xs vi-text-muted font-medium uppercase tracking-wide">{label}</p>
       </div>
-      <p className="text-3xl font-bold text-slate-900">{value.toLocaleString()}</p>
-      <p className="text-xs text-slate-400 mt-1">{helper}</p>
+      <p className="text-3xl font-bold vi-text">{value.toLocaleString()}</p>
+      <p className="text-xs vi-text-muted mt-1">{helper}</p>
     </div>
   );
 }
@@ -160,13 +160,13 @@ function ActionCard({ title, description, href, buttonLabel, icon }: {
   title: string; description: string; href: string; buttonLabel: string; icon: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 transition-all hover:shadow-md hover:border-violet-200 flex flex-col">
+    <div className="vi-card p-6 transition-all hover:shadow-md hover:border-[hsl(var(--visual-primary)/0.3)] flex flex-col">
       <div className="flex items-center gap-3 mb-3">
         <span className="text-2xl">{icon}</span>
-        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+        <h3 className="text-base font-semibold vi-text">{title}</h3>
       </div>
-      <p className="text-sm text-slate-500 flex-1">{description}</p>
-      <Link href={href} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-violet-600 hover:text-violet-700 transition">
+      <p className="text-sm vi-text-muted flex-1">{description}</p>
+      <Link href={href} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))] transition">
         {buttonLabel} <span>→</span>
       </Link>
     </div>
@@ -175,9 +175,9 @@ function ActionCard({ title, description, href, buttonLabel, icon }: {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 py-2 px-3 rounded-lg bg-slate-50">
-      <span className="text-xs text-slate-400 font-medium w-24">{label}</span>
-      <span className="text-sm text-slate-700 font-medium">{value}</span>
+    <div className="flex items-center gap-3 py-2 px-3 rounded-lg vi-bg">
+      <span className="text-xs vi-text-muted font-medium w-24">{label}</span>
+      <span className="text-sm vi-text font-medium">{value}</span>
     </div>
   );
 }

@@ -127,44 +127,44 @@ export default function AdminSettingsPage() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-slate-400 animate-pulse">Loading platform settings...</div>;
+    return <div className="p-8 text-center vi-text-muted animate-pulse">Loading platform settings...</div>;
   }
 
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("general")}</h1>
-          <p className="text-sm text-slate-500 mt-1">Configure feature flags, system limits, and global platform settings.</p>
+          <h1 className="text-2xl font-heading font-bold vi-text">{t("general")}</h1>
+          <p className="text-sm vi-text-muted mt-1">Configure feature flags, system limits, and global platform settings.</p>
         </div>
         {isPlatformAdmin && (
           <div className="flex items-center gap-3">
             {saveStatus === "success" && <span className="text-sm text-green-600 font-semibold">Saved!</span>}
             {saveStatus === "error" && <span className="text-sm text-red-600 font-semibold">Save failed</span>}
             <button onClick={handleSave} disabled={saving}
-              className="px-5 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary-dark transition disabled:opacity-50 shadow-sm">
+              className="px-5 py-2.5 rounded-xl bg-[hsl(var(--visual-primary))] text-white font-semibold text-sm hover:opacity-90 transition disabled:opacity-50 shadow-sm">
               {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         )}
       </div>
 
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-1">Feature Flags</h2>
-        <p className="text-xs text-slate-400 mb-5">Enable or disable platform features globally.</p>
+      <div className="vi-card p-6">
+        <h2 className="font-heading font-bold text-lg vi-text mb-1">Feature Flags</h2>
+        <p className="text-xs vi-text-muted mb-5">Enable or disable platform features globally.</p>
         <div className="space-y-4">
           {Object.entries(config?.featureFlags || {}).map(([key, enabled]) => {
             const info = FLAG_DESCRIPTIONS[key] || { label: key, desc: "" };
             return (
               <div key={key} className={`flex items-center justify-between p-4 rounded-xl border ${
-                info.critical ? "border-red-200 bg-red-50/30" : "border-slate-100"
+                info.critical ? "border-red-200 bg-red-50/30" : "vi-border"
               }`}>
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-slate-900">{info.label}</p>
+                    <p className="text-sm font-semibold vi-text">{info.label}</p>
                     {info.critical && <span className="px-1.5 py-0.5 text-[10px] rounded bg-red-100 text-red-700 font-bold">CRITICAL</span>}
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">{info.desc}</p>
+                  <p className="text-xs vi-text-muted mt-0.5">{info.desc}</p>
                 </div>
                 <button
                   onClick={() => handleToggleFlag(key)}
@@ -181,25 +181,25 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-1">System Limits</h2>
-        <p className="text-xs text-slate-400 mb-5">Configure platform-wide resource limits and thresholds.</p>
+      <div className="vi-card p-6">
+        <h2 className="font-heading font-bold text-lg vi-text mb-1">System Limits</h2>
+        <p className="text-xs vi-text-muted mb-5">Configure platform-wide resource limits and thresholds.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Object.entries(config?.systemLimits || {}).map(([key, value]) => {
             const info = LIMIT_DESCRIPTIONS[key] || { label: key, desc: "", unit: "" };
             return (
-              <div key={key} className="p-4 rounded-xl border border-slate-100">
-                <label className="block text-sm font-semibold text-slate-900 mb-0.5">{info.label}</label>
-                <p className="text-xs text-slate-400 mb-2">{info.desc}</p>
+              <div key={key} className="p-4 rounded-xl border vi-border">
+                <label className="block text-sm font-semibold vi-text mb-0.5">{info.label}</label>
+                <p className="text-xs vi-text-muted mb-2">{info.desc}</p>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
                     value={value}
                     onChange={(e) => handleLimitChange(key, e.target.value)}
                     disabled={!isPlatformAdmin}
-                    className="w-24 px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium text-right disabled:opacity-50"
+                    className="w-24 px-3 py-2 rounded-lg border vi-border text-sm font-medium text-right disabled:opacity-50"
                   />
-                  <span className="text-xs text-slate-400">{info.unit}</span>
+                  <span className="text-xs vi-text-muted">{info.unit}</span>
                 </div>
               </div>
             );
@@ -213,16 +213,16 @@ export default function AdminSettingsPage() {
           { href: "/dashboard/admin/settings/webhooks", label: "Webhooks", desc: "Configure webhook endpoints for events", icon: "🔗" },
           { href: "/dashboard/admin/settings/api-keys", label: "API Keys", desc: "Manage programmatic API access", icon: "🔑" },
         ].map((item) => (
-          <a key={item.href} href={item.href} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:border-purple-300 hover:shadow-md transition group">
+          <a key={item.href} href={item.href} className="vi-card p-5 hover:border-purple-300 hover:shadow-md transition group">
             <span className="text-2xl">{item.icon}</span>
-            <h3 className="font-heading font-bold text-slate-900 mt-2 group-hover:text-purple-600 transition">{item.label}</h3>
-            <p className="text-sm text-slate-500 mt-1">{item.desc}</p>
+            <h3 className="font-heading font-bold vi-text mt-2 group-hover:text-[hsl(var(--visual-primary))] transition">{item.label}</h3>
+            <p className="text-sm vi-text-muted mt-1">{item.desc}</p>
           </a>
         ))}
       </div>
 
-      <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Platform Information</h2>
+      <div className="vi-bg rounded-2xl p-6 border vi-border">
+        <h2 className="font-heading font-bold text-lg vi-text mb-4">Platform Information</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: "Platform Version", value: "v3.0.0" },
@@ -235,8 +235,8 @@ export default function AdminSettingsPage() {
             { label: "AI", value: "Claude / Gemini / GPT" },
           ].map((info) => (
             <div key={info.label} className="text-sm">
-              <p className="text-slate-400 font-medium">{info.label}</p>
-              <p className="text-slate-900 font-semibold">{info.value}</p>
+              <p className="vi-text-muted font-medium">{info.label}</p>
+              <p className="vi-text font-semibold">{info.value}</p>
             </div>
           ))}
         </div>

@@ -19,7 +19,7 @@ const STATUS_COLORS: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700",
   approved: "bg-green-100 text-green-700",
   rejected: "bg-red-100 text-red-700",
-  escalated: "bg-purple-100 text-purple-700",
+  escalated: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
 };
 
 const SAMPLE_ITEMS: ModerationItem[] = [
@@ -42,15 +42,15 @@ export default function ContentModerationPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center gap-3 text-sm text-slate-500">
-        <Link href="/dashboard/admin/ai" className="hover:text-purple-600 transition">AI & Brain Models</Link>
+      <div className="flex items-center gap-3 text-sm vi-text-muted">
+        <Link href="/dashboard/admin/ai" className="hover:text-[hsl(var(--visual-primary))] transition">AI & Brain Models</Link>
         <span>/</span>
-        <span className="text-slate-900 font-medium">Content Moderation</span>
+        <span className="vi-text font-medium">Content Moderation</span>
       </div>
 
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Content Moderation</h1>
-        <p className="text-sm text-slate-500 mt-1">Review AI-generated content flagged by automated safety filters.</p>
+        <h1 className="text-2xl font-heading font-bold vi-text">Content Moderation</h1>
+        <p className="text-sm vi-text-muted mt-1">Review AI-generated content flagged by automated safety filters.</p>
       </div>
 
       <div className="grid grid-cols-4 gap-4">
@@ -58,24 +58,24 @@ export default function ContentModerationPage() {
           { label: "Pending Review", value: items.filter((i) => i.status === "pending").length, color: "text-amber-600" },
           { label: "Approved", value: items.filter((i) => i.status === "approved").length, color: "text-green-600" },
           { label: "Rejected", value: items.filter((i) => i.status === "rejected").length, color: "text-red-600" },
-          { label: "Total Flagged", value: items.length, color: "text-slate-900" },
+          { label: "Total Flagged", value: items.length, color: "vi-text" },
         ].map((m) => (
-          <div key={m.label} className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 text-center">
+          <div key={m.label} className="bg-white rounded-xl p-4 shadow-sm border vi-border text-center">
             <p className={`text-2xl font-bold ${m.color}`}>{m.value}</p>
-            <p className="text-xs text-slate-500 font-semibold mt-1">{m.label}</p>
+            <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center gap-3">
-          <span className="text-sm text-slate-500">Filter:</span>
+      <div className="vi-card overflow-hidden">
+        <div className="p-4 border-b vi-border flex items-center gap-3">
+          <span className="text-sm vi-text-muted">Filter:</span>
           {["all", "pending", "approved", "rejected"].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
-                filter === f ? "bg-purple-100 text-purple-700" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                filter === f ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "vi-bg vi-text-muted hover:vi-surface-soft"
               }`}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -85,16 +85,16 @@ export default function ContentModerationPage() {
 
         <div className="divide-y divide-slate-50">
           {filtered.map((item) => (
-            <div key={item.id} className="p-5 hover:bg-slate-50/50 transition">
+            <div key={item.id} className="p-5 hover:vi-bg/50 transition">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${STATUS_COLORS[item.status]}`}>{item.status}</span>
-                    <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{item.flagReason.replace(/_/g, " ")}</span>
-                    <span className="text-xs text-slate-400">Confidence: {(item.flagConfidence * 100).toFixed(0)}%</span>
+                    <span className="text-xs vi-surface-soft vi-text-muted px-2 py-0.5 rounded-full">{item.flagReason.replace(/_/g, " ")}</span>
+                    <span className="text-xs vi-text-muted">Confidence: {(item.flagConfidence * 100).toFixed(0)}%</span>
                   </div>
-                  <p className="text-sm text-slate-900 line-clamp-2">{item.content}</p>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
+                  <p className="text-sm vi-text line-clamp-2">{item.content}</p>
+                  <div className="flex items-center gap-4 mt-2 text-xs vi-text-muted">
                     <span>Tutor: {item.tutorKey}</span>
                     <span>Model: {item.provider}</span>
                     <span>{new Date(item.createdAt).toLocaleString()}</span>
@@ -119,21 +119,21 @@ export default function ContentModerationPage() {
                   )}
                   <button
                     onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 transition"
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg vi-bg vi-text-muted hover:vi-surface-soft border vi-border transition"
                   >
                     {expandedId === item.id ? "Collapse" : "Expand"}
                   </button>
                 </div>
               </div>
               {expandedId === item.id && (
-                <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <p className="text-sm text-slate-900 whitespace-pre-wrap">{item.content}</p>
+                <div className="mt-4 p-4 vi-bg rounded-xl border vi-border">
+                  <p className="text-sm vi-text whitespace-pre-wrap">{item.content}</p>
                 </div>
               )}
             </div>
           ))}
           {filtered.length === 0 && (
-            <div className="p-10 text-center text-slate-400">No items matching the current filter.</div>
+            <div className="p-10 text-center vi-text-muted">No items matching the current filter.</div>
           )}
         </div>
       </div>

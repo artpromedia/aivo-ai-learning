@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const ROLE_COLORS: Record<string, string> = {
-  PARENT: "bg-purple-100 text-purple-700",
+  PARENT: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
   LEARNER: "bg-cyan-100 text-cyan-700",
   TEACHER: "bg-green-100 text-green-700",
   THERAPIST: "bg-amber-100 text-amber-700",
@@ -16,7 +16,7 @@ const ROLE_COLORS: Record<string, string> = {
   MARKETING: "bg-pink-100 text-pink-700",
   CUSTOMER_CARE: "bg-sky-100 text-sky-700",
   SUPPORT: "bg-amber-100 text-amber-700",
-  FINANCE: "bg-violet-100 text-violet-700",
+  FINANCE: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
   DEVOPS: "bg-cyan-100 text-cyan-700",
 };
 
@@ -238,7 +238,7 @@ export default function AdminUserDetailPage() {
   if (loading) {
     return (
       <div className="p-8">
-        <div className="text-center text-slate-400 animate-pulse py-20">Loading user details...</div>
+        <div className="text-center vi-text-muted animate-pulse py-20">Loading user details...</div>
       </div>
     );
   }
@@ -246,7 +246,7 @@ export default function AdminUserDetailPage() {
   if (error || !userData) {
     return (
       <div className="p-8 space-y-4">
-        <Link href="/dashboard/admin/users" className="text-sm text-purple-600 hover:text-purple-700 font-medium">
+        <Link href="/dashboard/admin/users" className="text-sm text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))] font-medium">
           ← Back to Users
         </Link>
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
@@ -287,19 +287,19 @@ export default function AdminUserDetailPage() {
         </div>
       )}
 
-      <Link href="/dashboard/admin/users" className="text-sm text-purple-600 hover:text-purple-700 font-medium inline-block">
+      <Link href="/dashboard/admin/users" className="text-sm text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))] font-medium inline-block">
         ← Back to Users
       </Link>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <div className="vi-card p-6">
         <div className="flex flex-col md:flex-row md:items-center gap-6">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+          <div className="w-16 h-16 rounded-full bg-[hsl(var(--visual-primary))] flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
             {userData.name?.charAt(0)?.toUpperCase() || "?"}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-heading font-bold text-slate-900">{userData.name}</h1>
-              <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${ROLE_COLORS[userData.role] || "bg-slate-100 text-slate-600"}`}>
+              <h1 className="text-2xl font-heading font-bold vi-text">{userData.name}</h1>
+              <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${ROLE_COLORS[userData.role] || "vi-surface-soft vi-text-muted"}`}>
                 {userData.role.replace(/_/g, " ")}
               </span>
               {isDeactivated ? (
@@ -308,8 +308,8 @@ export default function AdminUserDetailPage() {
                 <span className="px-2.5 py-0.5 text-xs rounded-full font-semibold bg-green-100 text-green-700">Active</span>
               )}
             </div>
-            <p className="text-sm text-slate-500 mt-1">{userData.email || "No email"}</p>
-            <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
+            <p className="text-sm vi-text-muted mt-1">{userData.email || "No email"}</p>
+            <div className="flex items-center gap-4 mt-2 text-xs vi-text-muted">
               {userData.lastLoginAt && (
                 <span>Last login: {new Date(userData.lastLoginAt).toLocaleString()}</span>
               )}
@@ -320,7 +320,7 @@ export default function AdminUserDetailPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-slate-100">
+        <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t vi-border">
           <button
             onClick={handleEdit}
             className="px-4 py-2 text-sm font-semibold rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition"
@@ -362,83 +362,83 @@ export default function AdminUserDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Account Info</h2>
+        <div className="vi-card p-6">
+          <h2 className="text-sm font-semibold vi-text-muted uppercase tracking-wider mb-4">Account Info</h2>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-slate-500">Email</span>
-              <span className="text-slate-900 font-medium">{userData.email || "—"}</span>
+              <span className="vi-text-muted">Email</span>
+              <span className="vi-text font-medium">{userData.email || "—"}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Role</span>
-              <span className="text-slate-900 font-medium">{userData.role.replace(/_/g, " ")}</span>
+              <span className="vi-text-muted">Role</span>
+              <span className="vi-text font-medium">{userData.role.replace(/_/g, " ")}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Email Verified</span>
+              <span className="vi-text-muted">Email Verified</span>
               <span className={`font-medium ${userData.emailVerified ? "text-green-600" : "text-red-500"}`}>
                 {userData.emailVerified ? "Yes" : "No"}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Google ID</span>
-              <span className="text-slate-900 font-medium truncate ml-2 max-w-[160px]">{userData.hasGoogle ? "Connected" : "—"}</span>
+              <span className="vi-text-muted">Google ID</span>
+              <span className="vi-text font-medium truncate ml-2 max-w-[160px]">{userData.hasGoogle ? "Connected" : "—"}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Apple ID</span>
-              <span className="text-slate-900 font-medium truncate ml-2 max-w-[160px]">{userData.hasApple ? "Connected" : "—"}</span>
+              <span className="vi-text-muted">Apple ID</span>
+              <span className="vi-text font-medium truncate ml-2 max-w-[160px]">{userData.hasApple ? "Connected" : "—"}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Created</span>
-              <span className="text-slate-900 font-medium">{new Date(userData.createdAt).toLocaleDateString()}</span>
+              <span className="vi-text-muted">Created</span>
+              <span className="vi-text font-medium">{new Date(userData.createdAt).toLocaleDateString()}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Updated</span>
-              <span className="text-slate-900 font-medium">{new Date(userData.updatedAt).toLocaleDateString()}</span>
+              <span className="vi-text-muted">Updated</span>
+              <span className="vi-text font-medium">{new Date(userData.updatedAt).toLocaleDateString()}</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Tenant Info</h2>
+        <div className="vi-card p-6">
+          <h2 className="text-sm font-semibold vi-text-muted uppercase tracking-wider mb-4">Tenant Info</h2>
           {userData.tenant ? (
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-500">Name</span>
-                <span className="text-slate-900 font-medium">{userData.tenant.name}</span>
+                <span className="vi-text-muted">Name</span>
+                <span className="vi-text font-medium">{userData.tenant.name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Type</span>
-                <span className="text-slate-900 font-medium">{userData.tenant.type}</span>
+                <span className="vi-text-muted">Type</span>
+                <span className="vi-text font-medium">{userData.tenant.type}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">ID</span>
-                <span className="text-slate-900 font-medium font-mono text-xs truncate ml-2 max-w-[160px]">{userData.tenant.id}</span>
+                <span className="vi-text-muted">ID</span>
+                <span className="vi-text font-medium font-mono text-xs truncate ml-2 max-w-[160px]">{userData.tenant.id}</span>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-slate-400">No tenant assigned</p>
+            <p className="text-sm vi-text-muted">No tenant assigned</p>
           )}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Session Info</h2>
+        <div className="vi-card p-6">
+          <h2 className="text-sm font-semibold vi-text-muted uppercase tracking-wider mb-4">Session Info</h2>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-slate-500">Active Sessions</span>
-              <span className="text-slate-900 font-bold text-lg">{userData.activeSessions}</span>
+              <span className="vi-text-muted">Active Sessions</span>
+              <span className="vi-text font-bold text-lg">{userData.activeSessions}</span>
             </div>
           </div>
         </div>
       </div>
 
       {userData.learners && userData.learners.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-5 border-b border-slate-100">
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Learners ({userData.learners.length})</h2>
+        <div className="vi-card overflow-hidden">
+          <div className="p-5 border-b vi-border">
+            <h2 className="text-sm font-semibold vi-text-muted uppercase tracking-wider">Learners ({userData.learners.length})</h2>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
+              <tr className="text-left vi-text-muted border-b vi-border vi-bg/50">
                 <th className="px-5 py-3 font-semibold">Name</th>
                 <th className="px-5 py-3 font-semibold">Functioning Level</th>
                 <th className="px-5 py-3 font-semibold">Grade Level</th>
@@ -448,15 +448,15 @@ export default function AdminUserDetailPage() {
             </thead>
             <tbody>
               {userData.learners.map((learner) => (
-                <tr key={learner.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
-                  <td className="px-5 py-3 font-medium text-slate-900">{learner.name}</td>
-                  <td className="px-5 py-3 text-slate-500">{learner.functioningLevel || "—"}</td>
-                  <td className="px-5 py-3 text-slate-500">{learner.gradeLevel || "—"}</td>
-                  <td className="px-5 py-3 text-slate-400">{new Date(learner.createdAt).toLocaleDateString()}</td>
+                <tr key={learner.id} className="border-b vi-border hover:vi-bg/50 transition">
+                  <td className="px-5 py-3 font-medium vi-text">{learner.name}</td>
+                  <td className="px-5 py-3 vi-text-muted">{learner.functioningLevel || "—"}</td>
+                  <td className="px-5 py-3 vi-text-muted">{learner.gradeLevel || "—"}</td>
+                  <td className="px-5 py-3 vi-text-muted">{new Date(learner.createdAt).toLocaleDateString()}</td>
                   <td className="px-5 py-3">
                     <Link
                       href={`/dashboard/admin/learners/${learner.id}`}
-                      className="text-purple-600 hover:text-purple-700 font-medium text-xs"
+                      className="text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))] font-medium text-xs"
                     >
                       View
                     </Link>
@@ -472,9 +472,9 @@ export default function AdminUserDetailPage() {
         <div className="fixed inset-0 z-[9998] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" role="presentation" onClick={() => setShowEditModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-            <div className="p-6 border-b border-slate-100">
-              <h2 className="text-lg font-heading font-bold text-slate-900">Edit User</h2>
-              <p className="text-sm text-slate-500 mt-1">Update user information.</p>
+            <div className="p-6 border-b vi-border">
+              <h2 className="text-lg font-heading font-bold vi-text">Edit User</h2>
+              <p className="text-sm vi-text-muted mt-1">Update user information.</p>
             </div>
             <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
               {editError && (
@@ -483,34 +483,34 @@ export default function AdminUserDetailPage() {
                 </div>
               )}
               <div>
-                <label htmlFor="edit-name" className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                <label htmlFor="edit-name" className="block text-sm font-medium vi-text mb-1">Full Name</label>
                 <input
                   id="edit-name"
                   type="text"
                   required
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl border vi-border text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
                 />
               </div>
               <div>
-                <label htmlFor="edit-email" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <label htmlFor="edit-email" className="block text-sm font-medium vi-text mb-1">Email</label>
                 <input
                   id="edit-email"
                   type="email"
                   required
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl border vi-border text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
                 />
               </div>
               <div>
-                <label htmlFor="edit-role" className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                <label htmlFor="edit-role" className="block text-sm font-medium vi-text mb-1">Role</label>
                 <select
                   id="edit-role"
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl border vi-border text-sm bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
                 >
                   {EDITABLE_ROLES.map((r) => (
                     <option key={r} value={r}>
@@ -523,7 +523,7 @@ export default function AdminUserDetailPage() {
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition"
+                  className="flex-1 py-2.5 rounded-xl border vi-border vi-text-muted font-semibold hover:vi-bg transition"
                 >
                   Cancel
                 </button>
@@ -545,14 +545,14 @@ export default function AdminUserDetailPage() {
           <div className="absolute inset-0 bg-black/40" role="presentation" onClick={() => setShowDeactivateConfirm(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
             <div className="p-6">
-              <h2 className="text-lg font-heading font-bold text-slate-900">Deactivate User</h2>
-              <p className="text-sm text-slate-500 mt-2">
-                Are you sure you want to deactivate <span className="font-semibold text-slate-700">{userData.name}</span>? They will no longer be able to log in.
+              <h2 className="text-lg font-heading font-bold vi-text">Deactivate User</h2>
+              <p className="text-sm vi-text-muted mt-2">
+                Are you sure you want to deactivate <span className="font-semibold vi-text">{userData.name}</span>? They will no longer be able to log in.
               </p>
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setShowDeactivateConfirm(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition"
+                  className="flex-1 py-2.5 rounded-xl border vi-border vi-text-muted font-semibold hover:vi-bg transition"
                 >
                   Cancel
                 </button>

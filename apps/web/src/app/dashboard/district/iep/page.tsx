@@ -47,7 +47,7 @@ export default function DistrictIepPage() {
   const today = new Date().toISOString().split("T")[0];
 
   const getReviewStatus = (reviewDate: string) => {
-    if (!reviewDate) return { label: "No date", cls: "bg-slate-100 text-slate-500" };
+    if (!reviewDate) return { label: "No date", cls: "vi-surface-soft vi-text-muted" };
     if (reviewDate < today) return { label: "Overdue", cls: "bg-red-100 text-red-700" };
     const thirtyDays = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
     if (reviewDate <= thirtyDays) return { label: "Due soon", cls: "bg-amber-100 text-amber-700" };
@@ -57,8 +57,8 @@ export default function DistrictIepPage() {
   return (
     <div className="p-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">IEP Management</h1>
-        <p className="text-sm text-slate-500 mt-1">Track individualized education programs, review dates, and compliance status.</p>
+        <h1 className="text-2xl font-heading font-bold vi-text">IEP Management</h1>
+        <p className="text-sm vi-text-muted mt-1">Track individualized education programs, review dates, and compliance status.</p>
       </header>
 
       {loading ? (
@@ -72,12 +72,12 @@ export default function DistrictIepPage() {
         <>
           {summary && (
             <div className="grid gap-4 md:grid-cols-3">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div className="vi-card p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-lg">📋</span>
-                  <span className="text-xs text-slate-400 font-medium uppercase">Active IEPs</span>
+                  <span className="text-xs vi-text-muted font-medium uppercase">Active IEPs</span>
                 </div>
-                <p className="text-3xl font-bold text-slate-900">{summary.active}</p>
+                <p className="text-3xl font-bold vi-text">{summary.active}</p>
               </div>
               <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-5">
                 <div className="flex items-center gap-2 mb-2">
@@ -96,13 +96,13 @@ export default function DistrictIepPage() {
             </div>
           )}
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-slate-100">
-              <h2 className="text-lg font-heading font-semibold text-slate-900">IEP Records</h2>
+          <div className="vi-card overflow-hidden">
+            <div className="p-5 border-b vi-border">
+              <h2 className="text-lg font-heading font-semibold vi-text">IEP Records</h2>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-slate-400 bg-slate-50/50 border-b border-slate-100">
+                <tr className="text-left vi-text-muted vi-bg/50 border-b vi-border">
                   <th className="px-5 py-3 font-semibold">Learner</th>
                   <th className="px-5 py-3 font-semibold">Grade</th>
                   <th className="px-5 py-3 font-semibold">Disability</th>
@@ -116,27 +116,27 @@ export default function DistrictIepPage() {
                 {iepLearners.map((il) => {
                   const reviewStatus = getReviewStatus(il.reviewDate);
                   return (
-                    <tr key={il.iepId} className="border-b border-slate-50 hover:bg-violet-50/30 transition">
+                    <tr key={il.iepId} className="border-b vi-border hover:vi-surface-soft transition">
                       <td className="px-5 py-3">
-                        <Link href={`/dashboard/district/learners/${il.learnerId}`} className="font-medium text-slate-900 hover:text-violet-600">
+                        <Link href={`/dashboard/district/learners/${il.learnerId}`} className="font-medium vi-text hover:text-[hsl(var(--visual-primary))]">
                           {il.learnerName}
                         </Link>
                       </td>
-                      <td className="px-5 py-3 text-slate-500">{il.gradeLevel || "—"}</td>
-                      <td className="px-5 py-3 text-slate-500 text-xs">{il.disabilityCategory || "—"}</td>
-                      <td className="px-5 py-3 text-slate-500 text-xs">{il.placement || "—"}</td>
-                      <td className="px-5 py-3 text-slate-500 text-xs">{il.reviewDate || "—"}</td>
+                      <td className="px-5 py-3 vi-text-muted">{il.gradeLevel || "—"}</td>
+                      <td className="px-5 py-3 vi-text-muted text-xs">{il.disabilityCategory || "—"}</td>
+                      <td className="px-5 py-3 vi-text-muted text-xs">{il.placement || "—"}</td>
+                      <td className="px-5 py-3 vi-text-muted text-xs">{il.reviewDate || "—"}</td>
                       <td className="px-5 py-3">
                         <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${reviewStatus.cls}`}>
                           {reviewStatus.label}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-slate-400 text-xs">{il.goals?.length || 0}</td>
+                      <td className="px-5 py-3 vi-text-muted text-xs">{il.goals?.length || 0}</td>
                     </tr>
                   );
                 })}
                 {iepLearners.length === 0 && (
-                  <tr><td colSpan={7} className="px-5 py-10 text-center text-slate-400">No IEP records found</td></tr>
+                  <tr><td colSpan={7} className="px-5 py-10 text-center vi-text-muted">No IEP records found</td></tr>
                 )}
               </tbody>
             </table>

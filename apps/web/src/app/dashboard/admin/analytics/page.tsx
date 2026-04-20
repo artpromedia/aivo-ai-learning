@@ -77,8 +77,8 @@ export default function AdminAnalyticsPage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">{td("analytics")}</h1>
-          <p className="text-sm text-slate-500 mt-1">Platform-wide engagement metrics, mastery growth, and research data.</p>
+          <h1 className="text-2xl font-heading font-bold vi-text">{td("analytics")}</h1>
+          <p className="text-sm vi-text-muted mt-1">Platform-wide engagement metrics, mastery growth, and research data.</p>
         </div>
         <button
           onClick={() => {
@@ -93,7 +93,7 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-20 text-slate-400 animate-pulse">Loading analytics...</div>
+        <div className="text-center py-20 vi-text-muted animate-pulse">Loading analytics...</div>
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -103,19 +103,19 @@ export default function AdminAnalyticsPage() {
               { label: "Completion Rate", value: engagement?.completionRate ? `${Math.round(engagement.completionRate * 100)}%` : "—", icon: "✅" },
               { label: "Total Duration", value: engagement?.totalDuration ? `${Math.round(engagement.totalDuration / 60)}h` : "—", icon: "📊" },
             ].map((m) => (
-              <div key={m.label} className="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+              <div key={m.label} className="bg-white rounded-xl p-5 shadow-sm border vi-border">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-2xl">{m.icon}</span>
                 </div>
-                <p className="text-2xl font-bold text-slate-900">{m.value}</p>
-                <p className="text-xs text-slate-500 font-semibold mt-1">{m.label}</p>
+                <p className="text-2xl font-bold vi-text">{m.value}</p>
+                <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
               </div>
             ))}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{tc("total")}</h2>
+            <div className="vi-card p-6">
+              <h2 className="font-heading font-bold text-lg vi-text mb-4">{tc("total")}</h2>
               {cohorts.length > 0 ? (
                 <div className="space-y-4">
                   {cohorts.map((c) => {
@@ -124,10 +124,10 @@ export default function AdminAnalyticsPage() {
                     return (
                       <div key={c.level}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-semibold text-slate-700">{c.level.replace(/_/g, " ")}</span>
-                          <span className="text-sm font-bold text-slate-900">{c.count} ({pct}%)</span>
+                          <span className="text-sm font-semibold vi-text">{c.level.replace(/_/g, " ")}</span>
+                          <span className="text-sm font-bold vi-text">{c.count} ({pct}%)</span>
                         </div>
-                        <div className="bg-slate-100 rounded-full h-3 overflow-hidden">
+                        <div className="vi-surface-soft rounded-full h-3 overflow-hidden">
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
                         </div>
                       </div>
@@ -135,50 +135,50 @@ export default function AdminAnalyticsPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-sm text-slate-400 text-center py-8">No cohort data available</p>
+                <p className="text-sm vi-text-muted text-center py-8">No cohort data available</p>
               )}
             </div>
 
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-              <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{td("analytics")}</h2>
+            <div className="vi-card p-6">
+              <h2 className="font-heading font-bold text-lg vi-text mb-4">{td("analytics")}</h2>
               {mastery?.subjects && mastery.subjects.length > 0 ? (
                 <div className="space-y-4">
                   {mastery.subjects.map((s) => (
                     <div key={s.subject}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-semibold text-slate-700">{s.subject}</span>
+                        <span className="text-sm font-semibold vi-text">{s.subject}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-slate-900">{Math.round(s.avgMastery)}%</span>
+                          <span className="text-sm font-bold vi-text">{Math.round(s.avgMastery)}%</span>
                           {s.growth > 0 && <span className="text-xs text-green-600">+{s.growth}%</span>}
                         </div>
                       </div>
-                      <div className="bg-slate-100 rounded-full h-3 overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full" style={{ width: `${s.avgMastery}%` }} />
+                      <div className="vi-surface-soft rounded-full h-3 overflow-hidden">
+                        <div className="h-full bg-[hsl(var(--visual-primary))] rounded-full" style={{ width: `${s.avgMastery}%` }} />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-slate-400 text-center py-8">No mastery data available yet</p>
+                <p className="text-sm vi-text-muted text-center py-8">No mastery data available yet</p>
               )}
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-6 text-white">
+          <div className="vi-card p-6">
             <h2 className="font-heading font-bold text-lg mb-2">{tc("download")}</h2>
-            <p className="text-sm text-slate-400 mb-4">Export anonymized learner data for research purposes. All data is de-identified per FERPA/COPPA requirements.</p>
+            <p className="text-sm vi-text-muted mb-4">Export anonymized learner data for research purposes. All data is de-identified per FERPA/COPPA requirements.</p>
             <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="p-4 rounded-xl vi-surface-soft vi-border border">
                 <p className="text-sm font-semibold">Anonymized Profiles</p>
-                <p className="text-xs text-slate-400 mt-1">Functioning levels, mastery scores, engagement patterns</p>
+                <p className="text-xs vi-text-muted mt-1">Functioning levels, mastery scores, engagement patterns</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="p-4 rounded-xl vi-surface-soft vi-border border">
                 <p className="text-sm font-semibold">Session Analytics</p>
-                <p className="text-xs text-slate-400 mt-1">Duration, completion, difficulty progression</p>
+                <p className="text-xs vi-text-muted mt-1">Duration, completion, difficulty progression</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="p-4 rounded-xl vi-surface-soft vi-border border">
                 <p className="text-sm font-semibold">Intervention Outcomes</p>
-                <p className="text-xs text-slate-400 mt-1">Accommodation effectiveness, mastery growth</p>
+                <p className="text-xs vi-text-muted mt-1">Accommodation effectiveness, mastery growth</p>
               </div>
             </div>
           </div>

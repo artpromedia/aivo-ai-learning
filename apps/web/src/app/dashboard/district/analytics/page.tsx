@@ -47,8 +47,8 @@ export default function DistrictAnalyticsPage() {
   return (
     <div className="p-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Analytics & Reports</h1>
-        <p className="text-sm text-slate-500 mt-1">District-wide performance metrics, functioning level distribution, and engagement data.</p>
+        <h1 className="text-2xl font-heading font-bold vi-text">Analytics & Reports</h1>
+        <p className="text-sm vi-text-muted mt-1">District-wide performance metrics, functioning level distribution, and engagement data.</p>
       </header>
 
       {loading ? (
@@ -68,19 +68,19 @@ export default function DistrictAnalyticsPage() {
           </div>
 
           {cohorts.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-              <h2 className="text-lg font-heading font-semibold text-slate-900 mb-1">Functioning Level Distribution</h2>
-              <p className="text-xs text-slate-400 mb-4">{cohortsTotal} total learners</p>
+            <div className="vi-card p-6">
+              <h2 className="text-lg font-heading font-semibold vi-text mb-1">Functioning Level Distribution</h2>
+              <p className="text-xs vi-text-muted mb-4">{cohortsTotal} total learners</p>
               <div className="flex items-end gap-4 h-48">
                 {cohorts.map((d) => (
                   <div key={d.level} className="flex-1 flex flex-col items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900">{d.count}</span>
+                    <span className="text-sm font-bold vi-text">{d.count}</span>
                     <div
-                      className="w-full rounded-t-lg bg-gradient-to-t from-violet-500 to-violet-400 transition-all"
+                      className="w-full rounded-t-lg bg-[hsl(var(--visual-primary))] transition-all"
                       style={{ height: `${Math.max(8, (d.count / maxCount) * 100)}%` }}
                     />
-                    <span className="text-[10px] text-slate-500 font-medium text-center">{d.level?.replace(/_/g, " ")}</span>
-                    <span className="text-[10px] text-slate-400">{d.pct}%</span>
+                    <span className="text-[10px] vi-text-muted font-medium text-center">{d.level?.replace(/_/g, " ")}</span>
+                    <span className="text-[10px] vi-text-muted">{d.pct}%</span>
                   </div>
                 ))}
               </div>
@@ -88,28 +88,28 @@ export default function DistrictAnalyticsPage() {
           )}
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-              <h2 className="text-lg font-heading font-semibold text-slate-900 mb-3">Role Distribution</h2>
+            <div className="vi-card p-6">
+              <h2 className="text-lg font-heading font-semibold vi-text mb-3">Role Distribution</h2>
               <div className="space-y-3">
                 {rc.map((r: any) => (
                   <div key={r.role} className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">{r.role?.replace(/_/g, " ")}</span>
+                    <span className="text-sm vi-text-muted">{r.role?.replace(/_/g, " ")}</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-24 h-2 rounded-full bg-slate-100 overflow-hidden">
+                      <div className="w-24 h-2 rounded-full vi-surface-soft overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-violet-500"
+                          className="h-full rounded-full bg-[hsl(var(--visual-primary))]"
                           style={{ width: `${Math.min(100, (Number(r.count) / Math.max(1, stats?.totalUsers ?? 1)) * 100)}%` }}
                         />
                       </div>
-                      <span className="text-sm font-semibold text-slate-900 w-8 text-right">{r.count}</span>
+                      <span className="text-sm font-semibold vi-text w-8 text-right">{r.count}</span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-              <h2 className="text-lg font-heading font-semibold text-slate-900 mb-3">Engagement</h2>
+            <div className="vi-card p-6">
+              <h2 className="text-lg font-heading font-semibold vi-text mb-3">Engagement</h2>
               {engagement ? (
                 <div className="space-y-4">
                   <EngagementRow label="Total Learners" value={engagement.totalLearners} />
@@ -118,13 +118,13 @@ export default function DistrictAnalyticsPage() {
                   <EngagementRow label="Completion Rate" value={`${engagement.completionRate}%`} />
                 </div>
               ) : (
-                <p className="text-sm text-slate-400">Engagement data will populate as learners use the platform.</p>
+                <p className="text-sm vi-text-muted">Engagement data will populate as learners use the platform.</p>
               )}
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <h2 className="text-lg font-heading font-semibold text-slate-900 mb-3">Quick Insights</h2>
+          <div className="vi-card p-6">
+            <h2 className="text-lg font-heading font-semibold vi-text mb-3">Quick Insights</h2>
             <div className="grid gap-3 md:grid-cols-3">
               <InsightCard icon="📊" title="Enrollment Growth" description="Track new student enrollments over time to identify trends." />
               <InsightCard icon="🏆" title="Mastery Tracking" description="Monitor domain mastery across all learners in your district." />
@@ -139,32 +139,32 @@ export default function DistrictAnalyticsPage() {
 
 function StatCard({ label, value, icon }: { label: string; value: number; icon: string }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition">
+    <div className="vi-card p-5 hover:shadow-md transition">
       <div className="flex items-center gap-2 mb-2">
         <span className="text-lg">{icon}</span>
-        <span className="text-xs text-slate-400 font-medium uppercase">{label}</span>
+        <span className="text-xs vi-text-muted font-medium uppercase">{label}</span>
       </div>
-      <p className="text-3xl font-bold text-slate-900">{value}</p>
+      <p className="text-3xl font-bold vi-text">{value}</p>
     </div>
   );
 }
 
 function EngagementRow({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-slate-50">
-      <span className="text-sm text-slate-600">{label}</span>
-      <span className="text-sm font-bold text-slate-900">{value}</span>
+    <div className="flex items-center justify-between py-2 px-3 rounded-lg vi-bg">
+      <span className="text-sm vi-text-muted">{label}</span>
+      <span className="text-sm font-bold vi-text">{value}</span>
     </div>
   );
 }
 
 function InsightCard({ icon, title, description }: { icon: string; title: string; description: string }) {
   return (
-    <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+    <div className="flex items-start gap-3 p-3 rounded-xl vi-bg border vi-border">
       <span className="text-lg flex-shrink-0">{icon}</span>
       <div>
-        <p className="text-sm font-semibold text-slate-800">{title}</p>
-        <p className="text-xs text-slate-500 mt-0.5">{description}</p>
+        <p className="text-sm font-semibold vi-text">{title}</p>
+        <p className="text-xs vi-text-muted mt-0.5">{description}</p>
       </div>
     </div>
   );

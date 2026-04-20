@@ -41,15 +41,15 @@ export default function BillingRevenuePage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center gap-3 text-sm text-slate-500">
-        <Link href="/dashboard/admin/billing" className="hover:text-purple-600 transition">Billing</Link>
+      <div className="flex items-center gap-3 text-sm vi-text-muted">
+        <Link href="/dashboard/admin/billing" className="hover:text-[hsl(var(--visual-primary))] transition">Billing</Link>
         <span>/</span>
-        <span className="text-slate-900 font-medium">Revenue</span>
+        <span className="vi-text font-medium">Revenue</span>
       </div>
 
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Revenue Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">Track MRR, subscriber growth, and churn metrics.</p>
+        <h1 className="text-2xl font-heading font-bold vi-text">Revenue Dashboard</h1>
+        <p className="text-sm vi-text-muted mt-1">Track MRR, subscriber growth, and churn metrics.</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -59,44 +59,44 @@ export default function BillingRevenuePage() {
           { label: "Avg Revenue Per User", value: `$${totalSubs > 0 ? Math.round(currentMRR / totalSubs) : 0}`, icon: "👤", change: "" },
           { label: "Churn Rate", value: "2.1%", icon: "📉", change: "-0.3% vs last month" },
         ].map((m) => (
-          <div key={m.label} className="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+          <div key={m.label} className="bg-white rounded-xl p-5 shadow-sm border vi-border">
             <div className="flex items-center justify-between">
               <span className="text-2xl">{m.icon}</span>
             </div>
-            <p className="text-2xl font-bold text-slate-900 mt-2">{m.value}</p>
-            <p className="text-xs text-slate-500 font-semibold mt-1">{m.label}</p>
+            <p className="text-2xl font-bold vi-text mt-2">{m.value}</p>
+            <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
             {m.change && <p className="text-xs text-green-600 mt-1">{m.change}</p>}
           </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">MRR Trend</h2>
+      <div className="vi-card p-6">
+        <h2 className="font-heading font-bold text-lg vi-text mb-4">MRR Trend</h2>
         <div className="flex items-end gap-2 h-48">
           {revenueData.map((d) => {
             const maxMRR = Math.max(...revenueData.map((r) => r.mrr));
             const height = (d.mrr / maxMRR) * 100;
             return (
               <div key={d.month} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[10px] text-slate-500 font-semibold">${(d.mrr / 1000).toFixed(1)}k</span>
+                <span className="text-[10px] vi-text-muted font-semibold">${(d.mrr / 1000).toFixed(1)}k</span>
                 <div
-                  className="w-full bg-gradient-to-t from-purple-500 to-purple-400 rounded-t-lg transition-all hover:from-purple-600 hover:to-purple-500"
+                  className="w-full bg-[hsl(var(--visual-primary))] rounded-t-lg transition-all hover:opacity-90"
                   style={{ height: `${height}%` }}
                 />
-                <span className="text-[10px] text-slate-400">{d.month}</span>
+                <span className="text-[10px] vi-text-muted">{d.month}</span>
               </div>
             );
           })}
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-5 border-b border-slate-100">
-          <h2 className="font-heading font-bold text-lg text-slate-900">Monthly Breakdown</h2>
+      <div className="vi-card overflow-hidden">
+        <div className="p-5 border-b vi-border">
+          <h2 className="font-heading font-bold text-lg vi-text">Monthly Breakdown</h2>
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
+            <tr className="text-left vi-text-muted border-b vi-border vi-bg/50">
               <th className="px-5 py-3 font-semibold">Month</th>
               <th className="px-5 py-3 font-semibold">MRR</th>
               <th className="px-5 py-3 font-semibold">New Subscribers</th>
@@ -106,9 +106,9 @@ export default function BillingRevenuePage() {
           </thead>
           <tbody>
             {revenueData.slice().reverse().map((d) => (
-              <tr key={d.month} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
-                <td className="px-5 py-3 font-medium text-slate-900">{d.month} 2026</td>
-                <td className="px-5 py-3 text-slate-900">${d.mrr.toLocaleString()}</td>
+              <tr key={d.month} className="border-b vi-border hover:vi-bg/50 transition">
+                <td className="px-5 py-3 font-medium vi-text">{d.month} 2026</td>
+                <td className="px-5 py-3 vi-text">${d.mrr.toLocaleString()}</td>
                 <td className="px-5 py-3 text-green-600">+{d.newSubs}</td>
                 <td className="px-5 py-3 text-red-600">-{d.churn}</td>
                 <td className="px-5 py-3">

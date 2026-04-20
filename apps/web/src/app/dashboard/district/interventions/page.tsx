@@ -20,7 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
   active: "bg-emerald-100 text-emerald-700",
   completed: "bg-blue-100 text-blue-700",
   paused: "bg-amber-100 text-amber-700",
-  cancelled: "bg-slate-100 text-slate-500",
+  cancelled: "vi-surface-soft vi-text-muted",
 };
 
 export default function DistrictInterventionsPage() {
@@ -47,15 +47,15 @@ export default function DistrictInterventionsPage() {
   return (
     <div className="p-8 space-y-6">
       <header>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Interventions</h1>
-        <p className="text-sm text-slate-500 mt-1">Track academic and behavioral interventions across the district.</p>
+        <h1 className="text-2xl font-heading font-bold vi-text">Interventions</h1>
+        <p className="text-sm vi-text-muted mt-1">Track academic and behavioral interventions across the district.</p>
       </header>
 
       <div className="grid gap-3 md:grid-cols-3">
         {tierCounts.map(({ tier, count }) => (
-          <div key={tier} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 text-center">
-            <p className="text-xs text-slate-400 font-medium uppercase">Tier {tier}</p>
-            <p className="text-3xl font-bold text-slate-900 mt-1">{count}</p>
+          <div key={tier} className="vi-card p-5 text-center">
+            <p className="text-xs vi-text-muted font-medium uppercase">Tier {tier}</p>
+            <p className="text-3xl font-bold vi-text mt-1">{count}</p>
           </div>
         ))}
       </div>
@@ -64,7 +64,7 @@ export default function DistrictInterventionsPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:border-violet-400 outline-none"
+          className="px-3 py-2 rounded-xl border vi-border text-sm vi-text-muted focus:border-violet-400 outline-none"
         >
           <option value="">All Statuses</option>
           <option value="active">Active</option>
@@ -72,7 +72,7 @@ export default function DistrictInterventionsPage() {
           <option value="paused">Paused</option>
           <option value="cancelled">Cancelled</option>
         </select>
-        <span className="text-sm text-slate-400">{interventions.length} interventions</span>
+        <span className="text-sm vi-text-muted">{interventions.length} interventions</span>
       </div>
 
       {loading ? (
@@ -80,10 +80,10 @@ export default function DistrictInterventionsPage() {
           {[1, 2, 3].map((i) => <div key={i} className="h-14 bg-slate-200 rounded-xl" />)}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="vi-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-slate-400 bg-slate-50/50 border-b border-slate-100">
+              <tr className="text-left vi-text-muted vi-bg/50 border-b vi-border">
                 <th className="px-5 py-3 font-semibold">Learner</th>
                 <th className="px-5 py-3 font-semibold">Type</th>
                 <th className="px-5 py-3 font-semibold">Tier</th>
@@ -94,27 +94,27 @@ export default function DistrictInterventionsPage() {
             </thead>
             <tbody>
               {interventions.map((iv) => (
-                <tr key={iv.id} className="border-b border-slate-50 hover:bg-violet-50/30 transition">
+                <tr key={iv.id} className="border-b vi-border hover:vi-surface-soft transition">
                   <td className="px-5 py-3">
-                    <Link href={`/dashboard/district/learners/${iv.learnerId}`} className="font-medium text-slate-900 hover:text-violet-600">
+                    <Link href={`/dashboard/district/learners/${iv.learnerId}`} className="font-medium vi-text hover:text-[hsl(var(--visual-primary))]">
                       {iv.learnerName}
                     </Link>
                   </td>
-                  <td className="px-5 py-3 text-slate-600">{iv.type}</td>
+                  <td className="px-5 py-3 vi-text-muted">{iv.type}</td>
                   <td className="px-5 py-3">
                     <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-semibold">Tier {iv.tier}</span>
                   </td>
                   <td className="px-5 py-3">
-                    <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${STATUS_COLORS[iv.status] || "bg-slate-100 text-slate-500"}`}>
+                    <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${STATUS_COLORS[iv.status] || "vi-surface-soft vi-text-muted"}`}>
                       {iv.status}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-slate-400 text-xs">{iv.startDate || "—"}</td>
-                  <td className="px-5 py-3 text-slate-400 text-xs">{iv.endDate || "Ongoing"}</td>
+                  <td className="px-5 py-3 vi-text-muted text-xs">{iv.startDate || "—"}</td>
+                  <td className="px-5 py-3 vi-text-muted text-xs">{iv.endDate || "Ongoing"}</td>
                 </tr>
               ))}
               {interventions.length === 0 && (
-                <tr><td colSpan={6} className="px-5 py-10 text-center text-slate-400">No interventions found</td></tr>
+                <tr><td colSpan={6} className="px-5 py-10 text-center vi-text-muted">No interventions found</td></tr>
               )}
             </tbody>
           </table>

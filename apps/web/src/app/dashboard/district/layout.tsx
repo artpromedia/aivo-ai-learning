@@ -6,49 +6,68 @@ import Link from "next/link";
 import Image from "next/image";
 import DashboardHeader from "@/components/DashboardHeader";
 import { SkipLink } from "@/components/a11y/SkipLink";
+import {
+  BarChart3,
+  School,
+  DoorOpen,
+  GraduationCap,
+  Users,
+  Home,
+  ClipboardList,
+  Target,
+  TrendingUp,
+  Activity,
+  Plug,
+  Settings,
+  ScrollText,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  type LucideIcon,
+} from "lucide-react";
 
-const NAV_SECTIONS = [
+const NAV_SECTIONS: { label: string; items: { href: string; label: string; Icon: LucideIcon }[] }[] = [
   {
     label: "Overview",
     items: [
-      { href: "/dashboard/district", label: "Dashboard", icon: "📊" },
-      { href: "/dashboard/district/schools", label: "Schools", icon: "🏫" },
-      { href: "/dashboard/district/classrooms", label: "Classrooms", icon: "🏠" },
+      { href: "/dashboard/district", label: "Dashboard", Icon: BarChart3 },
+      { href: "/dashboard/district/schools", label: "Schools", Icon: School },
+      { href: "/dashboard/district/classrooms", label: "Classrooms", Icon: DoorOpen },
     ],
   },
   {
     label: "People",
     items: [
-      { href: "/dashboard/district/learners", label: "Learners", icon: "🎓" },
-      { href: "/dashboard/district/staff", label: "Staff & Teachers", icon: "👩‍🏫" },
-      { href: "/dashboard/district/families", label: "Parents & Families", icon: "👨‍👩‍👧" },
+      { href: "/dashboard/district/learners", label: "Learners", Icon: GraduationCap },
+      { href: "/dashboard/district/staff", label: "Staff & Teachers", Icon: Users },
+      { href: "/dashboard/district/families", label: "Parents & Families", Icon: Home },
     ],
   },
   {
     label: "Teaching & Learning",
     items: [
-      { href: "/dashboard/district/iep", label: "IEP Management", icon: "📋" },
-      { href: "/dashboard/district/interventions", label: "Interventions", icon: "🎯" },
+      { href: "/dashboard/district/iep", label: "IEP Management", Icon: ClipboardList },
+      { href: "/dashboard/district/interventions", label: "Interventions", Icon: Target },
     ],
   },
   {
     label: "Insights",
     items: [
-      { href: "/dashboard/district/analytics", label: "Analytics & Reports", icon: "📈" },
-      { href: "/dashboard/district/usage", label: "Usage & Limits", icon: "⚡" },
+      { href: "/dashboard/district/analytics", label: "Analytics & Reports", Icon: TrendingUp },
+      { href: "/dashboard/district/usage", label: "Usage & Limits", Icon: Activity },
     ],
   },
   {
     label: "Connect",
     items: [
-      { href: "/dashboard/district/integrations", label: "Integrations", icon: "🔗" },
+      { href: "/dashboard/district/integrations", label: "Integrations", Icon: Plug },
     ],
   },
   {
     label: "Admin",
     items: [
-      { href: "/dashboard/district/settings", label: "District Settings", icon: "⚙️" },
-      { href: "/dashboard/district/activity", label: "Activity Log", icon: "📜" },
+      { href: "/dashboard/district/settings", label: "District Settings", Icon: Settings },
+      { href: "/dashboard/district/activity", label: "Activity Log", Icon: ScrollText },
     ],
   },
 ];
@@ -72,23 +91,31 @@ export default function DistrictLayout({ children }: { children: React.ReactNode
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen vi-bg flex">
       <SkipLink />
-      <aside className={`${collapsed ? "w-16" : "w-64"} bg-white border-r border-slate-200 flex flex-col transition-all duration-200 flex-shrink-0`} role="navigation" aria-label="District sidebar">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+      <aside
+        className={`${collapsed ? "w-16" : "w-64"} bg-[hsl(var(--visual-surface))] border-r vi-border flex flex-col transition-all duration-200 flex-shrink-0`}
+        role="navigation"
+        aria-label="District sidebar"
+      >
+        <div className="p-4 border-b vi-border flex items-center justify-between">
           {!collapsed && (
             <Link href="/dashboard/district" className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl flex items-center justify-center">
+              <div className="w-9 h-9 bg-[hsl(var(--visual-primary))] rounded-2xl flex items-center justify-center">
                 <Image src="/images/aivo-logo-white.png" alt="AIVO" width={22} height={22} style={{ height: "auto" }} />
               </div>
               <div>
-                <p className="font-bold text-slate-900 text-sm">AIVO</p>
-                <p className="text-xs text-violet-600 font-semibold uppercase tracking-wider">District Admin</p>
+                <p className="font-bold vi-text text-sm">AIVO</p>
+                <p className="text-xs text-[hsl(var(--visual-primary))] font-semibold uppercase tracking-wider">District Admin</p>
               </div>
             </Link>
           )}
-          <button onClick={() => setCollapsed(!collapsed)} className="text-slate-400 hover:text-slate-600 p-1 transition" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
-            {collapsed ? "→" : "←"}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="vi-text-muted hover:vi-text p-1 transition"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <ChevronRight size={16} strokeWidth={2.5} /> : <ChevronLeft size={16} strokeWidth={2.5} />}
           </button>
         </div>
 
@@ -96,43 +123,53 @@ export default function DistrictLayout({ children }: { children: React.ReactNode
           {NAV_SECTIONS.map((section) => (
             <div key={section.label} className="mb-3">
               {!collapsed && (
-                <p className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{section.label}</p>
+                <p className="px-4 text-xs font-bold vi-text-muted uppercase tracking-wider mb-1">{section.label}</p>
               )}
-              {section.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-label={item.label}
-                  aria-current={isActive(item.href) ? "page" : undefined}
-                  className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all mx-2 rounded-xl ${
-                    isActive(item.href)
-                      ? "bg-violet-100 text-violet-700 font-semibold shadow-sm"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <span className="text-base flex-shrink-0" aria-hidden="true">{item.icon}</span>
-                  {!collapsed && <span>{item.label}</span>}
-                </Link>
-              ))}
+              {section.items.map((item) => {
+                const Icon = item.Icon;
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-label={item.label}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all mx-2 rounded-2xl ${
+                      active
+                        ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] font-semibold shadow-sm"
+                        : "vi-text-muted hover:vi-surface-soft hover:vi-text"
+                    }`}
+                    style={{ minHeight: 44 }}
+                  >
+                    <Icon size={18} strokeWidth={2.5} className="flex-shrink-0" aria-hidden="true" />
+                    {!collapsed && <span>{item.label}</span>}
+                  </Link>
+                );
+              })}
             </div>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t vi-border">
           {!collapsed && (
             <>
               <div className="mb-3">
-                <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>
-                <p className="text-xs text-slate-500">{user.role.replace(/_/g, " ")}</p>
+                <p className="text-sm font-semibold vi-text truncate">{user.name}</p>
+                <p className="text-xs vi-text-muted">{user.role.replace(/_/g, " ")}</p>
               </div>
-              <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-3 mb-3">
-                <p className="text-xs font-medium text-violet-700">Need help?</p>
-                <p className="text-xs text-slate-600 mt-0.5">Contact your platform administrator for support.</p>
+              <div className="vi-surface-soft rounded-2xl p-3 mb-3">
+                <p className="text-xs font-medium text-[hsl(var(--visual-primary))]">Need help?</p>
+                <p className="text-xs vi-text-muted mt-0.5">Contact your platform administrator for support.</p>
               </div>
             </>
           )}
-          <button onClick={logout} aria-label="Sign out" className={`text-xs text-slate-400 hover:text-red-400 transition ${collapsed ? "w-full text-center" : ""}`}>
-            {collapsed ? "🚪" : "Sign Out"}
+          <button
+            onClick={logout}
+            aria-label="Sign out"
+            className={`inline-flex items-center gap-2 text-xs vi-text-muted hover:text-[hsl(var(--visual-math))] transition ${collapsed ? "w-full justify-center" : ""}`}
+          >
+            <LogOut size={14} strokeWidth={2.5} />
+            {!collapsed && <span>Sign Out</span>}
           </button>
         </div>
       </aside>
@@ -142,13 +179,11 @@ export default function DistrictLayout({ children }: { children: React.ReactNode
           userName={user.name || "District Admin"}
           userRole={user.role}
           userEmail={user.email || undefined}
-          accent="violet"
+          accent="purple"
           basePath="/dashboard/district"
           baseLabel="District"
         />
-        <div className="flex-1 overflow-auto">
-          {children}
-        </div>
+        <div className="flex-1 overflow-auto">{children}</div>
       </main>
     </div>
   );

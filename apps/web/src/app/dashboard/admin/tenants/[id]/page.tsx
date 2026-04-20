@@ -37,7 +37,7 @@ interface TenantDetail {
 }
 
 const TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
-  B2C_FAMILY: { label: "Family", icon: "👨‍👩‍👧", color: "bg-purple-100 text-purple-700" },
+  B2C_FAMILY: { label: "Family", icon: "👨‍👩‍👧", color: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" },
   B2B_SCHOOL: { label: "School", icon: "🏫", color: "bg-blue-100 text-blue-700" },
   B2B_DISTRICT: { label: "District", icon: "🏛️", color: "bg-orange-100 text-orange-700" },
 };
@@ -156,7 +156,7 @@ export default function TenantDetailPage() {
   if (error || !tenant) {
     return (
       <div className="p-8 space-y-4">
-        <Link href="/dashboard/admin/tenants" className="text-sm text-purple-600 hover:text-purple-700 font-medium">
+        <Link href="/dashboard/admin/tenants" className="text-sm text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))] font-medium">
           ← Back to Tenants
         </Link>
         <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-red-600">
@@ -166,21 +166,21 @@ export default function TenantDetailPage() {
     );
   }
 
-  const typeConfig = TYPE_CONFIG[tenant.type] || { label: tenant.type, icon: "📋", color: "bg-slate-100 text-slate-600" };
+  const typeConfig = TYPE_CONFIG[tenant.type] || { label: tenant.type, icon: "📋", color: "vi-surface-soft vi-text-muted" };
   const isSuspended = tenant.status === "suspended";
 
   return (
     <div className="p-8 space-y-6">
-      <Link href="/dashboard/admin/tenants" className="text-sm text-purple-600 hover:text-purple-700 font-medium inline-flex items-center gap-1">
+      <Link href="/dashboard/admin/tenants" className="text-sm text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))] font-medium inline-flex items-center gap-1">
         ← Back to Tenants
       </Link>
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center text-2xl">{typeConfig.icon}</div>
+          <div className="w-14 h-14 rounded-full bg-[hsl(var(--visual-primary)/0.12)] flex items-center justify-center text-2xl">{typeConfig.icon}</div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-heading font-bold text-slate-900">{tenant.name}</h1>
+              <h1 className="text-2xl font-heading font-bold vi-text">{tenant.name}</h1>
               <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${typeConfig.color}`}>{typeConfig.label}</span>
               {isSuspended ? (
                 <span className="px-2.5 py-0.5 text-xs rounded-full font-semibold bg-red-100 text-red-700">Suspended</span>
@@ -188,7 +188,7 @@ export default function TenantDetailPage() {
                 <span className="px-2.5 py-0.5 text-xs rounded-full font-semibold bg-green-100 text-green-700">Active</span>
               )}
             </div>
-            <p className="text-sm text-slate-500 mt-0.5">Created {new Date(tenant.createdAt).toLocaleDateString()}</p>
+            <p className="text-sm vi-text-muted mt-0.5">Created {new Date(tenant.createdAt).toLocaleDateString()}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -213,35 +213,35 @@ export default function TenantDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <h3 className="font-heading font-bold text-slate-900 mb-4">Tenant Details</h3>
+        <div className="vi-card p-6">
+          <h3 className="font-heading font-bold vi-text mb-4">Tenant Details</h3>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-slate-500">ID</span>
-              <span className="font-mono text-xs text-slate-500">{tenant.id}</span>
+              <span className="vi-text-muted">ID</span>
+              <span className="font-mono text-xs vi-text-muted">{tenant.id}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Type</span>
+              <span className="vi-text-muted">Type</span>
               <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${typeConfig.color}`}>{typeConfig.label}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Users</span>
-              <span className="font-medium text-slate-900">{tenant.userCount}</span>
+              <span className="vi-text-muted">Users</span>
+              <span className="font-medium vi-text">{tenant.userCount}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Learners</span>
-              <span className="font-medium text-slate-900">{tenant.learnerCount}</span>
+              <span className="vi-text-muted">Learners</span>
+              <span className="font-medium vi-text">{tenant.learnerCount}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Updated</span>
-              <span className="font-medium text-slate-900">{new Date(tenant.updatedAt).toLocaleDateString()}</span>
+              <span className="vi-text-muted">Updated</span>
+              <span className="font-medium vi-text">{new Date(tenant.updatedAt).toLocaleDateString()}</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <h3 className="font-heading font-bold text-slate-900 mb-4">Settings</h3>
-          <pre className="text-xs text-slate-600 bg-slate-50 rounded-lg p-3 overflow-auto max-h-48 font-mono">
+        <div className="vi-card p-6">
+          <h3 className="font-heading font-bold vi-text mb-4">Settings</h3>
+          <pre className="text-xs vi-text-muted vi-bg rounded-lg p-3 overflow-auto max-h-48 font-mono">
             {JSON.stringify(tenant.settings || {}, null, 2)}
           </pre>
         </div>
@@ -265,14 +265,14 @@ export default function TenantDetailPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="font-heading font-bold text-lg text-slate-900">Users</h2>
-          <span className="text-sm text-slate-400">{tenant.users.length} users</span>
+      <div className="vi-card overflow-hidden">
+        <div className="p-5 border-b vi-border flex items-center justify-between">
+          <h2 className="font-heading font-bold text-lg vi-text">Users</h2>
+          <span className="text-sm vi-text-muted">{tenant.users.length} users</span>
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
+            <tr className="text-left vi-text-muted border-b vi-border vi-bg/50">
               <th className="px-5 py-3 font-semibold">Name</th>
               <th className="px-5 py-3 font-semibold">Email</th>
               <th className="px-5 py-3 font-semibold">Role</th>
@@ -281,36 +281,36 @@ export default function TenantDetailPage() {
           </thead>
           <tbody>
             {tenant.users.map((u) => (
-              <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+              <tr key={u.id} className="border-b vi-border hover:vi-bg/50 transition">
                 <td className="px-5 py-3">
-                  <Link href={`/dashboard/admin/users/${u.id}`} className="font-medium text-purple-600 hover:text-purple-700">
+                  <Link href={`/dashboard/admin/users/${u.id}`} className="font-medium text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))]">
                     {u.name}
                   </Link>
                 </td>
-                <td className="px-5 py-3 text-slate-500">{u.email}</td>
+                <td className="px-5 py-3 vi-text-muted">{u.email}</td>
                 <td className="px-5 py-3">
-                  <span className="px-2 py-0.5 text-xs rounded-full bg-slate-100 text-slate-600 font-medium">
+                  <span className="px-2 py-0.5 text-xs rounded-full vi-surface-soft vi-text-muted font-medium">
                     {u.role.replace(/_/g, " ")}
                   </span>
                 </td>
-                <td className="px-5 py-3 text-slate-400">{new Date(u.createdAt).toLocaleDateString()}</td>
+                <td className="px-5 py-3 vi-text-muted">{new Date(u.createdAt).toLocaleDateString()}</td>
               </tr>
             ))}
             {tenant.users.length === 0 && (
-              <tr><td colSpan={4} className="px-5 py-10 text-center text-slate-400">No users found</td></tr>
+              <tr><td colSpan={4} className="px-5 py-10 text-center vi-text-muted">No users found</td></tr>
             )}
           </tbody>
         </table>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="font-heading font-bold text-lg text-slate-900">Learners</h2>
-          <span className="text-sm text-slate-400">{tenant.learners.length} learners</span>
+      <div className="vi-card overflow-hidden">
+        <div className="p-5 border-b vi-border flex items-center justify-between">
+          <h2 className="font-heading font-bold text-lg vi-text">Learners</h2>
+          <span className="text-sm vi-text-muted">{tenant.learners.length} learners</span>
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
+            <tr className="text-left vi-text-muted border-b vi-border vi-bg/50">
               <th className="px-5 py-3 font-semibold">Name</th>
               <th className="px-5 py-3 font-semibold">Functioning Level</th>
               <th className="px-5 py-3 font-semibold">Grade</th>
@@ -319,24 +319,24 @@ export default function TenantDetailPage() {
           </thead>
           <tbody>
             {tenant.learners.map((l) => {
-              const lc = LEVEL_CONFIG[l.functioningLevel || ""] || { label: "N/A", color: "text-slate-500", bg: "bg-slate-100" };
+              const lc = LEVEL_CONFIG[l.functioningLevel || ""] || { label: "N/A", color: "vi-text-muted", bg: "vi-surface-soft" };
               return (
-                <tr key={l.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+                <tr key={l.id} className="border-b vi-border hover:vi-bg/50 transition">
                   <td className="px-5 py-3">
-                    <Link href={`/dashboard/admin/learners/${l.id}`} className="font-medium text-purple-600 hover:text-purple-700">
+                    <Link href={`/dashboard/admin/learners/${l.id}`} className="font-medium text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))]">
                       {l.name}
                     </Link>
                   </td>
                   <td className="px-5 py-3">
                     <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${lc.bg} ${lc.color}`}>{lc.label}</span>
                   </td>
-                  <td className="px-5 py-3 text-slate-500">{l.gradeLevel || "—"}</td>
-                  <td className="px-5 py-3 text-slate-400">{new Date(l.createdAt).toLocaleDateString()}</td>
+                  <td className="px-5 py-3 vi-text-muted">{l.gradeLevel || "—"}</td>
+                  <td className="px-5 py-3 vi-text-muted">{new Date(l.createdAt).toLocaleDateString()}</td>
                 </tr>
               );
             })}
             {tenant.learners.length === 0 && (
-              <tr><td colSpan={4} className="px-5 py-10 text-center text-slate-400">No learners found</td></tr>
+              <tr><td colSpan={4} className="px-5 py-10 text-center vi-text-muted">No learners found</td></tr>
             )}
           </tbody>
         </table>
@@ -346,37 +346,37 @@ export default function TenantDetailPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-heading font-bold text-slate-900">Edit Tenant</h2>
-              <button onClick={() => setShowEdit(false)} className="text-slate-400 hover:text-slate-600 text-xl">×</button>
+              <h2 className="text-lg font-heading font-bold vi-text">Edit Tenant</h2>
+              <button onClick={() => setShowEdit(false)} className="vi-text-muted hover:vi-text-muted text-xl">×</button>
             </div>
             {saveError && <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm">{saveError}</div>}
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label htmlFor="edit-name" className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                <label htmlFor="edit-name" className="block text-sm font-medium vi-text mb-1">Name</label>
                 <input
                   id="edit-name"
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   required
-                  className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none text-sm"
+                  className="w-full px-4 py-2.5 rounded-lg border vi-border focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none text-sm"
                 />
               </div>
               <div>
-                <label htmlFor="edit-settings" className="block text-sm font-medium text-slate-700 mb-1">Settings (JSON)</label>
+                <label htmlFor="edit-settings" className="block text-sm font-medium vi-text mb-1">Settings (JSON)</label>
                 <textarea
                   id="edit-settings"
                   value={editSettings}
                   onChange={(e) => setEditSettings(e.target.value)}
                   rows={8}
-                  className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none text-sm font-mono"
+                  className="w-full px-4 py-2.5 rounded-lg border vi-border focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none text-sm font-mono"
                 />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowEdit(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition"
+                  className="px-4 py-2 rounded-xl border vi-border vi-text-muted font-semibold text-sm hover:vi-bg transition"
                 >
                   Cancel
                 </button>

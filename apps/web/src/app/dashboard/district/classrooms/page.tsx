@@ -44,8 +44,8 @@ export default function DistrictClassroomsPage() {
     <div className="p-8 space-y-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Classrooms</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage classroom assignments across all schools.</p>
+          <h1 className="text-2xl font-heading font-bold vi-text">Classrooms</h1>
+          <p className="text-sm vi-text-muted mt-1">Manage classroom assignments across all schools.</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -59,12 +59,12 @@ export default function DistrictClassroomsPage() {
         <select
           value={schoolFilter}
           onChange={(e) => setSchoolFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:border-violet-400 outline-none"
+          className="px-3 py-2 rounded-xl border vi-border text-sm vi-text-muted focus:border-violet-400 outline-none"
         >
           <option value="">All Schools</option>
           {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
-        <span className="text-sm text-slate-400">{classrooms.length} classrooms</span>
+        <span className="text-sm vi-text-muted">{classrooms.length} classrooms</span>
       </div>
 
       {loading ? (
@@ -72,16 +72,16 @@ export default function DistrictClassroomsPage() {
           {[1, 2, 3].map((i) => <div key={i} className="h-14 bg-slate-200 rounded-xl" />)}
         </div>
       ) : classrooms.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="vi-card p-12 text-center">
           <span className="text-4xl mb-4 block">🏠</span>
-          <p className="text-slate-600 font-medium">No classrooms found</p>
-          <p className="text-sm text-slate-400 mt-1">Create classrooms and assign them to schools.</p>
+          <p className="vi-text-muted font-medium">No classrooms found</p>
+          <p className="text-sm vi-text-muted mt-1">Create classrooms and assign them to schools.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="vi-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-slate-400 bg-slate-50/50 border-b border-slate-100">
+              <tr className="text-left vi-text-muted vi-bg/50 border-b vi-border">
                 <th className="px-5 py-3 font-semibold">Classroom</th>
                 <th className="px-5 py-3 font-semibold">School</th>
                 <th className="px-5 py-3 font-semibold">Grade</th>
@@ -91,17 +91,17 @@ export default function DistrictClassroomsPage() {
             </thead>
             <tbody>
               {classrooms.map((c) => (
-                <tr key={c.id} className="border-b border-slate-50 hover:bg-violet-50/30 transition">
+                <tr key={c.id} className="border-b vi-border hover:vi-surface-soft transition">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-sm">🏠</div>
-                      <span className="font-medium text-slate-900">{c.name}</span>
+                      <span className="font-medium vi-text">{c.name}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3 text-slate-500 text-xs">{c.schoolName || "—"}</td>
-                  <td className="px-5 py-3 text-slate-500">{c.gradeLevel || "—"}</td>
-                  <td className="px-5 py-3 text-slate-500">{c.subject || "—"}</td>
-                  <td className="px-5 py-3 text-slate-400">{c.capacity || "—"}</td>
+                  <td className="px-5 py-3 vi-text-muted text-xs">{c.schoolName || "—"}</td>
+                  <td className="px-5 py-3 vi-text-muted">{c.gradeLevel || "—"}</td>
+                  <td className="px-5 py-3 vi-text-muted">{c.subject || "—"}</td>
+                  <td className="px-5 py-3 vi-text-muted">{c.capacity || "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -161,37 +161,37 @@ function CreateClassroomModal({ accessToken, schools, onClose, onCreated }: {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-heading font-semibold text-slate-900">Add Classroom</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+          <h2 className="text-lg font-heading font-semibold vi-text">Add Classroom</h2>
+          <button onClick={onClose} className="vi-text-muted hover:vi-text-muted text-xl">&times;</button>
         </div>
         {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1">
-            <label htmlFor="classroom-name" className="text-xs text-slate-500 font-medium">Classroom Name *</label>
-            <input id="classroom-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Room 101" className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
+            <label htmlFor="classroom-name" className="text-xs vi-text-muted font-medium">Classroom Name *</label>
+            <input id="classroom-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Room 101" className="w-full px-3 py-2 rounded-xl border vi-border text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
           </div>
           <div className="space-y-1">
-            <label htmlFor="classroom-school" className="text-xs text-slate-500 font-medium">School *</label>
-            <select id="classroom-school" value={schoolId} onChange={(e) => setSchoolId(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none">
+            <label htmlFor="classroom-school" className="text-xs vi-text-muted font-medium">School *</label>
+            <select id="classroom-school" value={schoolId} onChange={(e) => setSchoolId(e.target.value)} className="w-full px-3 py-2 rounded-xl border vi-border text-sm focus:border-violet-400 outline-none">
               {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label htmlFor="classroom-grade" className="text-xs text-slate-500 font-medium">Grade</label>
-              <input id="classroom-grade" type="text" value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none" />
+              <label htmlFor="classroom-grade" className="text-xs vi-text-muted font-medium">Grade</label>
+              <input id="classroom-grade" type="text" value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)} className="w-full px-3 py-2 rounded-xl border vi-border text-sm focus:border-violet-400 outline-none" />
             </div>
             <div className="space-y-1">
-              <label htmlFor="classroom-subject" className="text-xs text-slate-500 font-medium">Subject</label>
-              <input id="classroom-subject" type="text" value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none" />
+              <label htmlFor="classroom-subject" className="text-xs vi-text-muted font-medium">Subject</label>
+              <input id="classroom-subject" type="text" value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full px-3 py-2 rounded-xl border vi-border text-sm focus:border-violet-400 outline-none" />
             </div>
             <div className="space-y-1">
-              <label htmlFor="classroom-capacity" className="text-xs text-slate-500 font-medium">Capacity</label>
-              <input id="classroom-capacity" type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none" />
+              <label htmlFor="classroom-capacity" className="text-xs vi-text-muted font-medium">Capacity</label>
+              <input id="classroom-capacity" type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} className="w-full px-3 py-2 rounded-xl border vi-border text-sm focus:border-violet-400 outline-none" />
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border vi-border rounded-xl text-sm vi-text-muted hover:vi-bg">Cancel</button>
             <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 disabled:opacity-50">
               {saving ? "Creating..." : "Create Classroom"}
             </button>

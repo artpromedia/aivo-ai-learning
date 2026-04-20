@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { IconWell } from "@/components/discovery/_vi";
+import { Bell, Trophy, AlertTriangle, Info, Target, type LucideIcon } from "lucide-react";
 
 interface Notification {
   id: string;
@@ -16,20 +18,28 @@ interface Notification {
   link?: string;
 }
 
-const TYPE_ICONS: Record<string, string> = {
-  achievement: "🏆",
-  alert: "⚠️",
-  info: "ℹ️",
-  milestone: "🎯",
-  system: "🔔",
+const TYPE_ICONS: Record<string, LucideIcon> = {
+  achievement: Trophy,
+  alert: AlertTriangle,
+  info: Info,
+  milestone: Target,
+  system: Bell,
+};
+
+const TYPE_TONE: Record<string, string> = {
+  achievement: "sel",
+  alert: "math",
+  info: "reading",
+  milestone: "science",
+  system: "primary",
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  achievement: "bg-amber-50 border-amber-200",
-  alert: "bg-red-50 border-red-200",
-  info: "bg-blue-50 border-blue-200",
-  milestone: "bg-green-50 border-green-200",
-  system: "bg-slate-50 border-slate-200",
+  achievement: "bg-[hsl(var(--visual-sel)/0.08)] border-[hsl(var(--visual-sel)/0.3)]",
+  alert: "bg-[hsl(var(--visual-math)/0.08)] border-[hsl(var(--visual-math)/0.3)]",
+  info: "bg-[hsl(var(--visual-reading)/0.08)] border-[hsl(var(--visual-reading)/0.3)]",
+  milestone: "bg-[hsl(var(--visual-science)/0.08)] border-[hsl(var(--visual-science)/0.3)]",
+  system: "vi-surface-soft vi-border",
 };
 
 export default function NotificationsPage() {
@@ -90,73 +100,85 @@ export default function NotificationsPage() {
     "/dashboard/admin";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50">
-      <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+    <div className="min-h-screen vi-bg">
+      <header className="bg-[hsl(var(--visual-surface))]/80 backdrop-blur border-b vi-border px-8 py-4 flex items-center justify-between">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} style={{ height: "auto" }} />
         <div className="flex items-center gap-4">
-          <Link href={dashboardLink} className="text-sm text-primary font-semibold hover:underline">Dashboard</Link>
-          <span className="text-sm font-semibold text-slate-600">{user.name}</span>
+          <Link href={dashboardLink} className="text-sm text-[hsl(var(--visual-primary))] font-semibold hover:underline">Dashboard</Link>
+          <span className="text-sm font-semibold vi-text-muted">{user.name}</span>
         </div>
       </header>
 
       <div className="max-w-3xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-heading font-bold text-slate-900">{td("overview")}</h1>
+        <header className="flex items-center gap-4 mb-6">
+          <IconWell color="primary">
+            <Bell size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div className="flex-1">
+            <h1 className="text-2xl font-heading font-bold vi-text leading-tight">{td("overview")}</h1>
             {unreadCount > 0 && (
-              <p className="text-sm text-slate-500 mt-1">{unreadCount} unread</p>
+              <p className="text-sm vi-text-muted font-medium mt-1">{unreadCount} unread</p>
             )}
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
+            <div className="flex gap-1 vi-surface-soft rounded-xl p-1">
               {(["all", "unread"] as const).map(f => (
                 <button key={f} onClick={() => setFilter(f)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition capitalize ${filter === f ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition capitalize ${filter === f ? "bg-[hsl(var(--visual-surface))] vi-text shadow-sm" : "vi-text-muted"}`}>
                   {f} {f === "unread" ? `(${unreadCount})` : ""}
                 </button>
               ))}
             </div>
             {unreadCount > 0 && (
-              <button onClick={markAllRead} className="text-xs text-primary font-semibold hover:underline">Mark all read</button>
+              <button onClick={markAllRead} className="text-xs text-[hsl(var(--visual-primary))] font-semibold hover:underline">Mark all read</button>
             )}
           </div>
-        </div>
+        </header>
 
         {loadingNotifs ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-slate-100 animate-pulse text-slate-400">Loading notifications...</div>
+          <div className="vi-card p-12 text-center animate-pulse vi-text-muted">Loading notifications...</div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
-            <div className="text-4xl mb-3">🔔</div>
-            <p className="text-slate-500 font-semibold">{filter === "unread" ? "No unread notifications" : "No notifications yet"}</p>
-            <p className="text-xs text-slate-400 mt-1">Updates about your learning journey will appear here.</p>
+          <div className="vi-card p-12 text-center">
+            <div className="flex justify-center mb-3">
+              <IconWell color="primary">
+                <Bell size={28} strokeWidth={2.5} aria-hidden="true" />
+              </IconWell>
+            </div>
+            <p className="vi-text-muted font-semibold">{filter === "unread" ? "No unread notifications" : "No notifications yet"}</p>
+            <p className="text-xs vi-text-muted mt-1">Updates about your learning journey will appear here.</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {filtered.map(n => (
+            {filtered.map(n => {
+              const Icon = TYPE_ICONS[n.type] || Bell;
+              return (
               <div key={n.id}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") markAsRead(n.id); }}
                 onClick={() => markAsRead(n.id)}
-                className={`rounded-xl border-2 p-4 cursor-pointer transition hover:shadow-sm ${n.read ? "bg-white border-slate-100 opacity-70" : TYPE_COLORS[n.type]}`}>
+                className={`rounded-xl border-2 p-4 cursor-pointer transition hover:shadow-sm ${n.read ? "bg-[hsl(var(--visual-surface))] vi-border opacity-70" : TYPE_COLORS[n.type]}`}>
                 <div className="flex items-start gap-3">
-                  <span className="text-xl mt-0.5">{TYPE_ICONS[n.type] || "🔔"}</span>
+                  <IconWell color={TYPE_TONE[n.type] || "primary"} size="sm">
+                    <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
+                  </IconWell>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className={`text-sm font-semibold ${n.read ? "text-slate-500" : "text-slate-900"}`}>{n.title}</h3>
+                      <h3 className={`text-sm font-semibold ${n.read ? "vi-text-muted" : "vi-text"}`}>{n.title}</h3>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {!n.read && <span className="w-2 h-2 rounded-full bg-primary" />}
-                        <span className="text-xs text-slate-400">{formatTime(n.createdAt)}</span>
+                        {!n.read && <span className="w-2 h-2 rounded-full bg-[hsl(var(--visual-primary))]" />}
+                        <span className="text-xs vi-text-muted">{formatTime(n.createdAt)}</span>
                       </div>
                     </div>
-                    <p className={`text-sm mt-0.5 ${n.read ? "text-slate-400" : "text-slate-600"}`}>{n.message}</p>
+                    <p className={`text-sm mt-0.5 ${n.read ? "vi-text-muted" : "vi-text-muted"}`}>{n.message}</p>
                     {n.link && (
-                      <Link href={n.link} className="text-xs text-primary font-semibold hover:underline mt-1 inline-block">View details →</Link>
+                      <Link href={n.link} className="text-xs text-[hsl(var(--visual-primary))] font-semibold hover:underline mt-1 inline-block">View details →</Link>
                     )}
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -24,7 +24,7 @@ interface Tenant {
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  PARENT: "bg-purple-100 text-purple-700",
+  PARENT: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
   LEARNER: "bg-cyan-100 text-cyan-700",
   TEACHER: "bg-green-100 text-green-700",
   THERAPIST: "bg-amber-100 text-amber-700",
@@ -35,7 +35,7 @@ const ROLE_COLORS: Record<string, string> = {
   MARKETING: "bg-pink-100 text-pink-700",
   CUSTOMER_CARE: "bg-sky-100 text-sky-700",
   SUPPORT: "bg-amber-100 text-amber-700",
-  FINANCE: "bg-violet-100 text-violet-700",
+  FINANCE: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
   DEVOPS: "bg-cyan-100 text-cyan-700",
 };
 
@@ -148,9 +148,9 @@ function CreateUserModal({
     <div className="fixed inset-0 z-[9998] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" role="presentation" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-        <div className="p-6 border-b border-slate-100">
-          <h2 className="text-lg font-heading font-bold text-slate-900">Create New User</h2>
-          <p className="text-sm text-slate-500 mt-1">Add a new user to the platform with any role.</p>
+        <div className="p-6 border-b vi-border">
+          <h2 className="text-lg font-heading font-bold vi-text">Create New User</h2>
+          <p className="text-sm vi-text-muted mt-1">Add a new user to the platform with any role.</p>
         </div>
 
         {result ? (
@@ -185,38 +185,38 @@ function CreateUserModal({
             )}
 
             <div>
-              <label htmlFor="user-fullname" className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+              <label htmlFor="user-fullname" className="block text-sm font-medium vi-text mb-1">Full Name</label>
               <input
                 id="user-fullname"
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                className="w-full px-4 py-2.5 rounded-xl border vi-border text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
                 placeholder="Jane Smith"
               />
             </div>
 
             <div>
-              <label htmlFor="user-email" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <label htmlFor="user-email" className="block text-sm font-medium vi-text mb-1">Email</label>
               <input
                 id="user-email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                className="w-full px-4 py-2.5 rounded-xl border vi-border text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
                 placeholder="jane@aivo.test"
               />
             </div>
 
             <div>
-              <label htmlFor="user-role" className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+              <label htmlFor="user-role" className="block text-sm font-medium vi-text mb-1">Role</label>
               <select
                 id="user-role"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                className="w-full px-4 py-2.5 rounded-xl border vi-border text-sm bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
               >
                 {ROLE_GROUPS.map((group) => (
                   <optgroup key={group.label} label={group.label}>
@@ -232,7 +232,7 @@ function CreateUserModal({
 
             {needsTenant && (
               <div>
-                <label htmlFor="user-tenant" className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="user-tenant" className="block text-sm font-medium vi-text mb-1">
                   Tenant / Organization <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -240,7 +240,7 @@ function CreateUserModal({
                   value={tenantId}
                   onChange={(e) => setTenantId(e.target.value)}
                   required
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl border vi-border text-sm bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none"
                 >
                   <option value="">Select a tenant...</option>
                   {tenants.map((t) => (
@@ -249,7 +249,7 @@ function CreateUserModal({
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs vi-text-muted mt-1">
                   Non-internal roles require assignment to a tenant.
                 </p>
               </div>
@@ -259,7 +259,7 @@ function CreateUserModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition"
+                className="flex-1 py-2.5 rounded-xl border vi-border vi-text-muted font-semibold hover:vi-bg transition"
               >
                 Cancel
               </button>
@@ -364,8 +364,8 @@ export default function AdminUsersPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("users")}</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage all platform users, roles, and access controls.</p>
+          <h1 className="text-2xl font-heading font-bold vi-text">{t("users")}</h1>
+          <p className="text-sm vi-text-muted mt-1">Manage all platform users, roles, and access controls.</p>
         </div>
         {canCreate && (
           <button
@@ -385,46 +385,46 @@ export default function AdminUsersPage() {
             onClick={() => setRoleFilter(roleFilter === role ? "ALL" : role)}
             className={`p-3 rounded-xl border text-center transition ${
               roleFilter === role
-                ? "border-purple-300 bg-purple-50 shadow-sm"
-                : "border-slate-200 bg-white hover:border-slate-300"
+                ? "border-purple-300 vi-surface-soft shadow-sm"
+                : "vi-border bg-white hover:border-slate-300"
             }`}
           >
-            <p className="text-lg font-bold text-slate-900">{roleCounts[role] ?? 0}</p>
-            <p className="text-[10px] font-semibold text-slate-500 mt-0.5">{role.replace(/_/g, " ")}</p>
+            <p className="text-lg font-bold vi-text">{roleCounts[role] ?? 0}</p>
+            <p className="text-[10px] font-semibold vi-text-muted mt-0.5">{role.replace(/_/g, " ")}</p>
           </button>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="vi-card overflow-hidden">
+        <div className="p-5 border-b vi-border flex flex-col md:flex-row gap-3 items-center justify-between">
           <div className="flex items-center gap-3 w-full md:w-auto">
             <input
               type="text"
               placeholder={tc("search")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="px-4 py-2 rounded-lg border border-slate-200 text-sm w-full md:w-80 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none"
+              className="px-4 py-2 rounded-lg border vi-border text-sm w-full md:w-80 focus:border-primary focus:ring-2 focus:ring-purple-100 outline-none"
             />
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+              className="px-3 py-2 rounded-lg border vi-border text-sm bg-white"
             >
               {ROLES.map((r) => (
                 <option key={r} value={r}>{r === "ALL" ? "All Roles" : r.replace(/_/g, " ")}</option>
               ))}
             </select>
           </div>
-          <p className="text-sm text-slate-400">{totalUsers} users</p>
+          <p className="text-sm vi-text-muted">{totalUsers} users</p>
         </div>
 
         {loading ? (
-          <div className="p-10 text-center text-slate-400 animate-pulse">Loading users...</div>
+          <div className="p-10 text-center vi-text-muted animate-pulse">Loading users...</div>
         ) : (
           <>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
+              <tr className="text-left vi-text-muted border-b vi-border vi-bg/50">
                 <th className="px-5 py-3 font-semibold">User</th>
                 <th className="px-5 py-3 font-semibold">{tc("email")}</th>
                 <th className="px-5 py-3 font-semibold">{tc("role")}</th>
@@ -434,23 +434,23 @@ export default function AdminUsersPage() {
             </thead>
             <tbody>
               {paginatedUsers.map((u) => (
-                <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+                <tr key={u.id} className="border-b vi-border hover:vi-bg/50 transition">
                   <td className="px-5 py-3">
                     <Link href={`/dashboard/admin/users/${u.id}`} className="flex items-center gap-3 group">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-[hsl(var(--visual-primary))] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                         {u.name?.charAt(0) || "?"}
                       </div>
-                      <span className="font-medium text-slate-900 group-hover:text-purple-600 transition">{u.name}</span>
+                      <span className="font-medium vi-text group-hover:text-[hsl(var(--visual-primary))] transition">{u.name}</span>
                       {u.deactivatedAt && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">Deactivated</span>}
                     </Link>
                   </td>
-                  <td className="px-5 py-3 text-slate-500">{u.email || "—"}</td>
+                  <td className="px-5 py-3 vi-text-muted">{u.email || "—"}</td>
                   <td className="px-5 py-3">
-                    <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${ROLE_COLORS[u.role] || "bg-slate-100 text-slate-600"}`}>
+                    <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${ROLE_COLORS[u.role] || "vi-surface-soft vi-text-muted"}`}>
                       {u.role.replace(/_/g, " ")}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-slate-400">{new Date(u.createdAt).toLocaleDateString()}</td>
+                  <td className="px-5 py-3 vi-text-muted">{new Date(u.createdAt).toLocaleDateString()}</td>
                   <td className="px-5 py-3">
                     {canImpersonate && u.id !== currentUser?.id && (
                       <button
@@ -466,7 +466,7 @@ export default function AdminUsersPage() {
               ))}
               {paginatedUsers.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-5 py-10 text-center text-slate-400">No users found</td>
+                  <td colSpan={5} className="px-5 py-10 text-center vi-text-muted">No users found</td>
                 </tr>
               )}
             </tbody>

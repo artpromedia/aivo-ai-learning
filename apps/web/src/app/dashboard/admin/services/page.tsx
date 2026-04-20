@@ -110,8 +110,8 @@ export default function AdminServicesPage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("system_health")}</h1>
-          <p className="text-sm text-slate-500 mt-1">Real-time health monitoring across all {ALL_SERVICES.length} microservices.</p>
+          <h1 className="text-2xl font-heading font-bold vi-text">{t("system_health")}</h1>
+          <p className="text-sm vi-text-muted mt-1">Real-time health monitoring across all {ALL_SERVICES.length} microservices.</p>
         </div>
         <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
           overallStatus === "operational" ? "bg-green-100 text-green-700" :
@@ -125,9 +125,9 @@ export default function AdminServicesPage() {
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-4 border border-slate-200 text-center">
-          <p className="text-3xl font-bold text-slate-900">{ALL_SERVICES.length}</p>
-          <p className="text-xs text-slate-500 font-semibold mt-1">Total Services</p>
+        <div className="bg-white rounded-xl p-4 border vi-border text-center">
+          <p className="text-3xl font-bold vi-text">{ALL_SERVICES.length}</p>
+          <p className="text-xs vi-text-muted font-semibold mt-1">Total Services</p>
         </div>
         <div className="bg-green-50 rounded-xl p-4 border border-green-200 text-center">
           <p className="text-3xl font-bold text-green-700">{healthyCount}</p>
@@ -144,49 +144,49 @@ export default function AdminServicesPage() {
       </div>
 
       {uptime && (
-        <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-6 text-white">
+        <div className="vi-card p-6">
           <h2 className="font-heading font-bold text-lg mb-3">30-Day Uptime Report</h2>
           <div className="grid grid-cols-3 gap-6">
             <div>
               <p className="text-3xl font-bold">{uptime.uptime?.overall ?? "99.9"}%</p>
-              <p className="text-sm text-slate-400">Overall Uptime</p>
+              <p className="text-sm vi-text-muted">Overall Uptime</p>
             </div>
             <div>
               <p className="text-3xl font-bold">{uptime.period ?? "30d"}</p>
-              <p className="text-sm text-slate-400">Period</p>
+              <p className="text-sm vi-text-muted">Period</p>
             </div>
             <div>
               <p className="text-3xl font-bold">{uptime.uptime?.byService?.length ?? 0}</p>
-              <p className="text-sm text-slate-400">Monitored Services</p>
+              <p className="text-sm vi-text-muted">Monitored Services</p>
             </div>
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-5 border-b border-slate-100">
-          <h2 className="font-heading font-bold text-lg text-slate-900">Service Status</h2>
+      <div className="vi-card overflow-hidden">
+        <div className="p-5 border-b vi-border">
+          <h2 className="font-heading font-bold text-lg vi-text">Service Status</h2>
         </div>
         {loading ? (
-          <div className="p-10 text-center text-slate-400 animate-pulse">Checking services...</div>
+          <div className="p-10 text-center vi-text-muted animate-pulse">Checking services...</div>
         ) : (
           <div className="divide-y divide-slate-50">
             {ALL_SERVICES.map((svc) => {
               const live = serviceStatuses.find((s) => s.name === svc.name);
               const status = live?.status || "unknown";
               return (
-                <div key={svc.name} className="flex items-center justify-between px-5 py-4 hover:bg-slate-50/50 transition">
+                <div key={svc.name} className="flex items-center justify-between px-5 py-4 hover:vi-bg/50 transition">
                   <div className="flex items-center gap-4">
                     <span className={`w-3 h-3 rounded-full flex-shrink-0 ${
                       status === "operational" ? "bg-green-500" : status === "degraded" ? "bg-amber-500 animate-pulse" : "bg-red-500"
                     }`} />
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">{svc.name}</p>
-                      <p className="text-xs text-slate-400">{svc.desc}</p>
+                      <p className="text-sm font-semibold vi-text">{svc.name}</p>
+                      <p className="text-xs vi-text-muted">{svc.desc}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-xs text-slate-400">:{svc.port}</span>
+                    <span className="text-xs vi-text-muted">:{svc.port}</span>
                     {live?.latency !== undefined && live.latency > 0 && (
                       <span className={`text-xs font-medium ${live.latency < 200 ? "text-green-600" : live.latency < 500 ? "text-amber-600" : "text-red-600"}`}>
                         {live.latency}ms
@@ -205,9 +205,9 @@ export default function AdminServicesPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="font-heading font-bold text-lg text-slate-900">Incidents</h2>
+      <div className="vi-card overflow-hidden">
+        <div className="p-5 border-b vi-border flex items-center justify-between">
+          <h2 className="font-heading font-bold text-lg vi-text">Incidents</h2>
           {user?.role === "PLATFORM_ADMIN" && (
             <button onClick={() => setShowIncidentForm(!showIncidentForm)}
               className="px-4 py-2 rounded-lg bg-red-50 text-red-700 text-sm font-semibold hover:bg-red-100 transition">
@@ -216,16 +216,16 @@ export default function AdminServicesPage() {
           )}
         </div>
         {showIncidentForm && (
-          <form onSubmit={handleCreateIncident} className="p-5 border-b border-slate-100 flex gap-3 items-end bg-slate-50">
+          <form onSubmit={handleCreateIncident} className="p-5 border-b vi-border flex gap-3 items-end vi-bg">
             <div className="flex-1">
-              <label htmlFor="incident-title" className="block text-xs font-medium text-slate-600 mb-1">Title</label>
+              <label htmlFor="incident-title" className="block text-xs font-medium vi-text-muted mb-1">Title</label>
               <input id="incident-title" type="text" value={incidentTitle} onChange={(e) => setIncidentTitle(e.target.value)} required
-                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm" placeholder="Describe the incident..." />
+                className="w-full px-3 py-2 rounded-lg border vi-border text-sm" placeholder="Describe the incident..." />
             </div>
             <div>
-              <label htmlFor="incident-severity" className="block text-xs font-medium text-slate-600 mb-1">Severity</label>
+              <label htmlFor="incident-severity" className="block text-xs font-medium vi-text-muted mb-1">Severity</label>
               <select id="incident-severity" value={incidentSeverity} onChange={(e) => setIncidentSeverity(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white">
+                className="px-3 py-2 rounded-lg border vi-border text-sm bg-white">
                 <option value="minor">Minor</option>
                 <option value="major">Major</option>
                 <option value="critical">Critical</option>
@@ -238,8 +238,8 @@ export default function AdminServicesPage() {
           {incidents.length > 0 ? incidents.map((inc) => (
             <div key={inc.id} className="px-5 py-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-900">{inc.title}</p>
-                <p className="text-xs text-slate-400">{new Date(inc.createdAt).toLocaleString()}</p>
+                <p className="text-sm font-medium vi-text">{inc.title}</p>
+                <p className="text-xs vi-text-muted">{new Date(inc.createdAt).toLocaleString()}</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
@@ -251,7 +251,7 @@ export default function AdminServicesPage() {
               </div>
             </div>
           )) : (
-            <div className="px-5 py-8 text-center text-slate-400 text-sm">No incidents reported</div>
+            <div className="px-5 py-8 text-center vi-text-muted text-sm">No incidents reported</div>
           )}
         </div>
       </div>

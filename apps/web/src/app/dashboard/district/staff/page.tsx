@@ -18,7 +18,7 @@ const ROLE_COLORS: Record<string, string> = {
   TEACHER: "bg-green-100 text-green-700",
   THERAPIST: "bg-amber-100 text-amber-700",
   CAREGIVER: "bg-blue-100 text-blue-700",
-  DISTRICT_ADMIN: "bg-violet-100 text-violet-700",
+  DISTRICT_ADMIN: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
 };
 
 const PAGE_SIZE = 20;
@@ -64,8 +64,8 @@ export default function DistrictStaffPage() {
     <div className="p-8 space-y-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">Staff & Teachers</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage teachers, therapists, and caregivers across your district.</p>
+          <h1 className="text-2xl font-heading font-bold vi-text">Staff & Teachers</h1>
+          <p className="text-sm vi-text-muted mt-1">Manage teachers, therapists, and caregivers across your district.</p>
         </div>
         <button
           onClick={() => setShowInvite(true)}
@@ -81,12 +81,12 @@ export default function DistrictStaffPage() {
           placeholder="Search by name or email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-xl border border-slate-200 text-sm w-72 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none"
+          className="px-4 py-2 rounded-xl border vi-border text-sm w-72 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none"
         />
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 focus:border-violet-400 outline-none"
+          className="px-3 py-2 rounded-xl border vi-border text-sm vi-text-muted focus:border-violet-400 outline-none"
         >
           <option value="">All Roles</option>
           <option value="TEACHER">Teachers</option>
@@ -94,7 +94,7 @@ export default function DistrictStaffPage() {
           <option value="CAREGIVER">Caregivers</option>
           <option value="DISTRICT_ADMIN">District Admins</option>
         </select>
-        <span className="text-sm text-slate-400">{total} staff</span>
+        <span className="text-sm vi-text-muted">{total} staff</span>
       </div>
 
       {loading ? (
@@ -102,10 +102,10 @@ export default function DistrictStaffPage() {
           {[1, 2, 3].map((i) => <div key={i} className="h-14 bg-slate-200 rounded-xl" />)}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="vi-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-slate-400 bg-slate-50/50 border-b border-slate-100">
+              <tr className="text-left vi-text-muted vi-bg/50 border-b vi-border">
                 <th className="px-5 py-3 font-semibold">Name</th>
                 <th className="px-5 py-3 font-semibold">Email</th>
                 <th className="px-5 py-3 font-semibold">Role</th>
@@ -115,31 +115,31 @@ export default function DistrictStaffPage() {
             </thead>
             <tbody>
               {staff.map((u) => (
-                <tr key={u.id} className="border-b border-slate-50 hover:bg-violet-50/30 transition cursor-pointer">
+                <tr key={u.id} className="border-b vi-border hover:vi-surface-soft transition cursor-pointer">
                   <td className="px-5 py-3">
                     <Link href={`/dashboard/district/staff/${u.id}`} className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white text-xs font-bold">
                         {u.name?.charAt(0) || "?"}
                       </div>
-                      <span className="font-medium text-slate-900 hover:text-violet-600">{u.name}</span>
+                      <span className="font-medium vi-text hover:text-[hsl(var(--visual-primary))]">{u.name}</span>
                     </Link>
                   </td>
-                  <td className="px-5 py-3 text-slate-500">{u.email || "—"}</td>
+                  <td className="px-5 py-3 vi-text-muted">{u.email || "—"}</td>
                   <td className="px-5 py-3">
-                    <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${ROLE_COLORS[u.role] || "bg-slate-100 text-slate-600"}`}>
+                    <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${ROLE_COLORS[u.role] || "vi-surface-soft vi-text-muted"}`}>
                       {u.role.replace(/_/g, " ")}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-slate-500 text-xs">
+                  <td className="px-5 py-3 vi-text-muted text-xs">
                     {u.schoolAssignments?.length ? u.schoolAssignments.map(a => a.schoolName).join(", ") : "—"}
                   </td>
-                  <td className="px-5 py-3 text-slate-400 text-xs">
+                  <td className="px-5 py-3 vi-text-muted text-xs">
                     {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : "Never"}
                   </td>
                 </tr>
               ))}
               {staff.length === 0 && (
-                <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-400">No staff found</td></tr>
+                <tr><td colSpan={5} className="px-5 py-10 text-center vi-text-muted">No staff found</td></tr>
               )}
             </tbody>
           </table>
@@ -197,8 +197,8 @@ function InviteStaffModal({ accessToken, schools, onClose, onCreated }: {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-heading font-semibold text-slate-900">Invite Staff Member</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+          <h2 className="text-lg font-heading font-semibold vi-text">Invite Staff Member</h2>
+          <button onClick={onClose} className="vi-text-muted hover:vi-text-muted text-xl">&times;</button>
         </div>
         {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
         {result ? (
@@ -213,32 +213,32 @@ function InviteStaffModal({ accessToken, schools, onClose, onCreated }: {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1">
-              <label htmlFor="staff-name" className="text-xs text-slate-500 font-medium">Full Name *</label>
-              <input id="staff-name" type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
+              <label htmlFor="staff-name" className="text-xs vi-text-muted font-medium">Full Name *</label>
+              <input id="staff-name" type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 rounded-xl border vi-border text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
             </div>
             <div className="space-y-1">
-              <label htmlFor="staff-email" className="text-xs text-slate-500 font-medium">Email *</label>
-              <input id="staff-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
+              <label htmlFor="staff-email" className="text-xs vi-text-muted font-medium">Email *</label>
+              <input id="staff-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-2 rounded-xl border vi-border text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label htmlFor="staff-role" className="text-xs text-slate-500 font-medium">Role *</label>
-                <select id="staff-role" value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none">
+                <label htmlFor="staff-role" className="text-xs vi-text-muted font-medium">Role *</label>
+                <select id="staff-role" value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-3 py-2 rounded-xl border vi-border text-sm focus:border-violet-400 outline-none">
                   <option value="TEACHER">Teacher</option>
                   <option value="THERAPIST">Therapist</option>
                   <option value="CAREGIVER">Caregiver</option>
                 </select>
               </div>
               <div className="space-y-1">
-                <label htmlFor="staff-school" className="text-xs text-slate-500 font-medium">Assign to School</label>
-                <select id="staff-school" value={schoolId} onChange={(e) => setSchoolId(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:border-violet-400 outline-none">
+                <label htmlFor="staff-school" className="text-xs vi-text-muted font-medium">Assign to School</label>
+                <select id="staff-school" value={schoolId} onChange={(e) => setSchoolId(e.target.value)} className="w-full px-3 py-2 rounded-xl border vi-border text-sm focus:border-violet-400 outline-none">
                   <option value="">No assignment</option>
                   {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
             </div>
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
+              <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border vi-border rounded-xl text-sm vi-text-muted hover:vi-bg">Cancel</button>
               <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 disabled:opacity-50">
                 {saving ? "Inviting..." : "Send Invite"}
               </button>

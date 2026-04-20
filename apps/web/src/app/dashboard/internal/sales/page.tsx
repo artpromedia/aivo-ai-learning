@@ -37,8 +37,8 @@ export default function SalesDashboard() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">{t("overview")}</h1>
-        <p className="text-sm text-slate-500 mt-1">Pipeline management, deal tracking, and revenue forecasting.</p>
+        <h1 className="text-2xl font-heading font-bold vi-text">{t("overview")}</h1>
+        <p className="text-sm vi-text-muted mt-1">Pipeline management, deal tracking, and revenue forecasting.</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -48,44 +48,44 @@ export default function SalesDashboard() {
           { label: "Pipeline Value", value: "$155,500", icon: "💰", trend: "+23% QoQ" },
           { label: "Win Rate", value: "32%", icon: "🎯", trend: "+5pp" },
         ].map((m) => (
-          <div key={m.label} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+          <div key={m.label} className="vi-card p-5">
             <div className="flex items-center justify-between mb-2">
               <span className="text-2xl">{m.icon}</span>
               <span className="text-xs text-green-600 font-semibold">{m.trend}</span>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{m.value}</p>
-            <p className="text-xs text-slate-500 font-semibold mt-1">{m.label}</p>
+            <p className="text-2xl font-bold vi-text">{m.value}</p>
+            <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("overview")}</h2>
+      <div className="vi-card p-6">
+        <h2 className="font-heading font-bold text-lg vi-text mb-4">{t("overview")}</h2>
         <div className="space-y-3">
           {pipeline.map((stage) => {
             const maxCount = Math.max(...pipeline.map((s) => s.count));
             const pct = (stage.count / maxCount) * 100;
             return (
               <div key={stage.stage} className="flex items-center gap-4">
-                <span className="text-sm font-semibold text-slate-700 w-36">{stage.stage}</span>
-                <div className="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                <span className="text-sm font-semibold vi-text w-36">{stage.stage}</span>
+                <div className="flex-1 vi-surface-soft rounded-full h-4 overflow-hidden">
                   <div className={`h-full rounded-full ${stage.color} transition-all`} style={{ width: `${pct}%` }} />
                 </div>
-                <span className="text-sm font-bold text-slate-700 w-10 text-right">{stage.count}</span>
-                <span className="text-xs text-slate-400 w-20 text-right">{stage.value}</span>
+                <span className="text-sm font-bold vi-text w-10 text-right">{stage.count}</span>
+                <span className="text-xs vi-text-muted w-20 text-right">{stage.value}</span>
               </div>
             );
           })}
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-5 border-b border-slate-100">
-          <h2 className="font-heading font-bold text-lg text-slate-900">Active Deals</h2>
+      <div className="vi-card overflow-hidden">
+        <div className="p-5 border-b vi-border">
+          <h2 className="font-heading font-bold text-lg vi-text">Active Deals</h2>
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
+            <tr className="text-left vi-text-muted border-b vi-border vi-bg/50">
               <th className="px-5 py-3 font-semibold">Account</th>
               <th className="px-5 py-3 font-semibold">Type</th>
               <th className="px-5 py-3 font-semibold">Seats</th>
@@ -96,8 +96,8 @@ export default function SalesDashboard() {
           </thead>
           <tbody>
             {recentDeals.map((deal) => (
-              <tr key={deal.name} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
-                <td className="px-5 py-3 font-medium text-slate-900">{deal.name}</td>
+              <tr key={deal.name} className="border-b vi-border hover:vi-bg/50 transition">
+                <td className="px-5 py-3 font-medium vi-text">{deal.name}</td>
                 <td className="px-5 py-3">
                   <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
                     deal.type === "B2B_DISTRICT" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"
@@ -105,12 +105,12 @@ export default function SalesDashboard() {
                     {deal.type === "B2B_DISTRICT" ? "District" : "School"}
                   </span>
                 </td>
-                <td className="px-5 py-3 text-slate-500">{deal.seats.toLocaleString()}</td>
-                <td className="px-5 py-3 font-semibold text-slate-900">{deal.value}</td>
+                <td className="px-5 py-3 vi-text-muted">{deal.seats.toLocaleString()}</td>
+                <td className="px-5 py-3 font-semibold vi-text">{deal.value}</td>
                 <td className="px-5 py-3">
-                  <span className="px-2 py-0.5 text-xs rounded-full font-semibold bg-purple-100 text-purple-700">{deal.stage}</span>
+                  <span className="px-2 py-0.5 text-xs rounded-full font-semibold bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]">{deal.stage}</span>
                 </td>
-                <td className="px-5 py-3 text-slate-400">{deal.daysInStage}d</td>
+                <td className="px-5 py-3 vi-text-muted">{deal.daysInStage}d</td>
               </tr>
             ))}
           </tbody>
@@ -123,12 +123,12 @@ export default function SalesDashboard() {
           <p className="text-3xl font-bold mt-2">$48,200</p>
           <p className="text-xs mt-1 opacity-70">+18% from last month</p>
         </div>
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-5 text-white">
+        <div className="bg-[hsl(var(--visual-primary))] rounded-2xl p-5 text-white">
           <p className="text-sm opacity-80">Annual Contract Value</p>
           <p className="text-3xl font-bold mt-2">$578,400</p>
           <p className="text-xs mt-1 opacity-70">Target: $750,000</p>
         </div>
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 text-white">
+        <div className="bg-[hsl(var(--visual-sel))] rounded-2xl p-5 text-white">
           <p className="text-sm opacity-80">Avg Deal Size</p>
           <p className="text-3xl font-bold mt-2">$31,000</p>
           <p className="text-xs mt-1 opacity-70">Enterprise segment</p>

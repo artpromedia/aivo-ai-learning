@@ -17,7 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
   paid: "bg-green-100 text-green-700",
   pending: "bg-amber-100 text-amber-700",
   overdue: "bg-red-100 text-red-700",
-  void: "bg-slate-100 text-slate-500",
+  void: "vi-surface-soft vi-text-muted",
 };
 
 const SAMPLE_INVOICES: Invoice[] = [
@@ -40,41 +40,41 @@ export default function InvoicesPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center gap-3 text-sm text-slate-500">
-        <Link href="/dashboard/admin/billing" className="hover:text-purple-600 transition">Billing</Link>
+      <div className="flex items-center gap-3 text-sm vi-text-muted">
+        <Link href="/dashboard/admin/billing" className="hover:text-[hsl(var(--visual-primary))] transition">Billing</Link>
         <span>/</span>
-        <span className="text-slate-900 font-medium">Invoices</span>
+        <span className="vi-text font-medium">Invoices</span>
       </div>
 
       <div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900">Invoices</h1>
-        <p className="text-sm text-slate-500 mt-1">View and manage all platform invoices.</p>
+        <h1 className="text-2xl font-heading font-bold vi-text">Invoices</h1>
+        <p className="text-sm vi-text-muted mt-1">View and manage all platform invoices.</p>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 text-center">
+        <div className="bg-white rounded-xl p-5 shadow-sm border vi-border text-center">
           <p className="text-2xl font-bold text-green-600">${totalRevenue}</p>
-          <p className="text-xs text-slate-500 font-semibold mt-1">Collected Revenue</p>
+          <p className="text-xs vi-text-muted font-semibold mt-1">Collected Revenue</p>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 text-center">
+        <div className="bg-white rounded-xl p-5 shadow-sm border vi-border text-center">
           <p className="text-2xl font-bold text-amber-600">${pendingAmount}</p>
-          <p className="text-xs text-slate-500 font-semibold mt-1">Outstanding</p>
+          <p className="text-xs vi-text-muted font-semibold mt-1">Outstanding</p>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 text-center">
-          <p className="text-2xl font-bold text-slate-900">{invoices.length}</p>
-          <p className="text-xs text-slate-500 font-semibold mt-1">Total Invoices</p>
+        <div className="bg-white rounded-xl p-5 shadow-sm border vi-border text-center">
+          <p className="text-2xl font-bold vi-text">{invoices.length}</p>
+          <p className="text-xs vi-text-muted font-semibold mt-1">Total Invoices</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center gap-3">
-          <span className="text-sm text-slate-500">Status:</span>
+      <div className="vi-card overflow-hidden">
+        <div className="p-4 border-b vi-border flex items-center gap-3">
+          <span className="text-sm vi-text-muted">Status:</span>
           {["all", "paid", "pending", "overdue", "void"].map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
-                statusFilter === s ? "bg-purple-100 text-purple-700" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                statusFilter === s ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "vi-bg vi-text-muted hover:vi-surface-soft"
               }`}
             >
               {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -84,7 +84,7 @@ export default function InvoicesPage() {
 
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-slate-400 border-b border-slate-100 bg-slate-50/50">
+            <tr className="text-left vi-text-muted border-b vi-border vi-bg/50">
               <th className="px-5 py-3 font-semibold">Invoice</th>
               <th className="px-5 py-3 font-semibold">Tenant</th>
               <th className="px-5 py-3 font-semibold">Plan</th>
@@ -96,16 +96,16 @@ export default function InvoicesPage() {
           </thead>
           <tbody>
             {filtered.map((inv) => (
-              <tr key={inv.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
-                <td className="px-5 py-3 font-mono text-xs text-slate-900">{inv.id}</td>
-                <td className="px-5 py-3 font-medium text-slate-900">{inv.tenantName}</td>
-                <td className="px-5 py-3 text-slate-500">{inv.plan}</td>
-                <td className="px-5 py-3 font-semibold text-slate-900">${inv.amount}</td>
+              <tr key={inv.id} className="border-b vi-border hover:vi-bg/50 transition">
+                <td className="px-5 py-3 font-mono text-xs vi-text">{inv.id}</td>
+                <td className="px-5 py-3 font-medium vi-text">{inv.tenantName}</td>
+                <td className="px-5 py-3 vi-text-muted">{inv.plan}</td>
+                <td className="px-5 py-3 font-semibold vi-text">${inv.amount}</td>
                 <td className="px-5 py-3">
                   <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${STATUS_COLORS[inv.status]}`}>{inv.status}</span>
                 </td>
-                <td className="px-5 py-3 text-slate-400">{new Date(inv.issuedAt).toLocaleDateString()}</td>
-                <td className="px-5 py-3 text-slate-400">{inv.paidAt ? new Date(inv.paidAt).toLocaleDateString() : "—"}</td>
+                <td className="px-5 py-3 vi-text-muted">{new Date(inv.issuedAt).toLocaleDateString()}</td>
+                <td className="px-5 py-3 vi-text-muted">{inv.paidAt ? new Date(inv.paidAt).toLocaleDateString() : "—"}</td>
               </tr>
             ))}
           </tbody>

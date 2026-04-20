@@ -8,12 +8,13 @@ import DashboardHeader from "@/components/DashboardHeader";
 import { SkipLink } from "@/components/a11y/SkipLink";
 import { ChevronLeft, ChevronRight, X, Menu, LogOut, type LucideIcon } from "lucide-react";
 
-type Tone = "reading" | "math" | "science";
+type Tone = "reading" | "math" | "science" | "primary";
 
-const ACCENT_TONE: Record<"blue" | "pink" | "green", Tone> = {
+const ACCENT_TONE: Record<"blue" | "pink" | "green" | "purple", Tone> = {
   blue: "reading",
   pink: "math",
   green: "science",
+  purple: "primary",
 };
 
 const TONE_CLASSES: Record<Tone, {
@@ -44,6 +45,13 @@ const TONE_CLASSES: Record<Tone, {
     activeText: "text-[hsl(var(--visual-science))]",
     focusRing: "focus-visible:ring-[hsl(var(--visual-science))]",
   },
+  primary: {
+    solidBg: "bg-[hsl(var(--visual-primary))]",
+    roleText: "text-[hsl(var(--visual-primary))]",
+    activeBg: "bg-[hsl(var(--visual-primary)/0.12)]",
+    activeText: "text-[hsl(var(--visual-primary))]",
+    focusRing: "focus-visible:ring-[hsl(var(--visual-primary))]",
+  },
 };
 
 interface NavItem {
@@ -52,16 +60,24 @@ interface NavItem {
   Icon: LucideIcon;
 }
 
+interface NavSection {
+  label: string;
+  items: NavItem[];
+}
+
 interface CareTeamLayoutProps {
   children: React.ReactNode;
   accent: keyof typeof ACCENT_TONE;
   roleLabel: string;
   allowedRoles: string[];
   basePath: string;
-  navItems: NavItem[];
+  navItems?: NavItem[];
+  navSections?: NavSection[];
+  topNavItems?: NavItem[];
+  topNavLabel?: string;
 }
 
-export default function CareTeamLayout({ children, accent, roleLabel, allowedRoles, basePath, navItems }: CareTeamLayoutProps) {
+export default function CareTeamLayout({ children, accent, roleLabel, allowedRoles, basePath, navItems, navSections, topNavItems, topNavLabel }: CareTeamLayoutProps) {
   const { user, logout, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -117,27 +133,84 @@ export default function CareTeamLayout({ children, accent, roleLabel, allowedRol
       </div>
 
       <nav className="flex-1 overflow-y-auto py-3">
-        {navItems.map((item) => {
-          const Icon = item.Icon;
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-label={item.label}
-              aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all mx-2 rounded-2xl focus:outline-none focus-visible:ring-2 ${colors.focusRing} focus-visible:ring-offset-2 ${
-                active
-                  ? `${colors.activeBg} ${colors.activeText} font-semibold shadow-sm`
-                  : "vi-text-muted hover:vi-surface-soft hover:vi-text"
-              }`}
-              style={{ minHeight: 44 }}
-            >
-              <Icon size={18} strokeWidth={2.5} className="flex-shrink-0" aria-hidden="true" />
-              {(!collapsed || mobileOpen) && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
+        {topNavItems && topNavItems.length > 0 && (
+          <div className="mb-3">
+            {!collapsed && topNavLabel && (
+              <p className="px-4 text-xs font-bold vi-text-muted uppercase tracking-wider mb-1">{topNavLabel}</p>
+            )}
+            {topNavItems.map((item) => {
+              const Icon = item.Icon;
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.label}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all mx-2 rounded-2xl focus:outline-none focus-visible:ring-2 ${colors.focusRing} focus-visible:ring-offset-2 ${
+                    active
+                      ? `${colors.activeBg} ${colors.activeText} font-semibold shadow-sm`
+                      : "vi-text-muted hover:vi-surface-soft hover:vi-text"
+                  }`}
+                  style={{ minHeight: 44 }}
+                >
+                  <Icon size={18} strokeWidth={2.5} className="flex-shrink-0" aria-hidden="true" />
+                  {(!collapsed || mobileOpen) && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+        {navSections
+          ? navSections.map((section) => (
+              <div key={section.label} className="mb-3">
+                {!collapsed && (
+                  <p className="px-4 text-xs font-bold vi-text-muted uppercase tracking-wider mb-1">{section.label}</p>
+                )}
+                {section.items.map((item) => {
+                  const Icon = item.Icon;
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      aria-label={item.label}
+                      aria-current={active ? "page" : undefined}
+                      className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all mx-2 rounded-2xl focus:outline-none focus-visible:ring-2 ${colors.focusRing} focus-visible:ring-offset-2 ${
+                        active
+                          ? `${colors.activeBg} ${colors.activeText} font-semibold shadow-sm`
+                          : "vi-text-muted hover:vi-surface-soft hover:vi-text"
+                      }`}
+                      style={{ minHeight: 44 }}
+                    >
+                      <Icon size={18} strokeWidth={2.5} className="flex-shrink-0" aria-hidden="true" />
+                      {(!collapsed || mobileOpen) && <span>{item.label}</span>}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))
+          : (navItems || []).map((item) => {
+              const Icon = item.Icon;
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.label}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all mx-2 rounded-2xl focus:outline-none focus-visible:ring-2 ${colors.focusRing} focus-visible:ring-offset-2 ${
+                    active
+                      ? `${colors.activeBg} ${colors.activeText} font-semibold shadow-sm`
+                      : "vi-text-muted hover:vi-surface-soft hover:vi-text"
+                  }`}
+                  style={{ minHeight: 44 }}
+                >
+                  <Icon size={18} strokeWidth={2.5} className="flex-shrink-0" aria-hidden="true" />
+                  {(!collapsed || mobileOpen) && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
       </nav>
 
       <div className="p-4 border-t vi-border">

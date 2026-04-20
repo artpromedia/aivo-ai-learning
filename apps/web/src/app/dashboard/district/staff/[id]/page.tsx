@@ -8,7 +8,7 @@ const ROLE_COLORS: Record<string, string> = {
   TEACHER: "bg-green-100 text-green-700",
   THERAPIST: "bg-amber-100 text-amber-700",
   CAREGIVER: "bg-blue-100 text-blue-700",
-  DISTRICT_ADMIN: "bg-violet-100 text-violet-700",
+  DISTRICT_ADMIN: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
 };
 
 export default function StaffDetailPage() {
@@ -38,8 +38,8 @@ export default function StaffDetailPage() {
   if (!data?.user) {
     return (
       <div className="p-8">
-        <p className="text-slate-500">Staff member not found.</p>
-        <Link href="/dashboard/district/staff" className="text-violet-600 text-sm mt-2 inline-block">Back to Staff</Link>
+        <p className="vi-text-muted">Staff member not found.</p>
+        <Link href="/dashboard/district/staff" className="text-[hsl(var(--visual-primary))] text-sm mt-2 inline-block">Back to Staff</Link>
       </div>
     );
   }
@@ -49,15 +49,15 @@ export default function StaffDetailPage() {
   return (
     <div className="p-8 space-y-6">
       <header>
-        <Link href="/dashboard/district/staff" className="text-sm text-violet-600 hover:underline mb-2 inline-block">&larr; Back to Staff</Link>
+        <Link href="/dashboard/district/staff" className="text-sm text-[hsl(var(--visual-primary))] hover:underline mb-2 inline-block">&larr; Back to Staff</Link>
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white text-xl font-bold">
             {u.name?.charAt(0) || "?"}
           </div>
           <div>
-            <h1 className="text-2xl font-heading font-bold text-slate-900">{u.name}</h1>
+            <h1 className="text-2xl font-heading font-bold vi-text">{u.name}</h1>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${ROLE_COLORS[u.role] || "bg-slate-100 text-slate-600"}`}>
+              <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${ROLE_COLORS[u.role] || "vi-surface-soft vi-text-muted"}`}>
                 {u.role?.replace(/_/g, " ")}
               </span>
               {u.deactivatedAt && (
@@ -69,8 +69,8 @@ export default function StaffDetailPage() {
       </header>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3">
-          <h3 className="text-lg font-semibold text-slate-900">Profile</h3>
+        <div className="vi-card p-6 space-y-3">
+          <h3 className="text-lg font-semibold vi-text">Profile</h3>
           <InfoRow label="Name" value={u.name || "—"} />
           <InfoRow label="Email" value={u.email || "—"} />
           <InfoRow label="Role" value={u.role?.replace(/_/g, " ") || "—"} />
@@ -78,24 +78,24 @@ export default function StaffDetailPage() {
           <InfoRow label="Last Login" value={u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : "Never"} />
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3">
-          <h3 className="text-lg font-semibold text-slate-900">School Assignments</h3>
+        <div className="vi-card p-6 space-y-3">
+          <h3 className="text-lg font-semibold vi-text">School Assignments</h3>
           {data.schoolAssignments?.length > 0 ? (
             <div className="space-y-2">
               {data.schoolAssignments.map((a: any, i: number) => (
-                <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-slate-50">
-                  <Link href={`/dashboard/district/schools/${a.schoolId}`} className="text-sm font-medium text-violet-600 hover:underline">
+                <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg vi-bg">
+                  <Link href={`/dashboard/district/schools/${a.schoolId}`} className="text-sm font-medium text-[hsl(var(--visual-primary))] hover:underline">
                     {a.schoolName}
                   </Link>
                   <div className="flex items-center gap-2">
-                    {a.roleAtSchool && <span className="text-xs text-slate-500">{a.roleAtSchool}</span>}
-                    <span className="text-xs text-slate-400">{a.assignedAt ? new Date(a.assignedAt).toLocaleDateString() : ""}</span>
+                    {a.roleAtSchool && <span className="text-xs vi-text-muted">{a.roleAtSchool}</span>}
+                    <span className="text-xs vi-text-muted">{a.assignedAt ? new Date(a.assignedAt).toLocaleDateString() : ""}</span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-slate-400">No school assignments.</p>
+            <p className="text-sm vi-text-muted">No school assignments.</p>
           )}
         </div>
       </div>
@@ -105,9 +105,9 @@ export default function StaffDetailPage() {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 py-2 px-3 rounded-lg bg-slate-50">
-      <span className="text-xs text-slate-400 font-medium w-24">{label}</span>
-      <span className="text-sm text-slate-700">{value}</span>
+    <div className="flex items-center gap-3 py-2 px-3 rounded-lg vi-bg">
+      <span className="text-xs vi-text-muted font-medium w-24">{label}</span>
+      <span className="text-sm vi-text">{value}</span>
     </div>
   );
 }

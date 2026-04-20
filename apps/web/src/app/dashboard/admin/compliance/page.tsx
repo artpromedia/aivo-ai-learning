@@ -88,8 +88,8 @@ export default function AdminCompliancePage() {
   const ACTION_COLORS: Record<string, string> = {
     USER_CREATED: "bg-green-100 text-green-700",
     ROLE_ASSIGNED: "bg-blue-100 text-blue-700",
-    TENANT_CREATED: "bg-purple-100 text-purple-700",
-    LOGIN: "bg-slate-100 text-slate-700",
+    TENANT_CREATED: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
+    LOGIN: "vi-surface-soft vi-text",
     IMPERSONATION: "bg-amber-100 text-amber-700",
     CONFIG_UPDATED: "bg-cyan-100 text-cyan-700",
   };
@@ -110,8 +110,8 @@ export default function AdminCompliancePage() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-slate-900">{t("audit_logs")}</h1>
-          <p className="text-sm text-slate-500 mt-1">COPPA, FERPA, GDPR compliance status, security controls, and audit trail.</p>
+          <h1 className="text-2xl font-heading font-bold vi-text">{t("audit_logs")}</h1>
+          <p className="text-sm vi-text-muted mt-1">COPPA, FERPA, GDPR compliance status, security controls, and audit trail.</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-semibold">
           <span className="w-2 h-2 rounded-full bg-green-500" />
@@ -124,9 +124,9 @@ export default function AdminCompliancePage() {
           const passed = fw.items.filter((i) => i.status).length;
           const total = fw.items.length;
           return (
-            <div key={fw.framework} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <div key={fw.framework} className="vi-card p-5">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-heading font-bold text-slate-900">{fw.framework}</h3>
+                <h3 className="font-heading font-bold vi-text">{fw.framework}</h3>
                 <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${
                   fw.status === "compliant" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
                 }`}>
@@ -136,54 +136,54 @@ export default function AdminCompliancePage() {
               <div className="space-y-2">
                 {fw.items.map((item, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <span className={`mt-0.5 text-xs flex-shrink-0 ${item.status ? "text-green-500" : "text-slate-300"}`}>
+                    <span className={`mt-0.5 text-xs flex-shrink-0 ${item.status ? "text-green-500" : "vi-text-muted opacity-70"}`}>
                       {item.status ? "✓" : "○"}
                     </span>
-                    <span className="text-xs text-slate-600">{item.label}</span>
+                    <span className="text-xs vi-text-muted">{item.label}</span>
                   </div>
                 ))}
               </div>
-              <div className="mt-3 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+              <div className="mt-3 vi-surface-soft rounded-full h-1.5 overflow-hidden">
                 <div className={`h-full rounded-full ${fw.status === "compliant" ? "bg-green-500" : "bg-amber-500"}`} style={{ width: `${(passed / total) * 100}%` }} />
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">{passed}/{total} checks passed</p>
+              <p className="text-[10px] vi-text-muted mt-1">{passed}/{total} checks passed</p>
             </div>
           );
         })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-          <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">{t("system_health")}</h2>
+        <div className="vi-card p-6">
+          <h2 className="font-heading font-bold text-lg vi-text mb-4">{t("system_health")}</h2>
           <div className="space-y-2">
             {securityControls.map((ctrl) => (
-              <div key={ctrl.label} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-slate-50 transition">
+              <div key={ctrl.label} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:vi-bg transition">
                 <span className={`font-bold flex-shrink-0 ${ctrl.status ? "text-green-500" : "text-red-400"}`}>{ctrl.status ? "✓" : "✗"}</span>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-700">{ctrl.label}</p>
+                  <p className="text-sm font-medium vi-text">{ctrl.label}</p>
                 </div>
-                <span className="px-2 py-0.5 text-[10px] rounded bg-slate-100 text-slate-500 font-medium">{ctrl.category}</span>
+                <span className="px-2 py-0.5 text-[10px] rounded vi-surface-soft vi-text-muted font-medium">{ctrl.category}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+        <div className="vi-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading font-bold text-lg text-slate-900">{t("audit_logs")}</h2>
-            <span className="text-xs text-slate-400">Last 30 days</span>
+            <h2 className="font-heading font-bold text-lg vi-text">{t("audit_logs")}</h2>
+            <span className="text-xs vi-text-muted">Last 30 days</span>
           </div>
           <div className="space-y-2">
             {recentAudit.map((entry, i) => (
-              <div key={i} className="flex items-center gap-3 py-2.5 px-3 rounded-lg border border-slate-50 hover:bg-slate-50 transition">
-                <span className={`px-2 py-0.5 text-[10px] rounded font-semibold flex-shrink-0 ${ACTION_COLORS[entry.action] || "bg-slate-100 text-slate-600"}`}>
+              <div key={i} className="flex items-center gap-3 py-2.5 px-3 rounded-lg border vi-border hover:vi-bg transition">
+                <span className={`px-2 py-0.5 text-[10px] rounded font-semibold flex-shrink-0 ${ACTION_COLORS[entry.action] || "vi-surface-soft vi-text-muted"}`}>
                   {entry.action.replace(/_/g, " ")}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-slate-700 truncate">{entry.details}</p>
-                  <p className="text-[10px] text-slate-400">{entry.actor}</p>
+                  <p className="text-sm vi-text truncate">{entry.details}</p>
+                  <p className="text-[10px] vi-text-muted">{entry.actor}</p>
                 </div>
-                <span className="text-[10px] text-slate-400 flex-shrink-0">
+                <span className="text-[10px] vi-text-muted flex-shrink-0">
                   {formatTimeAgo(new Date(entry.timestamp))}
                 </span>
               </div>
@@ -194,25 +194,25 @@ export default function AdminCompliancePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {dataRequests.map((dr) => (
-          <div key={dr.type} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+          <div key={dr.type} className="vi-card p-5">
             <div className="flex items-center gap-3 mb-3">
               <span className="text-2xl">{dr.icon}</span>
               <div>
-                <p className="text-sm font-semibold text-slate-700">{dr.type}</p>
-                <p className="text-xs text-slate-400">{dr.desc}</p>
+                <p className="text-sm font-semibold vi-text">{dr.type}</p>
+                <p className="text-xs vi-text-muted">{dr.desc}</p>
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <p className="text-3xl font-bold text-slate-900">{dr.count}</p>
+              <p className="text-3xl font-bold vi-text">{dr.count}</p>
               <span className="px-2.5 py-0.5 text-xs rounded-full bg-green-100 text-green-700 font-semibold">Clear</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-        <h2 className="font-heading font-bold text-lg text-slate-900 mb-4">Consent Management</h2>
-        <p className="text-sm text-slate-500 mb-4">COPPA parental consent is required before any child data is collected. All consent records are tracked with timestamps and can be revoked.</p>
+      <div className="vi-card p-6">
+        <h2 className="font-heading font-bold text-lg vi-text mb-4">Consent Management</h2>
+        <p className="text-sm vi-text-muted mb-4">COPPA parental consent is required before any child data is collected. All consent records are tracked with timestamps and can be revoked.</p>
         <div className="grid grid-cols-3 gap-4">
           <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-center">
             <p className="text-2xl font-bold text-green-700">{stats?.totalLearners ?? 0}</p>
@@ -222,9 +222,9 @@ export default function AdminCompliancePage() {
             <p className="text-2xl font-bold text-blue-700">Enforced</p>
             <p className="text-xs text-blue-600 font-medium mt-1">Data Minimization</p>
           </div>
-          <div className="p-4 rounded-xl bg-purple-50 border border-purple-200 text-center">
-            <p className="text-2xl font-bold text-purple-700">{recentAudit.length}</p>
-            <p className="text-xs text-purple-600 font-medium mt-1">Recent Admin Actions</p>
+          <div className="p-4 rounded-xl vi-surface-soft border border-[hsl(var(--visual-primary)/0.3)] text-center">
+            <p className="text-2xl font-bold text-[hsl(var(--visual-primary))]">{recentAudit.length}</p>
+            <p className="text-xs text-[hsl(var(--visual-primary))] font-medium mt-1">Recent Admin Actions</p>
           </div>
         </div>
       </div>
