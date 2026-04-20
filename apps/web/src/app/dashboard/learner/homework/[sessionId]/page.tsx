@@ -4,7 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Lightbulb, Check } from "lucide-react";
-import { subjectIcon } from "@/lib/subject-icons";
+import { subjectIcon, subjectWellClass } from "@/lib/subject-icons";
 
 interface AdaptedProblem {
   problem_number: number;
@@ -177,7 +177,14 @@ export default function HomeworkSessionPage() {
           <button onClick={() => router.push("/dashboard/learner/homework")} className="text-slate-400 hover:text-slate-600 font-bold text-sm">
             ← {tCommon("back")}
           </button>
-          {(() => { const Icon = subjectIcon(subjectLower); return <Icon className="w-6 h-6 text-purple-600" strokeWidth={2} aria-hidden />; })()}
+          {(() => {
+            const Icon = subjectIcon(subjectLower);
+            return (
+              <span className={`w-9 h-9 rounded-xl flex items-center justify-center ${subjectWellClass(subjectLower)}`}>
+                <Icon className="w-5 h-5" strokeWidth={2} aria-hidden />
+              </span>
+            );
+          })()}
           <span className="font-heading font-bold text-slate-800 capitalize">{subjectLower} Homework</span>
           {adaptedProblems.length > 0 && (
             <span className="text-xs text-slate-400">

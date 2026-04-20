@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Camera, Pencil, BookMarked } from "lucide-react";
-import { subjectIcon } from "@/lib/subject-icons";
+import { subjectIcon, subjectWellClass } from "@/lib/subject-icons";
 
 interface HomeworkAssignment {
   id: string;
@@ -17,15 +17,6 @@ interface HomeworkAssignment {
   adaptedCount: number;
   createdAt: string;
 }
-
-const SUBJECT_COLORS: Record<string, string> = {
-  math: "#6C5CE7",
-  ela: "#00B894",
-  science: "#FDCB6E",
-  history: "#E17055",
-  coding: "#0984E3",
-  other: "#636E72",
-};
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   PROCESSING: { label: "Processing...", color: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" },
@@ -277,13 +268,7 @@ export default function HomeworkPage() {
                   disabled={hw.status === "FAILED"}
                   className="w-full bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition flex items-center gap-4 text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                    style={{
-                      backgroundColor: `${SUBJECT_COLORS[subjectLower] || SUBJECT_COLORS.other}20`,
-                      color: SUBJECT_COLORS[subjectLower] || SUBJECT_COLORS.other,
-                    }}
-                  >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${subjectWellClass(subjectLower)}`}>
                     <SubjectIcon className="w-6 h-6" strokeWidth={2} aria-hidden />
                   </div>
                   <div className="flex-1 min-w-0">

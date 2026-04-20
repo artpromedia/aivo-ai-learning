@@ -9,7 +9,7 @@ import BrainSphere from "@/components/brain/BrainSphere";
 import BrainBuildingSequence from "@/components/brain/BrainBuildingSequence";
 import { useTranslations } from "next-intl";
 import { Brain, CheckCircle2, RefreshCw, RotateCcw, Compass, Search, BarChart3, Shield, GraduationCap, ClipboardList, Lock, Users2, BookOpen, Microscope, Landmark, Code2, MessageCircle, Heart, Puzzle, Home, Target, Palette, Wrench, Dna, Plus, Check, type LucideIcon } from "lucide-react";
-import { subjectIcon } from "@/lib/subject-icons";
+import { subjectIcon, subjectBarClass, subjectWellClass } from "@/lib/subject-icons";
 import { IconWell } from "@/components/discovery/_vi";
 
 interface MasteryDecision {
@@ -109,26 +109,21 @@ interface ParentModification {
   parent_note: string;
 }
 
-const MASTERY_BAR: Record<string, string> = {
-  math: "bg-[hsl(var(--visual-math))]",
-  ela: "bg-[hsl(var(--visual-reading))]",
-  science: "bg-[hsl(var(--visual-science))]",
-  history: "bg-[hsl(var(--visual-sel))]",
-  coding: "bg-[hsl(var(--visual-primary))]",
-  social: "bg-[hsl(var(--visual-math))]",
-  sel: "bg-[hsl(var(--visual-sel))]",
-  speech: "bg-[hsl(var(--visual-primary))]",
-  executive_function: "bg-[hsl(var(--visual-reading))]",
-  communication: "bg-[hsl(var(--visual-reading))]",
-  daily_living: "bg-[hsl(var(--visual-science))]",
-  cause_effect: "bg-[hsl(var(--visual-science))]",
-  sensory_engagement: "bg-[hsl(var(--visual-primary))]",
-  social_awareness: "bg-[hsl(var(--visual-math))]",
-};
-
 function MasteryIcon({ domain, className }: { domain: string; className?: string }) {
   const Icon: LucideIcon = subjectIcon(domain);
   return <Icon className={className || "w-5 h-5"} strokeWidth={2} aria-hidden />;
+}
+
+function MasteryWell({ domain, size = "sm", iconClassName }: { domain: string; size?: "xs" | "sm" | "md"; iconClassName?: string }) {
+  const sz =
+    size === "md" ? "w-9 h-9 rounded-xl" :
+    size === "sm" ? "w-8 h-8 rounded-lg" :
+    "w-7 h-7 rounded-lg";
+  return (
+    <span className={`${sz} flex items-center justify-center ${subjectWellClass(domain)}`}>
+      <MasteryIcon domain={domain} className={iconClassName || "w-4 h-4"} />
+    </span>
+  );
 }
 
 const SOURCE_BADGES: Record<string, { label: string; color: string }> = {
@@ -688,7 +683,7 @@ export default function BrainReviewPage() {
                     return (
                       <div key={m.domain} className={`relative overflow-hidden rounded-xl vi-surface-soft border p-4 ${overridden ? "border-[hsl(var(--visual-sel)/0.5)] ring-1 ring-[hsl(var(--visual-sel)/0.3)]" : "vi-border"}`}>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="w-7 h-7 rounded-lg vi-surface-soft flex items-center justify-center text-slate-600"><MasteryIcon domain={m.domain} className="w-4 h-4" /></span>
+                          <MasteryWell domain={m.domain} size="xs" />
                           <span className="font-heading font-bold text-sm text-slate-800">{m.display_label}</span>
                         </div>
                         <div className="text-2xl font-heading font-bold vi-text mb-1">
@@ -697,7 +692,7 @@ export default function BrainReviewPage() {
                         </div>
                         <div className="w-full bg-[hsl(var(--visual-surface-soft))] rounded-full h-2.5 overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${MASTERY_BAR[m.domain] || "bg-[hsl(var(--visual-primary))]"} transition-all duration-1000`}
+                            className={`h-full rounded-full ${subjectBarClass(m.domain)} transition-all duration-1000`}
                             style={{ width: `${Math.max(4, displayScore * 100)}%` }}
                           />
                         </div>
@@ -771,7 +766,7 @@ export default function BrainReviewPage() {
                     <div key={m.domain} className={`border rounded-xl p-4 transition ${isModified ? "border-[hsl(var(--visual-sel)/0.5)] bg-[hsl(var(--visual-sel)/0.06)]" : "vi-border hover:bg-[hsl(var(--visual-surface-soft))]"}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
-                          <span className="w-9 h-9 rounded-xl vi-surface-soft flex items-center justify-center text-slate-600"><MasteryIcon domain={m.domain} className="w-5 h-5" /></span>
+                          <MasteryWell domain={m.domain} size="md" iconClassName="w-5 h-5" />
                           <div>
                             <p className="font-heading font-bold vi-text">{m.display_label}</p>
                             {m.raw_score && (
@@ -810,7 +805,7 @@ export default function BrainReviewPage() {
 
                       <div className="w-full bg-[hsl(var(--visual-surface-soft))] rounded-full h-3 overflow-hidden mt-2 mb-2">
                         <div
-                          className={`h-full rounded-full ${MASTERY_BAR[m.domain] || "bg-[hsl(var(--visual-primary))]"}`}
+                          className={`h-full rounded-full ${subjectBarClass(m.domain)}`}
                           style={{ width: `${Math.max(4, currentVal * 100)}%` }}
                         />
                       </div>
@@ -1322,7 +1317,7 @@ function PreCloneReview({
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {Object.entries(baselineScores).map(([domain, score]) => (
                 <div key={domain} className="bg-[hsl(var(--visual-reading)/0.08)] rounded-xl p-3 text-center">
-                  <span className="w-8 h-8 rounded-lg bg-white/60 mx-auto mb-1 flex items-center justify-center text-[hsl(var(--visual-reading))]"><MasteryIcon domain={domain} className="w-5 h-5" /></span>
+                  <span className="mx-auto mb-1 inline-flex"><MasteryWell domain={domain} size="sm" iconClassName="w-5 h-5" /></span>
                   <p className="text-xs font-bold vi-text-muted uppercase">{domain.replace(/_/g, " ")}</p>
                   <p className="text-lg font-heading font-bold vi-text">{Math.round(Number(score) * 100)}%</p>
                 </div>
