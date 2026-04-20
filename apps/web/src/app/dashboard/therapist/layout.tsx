@@ -1,11 +1,12 @@
 "use client";
 import CareTeamLayout from "@/components/layouts/CareTeamLayout";
+import { Users, ClipboardList, CalendarDays, Settings } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/dashboard/therapist", label: "Caseload", icon: "\uD83D\uDC65" },
-  { href: "/dashboard/therapist/reports", label: "Reports", icon: "\uD83D\uDCCB" },
-  { href: "/dashboard/therapist/sessions", label: "Sessions", icon: "\uD83D\uDCC5" },
-  { href: "/dashboard/therapist/settings", label: "Settings", icon: "\u2699\uFE0F" },
+  { href: "/dashboard/therapist", label: "Caseload", Icon: Users },
+  { href: "/dashboard/therapist/reports", label: "Reports", Icon: ClipboardList },
+  { href: "/dashboard/therapist/sessions", label: "Sessions", Icon: CalendarDays },
+  { href: "/dashboard/therapist/settings", label: "Settings", Icon: Settings },
 ];
 
 export default function TherapistLayout({ children }: { children: React.ReactNode }) {

@@ -6,40 +6,55 @@ import Link from "next/link";
 import Image from "next/image";
 import DashboardHeader from "@/components/DashboardHeader";
 import { SkipLink } from "@/components/a11y/SkipLink";
+import { ChevronLeft, ChevronRight, X, Menu, LogOut, type LucideIcon } from "lucide-react";
 
-const ACCENT_CLASSES = {
-  blue: {
-    gradient: "from-blue-500 to-blue-600",
-    roleText: "text-blue-600",
-    activeBg: "bg-blue-100",
-    activeText: "text-blue-700",
-    focusRing: "focus-visible:ring-blue-500",
+type Tone = "reading" | "math" | "science";
+
+const ACCENT_TONE: Record<"blue" | "pink" | "green", Tone> = {
+  blue: "reading",
+  pink: "math",
+  green: "science",
+};
+
+const TONE_CLASSES: Record<Tone, {
+  solidBg: string;
+  roleText: string;
+  activeBg: string;
+  activeText: string;
+  focusRing: string;
+}> = {
+  reading: {
+    solidBg: "bg-[hsl(var(--visual-reading))]",
+    roleText: "text-[hsl(var(--visual-reading))]",
+    activeBg: "bg-[hsl(var(--visual-reading)/0.12)]",
+    activeText: "text-[hsl(var(--visual-reading))]",
+    focusRing: "focus-visible:ring-[hsl(var(--visual-reading))]",
   },
-  pink: {
-    gradient: "from-pink-500 to-pink-600",
-    roleText: "text-pink-600",
-    activeBg: "bg-pink-100",
-    activeText: "text-pink-700",
-    focusRing: "focus-visible:ring-pink-500",
+  math: {
+    solidBg: "bg-[hsl(var(--visual-math))]",
+    roleText: "text-[hsl(var(--visual-math))]",
+    activeBg: "bg-[hsl(var(--visual-math)/0.12)]",
+    activeText: "text-[hsl(var(--visual-math))]",
+    focusRing: "focus-visible:ring-[hsl(var(--visual-math))]",
   },
-  green: {
-    gradient: "from-green-500 to-green-600",
-    roleText: "text-green-600",
-    activeBg: "bg-green-100",
-    activeText: "text-green-700",
-    focusRing: "focus-visible:ring-green-500",
+  science: {
+    solidBg: "bg-[hsl(var(--visual-science))]",
+    roleText: "text-[hsl(var(--visual-science))]",
+    activeBg: "bg-[hsl(var(--visual-science)/0.12)]",
+    activeText: "text-[hsl(var(--visual-science))]",
+    focusRing: "focus-visible:ring-[hsl(var(--visual-science))]",
   },
-} as const;
+};
 
 interface NavItem {
   href: string;
   label: string;
-  icon: string;
+  Icon: LucideIcon;
 }
 
 interface CareTeamLayoutProps {
   children: React.ReactNode;
-  accent: keyof typeof ACCENT_CLASSES;
+  accent: keyof typeof ACCENT_TONE;
   roleLabel: string;
   allowedRoles: string[];
   basePath: string;
@@ -52,7 +67,8 @@ export default function CareTeamLayout({ children, accent, roleLabel, allowedRol
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const colors = ACCENT_CLASSES[accent];
+  const tone = ACCENT_TONE[accent];
+  const colors = TONE_CLASSES[tone];
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -72,61 +88,79 @@ export default function CareTeamLayout({ children, accent, roleLabel, allowedRol
 
   const sidebarContent = (
     <>
-      <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+      <div className="p-4 border-b vi-border flex items-center justify-between">
         {!collapsed && (
           <Link href={basePath} className="flex items-center gap-3">
-            <div className={`w-9 h-9 bg-gradient-to-br ${colors.gradient} rounded-xl flex items-center justify-center`}>
+            <div className={`w-9 h-9 ${colors.solidBg} rounded-2xl flex items-center justify-center`}>
               <Image src="/images/aivo-logo-white.png" alt="AIVO" width={22} height={22} style={{ height: "auto" }} />
             </div>
             <div>
-              <p className="font-bold text-slate-900 text-sm">AIVO</p>
+              <p className="font-bold vi-text text-sm">AIVO</p>
               <p className={`text-xs ${colors.roleText} font-semibold uppercase tracking-wider`}>{roleLabel}</p>
             </div>
           </Link>
         )}
-        <button onClick={() => setCollapsed(!collapsed)} className="text-slate-400 hover:text-slate-600 p-1 transition hidden md:block" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
-          {collapsed ? "\u2192" : "\u2190"}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="vi-text-muted hover:vi-text p-1 transition hidden md:block"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <ChevronRight size={16} strokeWidth={2.5} aria-hidden="true" /> : <ChevronLeft size={16} strokeWidth={2.5} aria-hidden="true" />}
         </button>
-        <button onClick={() => setMobileOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 transition md:hidden" aria-label="Close navigation menu">
-          \u2715
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="vi-text-muted hover:vi-text p-1 transition md:hidden"
+          aria-label="Close navigation menu"
+        >
+          <X size={18} strokeWidth={2.5} aria-hidden="true" />
         </button>
       </div>
 
       <nav className="flex-1 overflow-y-auto py-3">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-label={item.label}
-            aria-current={isActive(item.href) ? "page" : undefined}
-            className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all mx-2 rounded-xl focus:outline-none focus-visible:ring-2 ${colors.focusRing} focus-visible:ring-offset-2 ${
-              isActive(item.href)
-                ? `${colors.activeBg} ${colors.activeText} font-semibold shadow-sm`
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            }`}
-          >
-            <span className="text-base flex-shrink-0" aria-hidden="true">{item.icon}</span>
-            {(!collapsed || mobileOpen) && <span>{item.label}</span>}
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          const Icon = item.Icon;
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-label={item.label}
+              aria-current={active ? "page" : undefined}
+              className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all mx-2 rounded-2xl focus:outline-none focus-visible:ring-2 ${colors.focusRing} focus-visible:ring-offset-2 ${
+                active
+                  ? `${colors.activeBg} ${colors.activeText} font-semibold shadow-sm`
+                  : "vi-text-muted hover:vi-surface-soft hover:vi-text"
+              }`}
+              style={{ minHeight: 44 }}
+            >
+              <Icon size={18} strokeWidth={2.5} className="flex-shrink-0" aria-hidden="true" />
+              {(!collapsed || mobileOpen) && <span>{item.label}</span>}
+            </Link>
+          );
+        })}
       </nav>
 
-      <div className="p-4 border-t border-slate-100">
+      <div className="p-4 border-t vi-border">
         {(!collapsed || mobileOpen) && (
           <div className="mb-3">
-            <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>
-            <p className="text-xs text-slate-500">{user.role.replace(/_/g, " ")}</p>
+            <p className="text-sm font-semibold vi-text truncate">{user.name}</p>
+            <p className="text-xs vi-text-muted">{user.role.replace(/_/g, " ")}</p>
           </div>
         )}
-        <button onClick={logout} aria-label="Sign out" className={`text-xs text-slate-400 hover:text-red-400 transition ${collapsed && !mobileOpen ? "w-full text-center" : ""}`}>
-          {collapsed && !mobileOpen ? "\uD83D\uDEAA" : "Sign Out"}
+        <button
+          onClick={logout}
+          aria-label="Sign out"
+          className={`inline-flex items-center gap-2 text-xs vi-text-muted hover:text-[hsl(var(--visual-math))] transition ${collapsed && !mobileOpen ? "w-full justify-center" : ""}`}
+        >
+          <LogOut size={14} strokeWidth={2.5} aria-hidden="true" />
+          {(!collapsed || mobileOpen) && <span>Sign Out</span>}
         </button>
       </div>
     </>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen vi-bg flex">
       <SkipLink />
 
       {mobileOpen && (
@@ -136,7 +170,7 @@ export default function CareTeamLayout({ children, accent, roleLabel, allowedRol
       <aside
         id="care-team-sidebar"
         className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col
+          fixed inset-y-0 left-0 z-50 w-64 bg-[hsl(var(--visual-surface))] border-r vi-border flex flex-col
           transition-transform duration-200 motion-reduce:transition-none
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
           md:static md:translate-x-0 md:z-auto md:flex-shrink-0
@@ -149,17 +183,16 @@ export default function CareTeamLayout({ children, accent, roleLabel, allowedRol
       </aside>
 
       <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto flex flex-col min-w-0">
-        <div className="md:hidden flex items-center px-4 h-14 border-b border-slate-100 bg-white">
+        <div className="md:hidden flex items-center px-4 h-14 border-b vi-border bg-[hsl(var(--visual-surface))]">
           <button
             onClick={() => setMobileOpen(true)}
             aria-label="Open navigation menu"
             aria-expanded={mobileOpen}
             aria-controls="care-team-sidebar"
-            className="p-2 text-slate-600 hover:text-slate-900 transition"
+            className="p-2 vi-text-muted hover:vi-text transition"
+            style={{ minHeight: 44, minWidth: 44 }}
           >
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 12h18M3 6h18M3 18h18" />
-            </svg>
+            <Menu size={22} strokeWidth={2.5} aria-hidden="true" />
           </button>
           <Link href={basePath} className="ml-3">
             <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={80} height={24} style={{ height: "auto" }} />

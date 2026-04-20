@@ -108,21 +108,21 @@ interface ParentModification {
   parent_note: string;
 }
 
-const MASTERY_COLORS: Record<string, string> = {
-  math: "from-blue-500 to-blue-600",
-  ela: "from-emerald-500 to-emerald-600",
-  science: "from-amber-500 to-amber-600",
-  history: "from-rose-500 to-rose-600",
-  coding: "from-violet-500 to-violet-600",
-  social: "from-pink-500 to-pink-600",
-  sel: "from-pink-500 to-pink-600",
-  speech: "from-violet-500 to-violet-600",
-  executive_function: "from-cyan-500 to-cyan-600",
-  communication: "from-cyan-500 to-cyan-600",
-  daily_living: "from-orange-500 to-orange-600",
-  cause_effect: "from-teal-500 to-teal-600",
-  sensory_engagement: "from-indigo-500 to-indigo-600",
-  social_awareness: "from-fuchsia-500 to-fuchsia-600",
+const MASTERY_BAR: Record<string, string> = {
+  math: "bg-[hsl(var(--visual-math))]",
+  ela: "bg-[hsl(var(--visual-reading))]",
+  science: "bg-[hsl(var(--visual-science))]",
+  history: "bg-[hsl(var(--visual-sel))]",
+  coding: "bg-[hsl(var(--visual-primary))]",
+  social: "bg-[hsl(var(--visual-math))]",
+  sel: "bg-[hsl(var(--visual-sel))]",
+  speech: "bg-[hsl(var(--visual-primary))]",
+  executive_function: "bg-[hsl(var(--visual-reading))]",
+  communication: "bg-[hsl(var(--visual-reading))]",
+  daily_living: "bg-[hsl(var(--visual-science))]",
+  cause_effect: "bg-[hsl(var(--visual-science))]",
+  sensory_engagement: "bg-[hsl(var(--visual-primary))]",
+  social_awareness: "bg-[hsl(var(--visual-math))]",
 };
 
 const MASTERY_EMOJIS: Record<string, string> = {
@@ -133,11 +133,11 @@ const MASTERY_EMOJIS: Record<string, string> = {
 };
 
 const SOURCE_BADGES: Record<string, { label: string; color: string }> = {
-  discovery_adventure: { label: "From Assessment", color: "bg-blue-100 text-blue-700" },
-  template_default: { label: "Template Default", color: "bg-slate-100 text-slate-600" },
-  functioning_level_template: { label: "Evidence-Based", color: "bg-green-100 text-green-700" },
-  parent_assessment: { label: "Parent Reported", color: "bg-purple-100 text-purple-700" },
-  iep: { label: "From IEP", color: "bg-amber-100 text-amber-700" },
+  discovery_adventure: { label: "From Assessment", color: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" },
+  template_default: { label: "Template Default", color: "vi-surface-soft vi-text-muted" },
+  functioning_level_template: { label: "Evidence-Based", color: "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]" },
+  parent_assessment: { label: "Parent Reported", color: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" },
+  iep: { label: "From IEP", color: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" },
 };
 
 const AVAILABLE_ACCOMMODATIONS = [
@@ -531,21 +531,21 @@ export default function BrainReviewPage() {
 
   if (pageMode === "cloning") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#1a0a3e] via-[#0f172a] to-[#0c1222] text-white flex items-center justify-center">
+      <div className="min-h-screen vi-bg vi-text flex items-center justify-center">
         <div className="text-center">
           <div className="relative mx-auto w-48 h-48 mb-6">
-            <div className="absolute inset-0 rounded-full border-2 border-dashed border-purple-400/40 animate-spin" style={{ animationDuration: "20s" }} />
-            <div className="absolute inset-4 rounded-full border border-dashed border-cyan-400/30 animate-spin" style={{ animationDuration: "15s", animationDirection: "reverse" }} />
+            <div className="absolute inset-0 rounded-full border-2 border-dashed border-[hsl(var(--visual-primary)/0.40)] animate-spin" style={{ animationDuration: "20s" }} />
+            <div className="absolute inset-4 rounded-full border border-dashed border-[hsl(var(--visual-reading)/0.30)] animate-spin" style={{ animationDuration: "15s", animationDirection: "reverse" }} />
             <div className="absolute inset-0 flex items-center justify-center">
-              <Brain className="w-16 h-16 text-purple-300 animate-pulse" />
+              <Brain className="w-16 h-16 text-[hsl(var(--visual-primary))] animate-pulse" />
             </div>
           </div>
-          <h2 className="font-heading font-bold text-xl mb-2">Building the Brain...</h2>
-          <p className="text-white/50 text-sm font-body">Analyzing assessment data and constructing a personalized learning profile</p>
+          <h2 className="font-heading font-bold text-xl mb-2 vi-text">Building the Brain...</h2>
+          <p className="vi-text-muted text-sm font-body">Analyzing assessment data and constructing a personalized learning profile</p>
           <div className="flex gap-1 justify-center mt-4">
-            <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-            <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-            <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+            <div className="w-2 h-2 rounded-full bg-[hsl(var(--visual-primary))] animate-bounce" style={{ animationDelay: "0ms" }} />
+            <div className="w-2 h-2 rounded-full bg-[hsl(var(--visual-primary))] animate-bounce" style={{ animationDelay: "150ms" }} />
+            <div className="w-2 h-2 rounded-full bg-[hsl(var(--visual-primary))] animate-bounce" style={{ animationDelay: "300ms" }} />
           </div>
         </div>
       </div>
@@ -698,7 +698,7 @@ export default function BrainReviewPage() {
                         </div>
                         <div className="w-full bg-[hsl(var(--visual-surface-soft))] rounded-full h-2.5 overflow-hidden">
                           <div
-                            className={`h-full rounded-full bg-gradient-to-r ${MASTERY_COLORS[m.domain] || "from-purple-500 to-purple-600"} transition-all duration-1000`}
+                            className={`h-full rounded-full ${MASTERY_BAR[m.domain] || "bg-[hsl(var(--visual-primary))]"} transition-all duration-1000`}
                             style={{ width: `${Math.max(4, displayScore * 100)}%` }}
                           />
                         </div>
@@ -811,7 +811,7 @@ export default function BrainReviewPage() {
 
                       <div className="w-full bg-[hsl(var(--visual-surface-soft))] rounded-full h-3 overflow-hidden mt-2 mb-2">
                         <div
-                          className={`h-full rounded-full bg-gradient-to-r ${MASTERY_COLORS[m.domain] || "from-purple-500 to-purple-600"}`}
+                          className={`h-full rounded-full ${MASTERY_BAR[m.domain] || "bg-[hsl(var(--visual-primary))]"}`}
                           style={{ width: `${Math.max(4, currentVal * 100)}%` }}
                         />
                       </div>
@@ -1170,7 +1170,7 @@ export default function BrainReviewPage() {
                     onClick={handleStartOver}
                     disabled={submitting}
                     style={{ minHeight: 44 }}
-                    className="flex-1 px-6 py-3 bg-slate-500 text-white font-heading font-bold rounded-xl hover:bg-slate-600 transition disabled:opacity-50"
+                    className="flex-1 px-6 py-3 bg-[hsl(var(--visual-math))] text-white font-heading font-bold rounded-xl hover:bg-[hsl(var(--visual-math)/0.9)] transition disabled:opacity-50"
                   >
                     {submitting ? "Processing..." : "Confirm Start Over"}
                   </button>
@@ -1205,7 +1205,7 @@ export default function BrainReviewPage() {
                   onClick={() => setShowStartOverConfirm(true)}
                   disabled={submitting}
                   style={{ minHeight: 44 }}
-                  className="px-6 py-3 vi-surface-soft vi-text-muted font-heading font-bold rounded-xl hover:bg-slate-200 transition disabled:opacity-50 border vi-border"
+                  className="px-6 py-3 vi-surface-soft vi-text-muted font-heading font-bold rounded-xl hover:bg-[hsl(var(--visual-border))] transition disabled:opacity-50 border vi-border"
                 >
                   Start Over
                 </button>
@@ -1406,7 +1406,7 @@ function PreCloneReview({
             <Link
               href={`/dashboard/parent/learner/${learnerId}`}
               style={{ minHeight: 44 }}
-              className="px-6 py-4 vi-surface-soft vi-text-muted font-heading font-bold rounded-xl hover:bg-slate-200 transition border vi-border text-center"
+              className="px-6 py-4 vi-surface-soft vi-text-muted font-heading font-bold rounded-xl hover:bg-[hsl(var(--visual-border))] transition border vi-border text-center"
             >
               Not Yet
             </Link>
