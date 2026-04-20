@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "Hsn2y3sDFMbxWxdpX8f7c"
@@ -228,3 +227,27 @@ id = "pcw30K1KPCsXnnoFNJJcI"
 uri = "file://artifacts/mockup-sandbox/public/images/nd-visual-avatar.png"
 type = "image"
 title = "generated_image"
+
+[[outputs]]
+id = "0e7lRmti5tdoSwrX0-ySG"
+uri = "file://.local/preview/marketing-hero.jpg"
+type = "image"
+title = "Marketing site — hero (current)"
+
+[[outputs]]
+id = "Zi5vokNhnMNYB7TDg8_GM"
+uri = "file://.local/preview/marketing-fullpage.jpg"
+type = "image"
+title = "Marketing site — full page (current)"
+
+[[outputs]]
+id = "TkAz73eqcMHGHwBYQch_l"
+uri = "file://.local/preview/vi-login.jpg"
+type = "image"
+title = "V&I login page (T018)"
+
+[[outputs]]
+id = "0gUajev2DuV3SJfcfg67O"
+uri = "file://.local/preview/vi-signup.jpg"
+type = "image"
+title = "V&I signup page (T018)"

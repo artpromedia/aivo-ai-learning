@@ -26,6 +26,10 @@ args = "Identity Service"
 task = "workflow.run"
 args = "Web App"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Marketing Site"
+
 [[workflows.workflow]]
 name = "Brain Service"
 author = "agent"
@@ -61,6 +65,18 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow]]
+name = "Marketing Site"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd apps/marketing && npx next dev --port 5173 --hostname 0.0.0.0"
+waitForPort = 5173
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [[ports]]
 localPort = 3001
