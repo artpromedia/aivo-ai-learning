@@ -16,6 +16,10 @@ export function StickyHeader({ scrollY }: { scrollY: number }) {
     ? "text-slate-600 hover:text-primary"
     : "text-white/80 hover:text-white";
 
+  const signInClass = isScrolled
+    ? "text-slate-700 hover:text-primary"
+    : "text-white bg-white/10 hover:bg-white/20 border border-white/25 backdrop-blur-sm";
+
   const NAV_LINKS = [
     { labelKey: "features" as const, href: "#features" },
     { labelKey: "tutors" as const, href: "#tutors" },
@@ -60,7 +64,7 @@ export function StickyHeader({ scrollY }: { scrollY: number }) {
           <LanguageSwitcher compact />
           <a
             href={`${WEB_APP_URL}/login`}
-            className={`px-5 py-2 rounded-lg font-semibold transition hidden sm:inline-flex min-h-[44px] items-center ${linkColor}`}
+            className={`px-5 py-2 rounded-lg font-semibold transition hidden sm:inline-flex min-h-[44px] items-center ${signInClass}`}
           >
             {t("sign_in")}
           </a>

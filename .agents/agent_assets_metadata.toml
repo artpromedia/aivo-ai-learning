@@ -251,3 +251,9 @@ id = "0gUajev2DuV3SJfcfg67O"
 uri = "file://.local/preview/vi-signup.jpg"
 type = "image"
 title = "V&I signup page (T018)"
+
+[[outputs]]
+id = "bP6_v1-24oBejDBufWBm0"
+uri = "file://.local/preview/marketing-hero-fixed.jpg"
+type = "image"
+title = "Marketing site — Sign In button now visible"
