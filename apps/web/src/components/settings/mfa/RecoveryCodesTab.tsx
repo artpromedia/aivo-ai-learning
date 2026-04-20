@@ -24,7 +24,7 @@ export function RecoveryCodesTab({ injectedCodes, onCodesShown }: Props) {
     } catch {}
   };
 
-  useEffect(() => { if (accessToken) loadStatus(); /* eslint-disable-next-line */ }, [accessToken]);
+  useEffect(() => { if (accessToken) loadStatus(); }, [accessToken]);
 
   useEffect(() => {
     if (injectedCodes && injectedCodes.length) {
@@ -32,8 +32,7 @@ export function RecoveryCodesTab({ injectedCodes, onCodesShown }: Props) {
       setRemaining(injectedCodes.length);
       onCodesShown();
     }
-    // eslint-disable-next-line
-  }, [injectedCodes]);
+  }, [injectedCodes, onCodesShown]);
 
   const regenerate = async () => {
     if (!password) return;

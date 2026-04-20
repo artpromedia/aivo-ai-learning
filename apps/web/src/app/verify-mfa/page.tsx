@@ -94,13 +94,21 @@ function VerifyMfaContent() {
     setLoading(false);
   };
 
-  // Auto-submit when 6-digit code complete (TOTP / email).
+  // Auto-submit when a 6-digit code is complete (TOTP / email). We track the
+  // last code we already submitted so re-renders that re-create submitCode
+  // don't cause duplicate POSTs, and we don't need to memoize submitCode.
+  const lastSubmittedRef = useRef<string>("");
   useEffect(() => {
-    if ((mode === "email" || mode === "totp") && code.length === 6 && !loading) {
+    if (
+      (mode === "email" || mode === "totp") &&
+      code.length === 6 &&
+      !loading &&
+      lastSubmittedRef.current !== code
+    ) {
+      lastSubmittedRef.current = code;
       submitCode(code);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code]);
+  }, [code, mode, loading, submitCode]);
 
   const runWebAuthn = async () => {
     setError(""); setInfo(""); setLoading(true);
@@ -136,8 +144,7 @@ function VerifyMfaContent() {
       triedAutoRef.current = true;
       runWebAuthn();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  }, [mode, runWebAuthn]);
 
   const handleResend = async () => {
     if (resendCooldown > 0 || mode !== "email") return;

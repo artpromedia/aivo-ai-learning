@@ -30,7 +30,7 @@ export function PasskeysTab({ strongMfaEnabled, onChanged, onRecoveryCodes }: Pr
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [accessToken]);
+  useEffect(() => { load(); }, [accessToken]);
 
   const register = async () => {
     setErr(""); setBusy(true);
@@ -109,7 +109,7 @@ export function PasskeysTab({ strongMfaEnabled, onChanged, onRecoveryCodes }: Pr
               <div className="flex-1 min-w-0">
                 {renaming === c.id ? (
                   <input
-                    autoFocus value={renameValue}
+                    ref={(el) => { el?.focus(); }} value={renameValue}
                     onChange={e => setRenameValue(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") rename(c.id); if (e.key === "Escape") { setRenaming(null); setRenameValue(""); } }}
                     onBlur={() => rename(c.id)}
