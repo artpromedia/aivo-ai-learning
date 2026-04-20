@@ -10,6 +10,18 @@ import { WelcomeHero } from "./components/WelcomeHero";
 import { LearnerSummaryCard } from "./components/LearnerSummaryCard";
 import { QuickActions } from "./components/QuickActions";
 import { WhileYouWereAway } from "./components/WhileYouWereAway";
+import {
+  Users,
+  Plus,
+  CheckCircle2,
+  Sparkles,
+  MapPin,
+  Languages,
+  Loader2,
+  AlertCircle,
+  Store,
+  GraduationCap,
+} from "lucide-react";
 
 interface Learner {
   id: string;
@@ -233,88 +245,119 @@ export default function ParentDashboard() {
       />
 
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-heading font-bold text-slate-900">Your Children</h2>
-        <button onClick={() => setShowAddForm(!showAddForm)}
-          className="px-5 py-2.5 rounded-full bg-purple-600 text-white font-bold text-sm hover:bg-purple-700 transition shadow-lg shadow-purple-200"
-          style={{ minHeight: 44 }}>
-          + Add a Child
+        <div className="flex items-center gap-3">
+          <span className="w-11 h-11 rounded-2xl bg-purple-100 text-primary flex items-center justify-center shadow-sm">
+            <Users size={22} strokeWidth={2.5} aria-hidden="true" />
+          </span>
+          <h2 className="text-2xl font-heading font-bold text-slate-900">Your Children</h2>
+        </div>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-primary text-white font-heading font-black text-sm uppercase tracking-wider hover:bg-primary-dark transition shadow-lg shadow-purple-600/30"
+          style={{ minHeight: 44 }}
+        >
+          <Plus size={18} strokeWidth={3} aria-hidden="true" />
+          Add a Child
         </button>
       </div>
 
       {showAddForm && (
-        <form onSubmit={addLearner} className="bg-white rounded-2xl p-6 lg:p-8 shadow-md border border-slate-100 space-y-6">
-          <h3 className="font-heading font-bold text-xl text-slate-900">{t("onboarding.add_learner_title")}</h3>
+        <form
+          onSubmit={addLearner}
+          className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border-2 border-slate-100 space-y-6"
+        >
+          <div className="flex items-center gap-3">
+            <span className="w-11 h-11 rounded-2xl bg-purple-100 text-primary flex items-center justify-center shadow-sm">
+              <Sparkles size={22} strokeWidth={2.5} aria-hidden="true" />
+            </span>
+            <h3 className="font-heading font-bold text-xl text-slate-900">{t("onboarding.add_learner_title")}</h3>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="learner-name" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.learner_name")}</label>
+              <label htmlFor="learner-name" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.learner_name")}</label>
               <input id="learner-name" type="text" value={newLearner.name} onChange={(e) => setNewLearner({...newLearner, name: e.target.value})} required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none" />
+                className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body" />
             </div>
             <div>
-              <label htmlFor="learner-grade" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.grade_level")}</label>
+              <label htmlFor="learner-grade" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.grade_level")}</label>
               <input id="learner-grade" type="text" value={newLearner.gradeLevel} onChange={(e) => setNewLearner({...newLearner, gradeLevel: e.target.value})}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none" placeholder={t("onboarding.grade_level_placeholder")} />
+                className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body" placeholder={t("onboarding.grade_level_placeholder")} />
             </div>
             <div>
-              <label htmlFor="learner-pin" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.pin")}</label>
+              <label htmlFor="learner-pin" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.pin")}</label>
               <input id="learner-pin" type="text" value={newLearner.pin} onChange={(e) => setNewLearner({...newLearner, pin: e.target.value})} maxLength={6}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none" placeholder={t("onboarding.pin_placeholder")} />
+                className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body" placeholder={t("onboarding.pin_placeholder")} />
             </div>
           </div>
 
-          <div className="border-t border-slate-100 pt-6">
-            <h4 className="font-heading font-bold text-lg text-slate-800 mb-4">{t("onboarding.location")}</h4>
+          <div className="border-t-2 border-slate-100 pt-6">
+            <div className="flex items-center gap-2 mb-4">
+              <MapPin size={18} strokeWidth={2.5} className="text-primary" aria-hidden="true" />
+              <h4 className="font-heading font-bold text-lg text-slate-900">{t("onboarding.location")}</h4>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label htmlFor="learner-country" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.country")}</label>
+                <label htmlFor="learner-country" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.country")}</label>
                 <select id="learner-country" value={newLearner.country} onChange={(e) => setNewLearner({...newLearner, country: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none bg-white">
+                  className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body">
                   {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
                 </select>
               </div>
               {newLearner.country === "US" ? (
                 <div>
-                  <label htmlFor="learner-zip" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.zip_code")}</label>
+                  <label htmlFor="learner-zip" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.zip_code")}</label>
                   <input id="learner-zip" type="text" value={newLearner.zipCode} onChange={(e) => setNewLearner({...newLearner, zipCode: e.target.value})}
                     maxLength={5} placeholder={t("onboarding.zip_placeholder")}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none" />
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body" />
                 </div>
               ) : (
                 <div>
-                  <label htmlFor="learner-region" className="block text-sm font-bold text-slate-700 mb-1">{t("onboarding.region")}</label>
+                  <label htmlFor="learner-region" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.region")}</label>
                   <input id="learner-region" type="text" value={newLearner.region} onChange={(e) => setNewLearner({...newLearner, region: e.target.value})}
                     placeholder={t("onboarding.region_placeholder")}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none" />
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary focus:ring-4 focus:ring-purple-200 outline-none transition font-body" />
                 </div>
               )}
               <div className="flex items-end">
-                {curriculumLoading && <div className="px-4 py-3 text-sm text-slate-400 font-semibold">{t("common.loading")}</div>}
+                {curriculumLoading && (
+                  <div className="inline-flex items-center gap-2 px-4 py-3 text-sm text-slate-500 font-bold">
+                    <Loader2 size={16} strokeWidth={2.5} className="motion-safe:animate-spin" aria-hidden="true" />
+                    {t("common.loading")}
+                  </div>
+                )}
               </div>
             </div>
             {curriculumInfo && (
-              <div className="mt-4 p-4 rounded-xl bg-green-50 border border-green-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-green-600 text-lg">✓</span>
-                  <span className="font-heading font-bold text-green-800">Curriculum Detected</span>
+              <div className="mt-4 p-5 rounded-2xl bg-subject-science-soft border-2 border-green-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-8 h-8 rounded-xl bg-white text-subject-science flex items-center justify-center shadow-sm">
+                    <CheckCircle2 size={18} strokeWidth={2.5} aria-hidden="true" />
+                  </span>
+                  <span className="font-heading font-bold text-subject-science">Curriculum Detected</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                  <div><span className="font-bold text-green-700">Framework:</span> <span className="text-green-900">{curriculumInfo.curriculumFramework}</span></div>
-                  <div><span className="font-bold text-green-700">Standards:</span> <span className="text-green-900">{curriculumInfo.standards}</span></div>
-                  {curriculumInfo.state && <div><span className="font-bold text-green-700">State:</span> <span className="text-green-900">{curriculumInfo.state}</span></div>}
-                  {curriculumInfo.districtName && <div><span className="font-bold text-green-700">District:</span> <span className="text-green-900">{curriculumInfo.districtName}</span></div>}
+                  <div><span className="font-bold text-subject-science">Framework:</span> <span className="text-slate-800">{curriculumInfo.curriculumFramework}</span></div>
+                  <div><span className="font-bold text-subject-science">Standards:</span> <span className="text-slate-800">{curriculumInfo.standards}</span></div>
+                  {curriculumInfo.state && <div><span className="font-bold text-subject-science">State:</span> <span className="text-slate-800">{curriculumInfo.state}</span></div>}
+                  {curriculumInfo.districtName && <div><span className="font-bold text-subject-science">District:</span> <span className="text-slate-800">{curriculumInfo.districtName}</span></div>}
                 </div>
               </div>
             )}
           </div>
 
-          <div className="border-t border-slate-100 pt-6">
-            <h4 className="font-heading font-bold text-lg text-slate-800 mb-1">{t("onboarding.preferred_language")}</h4>
-            <p className="text-sm text-slate-500 mb-4">{t("onboarding.language_description")}</p>
+          <div className="border-t-2 border-slate-100 pt-6">
+            <div className="flex items-center gap-2 mb-1">
+              <Languages size={18} strokeWidth={2.5} className="text-primary" aria-hidden="true" />
+              <h4 className="font-heading font-bold text-lg text-slate-900">{t("onboarding.preferred_language")}</h4>
+            </div>
+            <p className="text-sm text-slate-600 mb-4 font-body">{t("onboarding.language_description")}</p>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {LEARNING_LANGUAGES.map((lang) => (
                 <button key={lang.code} type="button" onClick={() => setNewLearner({...newLearner, preferredLanguage: lang.code})}
-                  className={`px-4 py-3 rounded-xl border-2 text-sm font-semibold transition text-left ${
-                    newLearner.preferredLanguage === lang.code ? "border-purple-500 bg-purple-50 text-purple-700" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  className={`px-4 py-3 rounded-2xl border-2 text-sm font-bold transition text-left ${
+                    newLearner.preferredLanguage === lang.code
+                      ? "border-primary bg-purple-50 text-primary shadow-md"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                   }`}>
                   {lang.label}
                 </button>
@@ -322,34 +365,59 @@ export default function ParentDashboard() {
             </div>
           </div>
 
-          <button type="submit" disabled={submitting}
-            className={`px-8 py-3 rounded-full font-bold transition shadow-lg shadow-purple-200 ${submitting ? "bg-purple-400 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700 active:scale-[0.97]"} text-white`}
-            style={{ minHeight: 48 }}>
-            {submitting ? t("common.saving") : t("common.submit")}
+          <button
+            type="submit"
+            disabled={submitting}
+            aria-busy={submitting}
+            className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-heading font-black text-base uppercase tracking-wider transition shadow-lg shadow-purple-600/30 text-white ${
+              submitting ? "bg-primary/60 cursor-not-allowed" : "bg-primary hover:bg-primary-dark active:scale-[0.97]"
+            }`}
+            style={{ minHeight: 48 }}
+          >
+            {submitting ? (
+              <>
+                <Loader2 size={18} strokeWidth={2.5} className="motion-safe:animate-spin" aria-hidden="true" />
+                {t("common.saving")}
+              </>
+            ) : (
+              t("common.submit")
+            )}
           </button>
 
           {submitError && (
-            <p className="text-sm font-semibold text-red-600" role="alert" aria-live="assertive">
-              {submitError}
-            </p>
+            <div role="alert" aria-live="assertive" className="flex items-start gap-3 p-4 rounded-2xl bg-pink-50 border-2 border-pink-200 text-pink-800 text-sm font-bold">
+              <span className="w-8 h-8 rounded-xl bg-white text-pink-600 flex items-center justify-center shrink-0 shadow-sm">
+                <AlertCircle size={18} strokeWidth={2.5} aria-hidden="true" />
+              </span>
+              <span className="pt-1">{submitError}</span>
+            </div>
           )}
 
           {submitSuccess && (
-            <p className="text-sm font-semibold text-green-700" role="status" aria-live="polite">
-              {submitSuccess}
-            </p>
+            <div role="status" aria-live="polite" className="flex items-start gap-3 p-4 rounded-2xl bg-subject-science-soft border-2 border-green-200 text-subject-science text-sm font-bold">
+              <span className="w-8 h-8 rounded-xl bg-white text-subject-science flex items-center justify-center shrink-0 shadow-sm">
+                <CheckCircle2 size={18} strokeWidth={2.5} aria-hidden="true" />
+              </span>
+              <span className="pt-1">{submitSuccess}</span>
+            </div>
           )}
         </form>
       )}
 
       {learners.length === 0 && !showAddForm ? (
-        <div className="bg-white rounded-2xl p-12 lg:p-16 text-center border border-slate-100 shadow-sm">
-          <div className="text-5xl mb-4">🎮</div>
-          <h3 className="text-lg font-heading font-bold text-slate-700 mb-2">Welcome to AIVO!</h3>
-          <p className="text-slate-500 mb-6">Add your first child to get started with personalized learning.</p>
-          <button onClick={() => setShowAddForm(true)}
-            className="px-6 py-3 rounded-full bg-purple-600 text-white font-bold hover:bg-purple-700 transition" style={{ minHeight: 48 }}>
-            + Add Your First Child
+        <div className="bg-white rounded-3xl p-12 lg:p-16 text-center border-2 border-slate-100 shadow-sm">
+          <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-purple-100 text-primary flex items-center justify-center shadow-sm">
+            <Sparkles size={40} strokeWidth={2.5} aria-hidden="true" />
+          </div>
+          <h3 className="text-2xl font-heading font-bold text-slate-900 mb-2">Welcome to AIVO!</h3>
+          <p className="text-slate-600 font-body mb-6">Add your first child to get started with personalized learning.</p>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-primary text-white font-heading font-black text-sm uppercase tracking-wider hover:bg-primary-dark transition shadow-lg shadow-purple-600/30"
+            style={{ minHeight: 48 }}
+          >
+            <Plus size={18} strokeWidth={3} aria-hidden="true" />
+            Add Your First Child
           </button>
         </div>
       ) : (
@@ -371,24 +439,41 @@ export default function ParentDashboard() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+      <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border-2 border-slate-100">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-heading font-bold text-slate-900">{t("tutor.meet_tutors")}</h2>
-          <button onClick={() => router.push("/dashboard/parent/store")}
-            className="px-4 py-2 text-sm rounded-full bg-purple-600 text-white font-bold hover:bg-purple-700 transition" style={{ minHeight: 44 }}>
+          <div className="flex items-center gap-3">
+            <span className="w-11 h-11 rounded-2xl bg-amber-100 text-subject-sel flex items-center justify-center shadow-sm">
+              <GraduationCap size={22} strokeWidth={2.5} aria-hidden="true" />
+            </span>
+            <div>
+              <h2 className="text-xl font-heading font-bold text-slate-900">{t("tutor.meet_tutors")}</h2>
+              <p className="text-xs text-slate-500 font-body font-semibold">7 core tutors + 7 expansion specialists</p>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push("/dashboard/parent/store")}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm rounded-2xl bg-primary text-white font-heading font-black uppercase tracking-wider hover:bg-primary-dark transition shadow-md shadow-purple-600/20"
+            style={{ minHeight: 44 }}
+          >
+            <Store size={16} strokeWidth={2.5} aria-hidden="true" />
             {t("gamification.shop")}
           </button>
         </div>
-        <p className="text-sm text-slate-500 mb-6">7 core tutors + 7 expansion specialists</p>
         <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-3">
           {Object.entries(TUTORS).map(([key, tutor]) => (
-            <button key={key} onClick={() => router.push(`/dashboard/parent/store?tutor=${key}`)}
-              className="text-center p-2 rounded-2xl hover:bg-slate-50 transition cursor-pointer group">
-              <div className="relative w-14 h-14 mx-auto mb-1.5 rounded-full overflow-hidden border-2 group-hover:scale-110 transition-transform shadow-md" style={{ borderColor: tutor.color }}>
+            <button
+              key={key}
+              onClick={() => router.push(`/dashboard/parent/store?tutor=${key}`)}
+              className="text-center p-3 rounded-2xl hover:bg-slate-50 transition cursor-pointer group"
+            >
+              <div
+                className="relative w-14 h-14 mx-auto mb-1.5 rounded-full overflow-hidden border-[3px] group-hover:scale-110 transition-transform shadow-md"
+                style={{ borderColor: tutor.color }}
+              >
                 <Image src={tutor.avatar} alt={`${tutor.name} - ${tutor.domain}`} fill className="object-cover object-top" sizes="56px" />
               </div>
               <div className="font-heading font-bold text-xs" style={{ color: tutor.color }}>{tutor.name}</div>
-              <div className="text-[10px] text-slate-500 mt-0.5 leading-tight">{tutor.domain}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5 leading-tight font-body font-semibold">{tutor.domain}</div>
             </button>
           ))}
         </div>
