@@ -248,6 +248,21 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.status(401).send({ error: "Invalid credentials" });
     }
 
+    if (user.role === "DISTRICT_ADMIN") {
+      return reply.status(403).send({
+        error: "District administrators must sign in at district.aivolearning.com.",
+        redirectTo: "/district/login",
+        wrongSurface: "district",
+      });
+    }
+    if (["PLATFORM_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"].includes(user.role)) {
+      return reply.status(403).send({
+        error: "Staff accounts must sign in at admin.aivolearning.com.",
+        redirectTo: "/admin/login",
+        wrongSurface: "admin",
+      });
+    }
+
     const mfaRequired = user.mfaEnabled || MFA_FORCED_ROLES.includes(user.role);
     if (mfaRequired) {
       if (!user.mfaEnabled && MFA_FORCED_ROLES.includes(user.role)) {
@@ -328,6 +343,92 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
 
     if (!ADMIN_ROLES.includes(user.role)) {
+      return reply.status(401).send({ error: genericError });
+    }
+
+    if (user.deactivatedAt) {
+      return reply.status(401).send({ error: genericError });
+    }
+
+    if (user.mfaEnabled || MFA_FORCED_ROLES.includes(user.role)) {
+      if (!user.mfaEnabled) {
+        await db.update(users).set({ mfaEnabled: true, mfaMethod: "email" }).where(eq(users.id, user.id));
+      }
+      try {
+        await createAndSendMfaCode(db, user.id, user.email!, user.name);
+      } catch {
+        return reply.status(502).send({ error: "Failed to send verification code. Please try again." });
+      }
+      const mfaToken = await signMfaToken(user.id, user.email!);
+      return { mfaPending: true, mfaToken, mfaMethod: "email" };
+    }
+
+    const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
+    await db.update(users).set({
+      lastLoginAt: new Date(),
+      lastLoginIp: clientIp,
+    }).where(eq(users.id, user.id));
+
+    const accessToken = await signJWT({
+      sub: user.id,
+      tenantId: user.tenantId,
+      role: user.role,
+      email: user.email!,
+      name: user.name,
+    });
+
+    const rawRefreshToken = crypto.randomUUID();
+    await db.insert(sessions).values({
+      userId: user.id,
+      refreshToken: hashRefreshToken(rawRefreshToken),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+
+    reply.setCookie("refreshToken", rawRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60,
+    });
+
+    return {
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
+      accessToken,
+    };
+  });
+
+  const DISTRICT_ROLES = ["DISTRICT_ADMIN", "PLATFORM_ADMIN"];
+
+  app.post("/api/auth/district-login", {
+    schema: {
+      tags: ["Auth"],
+      body: {
+        type: "object",
+        required: ["email", "password"],
+        properties: {
+          email: { type: "string", format: "email" },
+          password: { type: "string" },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { email, password } = req.body as any;
+    const db = (app as any).db;
+
+    const genericError = "Invalid credentials";
+
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (!user || !user.passwordHash) {
+      return reply.status(401).send({ error: genericError });
+    }
+
+    const validPw = await verifyPassword(user.passwordHash, password);
+    if (!validPw) {
+      return reply.status(401).send({ error: genericError });
+    }
+
+    if (!DISTRICT_ROLES.includes(user.role)) {
       return reply.status(401).send({ error: genericError });
     }
 

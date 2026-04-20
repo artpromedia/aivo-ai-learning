@@ -48,7 +48,7 @@ export default function InternalLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login");
+      router.push("/admin/login");
       return;
     }
     if (!loading && user) {

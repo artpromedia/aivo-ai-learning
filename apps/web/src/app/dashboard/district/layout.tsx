@@ -79,7 +79,7 @@ export default function DistrictLayout({ children }: { children: React.ReactNode
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
+    if (!loading && !user) router.push("/district/login");
     if (!loading && user && !["DISTRICT_ADMIN", "PLATFORM_ADMIN"].includes(user.role)) router.push("/");
   }, [user, loading, router]);
 

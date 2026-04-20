@@ -74,7 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       credentials: "include",
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+    if (!res.ok) {
+      const err = new Error(data.error || "Login failed") as Error & { redirectTo?: string; wrongSurface?: string };
+      if (data.redirectTo) err.redirectTo = data.redirectTo;
+      if (data.wrongSurface) err.wrongSurface = data.wrongSurface;
+      throw err;
+    }
     if (data.mfaPending) {
       return { mfaPending: true, mfaToken: data.mfaToken, mfaMethod: data.mfaMethod };
     }
