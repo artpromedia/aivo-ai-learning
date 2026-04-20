@@ -25,6 +25,11 @@ import {
   isMfaLocked, recordMfaFailure, clearMfaFailures, lockoutSecondsRemaining,
 } from "../services/mfa-lockout.js";
 import {
+  challengeAllowsEmailOtp,
+  challengeAllowsEmailResend,
+  userMayUseTotp,
+} from "../services/mfa-method-policy.js";
+import {
   getRpId, getRpName, getExpectedOrigin,
   signWebauthnChallenge, verifyWebauthnChallengeToken,
 } from "../services/mfa-webauthn.js";
@@ -1081,7 +1086,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       usedRecovery = success;
     }
     // 2. TOTP if user has an enrolled authenticator app.
-    else if (user.mfaMethod === "totp" && user.totpSecretEncrypted && /^\d{6}$/.test(trimmed)) {
+    else if (userMayUseTotp(user) && /^\d{6}$/.test(trimmed)) {
       try {
         const secret = decryptSecret(user.totpSecretEncrypted);
         success = verifyTotpCode(secret, trimmed);
@@ -1091,7 +1096,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     //    method. This prevents downgrade attacks where a user challenged for
     //    WebAuthn or TOTP could submit an emailed code from a stale or
     //    attacker-influenced channel.
-    else if (payload.mfaMethod === "email" && /^\d{6}$/.test(trimmed)) {
+    else if (challengeAllowsEmailOtp(payload) && /^\d{6}$/.test(trimmed)) {
       const [mfaRecord] = await db.select().from(mfaCodes)
         .where(and(eq(mfaCodes.userId, user.id), eq(mfaCodes.used, false), eq(mfaCodes.purpose, "login")))
         .orderBy(sql`created_at DESC`)
@@ -1202,7 +1207,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
     // Resend only applies to email-OTP challenges. Refusing here prevents
     // a downgrade attack against WebAuthn / TOTP challenges.
-    if (payload.mfaMethod && payload.mfaMethod !== "email") {
+    if (!challengeAllowsEmailResend(payload)) {
       return reply.status(400).send({ error: "Resend is only available for email codes." });
     }
 

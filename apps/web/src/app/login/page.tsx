@@ -52,7 +52,7 @@ export default function LoginPage() {
     try {
       const result = await login(email, password);
       if (result?.mfaPending) {
-        router.push(`/verify-mfa?token=${encodeURIComponent(result.mfaToken)}&returnTo=/`);
+        router.push(`/verify-mfa?token=${encodeURIComponent(result.mfaToken)}&method=${encodeURIComponent(result.mfaMethod || "email")}&returnTo=/`);
         return;
       }
       const roleDashboards: Record<string, string> = {

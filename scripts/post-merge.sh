@@ -30,6 +30,7 @@ CREATE INDEX IF NOT EXISTS password_reset_tokens_user_id_idx ON password_reset_t
 ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret_encrypted text;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_locked_until timestamp;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_failed_attempts integer DEFAULT 0 NOT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_failed_last_at timestamp;
 
 ALTER TABLE mfa_codes ADD COLUMN IF NOT EXISTS code_hash varchar(64);
 UPDATE mfa_codes SET code_hash = encode(sha256(code::bytea), 'hex')

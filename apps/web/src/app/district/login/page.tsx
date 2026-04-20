@@ -37,7 +37,7 @@ export default function DistrictLoginPage() {
         throw new Error(data.error || "Login failed");
       }
       if (data.mfaPending) {
-        router.push(`/verify-mfa?token=${encodeURIComponent(data.mfaToken)}&returnTo=/dashboard/district`);
+        router.push(`/verify-mfa?token=${encodeURIComponent(data.mfaToken)}&method=${encodeURIComponent(data.mfaMethod || "email")}&returnTo=/dashboard/district`);
         return;
       }
       await refreshToken();

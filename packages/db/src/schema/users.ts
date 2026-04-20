@@ -16,6 +16,7 @@ export const users = pgTable("users", {
   totpSecretEncrypted: text("totp_secret_encrypted"),
   mfaLockedUntil: timestamp("mfa_locked_until"),
   mfaFailedAttempts: integer("mfa_failed_attempts").default(0).notNull(),
+  mfaFailedLastAt: timestamp("mfa_failed_last_at"),
   avatarUrl: text("avatar_url"),
   googleId: varchar("google_id", { length: 255 }),
   appleId: varchar("apple_id", { length: 255 }),

@@ -9,15 +9,17 @@ import { startAuthentication } from "@simplewebauthn/browser";
 
 type MfaMethod = "email" | "totp" | "webauthn";
 
-function decodeMethod(token: string): MfaMethod {
+function decodeMethodFromJwt(token: string): MfaMethod | null {
   try {
     const part = token.split(".")[1];
-    if (!part) return "email";
-    const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+    if (!part) return null;
+    let b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    const json = JSON.parse(atob(b64));
     const m = json.mfaMethod;
     if (m === "totp" || m === "webauthn" || m === "email") return m;
-    return "email";
-  } catch { return "email"; }
+    return null;
+  } catch { return null; }
 }
 
 export default function VerifyMfaPage() {
@@ -40,7 +42,16 @@ function VerifyMfaContent() {
 
   const mfaToken = searchParams.get("token") || "";
   const returnTo = searchParams.get("returnTo") || "/";
-  const initialMethod = useMemo<MfaMethod>(() => decodeMethod(mfaToken), [mfaToken]);
+  const urlMethod = searchParams.get("method");
+  const initialMethod = useMemo<MfaMethod>(() => {
+    // Trust the URL hint first (set by the login page from the API response).
+    // Fall back to a robust JWT decode. Only default to "email" when both are
+    // missing AND no method was hinted — this avoids stranding WebAuthn / TOTP
+    // users on an email-OTP screen when the JWT decode happens to fail.
+    if (urlMethod === "totp" || urlMethod === "webauthn" || urlMethod === "email") return urlMethod;
+    const fromJwt = decodeMethodFromJwt(mfaToken);
+    return fromJwt ?? "email";
+  }, [mfaToken, urlMethod]);
 
   const [mode, setMode] = useState<MfaMethod | "recovery">(initialMethod);
   const [code, setCode] = useState("");

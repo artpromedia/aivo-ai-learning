@@ -4,6 +4,7 @@
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "totp_secret_encrypted" text;--> statement-breakpoint
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mfa_locked_until" timestamp;--> statement-breakpoint
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mfa_failed_attempts" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mfa_failed_last_at" timestamp;--> statement-breakpoint
 
 ALTER TABLE "mfa_codes" ADD COLUMN IF NOT EXISTS "code_hash" varchar(64);--> statement-breakpoint
 UPDATE "mfa_codes" SET "code_hash" = encode(sha256("code"::bytea), 'hex') WHERE "code_hash" IS NULL AND "code" IS NOT NULL;--> statement-breakpoint
