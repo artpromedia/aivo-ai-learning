@@ -179,12 +179,12 @@ export default function CollaborationPage() {
                     {seat.used}/{seat.max}
                   </span>
                 </div>
-                <p className="text-sm font-bold text-slate-700 capitalize mb-2">{key}</p>
+                <p className="text-sm font-bold text-slate-800 capitalize mb-2">{key}</p>
                 <button
                   onClick={() => !isFull && setShowInvite(key)}
                   disabled={isFull}
                   className={`w-full px-4 py-2 rounded-full text-sm font-bold transition ${
-                    isFull ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "text-white hover:opacity-90"
+                    isFull ? "vi-surface-soft vi-text-muted cursor-not-allowed" : "text-white hover:opacity-90"
                   }`}
                   style={isFull ? { minHeight: "44px" } : { background: `hsl(${hsl})`, minHeight: "44px" }}
                 >
@@ -228,7 +228,7 @@ export default function CollaborationPage() {
           )}
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">{t("email_address")}</label>
+            <label className="block text-sm font-bold text-slate-800 mb-1">{t("email_address")}</label>
             <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required
               className="w-full px-4 py-2.5 rounded-xl border vi-border focus:border-[hsl(var(--visual-primary))] focus:ring-2 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none font-body"
               style={{ minHeight: "44px" }} />
@@ -236,7 +236,7 @@ export default function CollaborationPage() {
 
           {showInvite === "caregiver" && (
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">{t("relationship")}</label>
+              <label className="block text-sm font-bold text-slate-800 mb-1">{t("relationship")}</label>
               <input type="text" value={inviteRelationship} onChange={(e) => setInviteRelationship(e.target.value)}
                 placeholder={t("relationship_placeholder")}
                 className="w-full px-4 py-2.5 rounded-xl border vi-border focus:border-[hsl(var(--visual-primary))] focus:ring-2 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none font-body"
@@ -247,14 +247,14 @@ export default function CollaborationPage() {
           {showInvite === "therapist" && (
             <>
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">{t("specialty")}</label>
+                <label className="block text-sm font-bold text-slate-800 mb-1">{t("specialty")}</label>
                 <input type="text" value={inviteSpecialty} onChange={(e) => setInviteSpecialty(e.target.value)}
                   placeholder={t("specialty_placeholder")}
                   className="w-full px-4 py-2.5 rounded-xl border vi-border focus:border-[hsl(var(--visual-primary))] focus:ring-2 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none font-body"
                   style={{ minHeight: "44px" }} />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">{t("credentials")}</label>
+                <label className="block text-sm font-bold text-slate-800 mb-1">{t("credentials")}</label>
                 <input type="text" value={inviteCredentials} onChange={(e) => setInviteCredentials(e.target.value)}
                   placeholder={t("credentials_placeholder")}
                   className="w-full px-4 py-2.5 rounded-xl border vi-border focus:border-[hsl(var(--visual-primary))] focus:ring-2 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none font-body"
@@ -270,7 +270,7 @@ export default function CollaborationPage() {
               {submitting ? t("sending") : t("send_invite")}
             </button>
             <button type="button" onClick={() => { setShowInvite(null); setError(""); }}
-              className="px-6 py-2.5 rounded-full bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition"
+              className="px-6 py-2.5 rounded-full vi-surface-soft vi-text-muted font-bold hover:bg-[hsl(var(--visual-border))] transition"
               style={{ minHeight: "44px" }}>
               {tCommon("cancel")}
             </button>
@@ -322,7 +322,7 @@ export default function CollaborationPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 text-xs rounded-full font-bold ${STATUS_COLORS[m.status] || "bg-slate-100 text-slate-500"}`}>
+                    <span className={`px-3 py-1 text-xs rounded-full font-bold ${STATUS_COLORS[m.status] || "vi-surface-soft vi-text-muted"}`}>
                       {m.status}
                     </span>
                     <button onClick={() => removeMember(m.id, m.memberType)}

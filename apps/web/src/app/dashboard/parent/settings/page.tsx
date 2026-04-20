@@ -260,7 +260,7 @@ export default function ParentSettingsPage() {
               <h3 className="text-sm font-semibold text-slate-800">{t("email_notifications")}</h3>
               <label className="flex items-center gap-3">
                 <input type="checkbox" checked={notifPrefs.emailEnabled} onChange={e => setNotifPrefs({ ...notifPrefs, emailEnabled: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
+                  className="w-4 h-4 rounded vi-border text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
                 <span className="text-sm vi-text-muted">{t("enable_email")}</span>
               </label>
               <div className="ml-7">
@@ -274,7 +274,7 @@ export default function ParentSettingsPage() {
               </div>
               <label className="flex items-center gap-3">
                 <input type="checkbox" checked={notifPrefs.emailMarketing} onChange={e => setNotifPrefs({ ...notifPrefs, emailMarketing: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
+                  className="w-4 h-4 rounded vi-border text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
                 <span className="text-sm vi-text-muted">{t("product_updates")}</span>
               </label>
             </div>
@@ -282,23 +282,23 @@ export default function ParentSettingsPage() {
               <h3 className="text-sm font-semibold text-slate-800">{t("push_notifications")}</h3>
               <label className="flex items-center gap-3">
                 <input type="checkbox" checked={notifPrefs.pushEnabled} onChange={e => setNotifPrefs({ ...notifPrefs, pushEnabled: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
+                  className="w-4 h-4 rounded vi-border text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
                 <span className="text-sm vi-text-muted">{t("enable_push")}</span>
               </label>
               <label className="flex items-center gap-3 ml-7">
                 <input type="checkbox" checked={notifPrefs.pushSessionReminders} onChange={e => setNotifPrefs({ ...notifPrefs, pushSessionReminders: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
+                  className="w-4 h-4 rounded vi-border text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
                 <span className="text-sm vi-text-muted">{t("session_reminders")}</span>
               </label>
               <label className="flex items-center gap-3 ml-7">
                 <input type="checkbox" checked={notifPrefs.pushProgressUpdates} onChange={e => setNotifPrefs({ ...notifPrefs, pushProgressUpdates: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
+                  className="w-4 h-4 rounded vi-border text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
                 <span className="text-sm vi-text-muted">{t("progress_updates")}</span>
               </label>
             </div>
             <label className="flex items-center gap-3">
               <input type="checkbox" checked={notifPrefs.smsEnabled} onChange={e => setNotifPrefs({ ...notifPrefs, smsEnabled: e.target.checked })}
-                className="w-4 h-4 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
+                className="w-4 h-4 rounded vi-border text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]" />
               <span className="text-sm vi-text-muted">{t("sms_notifications")}</span>
             </label>
             <button onClick={handleNotifSave}

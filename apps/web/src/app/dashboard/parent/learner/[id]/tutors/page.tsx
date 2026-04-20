@@ -48,7 +48,7 @@ export default function ParentLearnerTutorsPage() {
           {tutorEntries.map(([key, tutor]) => {
             const active = isActive(key);
             return (
-              <div key={key} className={`rounded-2xl border-2 overflow-hidden transition ${active ? "border-[hsl(var(--visual-primary)/0.3)] bg-white shadow-sm" : "vi-border bg-slate-50/50 opacity-60"}`}>
+              <div key={key} className={`rounded-2xl border-2 overflow-hidden transition ${active ? "border-[hsl(var(--visual-primary)/0.3)] bg-[hsl(var(--visual-surface))] shadow-sm" : "vi-border vi-surface-soft opacity-60"}`}>
                 <div className="p-5">
                   <div className="flex items-center gap-3 mb-3">
                     <Image src={tutor.avatar} alt={tutor.name} width={48} height={48} className="rounded-xl" />
@@ -64,7 +64,7 @@ export default function ParentLearnerTutorsPage() {
                     {active ? (
                       <span className="px-3 py-1 text-xs rounded-full bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] font-semibold">{tc("active")}</span>
                     ) : (
-                      <span className="px-3 py-1 text-xs rounded-full bg-slate-200 text-slate-500 font-semibold">{t("not_subscribed")}</span>
+                      <span className="px-3 py-1 text-xs rounded-full vi-surface-soft vi-text-muted font-semibold">{t("not_subscribed")}</span>
                     )}
                   </div>
                 </div>

@@ -177,7 +177,7 @@ export default function RecommendationsPage() {
                         {t("decline")}
                       </button>
                       <button onClick={() => setRespondingTo(null)}
-                        className="px-4 py-2 rounded-full bg-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-300 transition"
+                        className="px-4 py-2 rounded-full vi-surface-soft vi-text-muted font-bold text-sm hover:bg-[hsl(var(--visual-border))] transition"
                         style={{ minHeight: 44 }}>
                         {tCommon("cancel")}
                       </button>

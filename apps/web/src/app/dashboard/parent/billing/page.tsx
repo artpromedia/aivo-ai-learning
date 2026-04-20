@@ -273,7 +273,7 @@ export default function ParentBillingPage() {
                   <button
                     onClick={() => !isCurrent && handleUpgrade(plan.id)}
                     disabled={isCurrent || upgradeLoading === plan.id}
-                    className={`w-full mt-5 py-2.5 rounded-xl text-sm font-bold transition ${isCurrent ? "vi-surface-soft vi-text-muted cursor-default" : highlighted ? "bg-[hsl(var(--visual-primary))] text-white hover:bg-[hsl(var(--visual-primary)/0.9)] shadow-sm" : "bg-slate-900 text-white hover:bg-slate-800"} disabled:opacity-50`}
+                    className={`w-full mt-5 py-2.5 rounded-xl text-sm font-bold transition ${isCurrent ? "vi-surface-soft vi-text-muted cursor-default" : highlighted ? "bg-[hsl(var(--visual-primary))] text-white hover:bg-[hsl(var(--visual-primary)/0.9)] shadow-sm" : "bg-[hsl(var(--visual-text))] text-white hover:opacity-90"} disabled:opacity-50`}
                     style={{ minHeight: 44 }}
                   >
                     {isCurrent ? t("current_plan_label") : upgradeLoading === plan.id ? t("switching") : isFree ? t("downgrade_to_free") : t("subscribe")}
@@ -289,7 +289,7 @@ export default function ParentBillingPage() {
                 <h3 className="font-heading font-bold text-lg vi-text">{districtPlan.name}</h3>
                 <p className="text-sm vi-text-muted mt-1">{t("district_plan_desc")}</p>
               </div>
-              <a href="mailto:sales@aivo.com" className="px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition flex-shrink-0" style={{ minHeight: 44 }}>
+              <a href="mailto:sales@aivo.com" className="px-6 py-2.5 rounded-xl bg-[hsl(var(--visual-text))] text-white font-bold text-sm hover:opacity-90 transition flex-shrink-0" style={{ minHeight: 44 }}>
                 {t("contact_sales")}
               </a>
             </div>

@@ -127,7 +127,7 @@ export default function ParentLearnerSettingsPage() {
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
     <button onClick={() => onChange(!value)} aria-pressed={value}
-      className={`w-11 h-6 rounded-full transition relative flex-shrink-0 ${value ? "bg-[hsl(var(--visual-primary))]" : "bg-slate-200"}`}
+      className={`w-11 h-6 rounded-full transition relative flex-shrink-0 ${value ? "bg-[hsl(var(--visual-primary))]" : "bg-[hsl(var(--visual-border))]"}`}
       style={{ minWidth: 44, minHeight: 24 }}>
       <span className={`absolute w-5 h-5 rounded-full bg-white shadow top-0.5 transition ${value ? "left-[22px]" : "left-0.5"}`} />
     </button>
@@ -188,7 +188,7 @@ export default function ParentLearnerSettingsPage() {
                 <div className="flex gap-1">
                   {(["normal", "large", "extra_large"] as const).map(size => (
                     <button key={size} onClick={() => updateAccommodation("fontSize", size)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${settings.accommodations.fontSize === size ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${settings.accommodations.fontSize === size ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "vi-surface-soft vi-text-muted hover:bg-[hsl(var(--visual-border))]"}`}
                       style={{ minHeight: 32 }}>
                       {size === "normal" ? "A" : size === "large" ? "A+" : "A++"}
                     </button>
@@ -225,7 +225,7 @@ export default function ParentLearnerSettingsPage() {
                 <div className="flex gap-2 mt-2">
                   {(["morning", "afternoon", "evening"] as const).map(time => (
                     <button key={time} onClick={() => updateGoals("preferredSessionTime", time)}
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition capitalize ${settings.learningGoals.preferredSessionTime === time ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition capitalize ${settings.learningGoals.preferredSessionTime === time ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "vi-surface-soft vi-text-muted hover:bg-[hsl(var(--visual-border))]"}`}
                       style={{ minHeight: 44 }}>
                       {time === "morning" ? "☀️ " : time === "afternoon" ? "🌤️ " : "🌙 "}{time}
                     </button>
@@ -268,7 +268,7 @@ export default function ParentLearnerSettingsPage() {
                     { key: "long" as const, label: "Long (30 min)" },
                   ]).map(opt => (
                     <button key={opt.key} onClick={() => updateTutor("sessionLengthPreference", opt.key)}
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${settings.tutorPreferences.sessionLengthPreference === opt.key ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${settings.tutorPreferences.sessionLengthPreference === opt.key ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "vi-surface-soft vi-text-muted hover:bg-[hsl(var(--visual-border))]"}`}
                       style={{ minHeight: 44 }}>
                       {opt.label}
                     </button>

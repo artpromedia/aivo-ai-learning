@@ -206,7 +206,7 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
                           : "vi-text-muted hover:vi-surface-soft"
                       }`}
                     >
-                      <div className={`w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black text-white shrink-0 shadow-sm ${active ? "bg-[hsl(var(--visual-primary))]" : "bg-slate-400"}`}>
+                      <div className={`w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black text-white shrink-0 shadow-sm ${active ? "bg-[hsl(var(--visual-primary))]" : "bg-[hsl(var(--visual-text-muted))]"}`}>
                         {l.name.charAt(0)}
                       </div>
                       {sidebarExpanded && <span className="truncate">{l.name}</span>}
@@ -301,7 +301,7 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
                             onClick={() => { setActiveLearner(l); setShowLearnerSwitcher(false); router.push(`/dashboard/parent/learner/${l.id}`); }}
                             className={`flex items-center gap-3 w-full px-4 py-2.5 text-left text-sm ${active ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] font-bold" : "vi-text hover:vi-surface-soft"}`}
                           >
-                            <div className={`w-8 h-8 rounded-2xl flex items-center justify-center text-xs font-black text-white shrink-0 ${active ? "bg-[hsl(var(--visual-primary))]" : "bg-slate-400"}`}>
+                            <div className={`w-8 h-8 rounded-2xl flex items-center justify-center text-xs font-black text-white shrink-0 ${active ? "bg-[hsl(var(--visual-primary))]" : "bg-[hsl(var(--visual-text-muted))]"}`}>
                               {l.name.charAt(0)}
                             </div>
                             <div>
@@ -349,7 +349,7 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
 
         <nav
           aria-label="Bottom navigation"
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[hsl(var(--visual-surface)/0.95)] backdrop-blur border-t-2 vi-border safe-area-bottom shadow-[0_-4px_20px_rgba(124,58,237,0.08)]"
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[hsl(var(--visual-surface)/0.95)] backdrop-blur border-t-2 vi-border safe-area-bottom shadow-[0_-4px_20px_hsl(var(--visual-primary)/0.08)]"
         >
           <div className="flex items-center justify-around h-16 px-2">
             {BOTTOM_TABS.map(tab => {

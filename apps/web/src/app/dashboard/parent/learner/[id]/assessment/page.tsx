@@ -199,7 +199,7 @@ export default function ParentAssessmentPage() {
     return (
       <div className="min-h-screen vi-bg flex items-center justify-center px-4 py-8">
         <div className="max-w-lg w-full">
-          <section className="vi-card p-8 md:p-10 text-center bg-gradient-to-br from-white via-[hsl(262_83%_58%/0.04)] to-[hsl(43_100%_50%/0.06)] border-2 border-[hsl(262_83%_58%/0.15)] relative overflow-hidden">
+          <section className="vi-card p-8 md:p-10 text-center border-2 border-[hsl(var(--visual-primary)/0.15)] bg-[hsl(var(--visual-surface))] relative overflow-hidden">
             <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[hsl(43_100%_50%/0.18)] blur-2xl" aria-hidden />
             <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-[hsl(262_83%_58%/0.18)] blur-2xl" aria-hidden />
             <div className="relative space-y-5">
@@ -208,13 +208,13 @@ export default function ParentAssessmentPage() {
               </div>
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(142_71%_45%)] mb-2">All Done</p>
-                <h1 className="text-2xl font-extrabold text-slate-900">{t("already_complete_title")}</h1>
-                <p className="text-slate-600 mt-2">{t("already_complete_desc", { name: learnerName || t("this_learner") })}</p>
+                <h1 className="text-2xl font-extrabold vi-text">{t("already_complete_title")}</h1>
+                <p className="vi-text-muted mt-2">{t("already_complete_desc", { name: learnerName || t("this_learner") })}</p>
               </div>
 
-              <div className="vi-card p-4 bg-white text-left">
+              <div className="vi-card p-4 bg-[hsl(var(--visual-surface))] text-left">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(262_83%_58%)]">{t("functioning_level_label")}</p>
-                <p className="text-lg font-extrabold text-slate-900 mt-1">
+                <p className="text-lg font-extrabold vi-text mt-1">
                   {learnerFunctioningLevel.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
                 </p>
               </div>
@@ -224,7 +224,7 @@ export default function ParentAssessmentPage() {
                   <IconWell color="sel" size="sm"><Compass className="w-5 h-5" strokeWidth={2.5} /></IconWell>
                   <div className="flex-1">
                     <p className="text-sm font-extrabold text-[hsl(43_100%_50%)]">{t("next_step_baseline")}</p>
-                    <p className="text-xs text-slate-600 mt-1">{t("baseline_child_desc", { name: learnerName || t("your_child") })}</p>
+                    <p className="text-xs vi-text-muted mt-1">{t("baseline_child_desc", { name: learnerName || t("your_child") })}</p>
                   </div>
                 </div>
               </div>
@@ -246,7 +246,7 @@ export default function ParentAssessmentPage() {
                 </button>
                 <button
                   onClick={() => router.push("/dashboard/parent")}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border-2 border-slate-200 text-slate-700 font-extrabold hover:border-slate-300 transition-colors"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[hsl(var(--visual-surface))] border-2 vi-border vi-text font-extrabold hover:border-[hsl(var(--visual-primary)/0.3)] transition-colors"
                   style={{ minHeight: "48px" }}
                 >
                   {t("back_to_dashboard")}
@@ -263,7 +263,7 @@ export default function ParentAssessmentPage() {
     return (
       <div className="min-h-screen vi-bg flex items-center justify-center px-4 py-8">
         <div className="max-w-lg w-full">
-          <section className="vi-card p-8 md:p-10 text-center bg-gradient-to-br from-white via-[hsl(262_83%_58%/0.04)] to-[hsl(43_100%_50%/0.06)] border-2 border-[hsl(262_83%_58%/0.15)] relative overflow-hidden">
+          <section className="vi-card p-8 md:p-10 text-center border-2 border-[hsl(var(--visual-primary)/0.15)] bg-[hsl(var(--visual-surface))] relative overflow-hidden">
             <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[hsl(43_100%_50%/0.18)] blur-2xl" aria-hidden />
             <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-[hsl(262_83%_58%/0.18)] blur-2xl" aria-hidden />
             <div className="relative space-y-5">
@@ -272,17 +272,17 @@ export default function ParentAssessmentPage() {
               </div>
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(142_71%_45%)] mb-2">Thank You</p>
-                <h1 className="text-2xl font-extrabold text-slate-900">{t("assessment_complete_title")}</h1>
-                <p className="text-slate-600 mt-2">{t("assessment_thank_you")}</p>
+                <h1 className="text-2xl font-extrabold vi-text">{t("assessment_complete_title")}</h1>
+                <p className="vi-text-muted mt-2">{t("assessment_thank_you")}</p>
               </div>
 
               {result.functioningLevel && (
-                <div className="vi-card p-4 bg-white text-left">
+                <div className="vi-card p-4 bg-[hsl(var(--visual-surface))] text-left">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(262_83%_58%)]">{t("recommended_level")}</p>
-                  <p className="text-lg font-extrabold text-slate-900 mt-1">
+                  <p className="text-lg font-extrabold vi-text mt-1">
                     {(result.functioningLevel.level || "").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
                   </p>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs vi-text-muted mt-1">
                     {t("confidence")}: {(() => {
                       const c = Number(result.functioningLevel.confidence) || 0;
                       const pct = c <= 1 ? c * 100 : c;
@@ -297,7 +297,7 @@ export default function ParentAssessmentPage() {
                   <IconWell color="sel" size="sm"><Compass className="w-5 h-5" strokeWidth={2.5} /></IconWell>
                   <div className="flex-1">
                     <p className="text-sm font-extrabold text-[hsl(43_100%_50%)]">{t("next_step_baseline")}</p>
-                    <p className="text-xs text-slate-600 mt-1">{t("baseline_generic_desc")}</p>
+                    <p className="text-xs vi-text-muted mt-1">{t("baseline_generic_desc")}</p>
                   </div>
                 </div>
               </div>
@@ -318,30 +318,30 @@ export default function ParentAssessmentPage() {
 
   return (
     <div className="min-h-screen vi-bg">
-      <header className="bg-white border-b border-slate-200/60 sticky top-0 z-20">
+      <header className="bg-[hsl(var(--visual-surface))] border-b vi-border sticky top-0 z-20">
         <div className="max-w-3xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push(`/dashboard/parent`)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-bold text-slate-500 hover:bg-slate-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%)]"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-bold vi-text-muted hover:vi-surface-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%)]"
             >
               <ArrowLeft className="w-4 h-4" /> {tc("back")}
             </button>
             <div className="hidden sm:flex items-center gap-2">
               <IconWell color="primary" size="sm"><Sparkles className="w-5 h-5" strokeWidth={2.5} /></IconWell>
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Parent Assessment</p>
-                <p className="text-sm font-extrabold text-slate-900">
+                <p className="text-[11px] font-bold uppercase tracking-wider vi-text-muted opacity-70">Parent Assessment</p>
+                <p className="text-sm font-extrabold vi-text">
                   {learnerName ? `Tell us about ${learnerName}` : "Tell us about your child"}
                 </p>
               </div>
             </div>
           </div>
-          <div className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full whitespace-nowrap">
+          <div className="text-xs font-bold vi-text-muted vi-surface-soft px-3 py-1.5 rounded-full whitespace-nowrap">
             {answeredCount} / {TOTAL_QUESTIONS}
           </div>
         </div>
-        <div className="h-1.5 bg-slate-100">
+        <div className="h-1.5 vi-surface-soft">
           <div
             className="h-full bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(340_82%_52%)] rounded-r-full transition-all duration-300"
             style={{ width: `${progress}%` }}
@@ -350,13 +350,13 @@ export default function ParentAssessmentPage() {
       </header>
 
       {showCelebration && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[hsl(var(--visual-text)/0.30)] backdrop-blur-sm">
           <div className="vi-card p-8 text-center max-w-sm mx-4 animate-in fade-in zoom-in border-2" style={{ borderColor: "hsl(142 71% 45% / 0.3)" }}>
             <div className="mx-auto inline-flex mb-3">
               <IconWell color="science" size="md"><Check className="w-7 h-7" strokeWidth={3} /></IconWell>
             </div>
-            <h3 className="text-xl font-extrabold text-slate-900">{t("section_complete")}</h3>
-            <p className="text-sm text-slate-500 mt-1">{t("moving_next")}</p>
+            <h3 className="text-xl font-extrabold vi-text">{t("section_complete")}</h3>
+            <p className="text-sm vi-text-muted mt-1">{t("moving_next")}</p>
           </div>
         </div>
       )}
@@ -387,7 +387,7 @@ export default function ParentAssessmentPage() {
                 {isComplete ? (
                   <Check className="w-3.5 h-3.5" strokeWidth={3} aria-hidden />
                 ) : (
-                  <span className={`text-[10px] font-extrabold tabular-nums ${isCurrent ? "" : "text-slate-400"}`}>{catAnswered}/{catTotal}</span>
+                  <span className={`text-[10px] font-extrabold tabular-nums ${isCurrent ? "" : "vi-text-muted opacity-70"}`}>{catAnswered}/{catTotal}</span>
                 )}
               </button>
             );
@@ -408,19 +408,19 @@ export default function ParentAssessmentPage() {
                 <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: category.color }}>
                   {category.label}
                 </p>
-                <p className="text-xs text-slate-400 font-semibold">
+                <p className="text-xs vi-text-muted opacity-70 font-semibold">
                   {t("question_of", { current: currentQuestionIdx + 1, total: category.questions.length })}
                 </p>
               </div>
             </div>
 
             <div>
-              <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 leading-snug">
+              <h2 className="text-xl md:text-2xl font-extrabold vi-text leading-snug">
                 {question.questionText}
               </h2>
               {question.helpText && (
-                <p className="mt-2 text-sm text-slate-500 italic flex items-start gap-1.5">
-                  <HelpCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-400" />
+                <p className="mt-2 text-sm vi-text-muted italic flex items-start gap-1.5">
+                  <HelpCircle className="w-4 h-4 mt-0.5 flex-shrink-0 vi-text-muted opacity-70" />
                   <span>{question.helpText}</span>
                 </p>
               )}
@@ -442,11 +442,11 @@ export default function ParentAssessmentPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-between pt-4 border-t vi-border">
               <button
                 onClick={goPrev}
                 disabled={currentCategoryIdx === 0 && currentQuestionIdx === 0}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-bold text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-bold vi-text-muted hover:vi-surface-soft transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--visual-primary)/0.4)]"
               >
                 <ChevronLeft className="w-4 h-4" /> {t("previous")}
               </button>
@@ -475,7 +475,7 @@ export default function ParentAssessmentPage() {
 
         <div className="vi-card p-4 flex items-start gap-3" style={{ background: "hsl(43 100% 50% / 0.08)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
           <IconWell color="sel" size="sm"><Sparkles className="w-5 h-5" strokeWidth={2.5} /></IconWell>
-          <p className="text-sm text-slate-700">
+          <p className="text-sm text-slate-800">
             Your answers help your tutors meet {learnerName || "your child"} where they are.{" "}
             <span className="font-extrabold">You can edit anything later.</span>
           </p>
@@ -578,7 +578,7 @@ function QuestionInput({
       <div className="pt-2">
         <div className="flex items-center gap-2 mb-3">
           <Heart className="w-4 h-4 text-[hsl(43_100%_50%)] fill-[hsl(43_100%_50%)]" aria-hidden />
-          <p className="text-sm font-bold text-slate-900">How often does this feel true?</p>
+          <p className="text-sm font-bold vi-text">How often does this feel true?</p>
         </div>
         <div className="flex items-center justify-between gap-1" role="radiogroup">
           {Array.from({ length: (q.scaleMax ?? 5) - (q.scaleMin ?? 1) + 1 }).map((_, i) => {
@@ -604,8 +604,8 @@ function QuestionInput({
         </div>
         {(q.scaleLabels?.min || q.scaleLabels?.max) && (
           <div className="flex justify-between mt-2 px-2">
-            <span className="text-xs text-slate-400 font-semibold">{q.scaleLabels?.min}</span>
-            <span className="text-xs text-slate-400 font-semibold">{q.scaleLabels?.max}</span>
+            <span className="text-xs vi-text-muted opacity-70 font-semibold">{q.scaleLabels?.min}</span>
+            <span className="text-xs vi-text-muted opacity-70 font-semibold">{q.scaleLabels?.max}</span>
           </div>
         )}
       </div>
@@ -619,7 +619,7 @@ function QuestionInput({
         onChange={(e) => onTextChange(e.target.value)}
         placeholder={t("type_answer")}
         rows={4}
-        className="w-full rounded-2xl border-2 border-slate-200 p-4 text-sm text-slate-800 placeholder-slate-300 focus:outline-none resize-none transition-all"
+        className="w-full rounded-2xl border-2 vi-border p-4 text-sm text-slate-800 placeholder-[hsl(var(--visual-text-muted))] focus:outline-none resize-none transition-all"
         onFocus={(e) => { e.currentTarget.style.borderColor = categoryColor; }}
         onBlur={(e) => { e.currentTarget.style.borderColor = "rgb(226 232 240)"; }}
       />

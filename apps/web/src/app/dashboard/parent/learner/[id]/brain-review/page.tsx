@@ -868,7 +868,7 @@ export default function BrainReviewPage() {
                             {!isAlreadyResolved && (
                               <button
                                 onClick={() => setAccommodationToggles(prev => ({ ...prev, [a.accommodation]: !isOn }))}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isOn ? "bg-[hsl(var(--visual-science))]" : "bg-slate-300"}`}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isOn ? "bg-[hsl(var(--visual-science))]" : "bg-[hsl(var(--visual-border))]"}`}
                               >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isOn ? "translate-x-6" : "translate-x-1"}`} />
                               </button>
@@ -966,7 +966,7 @@ export default function BrainReviewPage() {
                       {!isAlreadyResolved && (
                         <button
                           onClick={() => setTutorToggles(prev => ({ ...prev, [td.tutor_key]: !isOn }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${isOn ? "bg-[hsl(var(--visual-primary))]" : "bg-slate-300"}`}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${isOn ? "bg-[hsl(var(--visual-primary))]" : "bg-[hsl(var(--visual-border))]"}`}
                         >
                           <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isOn ? "translate-x-6" : "translate-x-1"}`} />
                         </button>
@@ -1062,7 +1062,7 @@ export default function BrainReviewPage() {
                   type="checkbox"
                   checked={consentChecked}
                   onChange={(e) => setConsentChecked(e.target.checked)}
-                  className="mt-0.5 w-5 h-5 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]"
+                  className="mt-0.5 w-5 h-5 rounded vi-border text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]"
                 />
                 <span className="text-sm text-slate-800 leading-relaxed">
                   I consent to AIVO creating a personalized learning profile (Brain) for {review.learner_name} based on the assessment data shown above.
@@ -1162,7 +1162,7 @@ export default function BrainReviewPage() {
                     value={startOverReason}
                     onChange={(e) => setStartOverReason(e.target.value)}
                     placeholder="e.g., 'She was having a bad day.' 'The environment was too distracting.'"
-                    className="w-full border vi-border rounded-xl p-3 text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-slate-400 font-body"
+                    className="w-full border vi-border rounded-xl p-3 text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--visual-primary)/0.4)] font-body"
                   />
                 </div>
                 <div className="flex gap-3">
@@ -1384,7 +1384,7 @@ function PreCloneReview({
                 type="checkbox"
                 checked={consentChecked}
                 onChange={(e) => setConsentChecked(e.target.checked)}
-                className="mt-0.5 w-5 h-5 rounded border-slate-300 text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]"
+                className="mt-0.5 w-5 h-5 rounded vi-border text-[hsl(var(--visual-primary))] focus:ring-[hsl(var(--visual-primary))]"
               />
               <span className="text-sm text-slate-800 leading-relaxed">
                 I consent to AIVO creating a personalized learning profile (Brain) for {learnerName} based on the assessment data shown above.
