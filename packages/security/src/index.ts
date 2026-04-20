@@ -92,6 +92,19 @@ export {
 } from "./flags.js";
 
 export {
+  encryptSecret,
+  decryptSecret,
+  hashOtpCode,
+  timingSafeEqualHex,
+  generateRecoveryCodes,
+  canonicalizeRecoveryCode,
+  looksLikeRecoveryCode,
+  _resetMfaKeyCache,
+  type RecoveryHasher,
+  type RecoveryVerifier,
+} from "./mfa-crypto.js";
+
+export {
   SURFACE_COOKIE_NAME,
   getSurfaceSecret,
   signSurfaceCookieValue,

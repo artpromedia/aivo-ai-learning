@@ -1,214 +1,136 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/providers/auth-provider";
-import { useTranslations } from "next-intl";
+import { AuthenticatorTab } from "./mfa/AuthenticatorTab";
+import { PasskeysTab } from "./mfa/PasskeysTab";
+import { RecoveryCodesTab } from "./mfa/RecoveryCodesTab";
 
-export function MfaSettings({ accentColor = "violet" }: { accentColor?: string }) {
-  const { user, accessToken } = useAuth();
-  const t = useTranslations("parent");
-  const tc = useTranslations("common");
+type Tab = "authenticator" | "passkeys" | "recovery";
 
-  const [mfaEnabled, setMfaEnabled] = useState(false);
-  const [mfaForced, setMfaForced] = useState(false);
-  const [mfaLoading, setMfaLoading] = useState(false);
-  const [mfaMsg, setMfaMsg] = useState("");
-  const [mfaErr, setMfaErr] = useState("");
-  const [mfaPassword, setMfaPassword] = useState("");
-  const [showMfaConfirm, setShowMfaConfirm] = useState(false);
-  const [mfaEnableToken, setMfaEnableToken] = useState("");
-  const [mfaEnableCode, setMfaEnableCode] = useState("");
-  const [mfaResendCooldown, setMfaResendCooldown] = useState(0);
-  const mfaCooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+type MfaStatus = {
+  mfaEnabled: boolean;
+  mfaForced: boolean;
+  mfaMethod: "email" | "totp" | "webauthn" | null;
+  webauthnCount: number;
+  recoveryRemaining: number;
+  strongMfaEnabled: boolean;
+};
 
-  useEffect(() => {
-    return () => { if (mfaCooldownRef.current) clearInterval(mfaCooldownRef.current); };
-  }, []);
+const TAB_LABELS: Record<Tab, string> = {
+  authenticator: "Authenticator app",
+  passkeys: "Passkeys",
+  recovery: "Recovery codes",
+};
 
-  useEffect(() => {
+export function MfaSettings(_props: { accentColor?: string } = {}) {
+  const { accessToken } = useAuth();
+  const [tab, setTab] = useState<Tab>("authenticator");
+  const [status, setStatus] = useState<MfaStatus | null>(null);
+  const [pendingCodes, setPendingCodes] = useState<string[] | null>(null);
+
+  const refresh = useCallback(async () => {
     if (!accessToken) return;
-    fetch("/api/auth/mfa/status", { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then(r => r.json())
-      .then(data => { setMfaEnabled(data.mfaEnabled); setMfaForced(data.mfaForced); })
-      .catch(() => {});
+    try {
+      const r = await fetch("/api/auth/mfa/status", { headers: { Authorization: `Bearer ${accessToken}` } });
+      const d = await r.json();
+      if (r.ok) {
+        setStatus({
+          mfaEnabled: !!d.mfaEnabled,
+          mfaForced: !!d.mfaForced,
+          mfaMethod: d.mfaMethod ?? null,
+          webauthnCount: d.webauthnCount ?? 0,
+          recoveryRemaining: d.recoveryRemaining ?? 0,
+          strongMfaEnabled: !!d.strongMfaEnabled,
+        });
+      }
+    } catch {}
   }, [accessToken]);
 
-  const handleMfaToggle = async () => {
-    if (!mfaPassword) return;
-    setMfaLoading(true);
-    setMfaMsg("");
-    setMfaErr("");
-    try {
-      if (mfaEnabled) {
-        const res = await fetch("/api/auth/mfa/disable", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-          body: JSON.stringify({ password: mfaPassword }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setMfaEnabled(false);
-          setMfaMsg(t("mfa_disabled"));
-          setShowMfaConfirm(false);
-          setMfaPassword("");
-        } else {
-          setMfaErr(data.error || tc("error"));
-        }
-      } else {
-        const res = await fetch("/api/auth/mfa/enable", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-          body: JSON.stringify({ password: mfaPassword }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setMfaEnableToken(data.mfaToken);
-          setMfaPassword("");
-        } else {
-          setMfaErr(data.error || tc("error"));
-        }
-      }
-    } catch { setMfaErr(tc("error")); }
-    setMfaLoading(false);
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const onRecoveryCodes = (codes: string[]) => {
+    setPendingCodes(codes);
+    setTab("recovery");
   };
 
-  const handleMfaConfirmEnable = async () => {
-    if (mfaEnableCode.length !== 6) return;
-    setMfaLoading(true);
-    setMfaMsg("");
-    setMfaErr("");
-    try {
-      const res = await fetch("/api/auth/mfa/confirm-enable", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mfaToken: mfaEnableToken, code: mfaEnableCode }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMfaEnabled(true);
-        setMfaMsg(t("mfa_enabled"));
-        setMfaEnableToken("");
-        setMfaEnableCode("");
-        setShowMfaConfirm(false);
-      } else {
-        setMfaErr(data.error || tc("error"));
-        setMfaEnableCode("");
-      }
-    } catch { setMfaErr(tc("error")); }
-    setMfaLoading(false);
-  };
-
-  const handleMfaResendEnable = async () => {
-    if (mfaResendCooldown > 0) return;
-    setMfaErr("");
-    try {
-      const res = await fetch("/api/auth/mfa/resend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mfaToken: mfaEnableToken }),
-      });
-      if (res.ok) {
-        setMfaMsg(t("mfa_code_resent") || "Code resent.");
-        setMfaResendCooldown(30);
-        if (mfaCooldownRef.current) clearInterval(mfaCooldownRef.current);
-        mfaCooldownRef.current = setInterval(() => setMfaResendCooldown(v => { if (v <= 1) { if (mfaCooldownRef.current) clearInterval(mfaCooldownRef.current); mfaCooldownRef.current = null; return 0; } return v - 1; }), 1000);
-      } else {
-        const data = await res.json();
-        setMfaErr(data.error || "Resend failed");
-      }
-    } catch { setMfaErr(t("network_error")); }
-  };
-
-  const colorClasses = {
-    violet: { bg: "bg-violet-600", hover: "hover:bg-violet-700", text: "text-violet-600", badge: "bg-violet-100 text-violet-700" },
-    blue: { bg: "bg-blue-600", hover: "hover:bg-blue-700", text: "text-blue-600", badge: "bg-blue-100 text-blue-700" },
-    pink: { bg: "bg-pink-600", hover: "hover:bg-pink-700", text: "text-pink-600", badge: "bg-pink-100 text-pink-700" },
-    green: { bg: "bg-green-600", hover: "hover:bg-green-700", text: "text-green-600", badge: "bg-green-100 text-green-700" },
-  }[accentColor] || { bg: "bg-violet-600", hover: "hover:bg-violet-700", text: "text-violet-600", badge: "bg-violet-100 text-violet-700" };
+  const activeMethod = status?.mfaMethod ?? "email";
+  const methodLabel =
+    activeMethod === "webauthn" ? "Passkey" :
+    activeMethod === "totp" ? "Authenticator app" :
+    status?.mfaEnabled ? "Email code" : "Off";
+  const methodTone =
+    !status?.mfaEnabled ? "bg-slate-100 text-slate-500" :
+    activeMethod === "webauthn" ? "bg-emerald-100 text-emerald-700" :
+    activeMethod === "totp" ? "bg-violet-100 text-violet-700" :
+    "bg-amber-100 text-amber-700";
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-start justify-between mb-4 gap-3">
         <div>
-          <h2 className="font-heading font-bold text-lg text-slate-900">{t("two_factor_auth")}</h2>
-          <p className="text-sm text-slate-500">{t("mfa_description")}</p>
+          <h2 className="font-heading font-bold text-lg text-slate-900">Two-factor authentication</h2>
+          <p className="text-sm text-slate-500">Protect your account with a second factor at sign-in.</p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-bold ${mfaEnabled ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
-          {mfaEnabled ? tc("on") : tc("off")}
+        <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${methodTone}`}>
+          {methodLabel}
         </span>
       </div>
-      {mfaForced && (
-        <div role="note" className="flex items-start gap-2 p-3 mb-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800">
+
+      {status?.mfaForced && (
+        <div role="note" className="flex items-start gap-2 p-3 mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800">
           <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
           </svg>
-          <p className="text-xs font-semibold">
-            {t("mfa_required_for_role") || "Two-factor authentication is required for your role and cannot be disabled."}
-          </p>
+          <p className="text-xs font-semibold">Two-factor authentication is required for your role and cannot be turned off.</p>
         </div>
       )}
-      {mfaMsg && <p className="text-sm text-green-600 mb-3">{mfaMsg}</p>}
-      {mfaErr && <p className="text-sm text-red-600 mb-3">{mfaErr}</p>}
 
-      {mfaEnableToken ? (
-        <div className="space-y-3">
-          <p className="text-sm text-slate-600">{t("mfa_enter_code")}</p>
-          <input
-            type="text"
-            inputMode="numeric"
-            maxLength={6}
-            value={mfaEnableCode}
-            onChange={e => setMfaEnableCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="000000"
-            className="w-full text-center text-2xl tracking-[0.5em] font-bold px-4 py-3 rounded-xl border border-slate-200 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none"
+      <div role="tablist" aria-label="MFA settings" className="flex gap-1 border-b border-slate-200 mb-4 overflow-x-auto">
+        {(Object.keys(TAB_LABELS) as Tab[]).map(t => (
+          <button
+            key={t}
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 text-sm font-semibold whitespace-nowrap border-b-2 -mb-px transition ${
+              tab === t
+                ? "border-violet-600 text-violet-700"
+                : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {TAB_LABELS[t]}
+            {t === "passkeys" && status && status.webauthnCount > 0 && (
+              <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700">{status.webauthnCount}</span>
+            )}
+            {t === "recovery" && status && (
+              <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700">{status.recoveryRemaining}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      <div role="tabpanel">
+        {tab === "authenticator" && (
+          <AuthenticatorTab
+            active={activeMethod === "totp"}
+            onChanged={refresh}
+            onRecoveryCodes={onRecoveryCodes}
           />
-          <div className="flex gap-3">
-            <button onClick={handleMfaConfirmEnable} disabled={mfaLoading || mfaEnableCode.length !== 6}
-              className={`flex-1 py-2.5 rounded-xl ${colorClasses.bg} text-white font-bold text-sm ${colorClasses.hover} transition disabled:opacity-50`}>
-              {mfaLoading ? tc("saving") : tc("confirm")}
-            </button>
-            <button onClick={handleMfaResendEnable} disabled={mfaResendCooldown > 0}
-              className={`px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold ${colorClasses.text} disabled:opacity-50`}>
-              {mfaResendCooldown > 0 ? `${tc("wait")} ${mfaResendCooldown}s` : (t("mfa_resend") || "Resend code")}
-            </button>
-            <button onClick={() => { setMfaEnableToken(""); setMfaEnableCode(""); setShowMfaConfirm(false); }}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">
-              {tc("cancel")}
-            </button>
-          </div>
-        </div>
-      ) : !showMfaConfirm ? (
-        <button
-          onClick={() => setShowMfaConfirm(true)}
-          disabled={mfaForced && mfaEnabled}
-          className={`px-6 py-2.5 rounded-xl font-bold text-sm transition disabled:opacity-50 ${
-            mfaEnabled
-              ? "border border-red-200 text-red-600 hover:bg-red-50"
-              : `${colorClasses.bg} text-white ${colorClasses.hover}`
-          }`}
-        >
-          {mfaEnabled ? t("disable_mfa") : t("enable_mfa")}
-        </button>
-      ) : (
-        <div className="space-y-3">
-          <input
-            type="password"
-            value={mfaPassword}
-            onChange={e => setMfaPassword(e.target.value)}
-            placeholder={t("enter_password")}
-            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none"
+        )}
+        {tab === "passkeys" && (
+          <PasskeysTab
+            strongMfaEnabled={!!status?.strongMfaEnabled}
+            onChanged={refresh}
+            onRecoveryCodes={onRecoveryCodes}
           />
-          <div className="flex gap-3">
-            <button onClick={handleMfaToggle} disabled={mfaLoading || !mfaPassword}
-              className={`flex-1 py-2.5 rounded-xl ${colorClasses.bg} text-white font-bold text-sm ${colorClasses.hover} transition disabled:opacity-50`}>
-              {mfaLoading ? tc("saving") : tc("confirm")}
-            </button>
-            <button onClick={() => { setShowMfaConfirm(false); setMfaPassword(""); }}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">
-              {tc("cancel")}
-            </button>
-          </div>
-        </div>
-      )}
+        )}
+        {tab === "recovery" && (
+          <RecoveryCodesTab
+            injectedCodes={pendingCodes}
+            onCodesShown={() => setPendingCodes(null)}
+          />
+        )}
+      </div>
     </div>
   );
 }

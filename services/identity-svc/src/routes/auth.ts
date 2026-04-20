@@ -1,10 +1,33 @@
 import { FastifyInstance } from "fastify";
-import { users, sessions, tenants, learners, mfaCodes, passwordResetTokens } from "@aivo/db";
-import { signJWT, verifyJWT } from "@aivo/security";
-import { eq, and, sql, lt } from "drizzle-orm";
+import { users, sessions, tenants, learners, mfaCodes, passwordResetTokens, webauthnCredentials, mfaRecoveryCodes, auditEvents } from "@aivo/db";
+import {
+  signJWT, verifyJWT,
+  ADMIN_ENTERPRISE,
+  encryptSecret, decryptSecret,
+  hashOtpCode, timingSafeEqualHex,
+  looksLikeRecoveryCode,
+} from "@aivo/security";
+import { eq, and, sql, lt, isNull } from "drizzle-orm";
 import crypto from "crypto";
 import argon2 from "argon2";
+import QRCode from "qrcode";
 import { setSurfaceCookie, clearSurfaceCookie } from "../lib/surface-cookie.js";
+import {
+  generateRegistrationOptions, verifyRegistrationResponse,
+  generateAuthenticationOptions, verifyAuthenticationResponse,
+} from "@simplewebauthn/server";
+import { generateTotpSecret, verifyTotpCode, buildOtpauthUrl } from "../services/mfa-totp.js";
+import { initiateMfa, pickMfaMethod, type MfaMethod } from "../services/mfa-initiate.js";
+import {
+  regenerateRecoveryCodes, countActiveRecoveryCodes, redeemRecoveryCode,
+} from "../services/mfa-recovery.js";
+import {
+  isMfaLocked, recordMfaFailure, clearMfaFailures, lockoutSecondsRemaining,
+} from "../services/mfa-lockout.js";
+import {
+  getRpId, getRpName, getExpectedOrigin,
+  signWebauthnChallenge, verifyWebauthnChallengeToken,
+} from "../services/mfa-webauthn.js";
 
 async function hashPassword(password: string): Promise<string> {
   return argon2.hash(password);
@@ -165,7 +188,7 @@ async function createAndSendMfaCode(db: any, userId: string, email: string, name
   const code = generateMfaCode();
   const [mfaRecord] = await db.insert(mfaCodes).values({
     userId,
-    code,
+    codeHash: hashOtpCode(code),
     purpose,
     expiresAt: new Date(Date.now() + 10 * 60 * 1000),
   }).returning();
@@ -183,8 +206,24 @@ async function createAndSendMfaCode(db: any, userId: string, email: string, name
   return mfaRecord.id;
 }
 
-async function signMfaToken(userId: string, email: string): Promise<string> {
-  return signJWT({ sub: userId, tenantId: "", role: "", email, purpose: "mfa" } as any, "15m");
+async function signMfaToken(userId: string, email: string, method: MfaMethod = "email"): Promise<string> {
+  return signJWT({ sub: userId, tenantId: "", role: "", email, purpose: "mfa", mfaMethod: method } as any, "15m");
+}
+
+/**
+ * Common MFA challenge initiation used by every login flow. Picks the
+ * strongest enrolled factor (passkey when STRONG_MFA, then TOTP, then email)
+ * and only side-effects (sends an email OTP) when the method is "email".
+ */
+async function startMfaForLogin(
+  db: any,
+  user: { id: string; email: string; name: string; mfaMethod: string | null }
+): Promise<{ mfaToken: string; mfaMethod: MfaMethod }> {
+  const { mfaToken, mfaMethod } = await initiateMfa(db, user);
+  if (mfaMethod === "email") {
+    await createAndSendMfaCode(db, user.id, user.email, user.name);
+  }
+  return { mfaToken, mfaMethod };
 }
 
 const MFA_FORCED_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
@@ -316,12 +355,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         await db.update(users).set({ mfaEnabled: true }).where(eq(users.id, user.id));
       }
       try {
-        await createAndSendMfaCode(db, user.id, user.email!, user.name);
+        const challenge = await startMfaForLogin(db, { id: user.id, email: user.email!, name: user.name, mfaMethod: user.mfaMethod });
+        return { mfaPending: true, mfaToken: challenge.mfaToken, mfaMethod: challenge.mfaMethod };
       } catch {
         return reply.status(502).send({ error: "Failed to send verification code. Please try again." });
       }
-      const mfaToken = await signMfaToken(user.id, user.email!);
-      return { mfaPending: true, mfaToken, mfaMethod: "email" };
     }
 
     const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
@@ -417,12 +455,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         await db.update(users).set({ mfaEnabled: true, mfaMethod: "email" }).where(eq(users.id, user.id));
       }
       try {
-        await createAndSendMfaCode(db, user.id, user.email!, user.name);
+        const challenge = await startMfaForLogin(db, { id: user.id, email: user.email!, name: user.name, mfaMethod: user.mfaMethod });
+        return { mfaPending: true, mfaToken: challenge.mfaToken, mfaMethod: challenge.mfaMethod };
       } catch {
         return reply.status(502).send({ error: "Failed to send verification code. Please try again." });
       }
-      const mfaToken = await signMfaToken(user.id, user.email!);
-      return { mfaPending: true, mfaToken, mfaMethod: "email" };
     }
 
     const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
@@ -504,12 +541,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         await db.update(users).set({ mfaEnabled: true, mfaMethod: "email" }).where(eq(users.id, user.id));
       }
       try {
-        await createAndSendMfaCode(db, user.id, user.email!, user.name);
+        const challenge = await startMfaForLogin(db, { id: user.id, email: user.email!, name: user.name, mfaMethod: user.mfaMethod });
+        return { mfaPending: true, mfaToken: challenge.mfaToken, mfaMethod: challenge.mfaMethod };
       } catch {
         return reply.status(502).send({ error: "Failed to send verification code. Please try again." });
       }
-      const mfaToken = await signMfaToken(user.id, user.email!);
-      return { mfaPending: true, mfaToken, mfaMethod: "email" };
     }
 
     const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
@@ -617,12 +653,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         await db.update(users).set({ mfaEnabled: true }).where(eq(users.id, user.id));
       }
       try {
-        await createAndSendMfaCode(db, user.id, user.email, user.name);
+        const challenge = await startMfaForLogin(db, { id: user.id, email: user.email, name: user.name, mfaMethod: user.mfaMethod });
+        return { mfaPending: true, mfaToken: challenge.mfaToken, mfaMethod: challenge.mfaMethod };
       } catch {
         return reply.status(502).send({ error: "Failed to send verification code. Please try again." });
       }
-      const mfaToken = await signMfaToken(user.id, user.email);
-      return { mfaPending: true, mfaToken, mfaMethod: "email" };
     }
 
     const accessToken = await signJWT({
@@ -998,6 +1033,15 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return { success: true, deletedLearnerId: learnerId };
   });
 
+  /**
+   * Complete MFA challenge. Accepts:
+   *   - 6-digit email OTP (from `mfa_codes.code_hash`)
+   *   - 6-digit TOTP code (verified against decrypted `users.totp_secret_encrypted`)
+   *   - 12-char recovery code (e.g. "ABCD-EFGH-JKLM"; matched against argon2id hash)
+   *
+   * Counts every wrong submission against the per-user lockout window
+   * (5 fails / 10 min => 15 min lock). Successful redemption clears it.
+   */
   app.post("/api/auth/verify-mfa", {
     schema: {
       tags: ["Auth"],
@@ -1006,7 +1050,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         required: ["mfaToken", "code"],
         properties: {
           mfaToken: { type: "string" },
-          code: { type: "string", minLength: 6, maxLength: 6 },
+          code: { type: "string", minLength: 4, maxLength: 32 },
         },
       },
     },
@@ -1015,42 +1059,88 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const db = (app as any).db;
 
     let payload: any;
-    try {
-      payload = await verifyJWT(mfaToken);
-    } catch {
-      return reply.status(401).send({ error: "MFA session expired. Please login again." });
-    }
-    if (payload.purpose !== "mfa") {
-      return reply.status(401).send({ error: "Invalid MFA token" });
-    }
+    try { payload = await verifyJWT(mfaToken); }
+    catch { return reply.status(401).send({ error: "MFA session expired. Please login again." }); }
+    if (payload.purpose !== "mfa") return reply.status(401).send({ error: "Invalid MFA token" });
 
-    const [mfaRecord] = await db.select().from(mfaCodes)
-      .where(and(eq(mfaCodes.userId, payload.sub), eq(mfaCodes.used, false), eq(mfaCodes.purpose, "login")))
-      .orderBy(sql`created_at DESC`)
-      .limit(1);
-
-    if (!mfaRecord) {
-      return reply.status(400).send({ error: "No active MFA code. Please login again." });
+    if (await isMfaLocked(db, payload.sub)) {
+      const remaining = await lockoutSecondsRemaining(db, payload.sub);
+      return reply.status(429).send({ error: "Account temporarily locked due to too many failed attempts.", retryAfterSeconds: remaining });
     }
-
-    if (new Date(mfaRecord.expiresAt) < new Date()) {
-      return reply.status(400).send({ error: "Code expired. Please request a new one." });
-    }
-
-    if (mfaRecord.attempts >= 5) {
-      await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(eq(mfaCodes.id, mfaRecord.id));
-      return reply.status(429).send({ error: "Too many attempts. Please login again." });
-    }
-
-    if (mfaRecord.code !== code) {
-      await db.update(mfaCodes).set({ attempts: sql`${mfaCodes.attempts} + 1` }).where(and(eq(mfaCodes.id, mfaRecord.id), sql`${mfaCodes.attempts} < 5`));
-      return reply.status(400).send({ error: "Invalid code", attemptsRemaining: 4 - mfaRecord.attempts });
-    }
-
-    await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(eq(mfaCodes.id, mfaRecord.id));
 
     const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
     if (!user) return reply.status(404).send({ error: "User not found" });
+
+    const trimmed = String(code || "").trim();
+    let success = false;
+    let usedRecovery = false;
+
+    // 1. Recovery code (multi-char, alphanum-with-dashes).
+    if (looksLikeRecoveryCode(trimmed)) {
+      success = await redeemRecoveryCode(db, user.id, trimmed);
+      usedRecovery = success;
+    }
+    // 2. TOTP if user has an enrolled authenticator app.
+    else if (user.mfaMethod === "totp" && user.totpSecretEncrypted && /^\d{6}$/.test(trimmed)) {
+      try {
+        const secret = decryptSecret(user.totpSecretEncrypted);
+        success = verifyTotpCode(secret, trimmed);
+      } catch { success = false; }
+    }
+    // 3. Email OTP — only when this MFA challenge was issued for the email
+    //    method. This prevents downgrade attacks where a user challenged for
+    //    WebAuthn or TOTP could submit an emailed code from a stale or
+    //    attacker-influenced channel.
+    else if (payload.mfaMethod === "email" && /^\d{6}$/.test(trimmed)) {
+      const [mfaRecord] = await db.select().from(mfaCodes)
+        .where(and(eq(mfaCodes.userId, user.id), eq(mfaCodes.used, false), eq(mfaCodes.purpose, "login")))
+        .orderBy(sql`created_at DESC`)
+        .limit(1);
+      if (!mfaRecord) return reply.status(400).send({ error: "No active MFA code. Please login again." });
+      if (new Date(mfaRecord.expiresAt) < new Date()) return reply.status(400).send({ error: "Code expired. Please request a new one." });
+      if (mfaRecord.attempts >= 5) {
+        await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(eq(mfaCodes.id, mfaRecord.id));
+        return reply.status(429).send({ error: "Too many attempts. Please login again." });
+      }
+      const expectedHash = hashOtpCode(trimmed);
+      if (timingSafeEqualHex(mfaRecord.codeHash, expectedHash)) {
+        await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(eq(mfaCodes.id, mfaRecord.id));
+        success = true;
+      } else {
+        await db.update(mfaCodes).set({ attempts: sql`${mfaCodes.attempts} + 1` }).where(and(eq(mfaCodes.id, mfaRecord.id), sql`${mfaCodes.attempts} < 5`));
+      }
+    }
+
+    if (!success) {
+      const fail = await recordMfaFailure(db, user.id);
+      if (fail.locked) {
+        return reply.status(429).send({ error: "Too many failed attempts. Account locked for 15 minutes." });
+      }
+      return reply.status(400).send({ error: "Invalid code", attemptsRemaining: Math.max(0, 5 - fail.attempts) });
+    }
+
+    await clearMfaFailures(db, user.id);
+
+    if (usedRecovery) {
+      const remaining = await countActiveRecoveryCodes(db, user.id);
+      const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
+      await db.insert(auditEvents).values({
+        tenantId: user.tenantId,
+        userId: user.id,
+        eventType: "MFA_RECOVERY_USED",
+        resourceType: "user",
+        resourceId: user.id,
+        details: { remainingRecoveryCodes: remaining },
+        ipAddress: clientIp,
+        userAgent: (req.headers["user-agent"] as string) || null,
+      });
+      // Best-effort notification email; never block login on comms failure.
+      fetch(`${COMMS_URL}/api/comms/internal/mfa-recovery-used`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
+        body: JSON.stringify({ to: user.email, name: user.name, remaining }),
+      }).catch(() => null);
+    }
 
     const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
     await db.update(users).set({ lastLoginAt: new Date(), lastLoginIp: clientIp }).where(eq(users.id, user.id));
@@ -1082,6 +1172,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
       accessToken,
+      usedRecoveryCode: usedRecovery,
     };
   });
 
@@ -1109,6 +1200,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (payload.purpose !== "mfa") {
       return reply.status(401).send({ error: "Invalid MFA token" });
     }
+    // Resend only applies to email-OTP challenges. Refusing here prevents
+    // a downgrade attack against WebAuthn / TOTP challenges.
+    if (payload.mfaMethod && payload.mfaMethod !== "email") {
+      return reply.status(400).send({ error: "Resend is only available for email codes." });
+    }
 
     const [existing] = await db.select().from(mfaCodes)
       .where(and(eq(mfaCodes.userId, payload.sub), eq(mfaCodes.used, false)))
@@ -1129,7 +1225,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const code = generateMfaCode();
     await db.insert(mfaCodes).values({
       userId: user.id,
-      code,
+      codeHash: hashOtpCode(code),
       purpose: existing?.purpose || "login",
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       resends: (existing?.resends ?? 0) + 1,
@@ -1215,7 +1311,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       await db.update(mfaCodes).set({ used: true, usedAt: new Date() }).where(eq(mfaCodes.id, mfaRecord.id));
       return reply.status(429).send({ error: "Too many attempts" });
     }
-    if (mfaRecord.code !== code) {
+    if (!timingSafeEqualHex(mfaRecord.codeHash, hashOtpCode(code))) {
       await db.update(mfaCodes).set({ attempts: sql`${mfaCodes.attempts} + 1` }).where(and(eq(mfaCodes.id, mfaRecord.id), sql`${mfaCodes.attempts} < 5`));
       return reply.status(400).send({ error: "Invalid code" });
     }
@@ -1273,11 +1369,419 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
     if (!user) return reply.status(404).send({ error: "User not found" });
 
+    const passkeys = await db.select({ id: webauthnCredentials.id })
+      .from(webauthnCredentials)
+      .where(eq(webauthnCredentials.userId, user.id));
+    const recoveryRemaining = await countActiveRecoveryCodes(db, user.id);
+    const webauthnCount = passkeys.length;
+
     return {
       mfaEnabled: !!user.mfaEnabled,
       mfaMethod: user.mfaMethod || "email",
       mfaForced: MFA_FORCED_ROLES.includes(user.role),
+      hasTotp: !!user.totpSecretEncrypted && user.mfaMethod === "totp",
+      hasPasskey: webauthnCount > 0,
+      webauthnCount,
+      recoveryRemaining,
+      recoveryCodesRemaining: recoveryRemaining,
+      strongMfaEnforced: !!ADMIN_ENTERPRISE.STRONG_MFA,
+      strongMfaEnabled: !!ADMIN_ENTERPRISE.STRONG_MFA,
     };
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Sprint 2 — Phishing-resistant MFA: TOTP, WebAuthn passkeys, recovery codes.
+  // All endpoints require a valid access token; password re-auth is required for
+  // any state change that could lock a user out of their account.
+  // ──────────────────────────────────────────────────────────────────────────
+
+  function requireBearer(req: any): string | null {
+    const auth = req.headers.authorization as string | undefined;
+    if (!auth?.startsWith("Bearer ")) return null;
+    return auth.slice(7);
+  }
+  async function requireUser(app: FastifyInstance, req: any, reply: any) {
+    const token = requireBearer(req);
+    if (!token) { reply.status(401).send({ error: "Missing authorization" }); return null; }
+    let payload: any;
+    try { payload = await verifyJWT(token); }
+    catch { reply.status(401).send({ error: "Invalid token" }); return null; }
+    const db = (app as any).db;
+    const [user] = await db.select().from(users).where(eq(users.id, payload.sub)).limit(1);
+    if (!user) { reply.status(404).send({ error: "User not found" }); return null; }
+    return { user, db, payload };
+  }
+
+  // ── TOTP enrollment ────────────────────────────────────────────────────────
+
+  app.post("/api/auth/mfa/totp/enroll", { schema: { tags: ["MFA"] } }, async (req, reply) => {
+    const ctx = await requireUser(app, req, reply); if (!ctx) return;
+    const { user } = ctx;
+    if (!user.email) return reply.status(400).send({ error: "Account has no email" });
+    const { base32Secret, otpauthUrl } = generateTotpSecret(user.email);
+    // Carry the unsaved secret in a short-lived JWT so we never persist
+    // an unconfirmed secret.
+    const enrollToken = await signJWT(
+      { sub: user.id, tenantId: "", role: "", purpose: "totp-enroll", secret: base32Secret } as any,
+      "10m"
+    );
+    let qrDataUrl = "";
+    try { qrDataUrl = await QRCode.toDataURL(otpauthUrl, { margin: 1, width: 240 }); } catch {}
+    return { enrollToken, otpauthUrl, base32Secret, qrDataUrl };
+  });
+
+  app.post("/api/auth/mfa/totp/confirm", {
+    schema: {
+      tags: ["MFA"],
+      body: {
+        type: "object", required: ["enrollToken", "code"],
+        properties: { enrollToken: { type: "string" }, code: { type: "string", minLength: 6, maxLength: 6 } },
+      },
+    },
+  }, async (req, reply) => {
+    const ctx = await requireUser(app, req, reply); if (!ctx) return;
+    const { user, db } = ctx;
+    const { enrollToken, code } = req.body as any;
+    let payload: any;
+    try { payload = await verifyJWT(enrollToken); }
+    catch { return reply.status(400).send({ error: "Enrollment session expired" }); }
+    if (payload.purpose !== "totp-enroll" || payload.sub !== user.id) {
+      return reply.status(400).send({ error: "Invalid enrollment token" });
+    }
+    if (!verifyTotpCode(payload.secret, code)) {
+      return reply.status(400).send({ error: "Invalid code — please try again" });
+    }
+    await db.update(users).set({
+      totpSecretEncrypted: encryptSecret(payload.secret),
+      mfaMethod: "totp",
+      mfaEnabled: true,
+    }).where(eq(users.id, user.id));
+    const recoveryCodes = await regenerateRecoveryCodes(db, user.id);
+    const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
+    await db.insert(auditEvents).values({
+      tenantId: user.tenantId, userId: user.id,
+      eventType: "MFA_TOTP_ENROLLED", resourceType: "user", resourceId: user.id,
+      ipAddress: clientIp, userAgent: (req.headers["user-agent"] as string) || null,
+    });
+    return { success: true, recoveryCodes };
+  });
+
+  app.post("/api/auth/mfa/totp/disable", {
+    schema: { tags: ["MFA"], body: { type: "object", required: ["password"], properties: { password: { type: "string" } } } },
+  }, async (req, reply) => {
+    const ctx = await requireUser(app, req, reply); if (!ctx) return;
+    const { user, db } = ctx;
+    if (MFA_FORCED_ROLES.includes(user.role) && ADMIN_ENTERPRISE.STRONG_MFA) {
+      return reply.status(403).send({ error: "TOTP cannot be disabled for admin roles when STRONG_MFA is enforced" });
+    }
+    const { password } = req.body as any;
+    if (!user.passwordHash || !(await verifyPassword(user.passwordHash, password))) {
+      return reply.status(400).send({ error: "Incorrect password" });
+    }
+    await db.update(users).set({ totpSecretEncrypted: null, mfaMethod: "email" }).where(eq(users.id, user.id));
+    await db.insert(auditEvents).values({
+      tenantId: user.tenantId, userId: user.id,
+      eventType: "MFA_TOTP_DISABLED", resourceType: "user", resourceId: user.id,
+    });
+    return { success: true };
+  });
+
+  // ── WebAuthn passkeys ──────────────────────────────────────────────────────
+
+  app.post("/api/auth/mfa/webauthn/register/options", { schema: { tags: ["MFA"] } }, async (req, reply) => {
+    const ctx = await requireUser(app, req, reply); if (!ctx) return;
+    const { user, db } = ctx;
+    const existing = await db.select({ credentialId: webauthnCredentials.credentialId, transports: webauthnCredentials.transports })
+      .from(webauthnCredentials).where(eq(webauthnCredentials.userId, user.id));
+    const options = await generateRegistrationOptions({
+      rpName: getRpName(),
+      rpID: getRpId(req),
+      userID: Buffer.from(user.id),
+      userName: user.email || user.id,
+      userDisplayName: user.name,
+      attestationType: "none",
+      authenticatorSelection: {
+        residentKey: "preferred",
+        userVerification: "preferred",
+      },
+      excludeCredentials: existing.map((c: any) => ({
+        id: c.credentialId,
+        transports: c.transports ? c.transports.split(",") : undefined,
+      })),
+    });
+    const challengeToken = await signWebauthnChallenge({
+      userId: user.id, challenge: options.challenge, purpose: "register",
+    });
+    return { options, challengeToken };
+  });
+
+  app.post("/api/auth/mfa/webauthn/register/verify", {
+    schema: {
+      tags: ["MFA"],
+      body: {
+        type: "object", required: ["challengeToken", "response"],
+        properties: { challengeToken: { type: "string" }, response: { type: "object" }, label: { type: "string" } },
+      },
+    },
+  }, async (req, reply) => {
+    const ctx = await requireUser(app, req, reply); if (!ctx) return;
+    const { user, db } = ctx;
+    const { challengeToken, response, label } = req.body as any;
+    let challenge: { userId: string; challenge: string };
+    try { challenge = await verifyWebauthnChallengeToken(challengeToken, "register"); }
+    catch { return reply.status(400).send({ error: "Challenge expired or invalid" }); }
+    if (challenge.userId !== user.id) return reply.status(403).send({ error: "Challenge user mismatch" });
+
+    let verification;
+    try {
+      verification = await verifyRegistrationResponse({
+        response,
+        expectedChallenge: challenge.challenge,
+        expectedOrigin: getExpectedOrigin(req),
+        expectedRPID: getRpId(req),
+        requireUserVerification: false,
+      });
+    } catch (err: any) {
+      app.log.warn({ err: err.message }, "webauthn register verify failed");
+      return reply.status(400).send({ error: err.message || "Registration failed" });
+    }
+    if (!verification.verified || !verification.registrationInfo) {
+      return reply.status(400).send({ error: "Registration could not be verified" });
+    }
+    const info: any = verification.registrationInfo;
+    const credential = info.credential ?? info; // simplewebauthn v10 vs v11
+    const credentialId: string = credential.id ?? Buffer.from(credential.credentialID || info.credentialID).toString("base64url");
+    const publicKey: string = Buffer.from(credential.publicKey || info.credentialPublicKey).toString("base64");
+    const counter: number = credential.counter ?? info.counter ?? 0;
+    const transports: string | null = Array.isArray(response.response?.transports) ? response.response.transports.join(",") : null;
+    const deviceType: string | null = info.credentialDeviceType || null;
+
+    const isFirstCredential =
+      (await db.select({ id: webauthnCredentials.id })
+        .from(webauthnCredentials)
+        .where(eq(webauthnCredentials.userId, user.id))
+        .limit(1)).length === 0;
+
+    await db.insert(webauthnCredentials).values({
+      userId: user.id,
+      credentialId,
+      publicKey,
+      counter,
+      transports,
+      label: (label || "Passkey").slice(0, 120),
+      deviceType,
+      backedUp: !!info.credentialBackedUp,
+    });
+
+    let recoveryCodes: string[] | undefined;
+    if (isFirstCredential) {
+      // Bump method preference up to passkey, mint recovery codes.
+      await db.update(users).set({ mfaEnabled: true, mfaMethod: "webauthn" }).where(eq(users.id, user.id));
+      recoveryCodes = await regenerateRecoveryCodes(db, user.id);
+    }
+
+    await db.insert(auditEvents).values({
+      tenantId: user.tenantId, userId: user.id,
+      eventType: "MFA_WEBAUTHN_REGISTERED", resourceType: "webauthn_credential", resourceId: credentialId,
+      details: { label: label || "Passkey", deviceType },
+    });
+
+    return { success: true, credentialId, recoveryCodes };
+  });
+
+  app.get("/api/auth/mfa/webauthn/credentials", { schema: { tags: ["MFA"] } }, async (req, reply) => {
+    const ctx = await requireUser(app, req, reply); if (!ctx) return;
+    const { user, db } = ctx;
+    const rows = await db.select({
+      id: webauthnCredentials.id,
+      label: webauthnCredentials.label,
+      deviceType: webauthnCredentials.deviceType,
+      createdAt: webauthnCredentials.createdAt,
+      lastUsedAt: webauthnCredentials.lastUsedAt,
+    }).from(webauthnCredentials).where(eq(webauthnCredentials.userId, user.id));
+    return { credentials: rows };
+  });
+
+  app.patch("/api/auth/mfa/webauthn/credentials/:id", {
+    schema: {
+      tags: ["MFA"],
+      params: { type: "object", properties: { id: { type: "string" } } },
+      body: { type: "object", required: ["label"], properties: { label: { type: "string", minLength: 1, maxLength: 120 } } },
+    },
+  }, async (req, reply) => {
+    const ctx = await requireUser(app, req, reply); if (!ctx) return;
+    const { user, db } = ctx;
+    const { id } = req.params as any;
+    const { label } = req.body as any;
+    const result = await db.update(webauthnCredentials)
+      .set({ label: String(label).slice(0, 120) })
+      .where(and(eq(webauthnCredentials.id, id), eq(webauthnCredentials.userId, user.id)))
+      .returning({ id: webauthnCredentials.id });
+    if (!result.length) return reply.status(404).send({ error: "Credential not found" });
+    return { success: true };
+  });
+
+  app.delete("/api/auth/mfa/webauthn/credentials/:id", { schema: { tags: ["MFA"] } }, async (req, reply) => {
+    const ctx = await requireUser(app, req, reply); if (!ctx) return;
+    const { user, db } = ctx;
+    const { id } = req.params as any;
+    const result = await db.delete(webauthnCredentials)
+      .where(and(eq(webauthnCredentials.id, id), eq(webauthnCredentials.userId, user.id)))
+      .returning({ id: webauthnCredentials.id });
+    if (!result.length) return reply.status(404).send({ error: "Credential not found" });
+    // If user no longer has any passkey, fall back to TOTP if enrolled, else email.
+    const remaining = await db.select({ id: webauthnCredentials.id })
+      .from(webauthnCredentials)
+      .where(eq(webauthnCredentials.userId, user.id))
+      .limit(1);
+    if (!remaining.length) {
+      const fallback = user.totpSecretEncrypted ? "totp" : "email";
+      await db.update(users).set({ mfaMethod: fallback }).where(eq(users.id, user.id));
+    }
+    await db.insert(auditEvents).values({
+      tenantId: user.tenantId, userId: user.id,
+      eventType: "MFA_WEBAUTHN_REVOKED", resourceType: "webauthn_credential", resourceId: id,
+    });
+    return { success: true };
+  });
+
+  // ── WebAuthn login ─────────────────────────────────────────────────────────
+
+  app.post("/api/auth/mfa/webauthn/login/options", {
+    schema: { tags: ["MFA"], body: { type: "object", required: ["mfaToken"], properties: { mfaToken: { type: "string" } } } },
+  }, async (req, reply) => {
+    const { mfaToken } = req.body as any;
+    const db = (app as any).db;
+    let payload: any;
+    try { payload = await verifyJWT(mfaToken); } catch { return reply.status(401).send({ error: "MFA session expired" }); }
+    if (payload.purpose !== "mfa") return reply.status(401).send({ error: "Invalid MFA token" });
+    if (await isMfaLocked(db, payload.sub)) return reply.status(429).send({ error: "Account temporarily locked" });
+
+    const creds = await db.select({ credentialId: webauthnCredentials.credentialId, transports: webauthnCredentials.transports })
+      .from(webauthnCredentials).where(eq(webauthnCredentials.userId, payload.sub));
+    if (!creds.length) return reply.status(400).send({ error: "No passkey enrolled for this account" });
+
+    const options = await generateAuthenticationOptions({
+      rpID: getRpId(req),
+      userVerification: "preferred",
+      allowCredentials: creds.map((c: any) => ({
+        id: c.credentialId,
+        transports: c.transports ? c.transports.split(",") : undefined,
+      })),
+    });
+    const challengeToken = await signWebauthnChallenge({
+      userId: payload.sub, challenge: options.challenge, purpose: "login",
+    });
+    return { options, challengeToken };
+  });
+
+  app.post("/api/auth/mfa/webauthn/login/verify", {
+    schema: {
+      tags: ["MFA"],
+      body: {
+        type: "object", required: ["challengeToken", "response"],
+        properties: { challengeToken: { type: "string" }, response: { type: "object" } },
+      },
+    },
+  }, async (req, reply) => {
+    const { challengeToken, response } = req.body as any;
+    const db = (app as any).db;
+    let challenge: { userId: string; challenge: string };
+    try { challenge = await verifyWebauthnChallengeToken(challengeToken, "login"); }
+    catch { return reply.status(400).send({ error: "Challenge expired or invalid" }); }
+
+    if (await isMfaLocked(db, challenge.userId)) return reply.status(429).send({ error: "Account temporarily locked" });
+
+    const responseId = response?.id || (response?.rawId && Buffer.from(response.rawId, "base64url").toString("base64url"));
+    if (!responseId) return reply.status(400).send({ error: "Malformed response" });
+
+    const [cred] = await db.select().from(webauthnCredentials)
+      .where(and(eq(webauthnCredentials.userId, challenge.userId), eq(webauthnCredentials.credentialId, responseId)))
+      .limit(1);
+    if (!cred) return reply.status(400).send({ error: "Unknown credential" });
+
+    let verification;
+    try {
+      verification = await verifyAuthenticationResponse({
+        response,
+        expectedChallenge: challenge.challenge,
+        expectedOrigin: getExpectedOrigin(req),
+        expectedRPID: getRpId(req),
+        credential: {
+          id: cred.credentialId,
+          publicKey: Buffer.from(cred.publicKey, "base64"),
+          counter: Number(cred.counter || 0),
+          transports: cred.transports ? cred.transports.split(",") : undefined,
+        } as any,
+        requireUserVerification: false,
+      });
+    } catch (err: any) {
+      const fail = await recordMfaFailure(db, challenge.userId);
+      app.log.warn({ err: err.message, locked: fail.locked }, "webauthn login verify failed");
+      return reply.status(400).send({ error: err.message || "Authentication failed" });
+    }
+    if (!verification.verified) {
+      await recordMfaFailure(db, challenge.userId);
+      return reply.status(400).send({ error: "Authentication could not be verified" });
+    }
+
+    await db.update(webauthnCredentials).set({
+      counter: verification.authenticationInfo.newCounter,
+      lastUsedAt: new Date(),
+    }).where(eq(webauthnCredentials.id, cred.id));
+    await clearMfaFailures(db, challenge.userId);
+
+    const [user] = await db.select().from(users).where(eq(users.id, challenge.userId)).limit(1);
+    if (!user) return reply.status(404).send({ error: "User not found" });
+
+    const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
+    await db.update(users).set({ lastLoginAt: new Date(), lastLoginIp: clientIp }).where(eq(users.id, user.id));
+    const accessToken = await signJWT({
+      sub: user.id, tenantId: user.tenantId, role: user.role, email: user.email!, name: user.name,
+    });
+    const rawRefreshToken = crypto.randomUUID();
+    await db.insert(sessions).values({
+      userId: user.id,
+      refreshToken: hashRefreshToken(rawRefreshToken),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+    reply.setCookie("refreshToken", rawRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60,
+    });
+    await setSurfaceCookie(reply, user.role);
+    return {
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
+      accessToken,
+    };
+  });
+
+  // ── Recovery codes ─────────────────────────────────────────────────────────
+
+  app.get("/api/auth/mfa/recovery/status", { schema: { tags: ["MFA"] } }, async (req, reply) => {
+    const ctx = await requireUser(app, req, reply); if (!ctx) return;
+    const remaining = await countActiveRecoveryCodes(ctx.db, ctx.user.id);
+    return { remaining, total: 10 };
+  });
+
+  app.post("/api/auth/mfa/recovery/regenerate", {
+    schema: { tags: ["MFA"], body: { type: "object", required: ["password"], properties: { password: { type: "string" } } } },
+  }, async (req, reply) => {
+    const ctx = await requireUser(app, req, reply); if (!ctx) return;
+    const { user, db } = ctx;
+    const { password } = req.body as any;
+    if (!user.passwordHash || !(await verifyPassword(user.passwordHash, password))) {
+      return reply.status(400).send({ error: "Incorrect password" });
+    }
+    const codes = await regenerateRecoveryCodes(db, user.id);
+    await db.insert(auditEvents).values({
+      tenantId: user.tenantId, userId: user.id,
+      eventType: "MFA_RECOVERY_REGENERATED", resourceType: "user", resourceId: user.id,
+    });
+    return { recoveryCodes: codes, codes };
   });
 
   setInterval(async () => {

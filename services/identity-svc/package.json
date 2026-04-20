@@ -19,11 +19,15 @@
     "@fastify/rate-limit": "^10.2.2",
     "@fastify/swagger": "^9.6.0",
     "@fastify/swagger-ui": "^5.2.2",
+    "@simplewebauthn/server": "^11.0.0",
     "argon2": "^0.44.0",
     "drizzle-orm": "^0.44.2",
-    "fastify": "^5.3.3"
+    "fastify": "^5.3.3",
+    "otpauth": "^9.5.0",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
+    "@types/qrcode": "^1.5.6",
     "tsx": "^4.19.4",
     "typescript": "^5.7.3"
   }

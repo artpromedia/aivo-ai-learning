@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, boolean, text, integer, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, boolean, text, integer, bigint, index } from "drizzle-orm/pg-core";
 import { userRoleEnum } from "./enums.js";
 import { tenants } from "./tenants.js";
 
@@ -13,6 +13,9 @@ export const users = pgTable("users", {
   emailVerified: boolean("email_verified").default(false),
   mfaEnabled: boolean("mfa_enabled").default(false),
   mfaMethod: varchar("mfa_method", { length: 20 }).default("email"),
+  totpSecretEncrypted: text("totp_secret_encrypted"),
+  mfaLockedUntil: timestamp("mfa_locked_until"),
+  mfaFailedAttempts: integer("mfa_failed_attempts").default(0).notNull(),
   avatarUrl: text("avatar_url"),
   googleId: varchar("google_id", { length: 255 }),
   appleId: varchar("apple_id", { length: 255 }),
@@ -28,7 +31,7 @@ export const users = pgTable("users", {
 export const mfaCodes = pgTable("mfa_codes", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id").references(() => users.id).notNull(),
-  code: varchar("code", { length: 6 }).notNull(),
+  codeHash: varchar("code_hash", { length: 64 }).notNull(),
   purpose: varchar("purpose", { length: 20 }).default("login").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   attempts: integer("attempts").default(0).notNull(),
@@ -39,6 +42,32 @@ export const mfaCodes = pgTable("mfa_codes", {
 }, (table) => [
   index("mfa_codes_user_id_idx").on(table.userId),
   index("mfa_codes_expires_at_idx").on(table.expiresAt),
+]);
+
+export const webauthnCredentials = pgTable("webauthn_credentials", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  credentialId: text("credential_id").notNull().unique(),
+  publicKey: text("public_key").notNull(),
+  counter: bigint("counter", { mode: "number" }).default(0).notNull(),
+  transports: text("transports"),
+  label: varchar("label", { length: 120 }).default("Passkey").notNull(),
+  deviceType: varchar("device_type", { length: 32 }),
+  backedUp: boolean("backed_up").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+}, (table) => [
+  index("webauthn_credentials_user_id_idx").on(table.userId),
+]);
+
+export const mfaRecoveryCodes = pgTable("mfa_recovery_codes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  codeHash: text("code_hash").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("mfa_recovery_codes_user_id_idx").on(table.userId),
 ]);
 
 export const sessions = pgTable("sessions", {

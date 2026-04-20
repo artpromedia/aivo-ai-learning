@@ -1,10 +1,24 @@
 "use client";
-import { Suspense, useState, useRef, useEffect } from "react";
+import { Suspense, useState, useRef, useEffect, useMemo } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
+import { startAuthentication } from "@simplewebauthn/browser";
+
+type MfaMethod = "email" | "totp" | "webauthn";
+
+function decodeMethod(token: string): MfaMethod {
+  try {
+    const part = token.split(".")[1];
+    if (!part) return "email";
+    const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+    const m = json.mfaMethod;
+    if (m === "totp" || m === "webauthn" || m === "email") return m;
+    return "email";
+  } catch { return "email"; }
+}
 
 export default function VerifyMfaPage() {
   return (
@@ -23,71 +37,42 @@ function VerifyMfaContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("mfa");
-  const tc = useTranslations("common");
 
   const mfaToken = searchParams.get("token") || "";
   const returnTo = searchParams.get("returnTo") || "/";
+  const initialMethod = useMemo<MfaMethod>(() => decodeMethod(mfaToken), [mfaToken]);
 
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [mode, setMode] = useState<MfaMethod | "recovery">(initialMethod);
+  const [code, setCode] = useState("");
+  const [recovery, setRecovery] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const [resendMsg, setResendMsg] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    inputRefs.current[0]?.focus();
+    inputRef.current?.focus();
     return () => { if (cooldownRef.current) clearInterval(cooldownRef.current); };
-  }, []);
+  }, [mode]);
 
-  const handleChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-    const newCode = [...code];
-    newCode[index] = value.slice(-1);
-    setCode(newCode);
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !code[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (pasted.length === 6) {
-      setCode(pasted.split(""));
-      inputRefs.current[5]?.focus();
-    }
-  };
-
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const fullCode = code.join("");
-    if (fullCode.length !== 6) {
-      setError(t("enter_full_code"));
-      return;
-    }
-    setError("");
-    setLoading(true);
+  const submitCode = async (raw: string) => {
+    if (!raw) return;
+    setError(""); setLoading(true);
     try {
       const res = await fetch("/api/auth/verify-mfa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mfaToken, code: fullCode }),
+        body: JSON.stringify({ mfaToken, code: raw }),
         credentials: "include",
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || t("verification_failed"));
-        setCode(["", "", "", "", "", ""]);
-        inputRefs.current[0]?.focus();
+        if (mode === "recovery") setRecovery("");
+        else setCode("");
       } else {
         await refreshToken();
         router.push(returnTo);
@@ -98,17 +83,54 @@ function VerifyMfaContent() {
     setLoading(false);
   };
 
+  // Auto-submit when 6-digit code complete (TOTP / email).
   useEffect(() => {
-    if (code.every((d) => d !== "")) {
-      handleSubmit();
+    if ((mode === "email" || mode === "totp") && code.length === 6 && !loading) {
+      submitCode(code);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
+  const runWebAuthn = async () => {
+    setError(""); setInfo(""); setLoading(true);
+    try {
+      const optsRes = await fetch("/api/auth/mfa/webauthn/login/options", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mfaToken }),
+      });
+      const opts = await optsRes.json();
+      if (!optsRes.ok) throw new Error(opts.error || "Could not start passkey sign-in");
+      const assertion = await startAuthentication(opts.options);
+      const verifyRes = await fetch("/api/auth/mfa/webauthn/login/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mfaToken, challengeToken: opts.challengeToken, response: assertion }),
+        credentials: "include",
+      });
+      const data = await verifyRes.json();
+      if (!verifyRes.ok) throw new Error(data.error || "Passkey verification failed");
+      await refreshToken();
+      router.push(returnTo);
+    } catch (e: any) {
+      setError(e.message || "Passkey sign-in failed");
+    }
+    setLoading(false);
+  };
+
+  // Auto-prompt the platform passkey UI when user lands on a webauthn challenge.
+  const triedAutoRef = useRef(false);
+  useEffect(() => {
+    if (mode === "webauthn" && !triedAutoRef.current) {
+      triedAutoRef.current = true;
+      runWebAuthn();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
   const handleResend = async () => {
-    if (resendCooldown > 0) return;
-    setResending(true);
-    setResendMsg("");
-    setError("");
+    if (resendCooldown > 0 || mode !== "email") return;
+    setResending(true); setInfo(""); setError("");
     try {
       const res = await fetch("/api/auth/mfa/resend", {
         method: "POST",
@@ -117,18 +139,15 @@ function VerifyMfaContent() {
       });
       const data = await res.json();
       if (res.ok) {
-        setResendMsg(t("code_resent"));
-        setCode(["", "", "", "", "", ""]);
-        inputRefs.current[0]?.focus();
+        setInfo(t("code_resent"));
+        setCode("");
         setResendCooldown(30);
         if (cooldownRef.current) clearInterval(cooldownRef.current);
         cooldownRef.current = setInterval(() => setResendCooldown(v => { if (v <= 1) { if (cooldownRef.current) clearInterval(cooldownRef.current); cooldownRef.current = null; return 0; } return v - 1; }), 1000);
       } else {
         setError(data.error || t("resend_failed"));
       }
-    } catch {
-      setError(t("resend_failed"));
-    }
+    } catch { setError(t("resend_failed")); }
     setResending(false);
   };
 
@@ -143,6 +162,17 @@ function VerifyMfaContent() {
     );
   }
 
+  const heading =
+    mode === "webauthn" ? "Use your passkey" :
+    mode === "totp" ? "Enter authenticator code" :
+    mode === "recovery" ? "Enter a recovery code" :
+    t("check_email");
+  const subtitle =
+    mode === "webauthn" ? "Confirm the prompt on your device to finish signing in." :
+    mode === "totp" ? "Open your authenticator app and enter the 6-digit code." :
+    mode === "recovery" ? "Use one of the single-use codes saved when you set up MFA." :
+    t("code_sent_desc");
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-white to-purple-50 px-4">
       <div className="w-full max-w-md">
@@ -155,72 +185,98 @@ function VerifyMfaContent() {
         <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
           <div className="text-center mb-6">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-violet-100 flex items-center justify-center">
-              <svg className="w-8 h-8 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
+              {mode === "webauthn" ? (
+                <svg className="w-8 h-8 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 11c0-1.1.9-2 2-2s2 .9 2 2v2h-4v-2zM6 11c0-3.31 2.69-6 6-6s6 2.69 6 6v2h2v8H4v-8h2v-2z"/></svg>
+              ) : mode === "totp" ? (
+                <svg className="w-8 h-8 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              ) : mode === "recovery" ? (
+                <svg className="w-8 h-8 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 12c0-3-2-5-5-5H8c-3 0-5 2-5 5"/></svg>
+              ) : (
+                <svg className="w-8 h-8 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              )}
             </div>
-            <h1 className="text-2xl font-heading font-bold text-gray-900">{t("check_email")}</h1>
-            <p className="text-gray-500 text-sm mt-2 font-body">{t("code_sent_desc")}</p>
+            <h1 className="text-2xl font-heading font-bold text-gray-900">{heading}</h1>
+            <p className="text-gray-500 text-sm mt-2 font-body">{subtitle}</p>
           </div>
 
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm font-medium mb-4">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01" /></svg>
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01"/></svg>
               {error}
             </div>
           )}
-
-          {resendMsg && (
-            <div className="p-3 rounded-xl bg-green-50 border border-green-100 text-green-700 text-sm font-medium mb-4">{resendMsg}</div>
+          {info && (
+            <div className="p-3 rounded-xl bg-green-50 border border-green-100 text-green-700 text-sm font-medium mb-4">{info}</div>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="flex gap-2 justify-center mb-6" onPaste={handlePaste}>
-              {code.map((digit, i) => (
-                <input
-                  key={i}
-                  ref={(el) => { inputRefs.current[i] = el; }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChange(i, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(i, e)}
-                  className="w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition"
-                  aria-label={`${t("digit")} ${i + 1}`}
-                />
-              ))}
-            </div>
-
+          {mode === "webauthn" && (
             <button
-              type="submit"
-              disabled={loading || code.some((d) => !d)}
-              className="w-full py-3.5 rounded-xl bg-violet-600 text-white font-bold hover:bg-violet-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
-                  {t("verifying")}
-                </span>
-              ) : t("verify_code")}
+              type="button" onClick={runWebAuthn} disabled={loading}
+              className="w-full py-3.5 rounded-xl bg-violet-600 text-white font-bold hover:bg-violet-700 transition disabled:opacity-50">
+              {loading ? "Waiting for device…" : "Use passkey"}
             </button>
-          </form>
+          )}
 
-          <div className="mt-6 text-center space-y-3">
-            <button
-              onClick={handleResend}
-              disabled={resending || resendCooldown > 0}
-              className="text-sm text-violet-600 font-semibold hover:text-violet-800 transition disabled:opacity-50"
-            >
-              {resending ? t("resending") : resendCooldown > 0 ? `${t("resend_code")} (${resendCooldown}s)` : t("resend_code")}
-            </button>
-            <div>
-              <Link href="/login" className="text-sm text-gray-500 hover:text-gray-700 transition">{t("back_to_login")}</Link>
-            </div>
+          {(mode === "email" || mode === "totp") && (
+            <form onSubmit={(e) => { e.preventDefault(); submitCode(code); }}>
+              <input
+                ref={inputRef}
+                type="text" inputMode="numeric" maxLength={6}
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="000000"
+                className="w-full text-center text-3xl tracking-[0.5em] font-bold px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none mb-4"
+                aria-label="6-digit code"
+              />
+              <button
+                type="submit" disabled={loading || code.length !== 6}
+                className="w-full py-3.5 rounded-xl bg-violet-600 text-white font-bold hover:bg-violet-700 transition disabled:opacity-50">
+                {loading ? t("verifying") : t("verify_code")}
+              </button>
+            </form>
+          )}
+
+          {mode === "recovery" && (
+            <form onSubmit={(e) => { e.preventDefault(); submitCode(recovery.trim()); }}>
+              <input
+                ref={inputRef}
+                type="text"
+                value={recovery}
+                onChange={(e) => setRecovery(e.target.value)}
+                placeholder="xxxx-xxxx-xxxx"
+                className="w-full text-center text-lg tracking-widest font-mono font-semibold px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none mb-4"
+                aria-label="Recovery code"
+              />
+              <button
+                type="submit" disabled={loading || recovery.trim().length < 8}
+                className="w-full py-3.5 rounded-xl bg-violet-600 text-white font-bold hover:bg-violet-700 transition disabled:opacity-50">
+                {loading ? t("verifying") : "Use recovery code"}
+              </button>
+            </form>
+          )}
+
+          <div className="mt-6 flex flex-col items-center gap-2 text-sm">
+            {mode === "email" && (
+              <button onClick={handleResend} disabled={resending || resendCooldown > 0}
+                className="text-violet-600 font-semibold hover:text-violet-800 disabled:opacity-50">
+                {resending ? t("resending") : resendCooldown > 0 ? `${t("resend_code")} (${resendCooldown}s)` : t("resend_code")}
+              </button>
+            )}
+            {mode !== "recovery" && (
+              <button onClick={() => { setMode("recovery"); setError(""); setInfo(""); }} className="text-slate-600 hover:text-violet-700 font-semibold">
+                Use a recovery code instead
+              </button>
+            )}
+            {mode === "recovery" && (
+              <button onClick={() => { setMode(initialMethod); setRecovery(""); setError(""); setInfo(""); }} className="text-slate-600 hover:text-violet-700 font-semibold">
+                Back to {initialMethod === "webauthn" ? "passkey" : initialMethod === "totp" ? "authenticator" : "email code"}
+              </button>
+            )}
+            <Link href="/login" className="text-gray-500 hover:text-gray-700">{t("back_to_login")}</Link>
           </div>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-6 font-body">{t("code_expires")}</p>
+        {mode === "email" && <p className="text-center text-xs text-gray-400 mt-6 font-body">{t("code_expires")}</p>}
       </div>
     </div>
   );
