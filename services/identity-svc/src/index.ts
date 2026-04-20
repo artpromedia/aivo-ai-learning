@@ -6,7 +6,7 @@ import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
-import { initKeys, logAdminEnterpriseFlags, assertMfaKeyConfigured } from "@aivo/security";
+import { initKeys, logAdminEnterpriseFlags, assertMfaKeyConfigured, registerAdminIpAllowlist } from "@aivo/security";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerTestHelperRoutes } from "./routes/test-helpers.js";
 import { registerUserRoutes } from "./routes/users.js";
@@ -104,6 +104,9 @@ async function start() {
   });
 
   app.decorate("db", db);
+
+  // Sprint 4: enforce ADMIN_IP_ALLOWLIST on /api/admin/** before any handler.
+  registerAdminIpAllowlist(app);
 
   await registerHealthRoutes(app);
   await registerAuthRoutes(app);

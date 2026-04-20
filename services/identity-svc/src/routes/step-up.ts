@@ -22,7 +22,7 @@ import {
   type JWTPayload,
   type WebauthnChallengeJWT,
 } from "@aivo/security";
-import { users, mfaCodes, webauthnCredentials, auditEvents } from "@aivo/db";
+import { users, mfaCodes, webauthnCredentials, auditEvents, appendAudit } from "@aivo/db";
 import { generateAuthenticationOptions, verifyAuthenticationResponse } from "@simplewebauthn/server";
 import {
   selectFactor,
@@ -338,7 +338,7 @@ export async function registerStepUpRoutes(app: FastifyInstance) {
       // Audit every failed step-up so brute-force attempts against destructive
       // scopes are visible in the SIEM.
       try {
-        await db.insert(auditEvents).values({
+        await appendAudit(db, "audit_events", auditEvents, {
           tenantId: caller.tenantId || null,
           userId: caller.sub,
           eventType: "STEP_UP_FAILED",
@@ -364,7 +364,7 @@ export async function registerStepUpRoutes(app: FastifyInstance) {
       challenge.factor,
     );
 
-    await db.insert(auditEvents).values({
+    await appendAudit(db, "audit_events", auditEvents, {
       tenantId: caller.tenantId || null,
       userId: caller.sub,
       eventType: "STEP_UP_VERIFIED",

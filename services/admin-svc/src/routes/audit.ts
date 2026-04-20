@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { adminAuditLog } from "@aivo/db";
+import { adminAuditLog, appendAudit } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { eq, desc, sql, and, gte, lte, or, count, ilike } from "drizzle-orm";
 
@@ -19,6 +19,7 @@ export async function logAuditEvent(db: any, event: {
   actorId: string;
   actorEmail: string;
   actorRole: string;
+  onBehalfOfId?: string | null;
   resourceType: string;
   resourceId?: string;
   details?: any;
@@ -26,7 +27,22 @@ export async function logAuditEvent(db: any, event: {
   userAgent?: string;
   tenantId?: string;
 }) {
-  await db.insert(adminAuditLog).values(event);
+  // Sprint 4: route admin audit writes through the hash-chain helper so
+  // every row gets prev_hash/hash. Without this, tamper evidence breaks
+  // and the verifier reports the row as legacy (unhashed).
+  await appendAudit(db, "admin_audit_log", adminAuditLog, {
+    action: event.action,
+    actorId: event.actorId,
+    actorEmail: event.actorEmail,
+    actorRole: event.actorRole,
+    onBehalfOfId: event.onBehalfOfId ?? null,
+    resourceType: event.resourceType,
+    resourceId: event.resourceId ?? null,
+    details: event.details ?? null,
+    ipAddress: event.ipAddress ?? null,
+    userAgent: event.userAgent ?? null,
+    tenantId: event.tenantId ?? null,
+  });
 }
 
 export function registerAuditRoutes(app: FastifyInstance, db: any) {

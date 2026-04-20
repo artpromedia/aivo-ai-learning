@@ -150,6 +150,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const exitImpersonation = async () => {
+    // Sprint 4: explicit end-of-impersonation hop so we get an
+    // IMPERSONATION_ENDED audit row with duration, plus a fresh admin
+    // access token for the original admin without forcing re-login.
+    if (accessToken) {
+      try {
+        const res = await fetch("/api/admin/impersonate/end", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+          setAccessToken(data.accessToken);
+          setIsImpersonating(false);
+          setOriginalAdmin(null);
+          sessionStorage.removeItem(IMPERSONATION_FLAG_KEY);
+          return;
+        }
+      } catch {}
+    }
+    // Fallback: clear local state and refresh from cookie session.
     sessionStorage.removeItem(IMPERSONATION_FLAG_KEY);
     setIsImpersonating(false);
     setOriginalAdmin(null);

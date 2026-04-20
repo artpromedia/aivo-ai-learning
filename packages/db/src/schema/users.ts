@@ -91,6 +91,26 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   index("password_reset_tokens_user_id_idx").on(table.userId),
 ]);
 
+/**
+ * Sprint 5: Admin session hygiene.
+ * Tracks per-internal-user session activity so we can enforce idle timeouts,
+ * periodic re-MFA, and device-binding for high-privilege accounts.
+ */
+export const adminSessions = pgTable("admin_sessions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  sessionId: varchar("session_id", { length: 64 }).notNull().unique(),
+  lastActivityAt: timestamp("last_activity_at").defaultNow().notNull(),
+  mfaVerifiedAt: timestamp("mfa_verified_at").defaultNow().notNull(),
+  /** sha256 hex of UA + Accept-Language + sec-ch-ua. */
+  deviceFingerprint: varchar("device_fingerprint", { length: 64 }).notNull(),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_admin_sessions_user").on(table.userId),
+  index("idx_admin_sessions_activity").on(table.lastActivityAt),
+]);
+
 export const consentRecords = pgTable("consent_records", {
   id: uuid("id").defaultRandom().primaryKey(),
   parentId: uuid("parent_id").references(() => users.id).notNull(),

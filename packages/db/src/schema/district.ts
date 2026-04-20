@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, jsonb, text, integer, index, uniqueIndex, date } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, jsonb, text, integer, index, uniqueIndex, date, bigserial } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
 import { tenants } from "./tenants.js";
 import { learners } from "./learners.js";
@@ -70,13 +70,17 @@ export const districtSettings = pgTable("district_settings", {
 
 export const districtActivityLog = pgTable("district_activity_log", {
   id: uuid("id").defaultRandom().primaryKey(),
+  seq: bigserial("seq", { mode: "number" }).notNull(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   action: varchar("action", { length: 100 }).notNull(),
   actorId: uuid("actor_id").references(() => users.id).notNull(),
   actorName: varchar("actor_name", { length: 255 }),
+  onBehalfOfId: uuid("on_behalf_of_id").references(() => users.id),
   resourceType: varchar("resource_type", { length: 50 }).notNull(),
   resourceId: varchar("resource_id", { length: 255 }),
   details: jsonb("details"),
+  prevHash: varchar("prev_hash", { length: 64 }),
+  hash: varchar("hash", { length: 64 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_district_activity_tenant").on(table.tenantId, table.createdAt),

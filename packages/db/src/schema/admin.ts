@@ -1,19 +1,24 @@
-import { pgTable, uuid, varchar, timestamp, jsonb, text, integer, decimal, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, jsonb, text, integer, decimal, boolean, index, bigserial } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
 import { tenants } from "./tenants.js";
 
 export const adminAuditLog = pgTable("admin_audit_log", {
   id: uuid("id").defaultRandom().primaryKey(),
+  seq: bigserial("seq", { mode: "number" }).notNull(),
   action: varchar("action", { length: 100 }).notNull(),
   actorId: uuid("actor_id").references(() => users.id).notNull(),
   actorEmail: varchar("actor_email", { length: 255 }).notNull(),
   actorRole: varchar("actor_role", { length: 50 }).notNull(),
+  /** Set when actor was impersonating — actor is the real admin, this is the impersonated user. */
+  onBehalfOfId: uuid("on_behalf_of_id").references(() => users.id),
   resourceType: varchar("resource_type", { length: 50 }).notNull(),
   resourceId: varchar("resource_id", { length: 255 }),
   details: jsonb("details"),
   ipAddress: varchar("ip_address", { length: 45 }),
   userAgent: text("user_agent"),
   tenantId: uuid("tenant_id").references(() => tenants.id),
+  prevHash: varchar("prev_hash", { length: 64 }),
+  hash: varchar("hash", { length: 64 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_audit_log_actor").on(table.actorId),

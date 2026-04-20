@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { users, sessions, tenants, learners, mfaCodes, passwordResetTokens, webauthnCredentials, mfaRecoveryCodes, auditEvents } from "@aivo/db";
+import { users, sessions, tenants, learners, mfaCodes, passwordResetTokens, webauthnCredentials, mfaRecoveryCodes, auditEvents, appendAudit, adminSessions } from "@aivo/db";
 import {
   signJWT, verifyJWT,
   ADMIN_ENTERPRISE,
@@ -13,6 +13,10 @@ import crypto from "crypto";
 import argon2 from "argon2";
 import QRCode from "qrcode";
 import { setSurfaceCookie, clearSurfaceCookie } from "../lib/surface-cookie.js";
+import {
+  isInternalRole, refreshTtlMs, recordAdminLogin, gateAdminRefresh,
+  bumpAdminActivity, idleDeadline, mfaDeadline,
+} from "../services/admin-session.js";
 import {
   generateRegistrationOptions, verifyRegistrationResponse,
   generateAuthenticationOptions, verifyAuthenticationResponse,
@@ -149,7 +153,9 @@ async function deleteUserCascade(db: any, userId: string) {
   await db.execute(sql.raw(`DELETE FROM "learner_teachers" WHERE teacher_user_id = '${userId}' OR invited_by = '${userId}'`));
   await db.execute(sql.raw(`DELETE FROM "learner_therapists" WHERE therapist_user_id = '${userId}' OR invited_by = '${userId}'`));
   await db.execute(sql.raw(`DELETE FROM "lesson_plans" WHERE teacher_user_id = '${userId}'`));
-  await db.execute(sql.raw(`DELETE FROM "audit_events" WHERE user_id = '${userId}'`));
+  // Sprint 4: audit_events is append-only (audit_no_mutate trigger). Rows
+  // for the deleted user are intentionally retained as forensic history;
+  // user_id is nullable with no FK so the orphan reference is harmless.
   await db.execute(sql.raw(`DELETE FROM "subscriptions" WHERE user_id = '${userId}'`));
   await db.execute(sql.raw(`DELETE FROM "tutor_subscriptions" WHERE user_id = '${userId}'`));
   await db.execute(sql.raw(`DELETE FROM "sessions" WHERE user_id = '${userId}'`));
@@ -391,18 +397,22 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     });
 
     const rawRefreshToken = crypto.randomUUID();
+    const ttlMs = refreshTtlMs(user.role);
     await db.insert(sessions).values({
       userId: user.id,
       refreshToken: hashRefreshToken(rawRefreshToken),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + ttlMs),
     });
+    if (isInternalRole(user.role)) {
+      await recordAdminLogin(db, user.id, hashRefreshToken(rawRefreshToken), req.headers, clientIp);
+    }
 
     reply.setCookie("refreshToken", rawRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: Math.floor(ttlMs / 1000),
     });
     await setSurfaceCookie(reply, user.role);
 
@@ -491,18 +501,23 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     });
 
     const rawRefreshToken = crypto.randomUUID();
+    const ttlMs = refreshTtlMs(user.role);
+    const hashedRT = hashRefreshToken(rawRefreshToken);
     await db.insert(sessions).values({
       userId: user.id,
-      refreshToken: hashRefreshToken(rawRefreshToken),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      refreshToken: hashedRT,
+      expiresAt: new Date(Date.now() + ttlMs),
     });
+    if (isInternalRole(user.role)) {
+      await recordAdminLogin(db, user.id, hashedRT, req.headers, clientIp);
+    }
 
     reply.setCookie("refreshToken", rawRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: Math.floor(ttlMs / 1000),
     });
     await setSurfaceCookie(reply, user.role);
 
@@ -577,18 +592,23 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     });
 
     const rawRefreshToken = crypto.randomUUID();
+    const ttlMs = refreshTtlMs(user.role);
+    const hashedRT = hashRefreshToken(rawRefreshToken);
     await db.insert(sessions).values({
       userId: user.id,
-      refreshToken: hashRefreshToken(rawRefreshToken),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      refreshToken: hashedRT,
+      expiresAt: new Date(Date.now() + ttlMs),
     });
+    if (isInternalRole(user.role)) {
+      await recordAdminLogin(db, user.id, hashedRT, req.headers, clientIp);
+    }
 
     reply.setCookie("refreshToken", rawRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: Math.floor(ttlMs / 1000),
     });
     await setSurfaceCookie(reply, user.role);
 
@@ -683,18 +703,24 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     });
 
     const rawRefreshToken = crypto.randomUUID();
+    const ttlMs = refreshTtlMs(user.role);
+    const hashedRT = hashRefreshToken(rawRefreshToken);
     await db.insert(sessions).values({
       userId: user.id,
-      refreshToken: hashRefreshToken(rawRefreshToken),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      refreshToken: hashedRT,
+      expiresAt: new Date(Date.now() + ttlMs),
     });
+    if (isInternalRole(user.role)) {
+      const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
+      await recordAdminLogin(db, user.id, hashedRT, req.headers, clientIp);
+    }
 
     reply.setCookie("refreshToken", rawRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: Math.floor(ttlMs / 1000),
     });
     await setSurfaceCookie(reply, user.role);
 
@@ -796,6 +822,25 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.status(401).send({ error: "Account has been deactivated" });
     }
 
+    // Sprint 5: enforce idle timeout, MFA freshness, and device-fingerprint
+    // binding for internal roles. Lenient backfill creates the
+    // admin_sessions row on first hit if one does not yet exist.
+    if (isInternalRole(user.role)) {
+      const ipAddress = (req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null) as string | null;
+      const gate = await gateAdminRefresh(db, hashedToken, user.id, req.headers, ipAddress);
+      if (!gate.ok) {
+        // Sprint 5: gate failure must be terminal for this refresh token.
+        // Without this, an attacker could simply retry refresh and let the
+        // lenient backfill recreate the admin_sessions row, defeating idle/
+        // device/MFA-freshness controls.
+        await db.delete(sessions).where(eq(sessions.refreshToken, hashedToken));
+        reply.clearCookie("refreshToken", { path: "/" });
+        clearSurfaceCookie(reply);
+        return reply.status(gate.status).send(gate.body);
+      }
+      await bumpAdminActivity(db, hashedToken);
+    }
+
     const accessToken = await signJWT({
       sub: user.id,
       tenantId: user.tenantId,
@@ -807,13 +852,51 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return { accessToken };
   });
 
+  /**
+   * Sprint 5: client heartbeat. Internal-role sessions ping this every
+   * minute (throttled) on user activity so the server can keep
+   * `adminSessions.lastActivityAt` fresh. Returns the next idle/MFA
+   * deadlines so the UI can drive a warning modal.
+   */
+  app.put("/api/auth/session/heartbeat", async (req, reply) => {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) return reply.status(401).send({ error: "Missing authorization header" });
+    let payload: any;
+    try {
+      payload = await verifyJWT(auth.slice(7));
+    } catch {
+      return reply.status(401).send({ error: "Invalid token" });
+    }
+    if (!isInternalRole(payload.role)) {
+      return { serverNow: Date.now(), idleDeadline: 0, mfaDeadline: 0 };
+    }
+    const cookieToken = req.cookies.refreshToken;
+    if (!cookieToken) return reply.status(401).send({ error: "No refresh session" });
+    const sessionId = hashRefreshToken(cookieToken);
+    const db = (app as any).db;
+    const [row] = await db.select().from(adminSessions).where(eq(adminSessions.sessionId, sessionId)).limit(1);
+    if (!row) {
+      const ipAddress = (req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null) as string | null;
+      await (await import("../services/admin-session.js")).recordAdminLogin(db, payload.sub, sessionId, req.headers, ipAddress);
+    }
+    const updated = await bumpAdminActivity(db, sessionId);
+    const fresh = row ?? { mfaVerifiedAt: updated };
+    return {
+      serverNow: Date.now(),
+      idleDeadline: idleDeadline(updated),
+      mfaDeadline: mfaDeadline(fresh.mfaVerifiedAt),
+    };
+  });
+
   app.post("/api/auth/logout", {
     schema: { tags: ["Auth"] },
   }, async (req, reply) => {
     const token = req.cookies.refreshToken;
     if (token) {
       const db = (app as any).db;
-      await db.delete(sessions).where(eq(sessions.refreshToken, hashRefreshToken(token)));
+      const hashed = hashRefreshToken(token);
+      await db.delete(sessions).where(eq(sessions.refreshToken, hashed));
+      await db.delete(adminSessions).where(eq(adminSessions.sessionId, hashed));
     }
     reply.clearCookie("refreshToken", { path: "/" });
     clearSurfaceCookie(reply);
@@ -1138,7 +1221,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (usedRecovery) {
       const remaining = await countActiveRecoveryCodes(db, user.id);
       const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
-      await db.insert(auditEvents).values({
+      await appendAudit(db, "audit_events", auditEvents, {
         tenantId: user.tenantId,
         userId: user.id,
         eventType: "MFA_RECOVERY_USED",
@@ -1168,18 +1251,23 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     });
 
     const rawRefreshToken = crypto.randomUUID();
+    const ttlMs = refreshTtlMs(user.role);
+    const hashedRT = hashRefreshToken(rawRefreshToken);
     await db.insert(sessions).values({
       userId: user.id,
-      refreshToken: hashRefreshToken(rawRefreshToken),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      refreshToken: hashedRT,
+      expiresAt: new Date(Date.now() + ttlMs),
     });
+    if (isInternalRole(user.role)) {
+      await recordAdminLogin(db, user.id, hashedRT, req.headers, clientIp);
+    }
 
     reply.setCookie("refreshToken", rawRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: Math.floor(ttlMs / 1000),
     });
     await setSurfaceCookie(reply, user.role);
 
@@ -1472,7 +1560,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }).where(eq(users.id, user.id));
     const recoveryCodes = await regenerateRecoveryCodes(db, user.id);
     const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
-    await db.insert(auditEvents).values({
+    await appendAudit(db, "audit_events", auditEvents, {
       tenantId: user.tenantId, userId: user.id,
       eventType: "MFA_TOTP_ENROLLED", resourceType: "user", resourceId: user.id,
       ipAddress: clientIp, userAgent: (req.headers["user-agent"] as string) || null,
@@ -1493,7 +1581,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: "Incorrect password" });
     }
     await db.update(users).set({ totpSecretEncrypted: null, mfaMethod: "email" }).where(eq(users.id, user.id));
-    await db.insert(auditEvents).values({
+    await appendAudit(db, "audit_events", auditEvents, {
       tenantId: user.tenantId, userId: user.id,
       eventType: "MFA_TOTP_DISABLED", resourceType: "user", resourceId: user.id,
     });
@@ -1594,7 +1682,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       recoveryCodes = await regenerateRecoveryCodes(db, user.id);
     }
 
-    await db.insert(auditEvents).values({
+    await appendAudit(db, "audit_events", auditEvents, {
       tenantId: user.tenantId, userId: user.id,
       eventType: "MFA_WEBAUTHN_REGISTERED", resourceType: "webauthn_credential", resourceId: credentialId,
       details: { label: label || "Passkey", deviceType },
@@ -1652,7 +1740,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       const fallback = user.totpSecretEncrypted ? "totp" : "email";
       await db.update(users).set({ mfaMethod: fallback }).where(eq(users.id, user.id));
     }
-    await db.insert(auditEvents).values({
+    await appendAudit(db, "audit_events", auditEvents, {
       tenantId: user.tenantId, userId: user.id,
       eventType: "MFA_WEBAUTHN_REVOKED", resourceType: "webauthn_credential", resourceId: id,
     });
@@ -1754,17 +1842,22 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       sub: user.id, tenantId: user.tenantId, role: user.role, email: user.email!, name: user.name,
     });
     const rawRefreshToken = crypto.randomUUID();
+    const ttlMs = refreshTtlMs(user.role);
+    const hashedRT = hashRefreshToken(rawRefreshToken);
     await db.insert(sessions).values({
       userId: user.id,
-      refreshToken: hashRefreshToken(rawRefreshToken),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      refreshToken: hashedRT,
+      expiresAt: new Date(Date.now() + ttlMs),
     });
+    if (isInternalRole(user.role)) {
+      await recordAdminLogin(db, user.id, hashedRT, req.headers, clientIp);
+    }
     reply.setCookie("refreshToken", rawRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: Math.floor(ttlMs / 1000),
     });
     await setSurfaceCookie(reply, user.role);
     return {
@@ -1791,7 +1884,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: "Incorrect password" });
     }
     const codes = await regenerateRecoveryCodes(db, user.id);
-    await db.insert(auditEvents).values({
+    await appendAudit(db, "audit_events", auditEvents, {
       tenantId: user.tenantId, userId: user.id,
       eventType: "MFA_RECOVERY_REGENERATED", resourceType: "user", resourceId: user.id,
     });

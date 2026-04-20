@@ -3,6 +3,7 @@ import {
   users, sessions, tenants, learners, sensoryProfiles,
   schools, classrooms, classroomEnrollments, staffAssignments,
   districtSettings, districtActivityLog, iepRecords, interventions,
+  appendAudit,
 } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { eq, and, sql, ilike, or, count, desc, asc, isNull } from "drizzle-orm";
@@ -41,7 +42,18 @@ function safePageSize(val: any, def = 20): number {
 }
 
 async function logActivity(db: any, tenantId: string, action: string, actorId: string, actorName: string, resourceType: string, resourceId?: string, details?: any) {
-  await db.insert(districtActivityLog).values({ tenantId, action, actorId, actorName, resourceType, resourceId, details });
+  // Sprint 4: chain district activity through appendAudit so the verifier
+  // can walk every row.
+  await appendAudit(db, "district_activity_log", districtActivityLog, {
+    tenantId,
+    action,
+    actorId,
+    actorName: actorName ?? null,
+    onBehalfOfId: null,
+    resourceType,
+    resourceId: resourceId ?? null,
+    details: details ?? null,
+  });
 }
 
 export async function registerDistrictRoutes(app: FastifyInstance) {

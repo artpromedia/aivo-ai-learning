@@ -1,6 +1,10 @@
 import { FastifyInstance } from "fastify";
-import { users, learners, tenants, sensoryProfiles, consentRecords, sessions } from "@aivo/db";
+import { users, learners, tenants, sensoryProfiles, consentRecords, sessions, adminAuditLog, appendAudit } from "@aivo/db";
 import { signJWT, verifyJWT } from "@aivo/security";
+
+function clientIp(req: any): string | null {
+  return req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
+}
 import { eq, sql, desc, ilike, or, and, count, asc } from "drizzle-orm";
 import argon2 from "argon2";
 import crypto from "crypto";
@@ -463,6 +467,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: "User not found" });
     }
 
+    const startedAt = Date.now();
     const impersonatedToken = await signJWT({
       sub: targetUser.id,
       tenantId: targetUser.tenantId || "",
@@ -470,6 +475,24 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       email: targetUser.email || "",
       name: targetUser.name,
       impersonatedBy: adminUser.sub,
+      impersonationStartedAt: startedAt,
+    });
+
+    // Sprint 4: write IMPERSONATION_STARTED into the hash-chained admin
+    // audit log. Failure to audit MUST block impersonation — silently
+    // dropping the trail would defeat the control.
+    await appendAudit(db, "admin_audit_log", adminAuditLog, {
+      action: "IMPERSONATION_STARTED",
+      actorId: adminUser.sub,
+      actorEmail: adminUser.email || "",
+      actorRole: adminUser.role,
+      onBehalfOfId: targetUser.id,
+      resourceType: "user",
+      resourceId: targetUser.id,
+      details: { startedAt, targetEmail: targetUser.email, targetRole: targetUser.role },
+      ipAddress: clientIp(req),
+      userAgent: (req.headers["user-agent"] as string) || null,
+      tenantId: adminUser.tenantId || null,
     });
 
     return {
@@ -481,6 +504,76 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         role: targetUser.role,
         tenantId: targetUser.tenantId,
       },
+    };
+  });
+
+  /**
+   * Sprint 4: end an impersonation session. Caller must present a Bearer
+   * token issued by /api/admin/impersonate (i.e. the JWT carries
+   * `impersonatedBy`). Writes an IMPERSONATION_ENDED audit row with the
+   * session duration and returns a fresh admin token for the original
+   * admin so the UI can keep working without a full re-auth.
+   */
+  app.post("/api/admin/impersonate/end", async (req: any, reply: any) => {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) {
+      return reply.status(401).send({ error: "Missing authorization header" });
+    }
+    let payload: any;
+    try {
+      payload = await verifyJWT(auth.slice(7));
+    } catch {
+      return reply.status(401).send({ error: "Invalid token" });
+    }
+    if (!payload.impersonatedBy) {
+      return reply.status(400).send({ error: "Token is not an impersonation token" });
+    }
+
+    const [admin] = await db
+      .select({ id: users.id, email: users.email, name: users.name, role: users.role, tenantId: users.tenantId })
+      .from(users)
+      .where(eq(users.id, payload.impersonatedBy))
+      .limit(1);
+    if (!admin) {
+      return reply.status(404).send({ error: "Original admin not found" });
+    }
+
+    const durationMs = payload.impersonationStartedAt
+      ? Date.now() - payload.impersonationStartedAt
+      : null;
+
+    await appendAudit(db, "admin_audit_log", adminAuditLog, {
+      action: "IMPERSONATION_ENDED",
+      actorId: admin.id,
+      actorEmail: admin.email || "",
+      actorRole: admin.role,
+      onBehalfOfId: payload.sub,
+      resourceType: "user",
+      resourceId: payload.sub,
+      details: { durationMs, startedAt: payload.impersonationStartedAt ?? null },
+      ipAddress: clientIp(req),
+      userAgent: (req.headers["user-agent"] as string) || null,
+      tenantId: admin.tenantId || null,
+    });
+
+    const adminToken = await signJWT({
+      sub: admin.id,
+      tenantId: admin.tenantId || "",
+      role: admin.role,
+      email: admin.email || "",
+      name: admin.name,
+    });
+
+    return {
+      accessToken: adminToken,
+      user: {
+        id: admin.id,
+        email: admin.email,
+        name: admin.name,
+        role: admin.role,
+        tenantId: admin.tenantId,
+      },
+      durationMs,
     };
   });
 

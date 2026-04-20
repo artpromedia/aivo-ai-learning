@@ -63,6 +63,58 @@ CREATE TABLE IF NOT EXISTS mfa_recovery_codes (
   created_at timestamp DEFAULT now() NOT NULL
 );
 CREATE INDEX IF NOT EXISTS mfa_recovery_codes_user_id_idx ON mfa_recovery_codes(user_id);
+
+-- Sprint 4: Audit immutability + impersonation trail
+ALTER TABLE audit_events ADD COLUMN IF NOT EXISTS seq bigserial;
+ALTER TABLE audit_events ADD COLUMN IF NOT EXISTS on_behalf_of_id uuid;
+ALTER TABLE audit_events ADD COLUMN IF NOT EXISTS prev_hash varchar(64);
+ALTER TABLE audit_events ADD COLUMN IF NOT EXISTS hash varchar(64);
+CREATE INDEX IF NOT EXISTS idx_audit_events_seq ON audit_events(seq);
+
+ALTER TABLE admin_audit_log ADD COLUMN IF NOT EXISTS seq bigserial;
+ALTER TABLE admin_audit_log ADD COLUMN IF NOT EXISTS on_behalf_of_id uuid REFERENCES users(id);
+ALTER TABLE admin_audit_log ADD COLUMN IF NOT EXISTS prev_hash varchar(64);
+ALTER TABLE admin_audit_log ADD COLUMN IF NOT EXISTS hash varchar(64);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_seq ON admin_audit_log(seq);
+
+ALTER TABLE district_activity_log ADD COLUMN IF NOT EXISTS seq bigserial;
+ALTER TABLE district_activity_log ADD COLUMN IF NOT EXISTS on_behalf_of_id uuid REFERENCES users(id);
+ALTER TABLE district_activity_log ADD COLUMN IF NOT EXISTS prev_hash varchar(64);
+ALTER TABLE district_activity_log ADD COLUMN IF NOT EXISTS hash varchar(64);
+CREATE INDEX IF NOT EXISTS idx_district_activity_log_seq ON district_activity_log(seq);
+
+CREATE OR REPLACE FUNCTION audit_no_mutate() RETURNS trigger AS $aivo$
+BEGIN
+  RAISE EXCEPTION 'Audit table % is append-only -- % blocked', TG_TABLE_NAME, TG_OP
+    USING ERRCODE = 'insufficient_privilege';
+END;
+$aivo$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS audit_events_no_mutate ON audit_events;
+CREATE TRIGGER audit_events_no_mutate
+  BEFORE UPDATE OR DELETE OR TRUNCATE ON audit_events
+  FOR EACH STATEMENT EXECUTE FUNCTION audit_no_mutate();
+DROP TRIGGER IF EXISTS admin_audit_log_no_mutate ON admin_audit_log;
+CREATE TRIGGER admin_audit_log_no_mutate
+  BEFORE UPDATE OR DELETE OR TRUNCATE ON admin_audit_log
+  FOR EACH STATEMENT EXECUTE FUNCTION audit_no_mutate();
+DROP TRIGGER IF EXISTS district_activity_log_no_mutate ON district_activity_log;
+CREATE TRIGGER district_activity_log_no_mutate
+  BEFORE UPDATE OR DELETE OR TRUNCATE ON district_activity_log
+  FOR EACH STATEMENT EXECUTE FUNCTION audit_no_mutate();
+
+-- Sprint 5: Admin session hygiene
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid NOT NULL REFERENCES users(id),
+  session_id varchar(64) NOT NULL UNIQUE,
+  last_activity_at timestamp DEFAULT now() NOT NULL,
+  mfa_verified_at timestamp DEFAULT now() NOT NULL,
+  device_fingerprint varchar(64) NOT NULL,
+  ip_address varchar(45),
+  created_at timestamp DEFAULT now() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_user ON admin_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_activity ON admin_sessions(last_activity_at);
 SQL
 fi
 

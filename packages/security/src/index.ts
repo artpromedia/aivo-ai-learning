@@ -45,6 +45,9 @@ export type StepUpScope =
   | "data:export"
   | "config:update";
 
+export * from "./audit-chain.js";
+export * from "./ip-allowlist.js";
+
 export const STEP_UP_SCOPES: readonly StepUpScope[] = [
   "tenant:delete",
   "tenant:suspend",
