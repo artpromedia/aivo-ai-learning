@@ -73,7 +73,7 @@ paths = [
 ]
 regexTarget = "match"
 regexes = [
-  '''sk_test_placeholder''',
+  '''placeholder-not-a-real-stripe-key''',
   '''whsec_placeholder''',
   '''re_test_placeholder''',
   '''ci-test-jwt-secret-not-real''',

@@ -49,7 +49,7 @@ jobs:
       NODE_ENV: test
       JWT_SECRET: ci-test-jwt-secret-not-real
       BETTER_AUTH_SECRET: ci-test-auth-secret-not-real
-      STRIPE_SECRET_KEY: sk_test_placeholder
+      STRIPE_SECRET_KEY: placeholder-not-a-real-stripe-key
       STRIPE_WEBHOOK_SECRET: whsec_placeholder
       RESEND_API_KEY: re_test_placeholder
 
