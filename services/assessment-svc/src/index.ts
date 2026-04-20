@@ -16,7 +16,7 @@ const PORT = parseInt(process.env.ASSESSMENT_PORT || "3003", 10);
 
 async function start() {
   const db = createDb(process.env.DATABASE_URL!);
-  const app = Fastify({ loggerInstance: logger });
+  const app = Fastify({ logger: false });
 
   await app.register(cors, { origin: true, credentials: true });
   await app.register(swagger, {
