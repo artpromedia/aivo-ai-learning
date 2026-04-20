@@ -1,4 +1,107 @@
 import json
+from typing import Optional
+
+
+CURRICULUM_FRAMEWORK_GUIDANCE = {
+    "CCSS": "Common Core State Standards (math: K-CC, OA, NBT, NF, MD, G; ELA: RL, RI, RF, W, SL, L)",
+    "TEKS": "Texas Essential Knowledge and Skills (state-specific TX scope and sequence)",
+    "NGSS": "Next Generation Science Standards (DCI / Cross-cutting Concepts / Practices)",
+    "FL_BEST": "Florida B.E.S.T. Standards",
+    "CA_CCSS": "California Common Core (CA-aligned ELA & math)",
+    "NY_NEXT_GEN": "New York Next Generation Learning Standards",
+}
+
+
+def _format_iep_block(iep: Optional[dict]) -> str:
+    """Render the learner's IEP context (if uploaded) as prompt-ready text."""
+    if not iep:
+        return "## IEP Context\nNo IEP on file. Generate based on parent assessment only."
+
+    disability = iep.get("disabilityCategories") or []
+    accommodations = iep.get("accommodations") or []
+    goals = iep.get("goals") or []
+    grade_level = iep.get("gradeLevel") or "not specified"
+    comm_system = iep.get("communicationSystem") or "not specified"
+    assistive_tech = iep.get("assistiveTechnology") or []
+    rec_fl = iep.get("recommendedFunctioningLevel") or "not specified"
+
+    def _fmt_goal(g):
+        if isinstance(g, str):
+            return f"  - {g}"
+        if not isinstance(g, dict):
+            return f"  - {str(g)}"
+        domain = g.get("domain") or "general"
+        desc = g.get("description") or g.get("goalText") or g.get("text") or ""
+        target = g.get("target") or g.get("targetCriteria") or ""
+        baseline = g.get("baseline") or ""
+        parts = [f"[{domain}] {desc}"]
+        if baseline:
+            parts.append(f"baseline: {baseline}")
+        if target:
+            parts.append(f"target: {target}")
+        return f"  - {' | '.join(parts)}"
+
+    def _fmt_accom(a):
+        if isinstance(a, str):
+            return f"  - {a}"
+        if not isinstance(a, dict):
+            return f"  - {str(a)}"
+        atype = a.get("type") or "general"
+        desc = a.get("description") or a.get("text") or ""
+        freq = a.get("frequency") or ""
+        suffix = f" ({freq})" if freq else ""
+        return f"  - [{atype}] {desc}{suffix}"
+
+    goals_block = "\n".join(_fmt_goal(g) for g in goals[:12]) if goals else "  - (none recorded)"
+    accom_block = "\n".join(_fmt_accom(a) for a in accommodations[:10]) if accommodations else "  - (none recorded)"
+
+    return f"""## IEP Context (Individualized Education Program)
+- Disability categories: {', '.join(disability) if disability else 'none reported'}
+- IEP grade level: {grade_level}
+- Communication system: {comm_system}
+- Assistive technology: {', '.join(assistive_tech) if assistive_tech else 'none'}
+- IEP-recommended functioning level: {rec_fl}
+
+### Active IEP Goals (target these domains explicitly)
+{goals_block}
+
+### Required Accommodations (apply to every question/activity)
+{accom_block}"""
+
+
+def _format_district_block(district: Optional[dict]) -> str:
+    """Render the learner's district / curriculum context as prompt-ready text."""
+    if not district:
+        return "## District & Curriculum Context\nNo district context on file. Use generic age-appropriate content."
+
+    name = district.get("districtName") or "(unnamed district)"
+    region = district.get("region") or "unknown region"
+    country = district.get("country") or "US"
+    grade = district.get("gradeLevel") or "not specified"
+    framework = district.get("curriculumFramework") or None
+    alignment = district.get("curriculumAlignment") or {}
+
+    framework_guidance = CURRICULUM_FRAMEWORK_GUIDANCE.get(framework or "", "")
+    framework_line = f"- Curriculum framework: {framework}" + (f" — {framework_guidance}" if framework_guidance else "") if framework else "- Curriculum framework: not specified"
+
+    alignment_lines = []
+    if isinstance(alignment, dict) and alignment:
+        for subject, value in list(alignment.items())[:8]:
+            alignment_lines.append(f"  - {subject}: {value}")
+    alignment_block = "\n".join(alignment_lines) if alignment_lines else "  - (no per-subject alignment recorded)"
+
+    return f"""## District & Curriculum Context
+- District: {name} ({region}, {country})
+- Enrolled grade level: {grade}
+{framework_line}
+
+### Per-Subject Standards Alignment
+{alignment_block}
+
+When generating questions, anchor wording, examples, and difficulty to the
+framework above for the enrolled grade level. If the IEP grade level differs
+from the enrolled grade level, prefer the IEP grade level for difficulty
+calibration but keep terminology consistent with the district framework."""
 
 
 SUBJECTS = [
@@ -81,7 +184,12 @@ ADVENTURE_CHAPTERS = [
 ]
 
 
-def build_discovery_adventure_prompt(parent_assessment: dict, chapter: dict) -> tuple[str, str]:
+def build_discovery_adventure_prompt(
+    parent_assessment: dict,
+    chapter: dict,
+    iep: Optional[dict] = None,
+    district: Optional[dict] = None,
+) -> tuple[str, str]:
     responses = parent_assessment.get("responses", {})
     communication_mode = parent_assessment.get("communicationMode", "verbal")
     device_interaction = parent_assessment.get("deviceInteraction", "independent")
@@ -130,6 +238,10 @@ def build_discovery_adventure_prompt(parent_assessment: dict, chapter: dict) -> 
 - What Frustrates Them: {frustrations or 'Not specified'}
 - Focus Rating (1-5): {focus_rating}
 - Self-Confidence (1-5): {confidence}
+
+{_format_iep_block(iep)}
+
+{_format_district_block(district)}
 
 ## Current Chapter
 - Chapter: {chapter['title']}
@@ -207,7 +319,11 @@ IMPORTANT:
     return system_prompt, user_prompt
 
 
-def build_baseline_generation_prompt(parent_assessment: dict) -> tuple[str, str]:
+def build_baseline_generation_prompt(
+    parent_assessment: dict,
+    iep: Optional[dict] = None,
+    district: Optional[dict] = None,
+) -> tuple[str, str]:
     responses = parent_assessment.get("responses", {})
     communication_mode = parent_assessment.get("communicationMode", "verbal")
     device_interaction = parent_assessment.get("deviceInteraction", "independent")
@@ -249,6 +365,10 @@ def build_baseline_generation_prompt(parent_assessment: dict) -> tuple[str, str]
 - Engagement Preference: {engagement_type or 'Not specified'}
 - Focus Rating (1-5): {focus_rating}
 - Self-Confidence (1-5): {confidence}
+
+{_format_iep_block(iep)}
+
+{_format_district_block(district)}
 
 ## Rules
 1. Generate EXACTLY 6 questions per subject for these 7 subjects: math, ela, science, speech, sel, life_skills, executive_function (42 questions total)

@@ -1,7 +1,57 @@
 import { FastifyInstance } from "fastify";
-import { parentAssessments, learners, assessmentAttempts } from "@aivo/db";
+import { parentAssessments, learners, assessmentAttempts, iepProfiles, iepGoals } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { eq, desc } from "drizzle-orm";
+
+async function loadIepContext(db: any, learnerDbId: string) {
+  const [profile] = await db
+    .select()
+    .from(iepProfiles)
+    .where(eq(iepProfiles.learnerId, learnerDbId))
+    .orderBy(desc(iepProfiles.updatedAt))
+    .limit(1);
+
+  if (!profile) return null;
+
+  const goals = await db
+    .select()
+    .from(iepGoals)
+    .where(eq(iepGoals.learnerId, learnerDbId))
+    .orderBy(desc(iepGoals.updatedAt))
+    .limit(20);
+
+  return {
+    disabilityCategories: profile.disabilityCategories || [],
+    accommodations: profile.accommodations || [],
+    goals: (profile.goals && Array.isArray(profile.goals) && profile.goals.length > 0)
+      ? profile.goals
+      : goals.map((g: any) => ({
+          domain: g.domain,
+          description: g.goalText,
+          baseline: g.baseline,
+          target: g.targetCriteria,
+        })),
+    gradeLevel: profile.gradeLevel,
+    communicationSystem: profile.communicationSystem,
+    assistiveTechnology: profile.assistiveTechnology || [],
+    recommendedFunctioningLevel: profile.recommendedFunctioningLevel,
+  };
+}
+
+function buildDistrictContext(learner: any) {
+  if (!learner.districtId && !learner.districtName && !learner.curriculumFramework) {
+    return null;
+  }
+  return {
+    districtId: learner.districtId || null,
+    districtName: learner.districtName || null,
+    region: learner.region || null,
+    country: learner.country || "US",
+    gradeLevel: learner.gradeLevel || null,
+    curriculumFramework: learner.curriculumFramework || null,
+    curriculumAlignment: learner.curriculumAlignment || {},
+  };
+}
 
 async function authenticate(req: any, reply: any) {
   const auth = req.headers.authorization;
@@ -143,6 +193,8 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
     }
 
     const parentPayload = buildParentAssessmentPayload(parentAssessment, learner);
+    const iepContext = await loadIepContext(db, learner.id);
+    const districtContext = buildDistrictContext(learner);
 
     try {
       const aiRes = await fetch(`${AI_SVC_URL}/api/ai/generate-discovery-chapter`, {
@@ -152,6 +204,8 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
           parent_assessment: parentPayload,
           chapter,
           functioning_level: learner.functioningLevel || "STANDARD",
+          iep: iepContext,
+          district: districtContext,
         }),
       });
 
@@ -364,6 +418,9 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
       });
     }
 
+    const iepContext = await loadIepContext(db, learner.id);
+    const districtContext = buildDistrictContext(learner);
+
     try {
       const aiRes = await fetch(`${AI_SVC_URL}/api/ai/generate-baseline`, {
         method: "POST",
@@ -379,6 +436,8 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
             functioningLevel: learner.functioningLevel || "STANDARD",
           },
           functioning_level: learner.functioningLevel || "STANDARD",
+          iep: iepContext,
+          district: districtContext,
         }),
       });
 

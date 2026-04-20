@@ -121,6 +121,8 @@ async def tutor_chat(req: TutorChatRequest):
 class BaselineRequest(BaseModel):
     parent_assessment: dict
     functioning_level: str = "STANDARD"
+    iep: Optional[dict] = None
+    district: Optional[dict] = None
 
 
 class BaselineResponse(BaseModel):
@@ -135,7 +137,9 @@ class BaselineResponse(BaseModel):
 async def generate_baseline(req: BaselineRequest):
     from ..services.baseline_generator import SUBJECTS
 
-    system_prompt, user_prompt = build_baseline_generation_prompt(req.parent_assessment)
+    system_prompt, user_prompt = build_baseline_generation_prompt(
+        req.parent_assessment, iep=req.iep, district=req.district
+    )
 
     try:
         result = await generate_completion(
@@ -194,6 +198,8 @@ class DiscoveryChapterRequest(BaseModel):
     parent_assessment: dict
     chapter: dict
     functioning_level: str = "STANDARD"
+    iep: Optional[dict] = None
+    district: Optional[dict] = None
 
 
 class DiscoveryChapterResponse(BaseModel):
@@ -208,7 +214,9 @@ class DiscoveryChapterResponse(BaseModel):
 async def generate_discovery_chapter(req: DiscoveryChapterRequest):
     from ..services.baseline_generator import build_discovery_adventure_prompt
 
-    system_prompt, user_prompt = build_discovery_adventure_prompt(req.parent_assessment, req.chapter)
+    system_prompt, user_prompt = build_discovery_adventure_prompt(
+        req.parent_assessment, req.chapter, iep=req.iep, district=req.district
+    )
 
     try:
         result = await generate_completion(
