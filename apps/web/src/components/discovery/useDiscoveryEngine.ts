@@ -412,7 +412,7 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     return loadSavedState(learnerId) !== null;
   }, [learnerId]);
 
-  const submitResults = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+  const submitResults = useCallback(async (): Promise<{ success: boolean; error?: string; code?: string; status?: number }> => {
     const payload = JSON.stringify({
       chapterResults: state.chapterResults,
       totalCorrect: state.totalCorrect,
@@ -432,7 +432,7 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     try {
       let token = accessToken;
       if (!token && refreshToken) token = await refreshToken();
-      if (!token) return { success: false, error: "No auth token" };
+      if (!token) return { success: false, error: "No auth token", code: "no_auth_token" };
 
       let res = await doPost(token);
 
@@ -447,11 +447,29 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
         clearSavedState(learnerId);
         return { success: true };
       } else {
-        const err = await res.text();
-        return { success: false, error: err };
+        const raw = await res.text();
+        let code: string | undefined;
+        let message: string | undefined;
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object") {
+            if (typeof parsed.error === "string") code = parsed.error;
+            if (typeof parsed.message === "string") message = parsed.message;
+            if (!code && typeof parsed.detail === "string") code = parsed.detail;
+          }
+        } catch {
+          const trimmed = raw.trim();
+          if (trimmed === "parent_assessment_required") code = trimmed;
+        }
+        return {
+          success: false,
+          error: message || raw || `HTTP ${res.status}`,
+          code,
+          status: res.status,
+        };
       }
     } catch (e: any) {
-      return { success: false, error: e.message };
+      return { success: false, error: e?.message || "Network error", code: "network_error" };
     }
   }, [accessToken, refreshToken, learnerId, state.chapterResults, state.totalCorrect, state.totalAttempts, state.xpEarned, state.responseLatencies]);
 

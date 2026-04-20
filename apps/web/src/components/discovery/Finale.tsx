@@ -15,10 +15,59 @@ interface FinaleProps {
   functioningLevel: FunctioningLevel;
   onFinish: () => void;
   onExitHome?: () => void;
-  onSubmitResults: () => Promise<{ success: boolean; error?: string }>;
+  onSubmitResults: () => Promise<{ success: boolean; error?: string; code?: string; status?: number }>;
 }
 
 type FinaleStage = "celebration" | "saving" | "saved" | "error";
+
+interface FriendlyError {
+  title: string;
+  body: string;
+  retryable: boolean;
+}
+
+function describeSaveError(code: string | undefined, status: number | undefined): FriendlyError {
+  if (code === "parent_assessment_required") {
+    return {
+      title: "We need a grown-up first",
+      body: "Ask the grown-up to finish the parent setup, then come back and tap Try saving again.",
+      retryable: true,
+    };
+  }
+  if (code === "no_auth_token" || status === 401 || status === 403) {
+    return {
+      title: "We need to sign you back in",
+      body: "Your sign-in expired. Ask the grown-up to sign in again, then tap Try saving again.",
+      retryable: true,
+    };
+  }
+  if (code === "network_error") {
+    return {
+      title: "We can't reach the internet",
+      body: "Check the Wi-Fi or try again in a moment — your progress is still here.",
+      retryable: true,
+    };
+  }
+  if (status === 502 || status === 503 || status === 504) {
+    return {
+      title: "Our helpers are taking a quick break",
+      body: "Something on our side is slow right now. Wait a moment, then tap Try saving again.",
+      retryable: true,
+    };
+  }
+  if (status && status >= 500) {
+    return {
+      title: "Something went wrong on our side",
+      body: "It's not your fault! Tap Try saving again — your progress is still here.",
+      retryable: true,
+    };
+  }
+  return {
+    title: "We couldn't save your results",
+    body: "Tap Try saving again — your progress is still here.",
+    retryable: true,
+  };
+}
 
 export default function Finale({
   learnerName, chapterResults, totalCorrect, totalAttempts, xpEarned,
@@ -28,15 +77,24 @@ export default function Finale({
   const [step, setStep] = useState(0);
 
   const [saveError, setSaveError] = useState<string>("");
+  const [saveErrorCode, setSaveErrorCode] = useState<string | undefined>(undefined);
+  const [saveErrorStatus, setSaveErrorStatus] = useState<number | undefined>(undefined);
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
   const saveResults = useCallback(async () => {
     setStage("saving");
     const result = await onSubmitResults();
     if (result.success) {
       setSaveError("");
+      setSaveErrorCode(undefined);
+      setSaveErrorStatus(undefined);
+      setShowErrorDetails(false);
       setStage("saved");
     } else {
-      console.error("[Finale] submitResults failed:", result.error);
+      console.error("[Finale] submitResults failed:", result.code, result.status, result.error);
       setSaveError(result.error || "Unknown error");
+      setSaveErrorCode(result.code);
+      setSaveErrorStatus(result.status);
+      setShowErrorDetails(false);
       setStage("error");
     }
   }, [onSubmitResults]);
@@ -82,12 +140,29 @@ export default function Finale({
       );
     }
     if (stage === "error") {
+      const friendly = describeSaveError(saveErrorCode, saveErrorStatus);
+      const hasDetails = !!(saveError || saveErrorCode || saveErrorStatus);
       return (
         <div className="vi-card p-5 mt-5" style={{ background: "hsl(43 100% 50% / 0.06)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
-          <p className="text-sm font-extrabold text-[hsl(43_100%_50%)] mb-1">We couldn&apos;t save your results</p>
-          <p className="text-xs text-slate-600 mb-2">Please try again — your progress is still here.</p>
-          {saveError ? (
-            <p className="text-[10px] text-slate-400 font-mono break-all mb-3 max-h-20 overflow-auto">{saveError}</p>
+          <p className="text-sm font-extrabold text-[hsl(43_100%_50%)] mb-1">{friendly.title}</p>
+          <p className="text-xs text-slate-600 mb-2">{friendly.body}</p>
+          {hasDetails ? (
+            <div className="mb-3">
+              <button
+                type="button"
+                onClick={() => setShowErrorDetails(v => !v)}
+                className="text-[11px] text-slate-500 underline font-bold"
+              >
+                {showErrorDetails ? "Hide details" : "Show details"}
+              </button>
+              {showErrorDetails ? (
+                <p className="mt-1 text-[10px] text-slate-400 font-mono break-all max-h-20 overflow-auto">
+                  {saveErrorStatus ? `[${saveErrorStatus}] ` : ""}
+                  {saveErrorCode ? `${saveErrorCode}: ` : ""}
+                  {saveError}
+                </p>
+              ) : null}
+            </div>
           ) : null}
           <button
             onClick={saveResults}
