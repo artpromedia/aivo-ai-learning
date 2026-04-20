@@ -7,6 +7,17 @@ import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
 import BrainVisualization from "@/components/BrainVisualization";
 import { useTranslations } from "next-intl";
+import {
+  Brain,
+  ClipboardList,
+  PartyPopper,
+  Search,
+  Flame,
+  BookOpen,
+  Target,
+  Trophy,
+  type LucideIcon,
+} from "lucide-react";
 
 interface Learner {
   id: string;
@@ -72,29 +83,46 @@ export default function LearnerHubPage() {
   if (!learner) {
     return (
       <div className="text-center py-20">
-        <div className="text-4xl mb-3">🔍</div>
+        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center">
+          <Search size={28} strokeWidth={2.5} aria-hidden="true" />
+        </div>
         <p className="vi-text-muted font-semibold">{t("learner_not_found")}</p>
         <Link href="/dashboard/parent" className="text-sm text-[hsl(var(--visual-primary))] font-semibold hover:underline mt-2 inline-block">{t("back_to_dashboard")}</Link>
       </div>
     );
   }
 
-  const RIGHT_NOW_CARDS = [];
+  type RightNowCard = {
+    Icon: LucideIcon;
+    iconWrap: string;
+    label: string;
+    description: string;
+    href: string;
+    color: string;
+  };
+
+  const RIGHT_NOW_CARDS: RightNowCard[] = [];
   if (pendingReview) {
     RIGHT_NOW_CARDS.push({
-      icon: "🧠", label: `Review ${learner.name}'s Brain Profile`, description: "AIVO updated the brain profile based on recent sessions.",
+      Icon: Brain,
+      iconWrap: "bg-[hsl(var(--visual-surface))] text-[hsl(var(--visual-sel))]",
+      label: `Review ${learner.name}'s Brain Profile`, description: "AIVO updated the brain profile based on recent sessions.",
       href: `/dashboard/parent/learner/${learnerId}/brain-review`, color: "bg-[hsl(var(--visual-sel)/0.12)] border-[hsl(var(--visual-sel)/0.3)] text-[hsl(var(--visual-sel))]",
     });
   }
   if (!baselineCompleted && !hasBrain) {
     RIGHT_NOW_CARDS.push({
-      icon: "📝", label: "Complete the Assessment", description: "Help AIVO understand your child's learning needs (10 min).",
+      Icon: ClipboardList,
+      iconWrap: "bg-[hsl(var(--visual-surface))] text-[hsl(var(--visual-reading))]",
+      label: "Complete the Assessment", description: "Help AIVO understand your child's learning needs (10 min).",
       href: `/dashboard/parent/learner/${learnerId}/assessment`, color: "bg-[hsl(var(--visual-reading)/0.12)] border-[hsl(var(--visual-reading)/0.3)] text-[hsl(var(--visual-reading))]",
     });
   }
   if (RIGHT_NOW_CARDS.length === 0) {
     RIGHT_NOW_CARDS.push({
-      icon: "🎉", label: `${learner.name} is on track!`, description: "Everything's looking great. Keep it up!",
+      Icon: PartyPopper,
+      iconWrap: "bg-[hsl(var(--visual-surface))] text-[hsl(var(--visual-science))]",
+      label: `${learner.name} is on track!`, description: "Everything's looking great. Keep it up!",
       href: "", color: "bg-[hsl(var(--visual-science)/0.12)] border-[hsl(var(--visual-science)/0.3)] text-[hsl(var(--visual-science))]",
     });
   }
@@ -110,7 +138,10 @@ export default function LearnerHubPage() {
             <h1 className="text-xl lg:text-2xl font-heading font-bold vi-text">{learner.name}</h1>
             <div className="flex items-center gap-2 flex-wrap mt-1">
               {streak && streak.currentStreak > 0 && (
-                <span className="text-sm text-[hsl(var(--visual-sel))] font-semibold">🔥 {streak.currentStreak}-day streak</span>
+                <span className="inline-flex items-center gap-1.5 text-sm text-[hsl(var(--visual-sel))] font-semibold">
+                  <Flame size={14} strokeWidth={2.5} aria-hidden="true" />
+                  {streak.currentStreak}-day streak
+                </span>
               )}
             </div>
           </div>
@@ -119,29 +150,28 @@ export default function LearnerHubPage() {
 
       <div className="space-y-3">
         <h2 className="text-lg font-heading font-bold vi-text">Right Now</h2>
-        {RIGHT_NOW_CARDS.map((card, i) => (
-          card.href ? (
-            <Link key={i} href={card.href} className={`block rounded-xl p-4 border ${card.color} hover:shadow-md transition`}>
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{card.icon}</span>
-                <div>
-                  <p className="text-sm font-bold">{card.label}</p>
-                  <p className="text-xs opacity-80 mt-0.5">{card.description}</p>
-                </div>
-              </div>
-            </Link>
-          ) : (
-            <div key={i} className={`rounded-xl p-4 border ${card.color}`}>
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{card.icon}</span>
-                <div>
-                  <p className="text-sm font-bold">{card.label}</p>
-                  <p className="text-xs opacity-80 mt-0.5">{card.description}</p>
-                </div>
+        {RIGHT_NOW_CARDS.map((card, i) => {
+          const inner = (
+            <div className="flex items-center gap-3">
+              <span className={`w-11 h-11 rounded-2xl ${card.iconWrap} flex items-center justify-center shrink-0 shadow-sm`}>
+                <card.Icon size={20} strokeWidth={2.5} aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-bold">{card.label}</p>
+                <p className="text-xs opacity-80 mt-0.5">{card.description}</p>
               </div>
             </div>
-          )
-        ))}
+          );
+          return card.href ? (
+            <Link key={i} href={card.href} className={`block rounded-2xl p-4 border-2 ${card.color} hover:shadow-md transition`}>
+              {inner}
+            </Link>
+          ) : (
+            <div key={i} className={`rounded-2xl p-4 border-2 ${card.color}`}>
+              {inner}
+            </div>
+          );
+        })}
       </div>
 
       {accessToken && hasBrain && (
@@ -180,7 +210,10 @@ export default function LearnerHubPage() {
         <h2 className="text-lg font-heading font-bold vi-text mb-4">Explore</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <h3 className="text-xs font-bold vi-text-muted uppercase tracking-wider mb-2">📚 Learning & Assessment</h3>
+            <h3 className="text-xs font-bold vi-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <BookOpen size={14} strokeWidth={2.5} className="text-[hsl(var(--visual-reading))]" aria-hidden="true" />
+              Learning & Assessment
+            </h3>
             <div className="space-y-1">
               <Link href={`/dashboard/parent/learner/${learnerId}/progress`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Progress & Grades
@@ -195,7 +228,10 @@ export default function LearnerHubPage() {
           </div>
 
           <div>
-            <h3 className="text-xs font-bold vi-text-muted uppercase tracking-wider mb-2">🧠 Brain & Accommodations</h3>
+            <h3 className="text-xs font-bold vi-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Brain size={14} strokeWidth={2.5} className="text-[hsl(var(--visual-primary))]" aria-hidden="true" />
+              Brain & Accommodations
+            </h3>
             <div className="space-y-1">
               <Link href={`/dashboard/parent/learner/${learnerId}/brain`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Brain Profile
@@ -210,7 +246,10 @@ export default function LearnerHubPage() {
           </div>
 
           <div>
-            <h3 className="text-xs font-bold vi-text-muted uppercase tracking-wider mb-2">🎯 IEP & Support</h3>
+            <h3 className="text-xs font-bold vi-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Target size={14} strokeWidth={2.5} className="text-[hsl(var(--visual-science))]" aria-hidden="true" />
+              IEP & Support
+            </h3>
             <div className="space-y-1">
               <Link href={`/dashboard/parent/learner/${learnerId}/iep`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 IEP Goals
@@ -225,7 +264,10 @@ export default function LearnerHubPage() {
           </div>
 
           <div>
-            <h3 className="text-xs font-bold vi-text-muted uppercase tracking-wider mb-2">🏆 Achievements</h3>
+            <h3 className="text-xs font-bold vi-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Trophy size={14} strokeWidth={2.5} className="text-[hsl(var(--visual-sel))]" aria-hidden="true" />
+              Achievements
+            </h3>
             <div className="space-y-1">
               <Link href={`/dashboard/parent/learner/${learnerId}/milestones`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Milestones & Badges

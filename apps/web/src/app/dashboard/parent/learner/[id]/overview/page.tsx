@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import BrainVisualization from "@/components/BrainVisualization";
 import { useTranslations } from "next-intl";
+import { ClipboardList, BarChart3, Target, Lightbulb } from "lucide-react";
 
 interface LearnerDetail {
   id: string;
@@ -80,22 +81,30 @@ export default function ParentLearnerOverviewPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Link href={`/dashboard/parent/learner/${learnerId}/assessment`}
           className="vi-card p-5 hover:shadow-md hover:border-[hsl(var(--visual-primary)/0.4)] transition text-center">
-          <span className="text-2xl">📋</span>
+          <span className="w-11 h-11 mx-auto rounded-2xl bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] flex items-center justify-center">
+            <ClipboardList size={22} strokeWidth={2.5} aria-hidden="true" />
+          </span>
           <p className="text-sm font-semibold vi-text mt-2">{t("assessments")}</p>
         </Link>
         <Link href={`/dashboard/parent/learner/${learnerId}/gradebook`}
           className="vi-card p-5 hover:shadow-md hover:border-[hsl(var(--visual-primary)/0.4)] transition text-center">
-          <span className="text-2xl">📊</span>
+          <span className="w-11 h-11 mx-auto rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center">
+            <BarChart3 size={22} strokeWidth={2.5} aria-hidden="true" />
+          </span>
           <p className="text-sm font-semibold vi-text mt-2">Progress</p>
         </Link>
         <Link href={`/dashboard/parent/learner/${learnerId}/iep`}
           className="vi-card p-5 hover:shadow-md hover:border-[hsl(var(--visual-primary)/0.4)] transition text-center">
-          <span className="text-2xl">🎯</span>
+          <span className="w-11 h-11 mx-auto rounded-2xl bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] flex items-center justify-center">
+            <Target size={22} strokeWidth={2.5} aria-hidden="true" />
+          </span>
           <p className="text-sm font-semibold vi-text mt-2">{t("iep_goals")}</p>
         </Link>
         <Link href={`/dashboard/parent/learner/${learnerId}/recommendations`}
           className="vi-card p-5 hover:shadow-md hover:border-[hsl(var(--visual-primary)/0.4)] transition text-center">
-          <span className="text-2xl">💡</span>
+          <span className="w-11 h-11 mx-auto rounded-2xl bg-[hsl(var(--visual-sel)/0.12)] text-[hsl(var(--visual-sel))] flex items-center justify-center">
+            <Lightbulb size={22} strokeWidth={2.5} aria-hidden="true" />
+          </span>
           <p className="text-sm font-semibold vi-text mt-2">{t("recommendations")}</p>
         </Link>
       </div>
