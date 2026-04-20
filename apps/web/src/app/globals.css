@@ -8,6 +8,14 @@
   --color-accent: #F59E0B;
   --color-surface: #F8FAFC;
   --color-surface-hover: #F1F5F9;
+  --color-subject-math: #EC4899;
+  --color-subject-math-soft: #FCE7F3;
+  --color-subject-reading: #0EA5E9;
+  --color-subject-reading-soft: #E0F2FE;
+  --color-subject-science: #22C55E;
+  --color-subject-science-soft: #DCFCE7;
+  --color-subject-sel: #F59E0B;
+  --color-subject-sel-soft: #FEF3C7;
   --font-heading: var(--font-fredoka), 'Fredoka', sans-serif;
   --font-body: var(--font-nunito), 'Nunito', sans-serif;
 
