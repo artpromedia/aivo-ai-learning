@@ -118,7 +118,7 @@ export default function AdminServicesPage() {
           overallStatus === "degraded" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" : "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]"
         }`}>
           <span className={`w-2 h-2 rounded-full ${
-            overallStatus === "operational" ? "bg-green-500" : overallStatus === "degraded" ? "bg-amber-500 animate-pulse" : "bg-red-500 animate-pulse"
+            overallStatus === "operational" ? "bg-[hsl(var(--visual-science))]" : overallStatus === "degraded" ? "bg-[hsl(var(--visual-sel))] animate-pulse" : "bg-[hsl(var(--visual-math))] animate-pulse"
           }`} />
           {overallStatus === "operational" ? "All Systems Operational" : overallStatus === "degraded" ? "Degraded" : "Issues Detected"}
         </div>
@@ -129,17 +129,17 @@ export default function AdminServicesPage() {
           <p className="text-3xl font-bold vi-text">{ALL_SERVICES.length}</p>
           <p className="text-xs vi-text-muted font-semibold mt-1">Total Services</p>
         </div>
-        <div className="bg-green-50 rounded-xl p-4 border border-green-200 text-center">
+        <div className="bg-[hsl(var(--visual-science)/0.08)] rounded-xl p-4 border border-[hsl(var(--visual-science)/0.25)] text-center">
           <p className="text-3xl font-bold text-[hsl(var(--visual-science))]">{healthyCount}</p>
-          <p className="text-xs text-green-600 font-semibold mt-1">Operational</p>
+          <p className="text-xs text-[hsl(var(--visual-science))] font-semibold mt-1">Operational</p>
         </div>
-        <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 text-center">
+        <div className="bg-[hsl(var(--visual-sel)/0.10)] rounded-xl p-4 border border-[hsl(var(--visual-sel)/0.30)] text-center">
           <p className="text-3xl font-bold text-[hsl(var(--visual-sel))]">{degradedCount}</p>
-          <p className="text-xs text-amber-600 font-semibold mt-1">Degraded</p>
+          <p className="text-xs text-[hsl(var(--visual-sel))] font-semibold mt-1">Degraded</p>
         </div>
-        <div className="bg-red-50 rounded-xl p-4 border border-red-200 text-center">
+        <div className="bg-[hsl(var(--visual-math)/0.08)] rounded-xl p-4 border border-[hsl(var(--visual-math)/0.25)] text-center">
           <p className="text-3xl font-bold text-[hsl(var(--visual-math))]">{downCount}</p>
-          <p className="text-xs text-red-600 font-semibold mt-1">Down</p>
+          <p className="text-xs text-[hsl(var(--visual-math))] font-semibold mt-1">Down</p>
         </div>
       </div>
 
@@ -178,7 +178,7 @@ export default function AdminServicesPage() {
                 <div key={svc.name} className="flex items-center justify-between px-5 py-4 hover:vi-bg/50 transition">
                   <div className="flex items-center gap-4">
                     <span className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                      status === "operational" ? "bg-green-500" : status === "degraded" ? "bg-amber-500 animate-pulse" : "bg-red-500"
+                      status === "operational" ? "bg-[hsl(var(--visual-science))]" : status === "degraded" ? "bg-[hsl(var(--visual-sel))] animate-pulse" : "bg-[hsl(var(--visual-math))]"
                     }`} />
                     <div>
                       <p className="text-sm font-semibold vi-text">{svc.name}</p>
@@ -188,7 +188,7 @@ export default function AdminServicesPage() {
                   <div className="flex items-center gap-4">
                     <span className="text-xs vi-text-muted">:{svc.port}</span>
                     {live?.latency !== undefined && live.latency > 0 && (
-                      <span className={`text-xs font-medium ${live.latency < 200 ? "text-green-600" : live.latency < 500 ? "text-amber-600" : "text-red-600"}`}>
+                      <span className={`text-xs font-medium ${live.latency < 200 ? "text-[hsl(var(--visual-science))]" : live.latency < 500 ? "text-[hsl(var(--visual-sel))]" : "text-[hsl(var(--visual-math))]"}`}>
                         {live.latency}ms
                       </span>
                     )}
@@ -210,7 +210,7 @@ export default function AdminServicesPage() {
           <h2 className="font-heading font-bold text-lg vi-text">Incidents</h2>
           {user?.role === "PLATFORM_ADMIN" && (
             <button onClick={() => setShowIncidentForm(!showIncidentForm)}
-              className="px-4 py-2 rounded-lg bg-red-50 text-[hsl(var(--visual-math))] text-sm font-semibold hover:bg-[hsl(var(--visual-math)/0.12)] transition">
+              className="px-4 py-2 rounded-lg bg-[hsl(var(--visual-math)/0.08)] text-[hsl(var(--visual-math))] text-sm font-semibold hover:bg-[hsl(var(--visual-math)/0.16)] transition">
               + Report Incident
             </button>
           )}
@@ -231,7 +231,7 @@ export default function AdminServicesPage() {
                 <option value="critical">Critical</option>
               </select>
             </div>
-            <button type="submit" className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold">Create</button>
+            <button type="submit" className="px-4 py-2 rounded-lg bg-[hsl(var(--visual-math))] text-white text-sm font-semibold">Create</button>
           </form>
         )}
         <div className="divide-y divide-slate-50">

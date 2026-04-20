@@ -249,7 +249,7 @@ export default function AdminUserDetailPage() {
         <Link href="/dashboard/admin/users" className="text-sm text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))] font-medium">
           ← Back to Users
         </Link>
-        <div className="bg-red-50 border border-red-200 text-[hsl(var(--visual-math))] px-4 py-3 rounded-xl text-sm">
+        <div className="bg-[hsl(var(--visual-math)/0.08)] border border-[hsl(var(--visual-math)/0.25)] text-[hsl(var(--visual-math))] px-4 py-3 rounded-xl text-sm">
           {error || "User not found"}
         </div>
       </div>
@@ -259,13 +259,13 @@ export default function AdminUserDetailPage() {
   return (
     <div className="p-8 space-y-6">
       {actionError && (
-        <div className="fixed top-4 right-4 z-[9999] bg-red-50 border border-red-200 text-[hsl(var(--visual-math))] px-4 py-3 rounded-xl shadow-lg text-sm font-medium">
+        <div className="fixed top-4 right-4 z-[9999] bg-[hsl(var(--visual-math)/0.08)] border border-[hsl(var(--visual-math)/0.25)] text-[hsl(var(--visual-math))] px-4 py-3 rounded-xl shadow-lg text-sm font-medium">
           {actionError}
         </div>
       )}
 
       {resetResult && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-2">
+        <div className="bg-[hsl(var(--visual-science)/0.08)] border border-[hsl(var(--visual-science)/0.25)] rounded-xl p-4 space-y-2">
           <p className="text-[hsl(var(--visual-science))] font-semibold">Password reset successfully!</p>
           <div className="text-sm space-y-1">
             <p className="text-[hsl(var(--visual-science))]">
@@ -275,7 +275,7 @@ export default function AdminUserDetailPage() {
               Temporary Password: <span className="font-mono font-semibold bg-[hsl(var(--visual-science)/0.14)] px-2 py-0.5 rounded select-all">{resetResult.temporaryPassword}</span>
             </p>
           </div>
-          <p className="text-xs text-green-600 mt-2">
+          <p className="text-xs text-[hsl(var(--visual-science))] mt-2">
             Share these credentials securely. The user should change their password on first login.
           </p>
           <button
@@ -330,21 +330,21 @@ export default function AdminUserDetailPage() {
           <button
             onClick={handleResetPassword}
             disabled={resettingPassword}
-            className="px-4 py-2 text-sm font-semibold rounded-xl bg-amber-50 text-[hsl(var(--visual-sel))] border border-amber-200 hover:bg-[hsl(var(--visual-sel)/0.18)] transition disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold rounded-xl bg-[hsl(var(--visual-sel)/0.10)] text-[hsl(var(--visual-sel))] border border-[hsl(var(--visual-sel)/0.30)] hover:bg-[hsl(var(--visual-sel)/0.18)] transition disabled:opacity-50"
           >
             {resettingPassword ? "Resetting..." : "Reset Password"}
           </button>
           {isDeactivated ? (
             <button
               onClick={handleReactivate}
-              className="px-4 py-2 text-sm font-semibold rounded-xl bg-green-50 text-[hsl(var(--visual-science))] border border-green-200 hover:bg-[hsl(var(--visual-science)/0.14)] transition"
+              className="px-4 py-2 text-sm font-semibold rounded-xl bg-[hsl(var(--visual-science)/0.08)] text-[hsl(var(--visual-science))] border border-[hsl(var(--visual-science)/0.25)] hover:bg-[hsl(var(--visual-science)/0.16)] transition"
             >
               Reactivate
             </button>
           ) : (
             <button
               onClick={() => setShowDeactivateConfirm(true)}
-              className="px-4 py-2 text-sm font-semibold rounded-xl bg-red-50 text-[hsl(var(--visual-math))] border border-red-200 hover:bg-[hsl(var(--visual-math)/0.12)] transition"
+              className="px-4 py-2 text-sm font-semibold rounded-xl bg-[hsl(var(--visual-math)/0.08)] text-[hsl(var(--visual-math))] border border-[hsl(var(--visual-math)/0.25)] hover:bg-[hsl(var(--visual-math)/0.16)] transition"
             >
               Deactivate
             </button>
@@ -353,7 +353,7 @@ export default function AdminUserDetailPage() {
             <button
               onClick={handleImpersonate}
               disabled={impersonating}
-              className="px-4 py-2 text-sm font-semibold rounded-xl bg-amber-50 text-[hsl(var(--visual-sel))] border border-amber-200 hover:bg-[hsl(var(--visual-sel)/0.18)] transition disabled:opacity-50"
+              className="px-4 py-2 text-sm font-semibold rounded-xl bg-[hsl(var(--visual-sel)/0.10)] text-[hsl(var(--visual-sel))] border border-[hsl(var(--visual-sel)/0.30)] hover:bg-[hsl(var(--visual-sel)/0.18)] transition disabled:opacity-50"
             >
               {impersonating ? "Switching..." : "Impersonate"}
             </button>
@@ -375,7 +375,7 @@ export default function AdminUserDetailPage() {
             </div>
             <div className="flex justify-between">
               <span className="vi-text-muted">Email Verified</span>
-              <span className={`font-medium ${userData.emailVerified ? "text-green-600" : "text-red-500"}`}>
+              <span className={`font-medium ${userData.emailVerified ? "text-[hsl(var(--visual-science))]" : "text-[hsl(var(--visual-math))]"}`}>
                 {userData.emailVerified ? "Yes" : "No"}
               </span>
             </div>
@@ -478,7 +478,7 @@ export default function AdminUserDetailPage() {
             </div>
             <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
               {editError && (
-                <div className="bg-red-50 border border-red-200 text-[hsl(var(--visual-math))] px-4 py-3 rounded-xl text-sm">
+                <div className="bg-[hsl(var(--visual-math)/0.08)] border border-[hsl(var(--visual-math)/0.25)] text-[hsl(var(--visual-math))] px-4 py-3 rounded-xl text-sm">
                   {editError}
                 </div>
               )}
@@ -559,7 +559,7 @@ export default function AdminUserDetailPage() {
                 <button
                   onClick={handleDeactivate}
                   disabled={deactivating}
-                  className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-[hsl(var(--visual-math))] text-white font-semibold hover:bg-[hsl(var(--visual-math)/0.85)] transition disabled:opacity-50"
                 >
                   {deactivating ? "Deactivating..." : "Deactivate"}
                 </button>

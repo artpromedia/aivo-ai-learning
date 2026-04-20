@@ -114,7 +114,7 @@ export default function AdminCompliancePage() {
           <p className="text-sm vi-text-muted mt-1">COPPA, FERPA, GDPR compliance status, security controls, and audit trail.</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))] text-sm font-semibold">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
+          <span className="w-2 h-2 rounded-full bg-[hsl(var(--visual-science))]" />
           3/4 Frameworks Compliant
         </div>
       </div>
@@ -136,7 +136,7 @@ export default function AdminCompliancePage() {
               <div className="space-y-2">
                 {fw.items.map((item, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <span className={`mt-0.5 text-xs flex-shrink-0 ${item.status ? "text-green-500" : "vi-text-muted opacity-70"}`}>
+                    <span className={`mt-0.5 text-xs flex-shrink-0 ${item.status ? "text-[hsl(var(--visual-science))]" : "vi-text-muted opacity-70"}`}>
                       {item.status ? "✓" : "○"}
                     </span>
                     <span className="text-xs vi-text-muted">{item.label}</span>
@@ -144,7 +144,7 @@ export default function AdminCompliancePage() {
                 ))}
               </div>
               <div className="mt-3 vi-surface-soft rounded-full h-1.5 overflow-hidden">
-                <div className={`h-full rounded-full ${fw.status === "compliant" ? "bg-green-500" : "bg-amber-500"}`} style={{ width: `${(passed / total) * 100}%` }} />
+                <div className={`h-full rounded-full ${fw.status === "compliant" ? "bg-[hsl(var(--visual-science))]" : "bg-[hsl(var(--visual-sel))]"}`} style={{ width: `${(passed / total) * 100}%` }} />
               </div>
               <p className="text-[10px] vi-text-muted mt-1">{passed}/{total} checks passed</p>
             </div>
@@ -158,7 +158,7 @@ export default function AdminCompliancePage() {
           <div className="space-y-2">
             {securityControls.map((ctrl) => (
               <div key={ctrl.label} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:vi-bg transition">
-                <span className={`font-bold flex-shrink-0 ${ctrl.status ? "text-green-500" : "text-red-400"}`}>{ctrl.status ? "✓" : "✗"}</span>
+                <span className={`font-bold flex-shrink-0 ${ctrl.status ? "text-[hsl(var(--visual-science))]" : "text-[hsl(var(--visual-math))]"}`}>{ctrl.status ? "✓" : "✗"}</span>
                 <div className="flex-1">
                   <p className="text-sm font-medium vi-text">{ctrl.label}</p>
                 </div>
@@ -214,13 +214,13 @@ export default function AdminCompliancePage() {
         <h2 className="font-heading font-bold text-lg vi-text mb-4">Consent Management</h2>
         <p className="text-sm vi-text-muted mb-4">COPPA parental consent is required before any child data is collected. All consent records are tracked with timestamps and can be revoked.</p>
         <div className="grid grid-cols-3 gap-4">
-          <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-center">
+          <div className="p-4 rounded-xl bg-[hsl(var(--visual-science)/0.08)] border border-[hsl(var(--visual-science)/0.25)] text-center">
             <p className="text-2xl font-bold text-[hsl(var(--visual-science))]">{stats?.totalLearners ?? 0}</p>
-            <p className="text-xs text-green-600 font-medium mt-1">Active Consents</p>
+            <p className="text-xs text-[hsl(var(--visual-science))] font-medium mt-1">Active Consents</p>
           </div>
-          <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-center">
+          <div className="p-4 rounded-xl bg-[hsl(var(--visual-reading)/0.08)] border border-[hsl(var(--visual-reading)/0.25)] text-center">
             <p className="text-2xl font-bold text-[hsl(var(--visual-reading))]">Enforced</p>
-            <p className="text-xs text-blue-600 font-medium mt-1">Data Minimization</p>
+            <p className="text-xs text-[hsl(var(--visual-reading))] font-medium mt-1">Data Minimization</p>
           </div>
           <div className="p-4 rounded-xl vi-surface-soft border border-[hsl(var(--visual-primary)/0.3)] text-center">
             <p className="text-2xl font-bold text-[hsl(var(--visual-primary))]">{recentAudit.length}</p>

@@ -77,7 +77,7 @@ export default function DevOpsDashboard() {
           overallStatus === "degraded" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" : "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]"
         }`}>
           <span className={`w-2 h-2 rounded-full ${
-            overallStatus === "operational" ? "bg-green-500" : overallStatus === "degraded" ? "bg-amber-500 animate-pulse" : "bg-red-500 animate-pulse"
+            overallStatus === "operational" ? "bg-[hsl(var(--visual-science))]" : overallStatus === "degraded" ? "bg-[hsl(var(--visual-sel))] animate-pulse" : "bg-[hsl(var(--visual-math))] animate-pulse"
           }`} />
           {overallStatus === "operational" ? "All Systems Operational" :
            overallStatus === "degraded" ? "Degraded" : overallStatus === "checking" ? "Checking..." : "Issues Detected"}
@@ -85,9 +85,9 @@ export default function DevOpsDashboard() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-green-50 rounded-xl p-5 border border-green-200 text-center">
+        <div className="bg-[hsl(var(--visual-science)/0.08)] rounded-xl p-5 border border-[hsl(var(--visual-science)/0.25)] text-center">
           <p className="text-3xl font-bold text-[hsl(var(--visual-science))]">{healthyCount}/{totalServices}</p>
-          <p className="text-xs text-green-600 font-semibold mt-1">Services Healthy</p>
+          <p className="text-xs text-[hsl(var(--visual-science))] font-semibold mt-1">Services Healthy</p>
         </div>
         <div className="bg-white rounded-xl p-5 border vi-border text-center">
           <p className="text-3xl font-bold vi-text">{uptime?.uptime?.overall ?? "99.9"}%</p>
@@ -113,13 +113,13 @@ export default function DevOpsDashboard() {
               <div key={svc.name} className="flex items-center justify-between px-5 py-3">
                 <div className="flex items-center gap-3">
                   <span className={`w-2.5 h-2.5 rounded-full ${
-                    svc.status === "healthy" ? "bg-green-500" : svc.status === "degraded" ? "bg-amber-500 animate-pulse" : "bg-red-500"
+                    svc.status === "healthy" ? "bg-[hsl(var(--visual-science))]" : svc.status === "degraded" ? "bg-[hsl(var(--visual-sel))] animate-pulse" : "bg-[hsl(var(--visual-math))]"
                   }`} />
                   <span className="text-sm font-medium vi-text">{svc.name}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`text-xs font-medium ${
-                    svc.latencyMs < 200 ? "text-green-600" : svc.latencyMs < 500 ? "text-amber-600" : "text-red-600"
+                    svc.latencyMs < 200 ? "text-[hsl(var(--visual-science))]" : svc.latencyMs < 500 ? "text-[hsl(var(--visual-sel))]" : "text-[hsl(var(--visual-math))]"
                   }`}>{svc.latencyMs}ms</span>
                   <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
                     svc.status === "healthy" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : svc.status === "degraded" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" : "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]"
@@ -154,7 +154,7 @@ export default function DevOpsDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {performanceMetrics.map((pm) => (
           <div key={pm.metric} className={`rounded-xl p-3 border text-center ${
-            pm.status === "good" ? "bg-green-50 border-green-200" : pm.status === "warning" ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200"
+            pm.status === "good" ? "bg-[hsl(var(--visual-science)/0.08)] border-[hsl(var(--visual-science)/0.25)]" : pm.status === "warning" ? "bg-[hsl(var(--visual-sel)/0.10)] border-[hsl(var(--visual-sel)/0.30)]" : "bg-[hsl(var(--visual-math)/0.08)] border-[hsl(var(--visual-math)/0.25)]"
           }`}>
             <p className={`text-lg font-bold ${pm.status === "good" ? "text-[hsl(var(--visual-science))]" : pm.status === "warning" ? "text-[hsl(var(--visual-sel))]" : "text-[hsl(var(--visual-math))]"}`}>
               {pm.value}
@@ -194,7 +194,7 @@ export default function DevOpsDashboard() {
               <div key={i} className="flex items-center justify-between px-5 py-3">
                 <div className="flex items-center gap-3">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    a.severity === "warning" ? "bg-amber-500" : a.severity === "info" ? "bg-blue-500" : "bg-green-500"
+                    a.severity === "warning" ? "bg-[hsl(var(--visual-sel))]" : a.severity === "info" ? "bg-[hsl(var(--visual-reading))]" : "bg-[hsl(var(--visual-science))]"
                   }`} />
                   <div>
                     <p className="text-sm vi-text">{a.message}</p>

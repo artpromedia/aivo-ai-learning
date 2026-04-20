@@ -323,7 +323,7 @@ export default function IntegrationsPage() {
     <div className="p-8 space-y-6">
       {notification && (
         <div className={`p-4 rounded-xl text-sm font-medium flex items-center justify-between ${
-          notification.type === "success" ? "bg-green-50 text-[hsl(var(--visual-science))] border border-green-200" : "bg-red-50 text-[hsl(var(--visual-math))] border border-red-200"
+          notification.type === "success" ? "bg-[hsl(var(--visual-science)/0.08)] text-[hsl(var(--visual-science))] border border-[hsl(var(--visual-science)/0.25)]" : "bg-[hsl(var(--visual-math)/0.08)] text-[hsl(var(--visual-math))] border border-[hsl(var(--visual-math)/0.25)]"
         }`}>
           <span>{notification.message}</span>
           <button onClick={() => setNotification(null)} className="text-current opacity-50 hover:opacity-100">x</button>
@@ -367,7 +367,7 @@ export default function IntegrationsPage() {
 
               return (
                 <div key={connector.id} className={`bg-white rounded-2xl p-6 border transition-all ${
-                  isConnected ? "border-green-200 bg-green-50/30" : isComingSoon ? "vi-border opacity-60" : "vi-border hover:border-[hsl(var(--visual-primary)/0.3)] hover:shadow-md"
+                  isConnected ? "border-[hsl(var(--visual-science)/0.30)] bg-[hsl(var(--visual-science)/0.05)]" : isComingSoon ? "vi-border opacity-60" : "vi-border hover:border-[hsl(var(--visual-primary)/0.3)] hover:shadow-md"
                 }`}>
                   <div className="flex items-start justify-between mb-4">
                     <div className="w-12 h-12 vi-surface-soft rounded-xl flex items-center justify-center text-2xl">
@@ -397,7 +397,7 @@ export default function IntegrationsPage() {
                     {isConnected ? (
                       <button
                         onClick={() => setActiveTab("connected")}
-                        className="flex-1 py-2 rounded-lg text-sm font-semibold bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))] hover:bg-green-200 transition"
+                        className="flex-1 py-2 rounded-lg text-sm font-semibold bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))] hover:bg-[hsl(var(--visual-science)/0.22)] transition"
                       >
                         View Connection
                       </button>
@@ -500,7 +500,7 @@ export default function IntegrationsPage() {
                         </button>
                         <button
                           onClick={() => handleDisconnect(conn.id)}
-                          className="px-4 py-2 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 border border-red-200 transition"
+                          className="px-4 py-2 rounded-lg text-sm font-semibold text-[hsl(var(--visual-math))] hover:bg-[hsl(var(--visual-math)/0.08)] border border-[hsl(var(--visual-math)/0.25)] transition"
                         >
                           Disconnect
                         </button>
@@ -524,13 +524,13 @@ export default function IntegrationsPage() {
                         {lastSync.recordsFailed > 0 && (
                           <div>
                             <p className="text-[10px] vi-text-muted font-semibold uppercase">Failed</p>
-                            <p className="text-sm font-bold text-red-600">{lastSync.recordsFailed}</p>
+                            <p className="text-sm font-bold text-[hsl(var(--visual-math))]">{lastSync.recordsFailed}</p>
                           </div>
                         )}
                         {lastSync.recordsSkipped > 0 && (
                           <div>
                             <p className="text-[10px] vi-text-muted font-semibold uppercase">Skipped</p>
-                            <p className="text-sm font-bold text-amber-600">{lastSync.recordsSkipped}</p>
+                            <p className="text-sm font-bold text-[hsl(var(--visual-sel))]">{lastSync.recordsSkipped}</p>
                           </div>
                         )}
                         <div>
@@ -565,10 +565,10 @@ export default function IntegrationsPage() {
                   )}
 
                   {lastSync?.errors && lastSync.errors.length > 0 && (
-                    <div className="px-6 py-4 bg-red-50/50 border-t border-red-100">
-                      <p className="text-xs font-bold text-red-600 uppercase mb-2">Errors</p>
+                    <div className="px-6 py-4 bg-[hsl(var(--visual-math)/0.06)] border-t border-[hsl(var(--visual-math)/0.20)]">
+                      <p className="text-xs font-bold text-[hsl(var(--visual-math))] uppercase mb-2">Errors</p>
                       {lastSync.errors.map((err: any, i: number) => (
-                        <p key={i} className="text-xs text-red-600">{err.message}</p>
+                        <p key={i} className="text-xs text-[hsl(var(--visual-math))]">{err.message}</p>
                       ))}
                     </div>
                   )}

@@ -102,9 +102,9 @@ export default function AdminOverview() {
             "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]"
           }`}>
             <span className={`w-2 h-2 rounded-full ${
-              platformStatus === "operational" ? "bg-green-500" :
-              platformStatus === "degraded" ? "bg-amber-500 animate-pulse" :
-              "bg-red-500 animate-pulse"
+              platformStatus === "operational" ? "bg-[hsl(var(--visual-science))]" :
+              platformStatus === "degraded" ? "bg-[hsl(var(--visual-sel))] animate-pulse" :
+              "bg-[hsl(var(--visual-math))] animate-pulse"
             }`} />
             {platformStatus === "operational" ? "All Systems Operational" :
              platformStatus === "degraded" ? "Degraded Performance" :
@@ -182,7 +182,7 @@ export default function AdminOverview() {
               <div key={svc.name} className="flex items-center justify-between py-2 border-b vi-border last:border-0">
                 <div className="flex items-center gap-3">
                   <span className={`w-2.5 h-2.5 rounded-full ${
-                    svc.status === "healthy" ? "bg-green-500" : svc.status === "degraded" ? "bg-amber-500 animate-pulse" : "bg-red-500"
+                    svc.status === "healthy" ? "bg-[hsl(var(--visual-science))]" : svc.status === "degraded" ? "bg-[hsl(var(--visual-sel))] animate-pulse" : "bg-[hsl(var(--visual-math))]"
                   }`} />
                   <span className="text-sm font-medium vi-text">{svc.name}</span>
                 </div>
