@@ -6,7 +6,7 @@ import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
-import { initKeys } from "@aivo/security";
+import { initKeys, logAdminEnterpriseFlags } from "@aivo/security";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerUserRoutes } from "./routes/users.js";
 import { registerHealthRoutes } from "./routes/health.js";
@@ -20,6 +20,7 @@ const PORT = parseInt(process.env.PORT || "3001", 10);
 
 async function start() {
   await initKeys();
+  logAdminEnterpriseFlags(logger);
 
   const dbUrl = process.env.DATABASE_URL || "";
   if (

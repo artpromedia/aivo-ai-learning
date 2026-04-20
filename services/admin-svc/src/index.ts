@@ -4,6 +4,7 @@ import Fastify from "fastify";
   import swaggerUI from "@fastify/swagger-ui";
   import { createLogger } from "@aivo/observability";
   import { createDb } from "@aivo/db";
+  import { logAdminEnterpriseFlags } from "@aivo/security";
   import { registerHealthRoutes } from "./routes/health.js";
   import { registerPlatformRoutes } from "./routes/platform.js";
   import { registerAuditRoutes } from "./routes/audit.js";
@@ -15,6 +16,7 @@ import Fastify from "fastify";
   const PORT = parseInt(process.env.ADMIN_SVC_PORT || "3013", 10);
 
   async function start() {
+    logAdminEnterpriseFlags(logger);
     const db = createDb(process.env.DATABASE_URL!);
     const app = Fastify({ logger: false });
 
