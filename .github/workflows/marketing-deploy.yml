@@ -18,10 +18,11 @@ env:
   NODE_VERSION: "22"
 
 jobs:
-  build:
-    name: Build Marketing Site
+  build-and-deploy-staging:
+    name: Deploy to Staging
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    environment: staging
 
     steps:
       - uses: actions/checkout@v4
@@ -38,29 +39,6 @@ jobs:
 
       - name: Build marketing site
         run: pnpm --filter @aivo/marketing build
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4.4.3
-        with:
-          name: marketing-build
-          path: apps/marketing/.next/
-          retention-days: 7
-
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: build
-    environment: staging
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4.1.8
-        with:
-          name: marketing-build
-          path: apps/marketing/.next/
 
       - name: Deploy to staging
         run: echo "Add staging deployment steps for your hosting provider (Vercel, Netlify, etc.)"
