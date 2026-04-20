@@ -91,6 +91,9 @@ export default function IntegrationsPage() {
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestName, setRequestName] = useState("");
   const [requestSubmitted, setRequestSubmitted] = useState(false);
+  const [showWaitlistFor, setShowWaitlistFor] = useState<string | null>(null);
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
 
   const tenantId = user?.tenantId;
 
@@ -414,8 +417,11 @@ export default function IntegrationsPage() {
                         View Connection
                       </button>
                     ) : isComingSoon ? (
-                      <button disabled className="flex-1 py-2 rounded-lg text-sm font-semibold vi-surface-soft vi-text-muted cursor-not-allowed">
-                        Coming Soon
+                      <button
+                        onClick={() => setShowWaitlistFor(connector.id)}
+                        className="flex-1 py-2 rounded-lg text-sm font-semibold bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))] hover:bg-[hsl(var(--visual-sel)/0.28)] transition"
+                      >
+                        Notify me when available
                       </button>
                     ) : (
                       <button
@@ -703,6 +709,72 @@ export default function IntegrationsPage() {
                 className="flex-1 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition disabled:opacity-50"
               >
                 Connect
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showWaitlistFor && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+            <h3 className="font-heading font-bold text-lg vi-text mb-2">
+              Get notified when {connectors.find((c) => c.id === showWaitlistFor)?.name} is ready
+            </h3>
+            <p className="text-sm vi-text-muted mb-4">
+              We'll email you the moment this integration is available for your district.
+            </p>
+            <label htmlFor="waitlist-email" className="block text-xs font-semibold vi-text-muted mb-1">
+              Contact email
+            </label>
+            <input
+              id="waitlist-email"
+              type="email"
+              value={waitlistEmail}
+              onChange={(e) => setWaitlistEmail(e.target.value)}
+              placeholder="you@district.org"
+              className="w-full px-3 py-2 rounded-lg border vi-border text-sm mb-4"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowWaitlistFor(null); setWaitlistEmail(""); }}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold border vi-border vi-text-muted hover:vi-bg transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!showWaitlistFor || !waitlistEmail.trim() || !tenantId) return;
+                  setWaitlistSubmitting(true);
+                  try {
+                    const res = await fetch("/api/integrations/waitlist", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                      },
+                      body: JSON.stringify({
+                        connectorId: showWaitlistFor,
+                        districtId: tenantId,
+                        contactEmail: waitlistEmail.trim(),
+                      }),
+                    });
+                    if (res.ok) {
+                      setNotification({ type: "success", message: "You're on the waitlist. We'll be in touch." });
+                      setShowWaitlistFor(null);
+                      setWaitlistEmail("");
+                    } else {
+                      const err = await res.json().catch(() => ({}));
+                      setNotification({ type: "error", message: err.error || "Failed to join waitlist" });
+                    }
+                  } finally {
+                    setWaitlistSubmitting(false);
+                  }
+                }}
+                disabled={!waitlistEmail.trim() || waitlistSubmitting}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition disabled:opacity-50"
+              >
+                {waitlistSubmitting ? "Submitting..." : "Notify me"}
               </button>
             </div>
           </div>

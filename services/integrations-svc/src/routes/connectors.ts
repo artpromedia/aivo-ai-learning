@@ -147,9 +147,63 @@ function getOAuthConfig(connectorId: string) {
   return configs[connectorId] || null;
 }
 
+interface WaitlistEntry {
+  id: string;
+  connectorId: string;
+  districtId: string;
+  contactEmail: string;
+  createdAt: string;
+}
+const waitlistStore: WaitlistEntry[] = [];
+
+export function getWaitlistStore() {
+  return waitlistStore;
+}
+
 export function registerConnectorRoutes(app: FastifyInstance, db: any) {
   app.get("/api/integrations/connectors", async () => {
     return { connectors: CONNECTORS };
+  });
+
+  app.post("/api/integrations/waitlist", { preHandler: requireAuth }, async (request, reply) => {
+    const user = (request as any).user;
+    const { connectorId, districtId: bodyDistrictId, contactEmail } = (request.body as any) || {};
+    const districtId = user.role === "PLATFORM_ADMIN" ? (bodyDistrictId || user.tenantId) : user.tenantId;
+    if (!connectorId || !districtId || !contactEmail) {
+      return reply.code(400).send({ error: "connectorId, contactEmail required" });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+      return reply.code(400).send({ error: "Invalid contactEmail" });
+    }
+    const connector = CONNECTORS.find((c) => c.id === connectorId);
+    if (!connector) return reply.code(404).send({ error: "Connector not found" });
+    if (connector.status !== "coming_soon") {
+      return reply.code(400).send({ error: "This connector is already available" });
+    }
+
+    const existing = waitlistStore.find(
+      (e) => e.connectorId === connectorId && e.districtId === districtId && e.contactEmail.toLowerCase() === contactEmail.toLowerCase(),
+    );
+    if (existing) return { entry: existing, deduped: true };
+
+    const entry: WaitlistEntry = {
+      id: crypto.randomUUID(),
+      connectorId,
+      districtId,
+      contactEmail,
+      createdAt: new Date().toISOString(),
+    };
+    waitlistStore.push(entry);
+    app.log.info({ connectorId, districtId }, "waitlist_signup");
+    return { entry };
+  });
+
+  app.get("/api/integrations/waitlist", { preHandler: requireAdmin }, async (request) => {
+    const user = (request as any).user;
+    const entries = user.role === "PLATFORM_ADMIN"
+      ? waitlistStore
+      : waitlistStore.filter((e) => e.districtId === user.tenantId);
+    return { entries, total: entries.length };
   });
 
   app.get("/api/integrations/connectors/:connectorId", async (request, reply) => {

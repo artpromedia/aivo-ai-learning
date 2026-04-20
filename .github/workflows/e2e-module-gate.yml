@@ -6,7 +6,9 @@ on:
     paths:
       - 'services/**'
       - 'apps/mobile/**'
+      - 'apps/web/**'
       - 'packages/**'
+      - '.github/workflows/e2e-module-gate.yml'
 
 concurrency:
   group: e2e-${{ github.ref }}
@@ -91,6 +93,17 @@ jobs:
           else
             echo "E2E tests directory not yet created"
           fi
+
+      - name: Install Playwright browsers
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Run web E2E smoke specs
+        working-directory: apps/web
+        env:
+          BASE_URL: http://localhost:5000
+          CI: "true"
+        run: npx playwright test tests/e2e --reporter=line
 
       - name: Upload test reports
         uses: actions/upload-artifact@v4
