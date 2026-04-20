@@ -179,13 +179,16 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
         >
           <div className="flex flex-col h-full bg-white/95 backdrop-blur border-r-2 border-slate-100 shadow-sm">
             <div className="flex items-center h-20 px-4">
-              <Link href="/dashboard/parent" className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-600/30 shrink-0">
-                  <Sparkles size={22} strokeWidth={2.5} aria-hidden="true" />
-                </div>
-                {sidebarExpanded && (
-                  <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={90} height={28} style={{ width: "auto", height: "auto" }} />
-                )}
+              <Link href="/dashboard/parent" aria-label="AIVO Learning home" className="flex items-center">
+                <Image
+                  src="/images/aivo-logo-purple.png"
+                  alt="AIVO Learning"
+                  width={sidebarExpanded ? 140 : 44}
+                  height={sidebarExpanded ? 44 : 44}
+                  className="object-contain"
+                  style={{ height: 44, width: "auto", transition: "width 200ms ease" }}
+                  priority
+                />
               </Link>
             </div>
 
