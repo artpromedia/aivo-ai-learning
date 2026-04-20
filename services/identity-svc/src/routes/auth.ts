@@ -360,7 +360,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     };
   });
 
-  const ADMIN_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
+  // Strict surface separation: /api/auth/admin-login is for INTERNAL staff
+  // only. DISTRICT_ADMIN must use /api/auth/district-login (different host
+  // in production: district.aivolearning.com). The middleware also enforces
+  // this at the edge, but rejecting cleanly here gives a better UX with an
+  // explicit redirect hint instead of a generic "Invalid credentials".
+  const ADMIN_ROLES = ["PLATFORM_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
 
   app.post("/api/auth/admin-login", {
     schema: {
@@ -388,6 +393,15 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const validPw = await verifyPassword(user.passwordHash, password);
     if (!validPw) {
       return reply.status(401).send({ error: genericError });
+    }
+
+    if (user.role === "DISTRICT_ADMIN") {
+      // Wrong surface — bounce them to district sign-in with a clear hint.
+      return reply.status(403).send({
+        error: "District administrators must sign in at district.aivolearning.com.",
+        redirectTo: districtLoginUrl(req),
+        wrongSurface: "district",
+      });
     }
 
     if (!ADMIN_ROLES.includes(user.role)) {
