@@ -353,6 +353,15 @@ importers:
         specifier: ^5.7.3
         version: 5.7.3
 
+  packages/scoring:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.3
+        version: 5.8.3
+
   packages/security:
     dependencies:
       jose:
@@ -743,6 +752,9 @@ importers:
       '@aivo/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@aivo/scoring':
+        specifier: workspace:*
+        version: link:../../packages/scoring
       '@aivo/security':
         specifier: workspace:*
         version: link:../../packages/security
@@ -857,6 +869,9 @@ importers:
       '@aivo/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@aivo/scoring':
+        specifier: workspace:*
+        version: link:../../packages/scoring
       '@aivo/security':
         specifier: workspace:*
         version: link:../../packages/security

@@ -216,7 +216,13 @@ export default function LearnerHubPage() {
             </h3>
             <div className="space-y-1">
               <Link href={`/dashboard/parent/learner/${learnerId}/progress`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
-                Progress & Grades
+                Progress & XP
+              </Link>
+              <Link href={`/dashboard/parent/learner/${learnerId}/gradebook`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
+                Gradebook
+              </Link>
+              <Link href={`/dashboard/parent/learner/${learnerId}/insights`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
+                Insights
               </Link>
               <Link href={`/dashboard/parent/learner/${learnerId}/assessment`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Assessments
@@ -235,6 +241,9 @@ export default function LearnerHubPage() {
             <div className="space-y-1">
               <Link href={`/dashboard/parent/learner/${learnerId}/brain`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Brain Profile
+              </Link>
+              <Link href={`/dashboard/parent/learner/${learnerId}/brain-history`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
+                Brain History
               </Link>
               <Link href={`/dashboard/parent/learner/${learnerId}/sensory`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Sensory Needs
@@ -259,6 +268,9 @@ export default function LearnerHubPage() {
               </Link>
               <Link href={`/dashboard/parent/learner/${learnerId}/team`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Learning Team
+              </Link>
+              <Link href={`/dashboard/parent/learner/${learnerId}/transitions`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
+                Transition Planning
               </Link>
             </div>
           </div>

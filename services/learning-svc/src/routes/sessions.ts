@@ -3,7 +3,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { lessonSessions, lessonContent, gradebookEntries, learningPaths } from "@aivo/db";
 import { generateLessonContent, getSubjectForTutor, fetchPersonalizedTopics } from "../services/content-generator.js";
 import { computeLessonXp, computeCompletionQuality, type LessonSignals } from "../services/scoring.js";
-import { resolveTenantId } from "../lib/tenant.js";
+import { resolveTenantId, requireLearnerAccess } from "../lib/tenant.js";
 
 const BRAIN_SVC_URL = process.env.BRAIN_SVC_URL || "http://localhost:3002";
 
@@ -233,16 +233,16 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
 
   app.get("/api/learning/path/:learnerId/:subject", async (request, reply) => {
     const { learnerId, subject } = request.params as any;
+
+    const access = await requireLearnerAccess(request, reply, db, learnerId);
+    if (!access) return;
+
     const [path] = await db.select().from(learningPaths)
       .where(and(eq(learningPaths.learnerId, learnerId), eq(learningPaths.subject, subject)));
 
     if (!path) {
-      const tenantId = await resolveTenantId(request, db, learnerId);
-      if (!tenantId) {
-        return { error: "Unable to resolve tenantId for learner" };
-      }
       const [newPath] = await db.insert(learningPaths).values({
-        tenantId,
+        tenantId: access.tenantId,
         learnerId,
         subject,
         topicSequence: getDefaultTopics(subject),
@@ -258,6 +258,9 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
   app.post("/api/learning/path/:learnerId/:subject/init", async (request, reply) => {
     const { learnerId, subject } = request.params as any;
 
+    const access = await requireLearnerAccess(request, reply, db, learnerId);
+    if (!access) return;
+
     const [existing] = await db.select().from(learningPaths)
       .where(and(eq(learningPaths.learnerId, learnerId), eq(learningPaths.subject, subject)));
 
@@ -265,10 +268,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
       return { status: "already_exists", path: existing };
     }
 
-    const tenantId = await resolveTenantId(request, db, learnerId);
-    if (!tenantId) {
-      return reply.code(400).send({ error: "Unable to resolve tenantId for learner" });
-    }
+    const tenantId = access.tenantId;
 
     // Insert with static defaults first so we always return something fast.
     const [newPath] = await db.insert(learningPaths).values({
@@ -306,6 +306,9 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
 
   app.post("/api/learning/path/:learnerId/:subject/refresh-topics", async (request, reply) => {
     const { learnerId, subject } = request.params as any;
+
+    const access = await requireLearnerAccess(request, reply, db, learnerId);
+    if (!access) return;
 
     const [path] = await db.select().from(learningPaths)
       .where(and(eq(learningPaths.learnerId, learnerId), eq(learningPaths.subject, subject)));
@@ -351,6 +354,9 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
 
   app.post("/api/learning/path/:learnerId/:subject/advance", async (request, reply) => {
     const { learnerId, subject } = request.params as any;
+
+    const access = await requireLearnerAccess(request, reply, db, learnerId);
+    if (!access) return;
 
     const [path] = await db.select().from(learningPaths)
       .where(and(eq(learningPaths.learnerId, learnerId), eq(learningPaths.subject, subject)));
