@@ -62,6 +62,9 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   const gradebookActive = pathname.includes("/gradebook");
   const collaborationActive = pathname.includes("/collaboration");
 
+  const focusedFlow = pathname.includes("/assessment");
+  if (focusedFlow) return <>{children}</>;
+
   return (
     <div>
       <div className="sticky top-14 z-20 bg-white/95 backdrop-blur border-b border-slate-100">
