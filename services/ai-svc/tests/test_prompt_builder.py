@@ -242,3 +242,102 @@ class TestSensoryInstructions:
         assert _build_sensory_instructions(
             {"visual": "typical", "auditory": "typical", "tactile": "typical"}
         ) == ""
+
+
+# ---------------------------------------------------------------------------
+# Scaffolding & remediation modifiers (Sprint 4.4)
+# ---------------------------------------------------------------------------
+class TestScaffoldingAndRemediation:
+    def test_first_attempt_has_no_scaffolding(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD",
+            attempts_on_current_topic=1, mastery_trend="stable",
+        )
+        assert "Scaffolding Mode" not in prompt
+
+    def test_two_attempts_still_no_scaffolding(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD",
+            attempts_on_current_topic=2, mastery_trend="stable",
+        )
+        assert "Scaffolding Mode" not in prompt
+
+    def test_three_attempts_triggers_light_scaffolding(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD",
+            attempts_on_current_topic=3, mastery_trend="stable",
+        )
+        assert "Scaffolding Mode (Light)" in prompt
+        assert "smaller steps" in prompt
+        assert "concrete examples before" in prompt
+
+    def test_four_attempts_still_light_scaffolding(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD",
+            attempts_on_current_topic=4, mastery_trend="improving",
+        )
+        assert "Scaffolding Mode (Light)" in prompt
+        assert "Heavy" not in prompt
+
+    def test_five_attempts_triggers_heavy_scaffolding(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD",
+            attempts_on_current_topic=5, mastery_trend="stable",
+        )
+        assert "Scaffolding Mode (Heavy)" in prompt
+        assert "prerequisite skills" in prompt
+        assert "manipulatives" in prompt or "visual models" in prompt
+
+    def test_seven_attempts_still_heavy(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD",
+            attempts_on_current_topic=7, mastery_trend="improving",
+        )
+        assert "Scaffolding Mode (Heavy)" in prompt
+
+    def test_declining_trend_includes_regression_language(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD",
+            attempts_on_current_topic=1, mastery_trend="declining",
+        )
+        assert "Mastery Trend: Declining" in prompt
+        assert "fatigue" in prompt or "prerequisite knowledge" in prompt
+
+    def test_improving_trend_has_no_modifier(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD",
+            attempts_on_current_topic=1, mastery_trend="improving",
+        )
+        assert "Mastery Trend" not in prompt
+
+    def test_stable_at_low_mastery_suggests_new_approach(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD",
+            attempts_on_current_topic=2, mastery_trend="stable",
+            current_mastery=0.25,
+        )
+        assert "Stable at Low Level" in prompt
+        assert "different modality" in prompt or "different teaching" in prompt.lower()
+
+    def test_stable_at_healthy_mastery_no_modifier(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD",
+            attempts_on_current_topic=2, mastery_trend="stable",
+            current_mastery=0.75,
+        )
+        assert "Stable at Low Level" not in prompt
+
+    def test_heavy_scaffolding_combines_with_declining_trend(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD",
+            attempts_on_current_topic=6, mastery_trend="declining",
+        )
+        assert "Scaffolding Mode (Heavy)" in prompt
+        assert "Mastery Trend: Declining" in prompt
+
+    def test_default_args_produce_no_scaffolding_section(self):
+        # Backwards-compatibility: existing callers that don't pass the new
+        # kwargs must not see scaffolding sections appear.
+        prompt = build_tutor_system_prompt("ADDON_TUTOR_MATH", {}, "STANDARD")
+        assert "Scaffolding Mode" not in prompt
+        assert "Mastery Trend" not in prompt

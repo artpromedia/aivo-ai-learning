@@ -1,7 +1,8 @@
 import { FastifyInstance } from "fastify";
 import { eq, and, desc } from "drizzle-orm";
 import { lessonSessions, lessonContent, gradebookEntries, learningPaths } from "@aivo/db";
-import { generateLessonContent, getSubjectForTutor } from "../services/content-generator.js";
+import { generateLessonContent, getSubjectForTutor, fetchPersonalizedTopics } from "../services/content-generator.js";
+import { computeLessonXp, computeCompletionQuality, type LessonSignals } from "../services/scoring.js";
 import { resolveTenantId } from "../lib/tenant.js";
 
 const BRAIN_SVC_URL = process.env.BRAIN_SVC_URL || "http://localhost:3002";
@@ -92,17 +93,43 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
 
   app.post("/api/learning/sessions/:sessionId/complete", async (request, reply) => {
     const { sessionId } = request.params as any;
-    const { masteryUpdates, xpEarned } = request.body as any;
+    const body = (request.body as any) || {};
+    const { masteryUpdates, xpEarned } = body;
 
     const [session] = await db.select().from(lessonSessions).where(eq(lessonSessions.id, sessionId));
     if (!session) return reply.code(404).send({ error: "Session not found" });
 
+    const durationSeconds = Math.floor((Date.now() - session.startedAt.getTime()) / 1000);
+
+    // Compute multi-signal XP + quality unless caller supplied a final xpEarned.
+    const masteryBefore = (session.brainContextSnapshot as any)?.mastery_levels || {};
+    const masteryDelta = computeMasteryDelta(masteryBefore, masteryUpdates || {});
+    const signals: LessonSignals = {
+      durationSeconds,
+      functioningLevel: session.functioningLevel || "STANDARD",
+      beatsCompleted: body.beatsCompleted,
+      beatsTotal: body.beatsTotal,
+      correctAnswers: body.correctAnswers,
+      attemptedAnswers: body.attemptedAnswers,
+      engagementBeats: body.engagementBeats,
+      breaksUsed: body.breaksUsed,
+      masteryDelta,
+    };
+    const computedXp = computeLessonXp(signals);
+    const completionQuality = computeCompletionQuality(signals);
+    const finalXp = typeof xpEarned === "number" ? xpEarned : computedXp;
+
     await db.update(lessonSessions).set({
       status: "COMPLETED",
       masteryAfter: masteryUpdates || {},
-      xpEarned: xpEarned || 10,
+      xpEarned: finalXp,
       completedAt: new Date(),
-      durationSeconds: Math.floor((Date.now() - session.startedAt.getTime()) / 1000),
+      durationSeconds,
+      sessionData: {
+        ...((session.sessionData as any) || {}),
+        completionQuality,
+        scoringSignals: signals,
+      },
     }).where(eq(lessonSessions.id, sessionId));
 
     if (masteryUpdates) {
@@ -133,7 +160,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
       }
     }
 
-    return { status: "COMPLETED", sessionId };
+    return { status: "COMPLETED", sessionId, xpEarned: finalXp, completionQuality };
   });
 
   app.post("/api/learning/gradebook/update", async (request, reply) => {
@@ -230,7 +257,6 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
 
   app.post("/api/learning/path/:learnerId/:subject/init", async (request, reply) => {
     const { learnerId, subject } = request.params as any;
-    const { functioning_level } = request.body as any;
 
     const [existing] = await db.select().from(learningPaths)
       .where(and(eq(learningPaths.learnerId, learnerId), eq(learningPaths.subject, subject)));
@@ -239,24 +265,189 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
       return { status: "already_exists", path: existing };
     }
 
-    const topicSequence = getDefaultTopics(subject);
-
     const tenantId = await resolveTenantId(request, db, learnerId);
     if (!tenantId) {
       return reply.code(400).send({ error: "Unable to resolve tenantId for learner" });
     }
 
+    // Insert with static defaults first so we always return something fast.
     const [newPath] = await db.insert(learningPaths).values({
       tenantId,
       learnerId,
       subject,
-      topicSequence,
+      topicSequence: getDefaultTopics(subject),
       completedTopics: [],
       masteryMap: {},
     }).returning();
 
-    return { status: "created", path: newPath };
+    // Best-effort upgrade to personalized LLM-generated topics.
+    const authHeader = request.headers.authorization;
+    const personalized = await fetchPersonalizedTopics({
+      learnerId,
+      subject,
+      currentMastery: 0,
+      completedTopics: [],
+      authHeader,
+    });
+
+    if (personalized) {
+      const topicNames = personalized.map((t) => t.topic).filter(Boolean);
+      if (topicNames.length > 0) {
+        const [updated] = await db.update(learningPaths)
+          .set({ topicSequence: topicNames, updatedAt: new Date() })
+          .where(eq(learningPaths.id, newPath.id))
+          .returning();
+        return { status: "created", path: updated, personalized: true };
+      }
+    }
+
+    return { status: "created", path: newPath, personalized: false };
   });
+
+  app.post("/api/learning/path/:learnerId/:subject/refresh-topics", async (request, reply) => {
+    const { learnerId, subject } = request.params as any;
+
+    const [path] = await db.select().from(learningPaths)
+      .where(and(eq(learningPaths.learnerId, learnerId), eq(learningPaths.subject, subject)));
+
+    if (!path) {
+      return reply.code(404).send({ error: "Learning path not found" });
+    }
+
+    const brain = await fetchBrainContext(learnerId);
+    const masteryLevels = ((brain as any).mastery_levels || {}) as Record<string, number>;
+    const subjectScores = Object.entries(masteryLevels)
+      .filter(([k]) => k.toLowerCase().includes(subject.toLowerCase().split(" ")[0]))
+      .map(([, v]) => Number(v) || 0);
+    const currentMastery = subjectScores.length
+      ? subjectScores.reduce((a, b) => a + b, 0) / subjectScores.length
+      : 0;
+
+    const completedTopics = ((path.completedTopics as string[]) || []).slice(-20);
+    const personalized = await fetchPersonalizedTopics({
+      learnerId,
+      subject,
+      currentMastery,
+      completedTopics,
+      authHeader: request.headers.authorization,
+    });
+
+    if (!personalized) {
+      return reply.code(503).send({
+        status: "fallback",
+        error: "Could not refresh topics from curriculum engine",
+        topicSequence: path.topicSequence,
+      });
+    }
+
+    const topicNames = personalized.map((t) => t.topic).filter(Boolean);
+    const [updated] = await db.update(learningPaths)
+      .set({ topicSequence: topicNames, updatedAt: new Date() })
+      .where(eq(learningPaths.id, path.id))
+      .returning();
+
+    return { status: "refreshed", path: updated, topicCount: topicNames.length };
+  });
+
+  app.post("/api/learning/path/:learnerId/:subject/advance", async (request, reply) => {
+    const { learnerId, subject } = request.params as any;
+
+    const [path] = await db.select().from(learningPaths)
+      .where(and(eq(learningPaths.learnerId, learnerId), eq(learningPaths.subject, subject)));
+
+    if (!path) {
+      return reply.code(404).send({ error: "Learning path not found" });
+    }
+
+    const sequence = (path.topicSequence as string[]) || [];
+    const completed = (path.completedTopics as string[]) || [];
+    const currentTopic = sequence.find((t) => !completed.includes(t));
+
+    if (!currentTopic) {
+      return { status: "path_complete", subject, completedCount: completed.length };
+    }
+
+    const brain = await fetchBrainContext(learnerId);
+    const functioningLevel =
+      ((brain as any).functioning_level_profile?.level as string) || "STANDARD";
+    const threshold = MASTERY_THRESHOLDS[functioningLevel] ?? MASTERY_THRESHOLDS.STANDARD;
+
+    const gradebook = await db.select().from(gradebookEntries).where(
+      and(eq(gradebookEntries.learnerId, learnerId), eq(gradebookEntries.skill, currentTopic)),
+    );
+    const masteryScore = Number(gradebook[0]?.masteryScore) || 0;
+
+    if (masteryScore < threshold) {
+      return {
+        status: "needs_practice",
+        currentTopic,
+        masteryScore,
+        thresholdRequired: threshold,
+        functioningLevel,
+      };
+    }
+
+    const newCompleted = [...completed, currentTopic];
+    const remaining = sequence.filter((t) => !newCompleted.includes(t));
+    const nextTopic = remaining[0] || null;
+
+    await db.update(learningPaths)
+      .set({ completedTopics: newCompleted, currentTopic: nextTopic, updatedAt: new Date() })
+      .where(eq(learningPaths.id, path.id));
+
+    // Trigger refresh once the queue is running low (fire-and-forget).
+    if (remaining.length <= 3) {
+      const authHeader = request.headers.authorization;
+      void (async () => {
+        try {
+          const personalized = await fetchPersonalizedTopics({
+            learnerId,
+            subject,
+            currentMastery: masteryScore,
+            completedTopics: newCompleted.slice(-20),
+            authHeader,
+          });
+          if (personalized) {
+            const newTopics = personalized.map((t) => t.topic).filter(Boolean);
+            const merged = Array.from(new Set([...remaining, ...newTopics]));
+            await db.update(learningPaths)
+              .set({ topicSequence: merged, updatedAt: new Date() })
+              .where(eq(learningPaths.id, path.id));
+          }
+        } catch {}
+      })();
+    }
+
+    return {
+      status: nextTopic ? "advanced" : "path_complete",
+      previousTopic: currentTopic,
+      nextTopic,
+      masteryScore,
+      thresholdRequired: threshold,
+      functioningLevel,
+    };
+  });
+}
+
+const MASTERY_THRESHOLDS: Record<string, number> = {
+  STANDARD: 0.70,
+  SUPPORTED: 0.60,
+  LOW_VERBAL: 0.50,
+  NON_VERBAL: 0.40,
+  PRE_SYMBOLIC: 0.30,
+};
+
+function computeMasteryDelta(
+  before: Record<string, number>,
+  after: Record<string, number>,
+): number {
+  const keys = Object.keys(after);
+  if (keys.length === 0) return 0;
+  let total = 0;
+  for (const k of keys) {
+    total += (Number(after[k]) || 0) - (Number(before[k]) || 0);
+  }
+  return total / keys.length;
 }
 
 function getDefaultTopics(subject: string): string[] {

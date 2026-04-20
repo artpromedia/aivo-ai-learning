@@ -3,6 +3,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { TUTORS } from "@aivo/brand";
 import { tutorSessions } from "@aivo/db";
 import { resolveTenantIdForLearner } from "../lib/tenant.js";
+import { computeTutorXp, computeTutorQuality, type TutorSignals } from "../services/scoring.js";
 
 const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
 const BRAIN_SVC_URL = process.env.BRAIN_SVC_URL || "http://localhost:3002";
@@ -39,6 +40,19 @@ async function fetchBrainContext(learnerId: string): Promise<Record<string, unkn
     }
   } catch {}
   return {};
+}
+
+function computeMasteryDelta(
+  before: Record<string, number>,
+  after: Record<string, number>,
+): number {
+  const keys = Object.keys(after);
+  if (keys.length === 0) return 0;
+  let total = 0;
+  for (const k of keys) {
+    total += (Number(after[k]) || 0) - (Number(before[k]) || 0);
+  }
+  return total / keys.length;
 }
 
 export function registerChatRoutes(app: FastifyInstance, db: any) {
@@ -120,7 +134,8 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
 
   app.post("/api/tutor/session/:sessionId/complete", async (request, reply) => {
     const { sessionId } = request.params as any;
-    const { masteryUpdates, xpEarned } = request.body as any;
+    const body = (request.body as any) || {};
+    const { masteryUpdates, xpEarned } = body;
 
     const [session] = await db.select().from(tutorSessions).where(eq(tutorSessions.id, sessionId));
     if (!session) return reply.code(404).send({ error: "Session not found" });
@@ -128,15 +143,40 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
     const messages = (session.messages as any[]) || [];
     const durationSeconds = Math.floor((Date.now() - session.startedAt.getTime()) / 1000);
 
+    const masteryBefore = ((session.brainContext as any)?.mastery_levels || {}) as Record<string, number>;
+    const masteryDelta = computeMasteryDelta(masteryBefore, masteryUpdates || {});
+
+    const signals: TutorSignals = {
+      durationSeconds,
+      functioningLevel: session.functioningLevel || "STANDARD",
+      messageCount: messages.length,
+      beatsCompleted: body.beatsCompleted,
+      beatsTotal: body.beatsTotal,
+      correctAnswers: body.correctAnswers,
+      attemptedAnswers: body.attemptedAnswers,
+      engagementBeats: body.engagementBeats,
+      breaksUsed: body.breaksUsed,
+      masteryDelta,
+    };
+    const computedXp = computeTutorXp(signals);
+    const completionQuality = computeTutorQuality(signals);
+    const finalXp = typeof xpEarned === "number" ? xpEarned : computedXp;
+
     await db.update(tutorSessions).set({
       masteryUpdates: masteryUpdates || {},
-      xpEarned: xpEarned || Math.min(messages.length * 5, 50),
+      xpEarned: finalXp,
       durationSeconds,
       completedAt: new Date(),
-      completionQuality: Math.min(1.0, messages.length / 10),
+      completionQuality,
     }).where(eq(tutorSessions.id, sessionId));
 
-    return { status: "completed", sessionId, durationSeconds, xpEarned: xpEarned || Math.min(messages.length * 5, 50) };
+    return {
+      status: "completed",
+      sessionId,
+      durationSeconds,
+      xpEarned: finalXp,
+      completionQuality,
+    };
   });
 
   app.get("/api/tutor/sessions/:learnerId", async (request) => {

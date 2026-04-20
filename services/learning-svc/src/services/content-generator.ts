@@ -1,6 +1,54 @@
 import { TUTORS } from "@aivo/brand";
 
 const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
+const BRAIN_SVC_URL = process.env.BRAIN_SVC_URL || "http://localhost:3002";
+
+export interface PersonalizedTopic {
+  topic: string;
+  standard_codes?: string[];
+  prerequisite_topics?: string[];
+  estimated_sessions?: number;
+  difficulty?: number;
+  description?: string;
+}
+
+/**
+ * Best-effort call to brain-svc curriculum engine. Returns null on any failure
+ * so callers can fall back to static defaults silently.
+ */
+export async function fetchPersonalizedTopics(params: {
+  learnerId: string;
+  subject: string;
+  currentMastery?: number;
+  completedTopics?: string[];
+  authHeader?: string;
+  signal?: AbortSignal;
+}): Promise<PersonalizedTopic[] | null> {
+  try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (params.authHeader) headers["Authorization"] = params.authHeader;
+    const res = await fetch(
+      `${BRAIN_SVC_URL}/api/brain/curriculum/${params.learnerId}/topic-sequence`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          subject: params.subject,
+          current_mastery: params.currentMastery ?? 0,
+          completed_topics: params.completedTopics ?? [],
+        }),
+        signal: params.signal,
+      },
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const topics = data?.topics;
+    if (!Array.isArray(topics) || topics.length === 0) return null;
+    return topics as PersonalizedTopic[];
+  } catch {
+    return null;
+  }
+}
 
 export async function generateLessonContent(params: {
   subject: string;

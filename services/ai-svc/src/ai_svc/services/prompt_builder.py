@@ -7,6 +7,9 @@ def build_tutor_system_prompt(
     tutor_sku: str,
     brain_context: dict,
     functioning_level: str = "STANDARD",
+    attempts_on_current_topic: int = 0,
+    mastery_trend: str = "stable",
+    current_mastery: float | None = None,
 ) -> str:
     persona = TUTOR_PERSONAS.get(tutor_sku, {})
     adaptation = FUNCTIONING_LEVEL_ADAPTATIONS.get(functioning_level, FUNCTIONING_LEVEL_ADAPTATIONS["STANDARD"])
@@ -54,7 +57,73 @@ def build_tutor_system_prompt(
 
     layer2_parts.append(f"\n## Subject Strategy\n{persona.get('subject_strategy', '')}")
 
+    scaffolding = _build_scaffolding_instructions(
+        attempts_on_current_topic, mastery_trend, current_mastery
+    )
+    if scaffolding:
+        layer2_parts.append(scaffolding)
+
     return layer1 + "\n".join(layer2_parts)
+
+
+def _build_scaffolding_instructions(
+    attempts: int,
+    trend: str,
+    current_mastery: float | None,
+) -> str:
+    """Return scaffolding / remediation guidance based on attempt count and trend.
+
+    - Attempts <= 2: no scaffolding overhead.
+    - Attempts 3-4: micro-step + concrete-before-abstract guidance.
+    - Attempts >= 5: significant scaffolding — prerequisites, manipulatives.
+    - Trend 'declining': regression-aware language.
+    - Trend 'stable' with low mastery (< 0.4): switch teaching approach.
+    """
+    parts: list[str] = []
+
+    attempts = max(0, int(attempts or 0))
+    if attempts >= 5:
+        parts.append(
+            "\n## Scaffolding Mode (Heavy)\n"
+            "This topic requires significant scaffolding. The learner has attempted "
+            "this topic 5 or more times. Start with prerequisite skills before "
+            "re-introducing the target concept. Use manipulatives, visual models, "
+            "and concrete representations. Celebrate small wins explicitly. Avoid "
+            "abstract notation until the learner demonstrates fluency with the "
+            "concrete form."
+        )
+    elif attempts >= 3:
+        parts.append(
+            "\n## Scaffolding Mode (Light)\n"
+            "The learner has struggled with this topic across multiple attempts. "
+            "Break the concept into smaller steps. Use concrete examples before "
+            "abstract concepts. Check understanding at each micro-step before "
+            "moving on, and offer a hint before correcting an answer."
+        )
+
+    trend_normalized = (trend or "stable").lower()
+    if trend_normalized == "declining":
+        parts.append(
+            "\n## Mastery Trend: Declining\n"
+            "The learner's mastery on this topic is declining. This may indicate "
+            "confusion, fatigue, or a gap in prerequisite knowledge. Gently assess "
+            "what they remember from previous sessions before introducing new "
+            "content. Do not push forward — consolidate first."
+        )
+    elif (
+        trend_normalized == "stable"
+        and current_mastery is not None
+        and current_mastery < 0.4
+    ):
+        parts.append(
+            "\n## Mastery Trend: Stable at Low Level\n"
+            "The learner is not making progress with the current teaching approach. "
+            "Try a completely different modality (visual instead of verbal, hands-on "
+            "instead of explained, story-based instead of procedural). Avoid "
+            "repeating the same explanation."
+        )
+
+    return "\n".join(parts)
 
 
 def build_content_generation_prompt(
