@@ -15,3 +15,4 @@ export * from "./admin.js";
 export * from "./district.js";
 export * from "./parent.js";
 export * from "./comms.js";
+export * from "./moderation.js";
