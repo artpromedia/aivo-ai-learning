@@ -6,6 +6,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import {
+  Home,
+  MessageCircle,
+  Settings,
+  CreditCard,
+  ShoppingBag,
+  HelpCircle,
+  LogOut,
+  Bell,
+  ChevronDown,
+  Baby,
+  BarChart3,
+  Menu as MenuIcon,
+  Sparkles,
+  Sun,
+  Moon,
+  type LucideIcon,
+} from "lucide-react";
 
 interface Learner {
   id: string;
@@ -32,21 +50,35 @@ const ParentLayoutContext = createContext<ParentLayoutContextType>({
 
 export const useParentLayout = () => useContext(ParentLayoutContext);
 
-const NAV_ITEMS = [
-  { key: "home", icon: "🏠", href: "/dashboard/parent", matchExact: true },
-  { key: "inbox", icon: "💬", href: "/dashboard/parent/inbox" },
-  { key: "settings", icon: "⚙️", href: "/dashboard/parent/settings" },
-  { key: "billing", icon: "💳", href: "/dashboard/parent/billing" },
-  { key: "store", icon: "🛍️", href: "/dashboard/parent/store" },
-  { key: "help", icon: "❓", href: "/dashboard/parent/help" },
+interface NavItem {
+  key: string;
+  Icon: LucideIcon;
+  href: string;
+  matchExact?: boolean;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { key: "home", Icon: Home, href: "/dashboard/parent", matchExact: true },
+  { key: "inbox", Icon: MessageCircle, href: "/dashboard/parent/inbox" },
+  { key: "settings", Icon: Settings, href: "/dashboard/parent/settings" },
+  { key: "billing", Icon: CreditCard, href: "/dashboard/parent/billing" },
+  { key: "store", Icon: ShoppingBag, href: "/dashboard/parent/store" },
+  { key: "help", Icon: HelpCircle, href: "/dashboard/parent/help" },
 ];
 
-const BOTTOM_TABS = [
-  { key: "home", icon: "🏠", href: "/dashboard/parent", matchExact: true },
-  { key: "child", icon: "🧒", href: null },
-  { key: "progress", icon: "📊", href: null },
-  { key: "inbox", icon: "💬", href: "/dashboard/parent/inbox" },
-  { key: "more", icon: "☰", href: null },
+interface BottomTab {
+  key: string;
+  Icon: LucideIcon;
+  href: string | null;
+  matchExact?: boolean;
+}
+
+const BOTTOM_TABS: BottomTab[] = [
+  { key: "home", Icon: Home, href: "/dashboard/parent", matchExact: true },
+  { key: "child", Icon: Baby, href: null },
+  { key: "progress", Icon: BarChart3, href: null },
+  { key: "inbox", Icon: MessageCircle, href: "/dashboard/parent/inbox" },
+  { key: "more", Icon: MenuIcon, href: null },
 ];
 
 export default function ParentDashboardLayout({ children }: { children: React.ReactNode }) {
@@ -108,16 +140,21 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
     return pathname.startsWith(href);
   };
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    const name = user.name?.split(" ")[0] || "";
-    if (hour >= 5 && hour < 12) return `Good morning, ${name} ☀️`;
-    if (hour >= 12 && hour < 17) return `Good afternoon, ${name} 🌤️`;
-    if (hour >= 17 && hour < 21) return `Good evening, ${name} 🌙`;
-    return `Hey ${name} 🌟`;
-  };
+  const firstName = user.name?.split(" ")[0] || "";
+  const hour = new Date().getHours();
+  const isMorning = hour >= 5 && hour < 12;
+  const isAfternoon = hour >= 12 && hour < 17;
+  const isEvening = hour >= 17 && hour < 21;
+  const greetingLabel = isMorning
+    ? `Good morning, ${firstName}`
+    : isAfternoon
+    ? `Good afternoon, ${firstName}`
+    : isEvening
+    ? `Good evening, ${firstName}`
+    : `Hey ${firstName}`;
+  const GreetingIcon = isMorning ? Sun : isAfternoon ? Sun : isEvening ? Moon : Sparkles;
 
-  const handleBottomTab = (tab: typeof BOTTOM_TABS[0]) => {
+  const handleBottomTab = (tab: BottomTab) => {
     if (tab.href) {
       router.push(tab.href);
       setShowMoreMenu(false);
@@ -133,106 +170,169 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
   return (
     <ParentLayoutContext.Provider value={{ learners, activeLearner, setActiveLearner, unreadCount, refreshLearners }}>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
-        <nav aria-label="Parent sidebar" className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:flex-col"
-          onMouseEnter={() => setSidebarExpanded(true)} onMouseLeave={() => setSidebarExpanded(false)}
-          style={{ width: sidebarExpanded ? 220 : 64, transition: "width 200ms ease" }}>
-          <div className="flex flex-col h-full bg-white/95 backdrop-blur border-r border-slate-100 shadow-sm">
-            <div className="flex items-center h-16 px-4">
-              <Link href="/dashboard/parent">
-                {sidebarExpanded ? (
-                  <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
-                ) : (
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white font-bold text-sm">A</div>
+        <nav
+          aria-label="Parent sidebar"
+          className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:flex-col"
+          onMouseEnter={() => setSidebarExpanded(true)}
+          onMouseLeave={() => setSidebarExpanded(false)}
+          style={{ width: sidebarExpanded ? 240 : 80, transition: "width 200ms ease" }}
+        >
+          <div className="flex flex-col h-full bg-white/95 backdrop-blur border-r-2 border-slate-100 shadow-sm">
+            <div className="flex items-center h-20 px-4">
+              <Link href="/dashboard/parent" className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-600/30 shrink-0">
+                  <Sparkles size={22} strokeWidth={2.5} aria-hidden="true" />
+                </div>
+                {sidebarExpanded && (
+                  <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={90} height={28} style={{ width: "auto", height: "auto" }} />
                 )}
               </Link>
             </div>
 
             {learners.length > 1 && (
-              <div className="px-3 py-2 border-b border-slate-100">
-                {learners.map(l => (
-                  <button key={l.id} onClick={() => { setActiveLearner(l); router.push(`/dashboard/parent/learner/${l.id}`); }}
-                    className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-sm transition mb-1 ${activeLearner?.id === l.id ? "bg-purple-50 text-purple-700 font-semibold" : "text-slate-600 hover:bg-slate-50"}`}>
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 ${activeLearner?.id === l.id ? "bg-purple-500" : "bg-slate-400"}`}>
-                      {l.name.charAt(0)}
-                    </div>
-                    {sidebarExpanded && <span className="truncate">{l.name}</span>}
-                  </button>
-                ))}
+              <div className="px-3 py-3 border-b-2 border-slate-100 space-y-1.5">
+                {learners.map(l => {
+                  const active = activeLearner?.id === l.id;
+                  return (
+                    <button
+                      key={l.id}
+                      onClick={() => { setActiveLearner(l); router.push(`/dashboard/parent/learner/${l.id}`); }}
+                      className={`flex items-center gap-3 w-full px-2 py-2 rounded-2xl text-sm transition ${
+                        active
+                          ? "bg-purple-100 text-primary font-bold"
+                          : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className={`w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black text-white shrink-0 shadow-sm ${active ? "bg-primary" : "bg-slate-400"}`}>
+                        {l.name.charAt(0)}
+                      </div>
+                      {sidebarExpanded && <span className="truncate">{l.name}</span>}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
-            <nav className="flex-1 px-3 py-4 space-y-1">
-              {NAV_ITEMS.map(item => (
-                <Link key={item.key} href={item.href}
-                  className={`flex items-center gap-3 px-2 py-2.5 rounded-lg text-sm transition ${isActive(item.href, item.matchExact) ? "bg-purple-50 text-purple-700 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}>
-                  <span className="text-lg flex-shrink-0 w-6 text-center">{item.icon}</span>
-                  {sidebarExpanded && (
-                    <span className="truncate">{t(`nav_${item.key}`, { defaultValue: item.key.charAt(0).toUpperCase() + item.key.slice(1) })}</span>
-                  )}
-                  {item.key === "inbox" && unreadCount > 0 && (
-                    <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
-                  )}
-                </Link>
-              ))}
-            </nav>
+            <ul className="flex-1 px-3 py-4 space-y-1.5 list-none">
+              {NAV_ITEMS.map(item => {
+                const active = isActive(item.href, item.matchExact);
+                const Icon = item.Icon;
+                const label = t(`nav_${item.key}`, { defaultValue: item.key.charAt(0).toUpperCase() + item.key.slice(1) });
+                return (
+                  <li key={item.key}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      aria-label={item.key === "inbox" && unreadCount > 0 ? `${label}, ${unreadCount} unread` : (!sidebarExpanded ? label : undefined)}
+                      title={!sidebarExpanded ? label : undefined}
+                      className={`relative flex items-center gap-3 px-3 py-3 rounded-2xl text-sm transition group ${
+                        active
+                          ? "bg-purple-100 text-primary font-bold shadow-sm"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`}
+                    >
+                      <Icon size={22} strokeWidth={active ? 2.75 : 2.25} className="shrink-0" aria-hidden="true" />
+                      {sidebarExpanded && <span className="truncate">{label}</span>}
+                      {item.key === "inbox" && unreadCount > 0 && (
+                        <span aria-hidden="true" className={`${sidebarExpanded ? "ml-auto" : "absolute -top-1 -right-1"} bg-pink-600 text-white text-[10px] font-black rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center shadow-md`}>
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
 
-            <div className="px-3 py-4 border-t border-slate-100">
-              <button onClick={logout}
-                className="flex items-center gap-3 px-2 py-2.5 rounded-lg text-sm text-slate-500 hover:bg-red-50 hover:text-red-600 transition w-full">
-                <span className="text-lg flex-shrink-0 w-6 text-center">🚪</span>
+            <div className="px-3 py-4 border-t-2 border-slate-100">
+              <button
+                onClick={logout}
+                aria-label={t("logout")}
+                title={!sidebarExpanded ? t("logout") : undefined}
+                className="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-700 transition w-full"
+              >
+                <LogOut size={22} strokeWidth={2.25} className="shrink-0" aria-hidden="true" />
                 {sidebarExpanded && <span>{t("logout")}</span>}
               </button>
             </div>
           </div>
         </nav>
 
-        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-100 lg:pl-16" style={{ transition: "padding 200ms ease" }}>
-          <div className="flex items-center justify-between px-4 lg:px-6 h-14">
+        <header
+          className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b-2 border-slate-100 lg:pl-20"
+          style={{ transition: "padding 200ms ease" }}
+        >
+          <div className="flex items-center justify-between px-4 lg:px-6 h-16">
             <div className="flex items-center gap-3">
               <Link href="/dashboard/parent" className="lg:hidden">
-                <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={80} height={24} />
+                <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={80} height={24} style={{ width: "auto", height: "auto" }} />
               </Link>
-              <span className="hidden lg:block text-sm text-slate-500">{getGreeting()}</span>
+              <span className="hidden lg:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-50 text-primary text-sm font-bold">
+                <GreetingIcon size={14} strokeWidth={2.5} aria-hidden="true" />
+                {greetingLabel}
+              </span>
             </div>
 
             <div className="flex items-center gap-3">
               {learners.length > 0 && (
                 <div className="relative lg:hidden">
-                  <button onClick={() => setShowLearnerSwitcher(!showLearnerSwitcher)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 text-sm font-semibold">
+                  <button
+                    onClick={() => setShowLearnerSwitcher(!showLearnerSwitcher)}
+                    aria-haspopup="true"
+                    aria-expanded={showLearnerSwitcher}
+                    className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-purple-100 text-primary text-sm font-bold"
+                  >
                     <span>{activeLearner?.name || "Select"}</span>
-                    {activeLearner?.gradeLevel && <span className="text-xs text-purple-400">Grade {activeLearner.gradeLevel}</span>}
-                    <span className="text-xs">▾</span>
+                    {activeLearner?.gradeLevel && (
+                      <span className="text-xs text-primary/70 font-semibold">Gr {activeLearner.gradeLevel}</span>
+                    )}
+                    <ChevronDown size={14} strokeWidth={2.5} aria-hidden="true" />
                   </button>
                   {showLearnerSwitcher && (
-                    <div className="absolute top-full mt-1 right-0 bg-white rounded-xl shadow-lg border border-slate-200 py-2 min-w-48 z-50">
-                      {learners.map(l => (
-                        <button key={l.id} onClick={() => { setActiveLearner(l); setShowLearnerSwitcher(false); router.push(`/dashboard/parent/learner/${l.id}`); }}
-                          className={`flex items-center gap-2 w-full px-4 py-2.5 text-left text-sm ${activeLearner?.id === l.id ? "bg-purple-50 text-purple-700 font-semibold" : "text-slate-700 hover:bg-slate-50"}`}>
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${activeLearner?.id === l.id ? "bg-purple-500" : "bg-slate-400"}`}>
-                            {l.name.charAt(0)}
-                          </div>
-                          <div>
-                            <div>{l.name}</div>
-                            {l.gradeLevel && <div className="text-xs text-slate-400">Grade {l.gradeLevel}</div>}
-                          </div>
-                        </button>
-                      ))}
+                    <div className="absolute top-full mt-2 right-0 bg-white rounded-2xl shadow-lg border-2 border-slate-100 py-2 min-w-52 z-50">
+                      {learners.map(l => {
+                        const active = activeLearner?.id === l.id;
+                        return (
+                          <button
+                            key={l.id}
+                            onClick={() => { setActiveLearner(l); setShowLearnerSwitcher(false); router.push(`/dashboard/parent/learner/${l.id}`); }}
+                            className={`flex items-center gap-3 w-full px-4 py-2.5 text-left text-sm ${active ? "bg-purple-50 text-primary font-bold" : "text-slate-700 hover:bg-slate-50"}`}
+                          >
+                            <div className={`w-8 h-8 rounded-2xl flex items-center justify-center text-xs font-black text-white shrink-0 ${active ? "bg-primary" : "bg-slate-400"}`}>
+                              {l.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div>{l.name}</div>
+                              {l.gradeLevel && <div className="text-xs text-slate-500 font-semibold">Grade {l.gradeLevel}</div>}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
               )}
 
-              <Link href="/dashboard/parent/inbox" className="relative p-2 rounded-full hover:bg-slate-100 transition" aria-label="Inbox">
-                <span className="text-lg">🔔</span>
+              <Link
+                href="/dashboard/parent/inbox"
+                className="relative w-10 h-10 rounded-2xl bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-primary flex items-center justify-center transition"
+                aria-label={`Inbox${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+              >
+                <Bell size={18} strokeWidth={2.5} aria-hidden="true" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
+                  <span className="absolute -top-1 -right-1 bg-pink-600 text-white text-[10px] font-black rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-md">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
                 )}
               </Link>
 
               <div className="hidden lg:flex items-center gap-2">
                 <LanguageSwitcher compact />
-                <Link href="/dashboard/parent/settings" className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-sm font-bold" aria-label="Account">
+                <Link
+                  href="/dashboard/parent/settings"
+                  className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center text-white text-sm font-black shadow-md shadow-purple-600/30 hover:scale-105 transition-transform"
+                  aria-label="Account"
+                >
                   {user.name?.charAt(0) || "P"}
                 </Link>
               </div>
@@ -240,24 +340,38 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
           </div>
         </header>
 
-        <main className="lg:pl-16 pb-20 lg:pb-0" style={{ transition: "padding 200ms ease" }}>
+        <main className="lg:pl-20 pb-24 lg:pb-0" style={{ transition: "padding 200ms ease" }}>
           {children}
         </main>
 
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 safe-area-bottom">
-          <div className="flex items-center justify-around h-14">
+        <nav
+          aria-label="Bottom navigation"
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t-2 border-slate-100 safe-area-bottom shadow-[0_-4px_20px_rgba(124,58,237,0.08)]"
+        >
+          <div className="flex items-center justify-around h-16 px-2">
             {BOTTOM_TABS.map(tab => {
               const active = tab.href ? isActive(tab.href, tab.matchExact) :
                 tab.key === "child" ? pathname.includes("/learner/") && !pathname.includes("/progress") :
                 tab.key === "progress" ? pathname.includes("/progress") : false;
+              const Icon = tab.Icon;
+              const label = t(`nav_${tab.key}`, { defaultValue: tab.key.charAt(0).toUpperCase() + tab.key.slice(1) });
               return (
-                <button key={tab.key} onClick={() => handleBottomTab(tab)}
-                  className={`flex flex-col items-center justify-center w-full h-full relative ${active ? "text-purple-600" : "text-slate-400"}`}
-                  style={{ minHeight: 44, minWidth: 44 }}>
-                  <span className="text-lg">{tab.icon}</span>
-                  <span className={`text-[10px] mt-0.5 ${active ? "font-bold" : ""}`}>{t(`nav_${tab.key}`, { defaultValue: tab.key.charAt(0).toUpperCase() + tab.key.slice(1) })}</span>
+                <button
+                  key={tab.key}
+                  onClick={() => handleBottomTab(tab)}
+                  aria-current={active ? "page" : undefined}
+                  aria-label={tab.key === "inbox" && unreadCount > 0 ? `${label}, ${unreadCount} unread` : label}
+                  className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full rounded-2xl transition ${active ? "text-primary" : "text-slate-400 hover:text-slate-600"}`}
+                  style={{ minHeight: 44, minWidth: 44 }}
+                >
+                  <span className={`flex items-center justify-center w-10 h-7 rounded-full transition ${active ? "bg-purple-100" : ""}`}>
+                    <Icon size={20} strokeWidth={active ? 2.75 : 2.25} aria-hidden="true" />
+                  </span>
+                  <span className={`text-[10px] leading-none ${active ? "font-black" : "font-bold"}`}>{label}</span>
                   {tab.key === "inbox" && unreadCount > 0 && (
-                    <span className="absolute top-1 right-1/4 bg-red-500 text-white text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
+                    <span aria-hidden="true" className="absolute top-1 right-[28%] bg-pink-600 text-white text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-md">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
                   )}
                 </button>
               );
@@ -265,22 +379,35 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
           </div>
 
           {showMoreMenu && (
-            <div className="absolute bottom-full left-0 right-0 bg-white border-t border-slate-200 shadow-lg rounded-t-2xl p-4 space-y-2">
+            <div className="absolute bottom-full left-0 right-0 bg-white border-t-2 border-slate-100 shadow-2xl rounded-t-3xl p-4 space-y-1.5">
               {[
-                { key: "settings", href: "/dashboard/parent/settings", icon: "⚙️" },
-                { key: "billing", href: "/dashboard/parent/billing", icon: "💳" },
-                { key: "store", href: "/dashboard/parent/store", icon: "🛍️" },
-                { key: "help", href: "/dashboard/parent/help", icon: "❓" },
-              ].map(item => (
-                <Link key={item.href} href={item.href} onClick={() => setShowMoreMenu(false)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 text-sm font-semibold text-slate-700">
-                  <span className="text-lg">{item.icon}</span>
-                  <span>{t(`nav_${item.key}`, { defaultValue: item.key.charAt(0).toUpperCase() + item.key.slice(1) })}</span>
-                </Link>
-              ))}
-              <button onClick={() => { setShowMoreMenu(false); logout(); }}
-                className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-red-50 text-sm font-semibold text-red-500 w-full">
-                <span className="text-lg">🚪</span>
+                { key: "settings", href: "/dashboard/parent/settings", Icon: Settings },
+                { key: "billing", href: "/dashboard/parent/billing", Icon: CreditCard },
+                { key: "store", href: "/dashboard/parent/store", Icon: ShoppingBag },
+                { key: "help", href: "/dashboard/parent/help", Icon: HelpCircle },
+              ].map(item => {
+                const Icon = item.Icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setShowMoreMenu(false)}
+                    className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-purple-50 hover:text-primary text-sm font-bold text-slate-700 transition"
+                  >
+                    <span className="w-9 h-9 rounded-2xl bg-purple-100 text-primary flex items-center justify-center">
+                      <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
+                    </span>
+                    <span>{t(`nav_${item.key}`, { defaultValue: item.key.charAt(0).toUpperCase() + item.key.slice(1) })}</span>
+                  </Link>
+                );
+              })}
+              <button
+                onClick={() => { setShowMoreMenu(false); logout(); }}
+                className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-pink-50 text-sm font-bold text-pink-700 w-full transition"
+              >
+                <span className="w-9 h-9 rounded-2xl bg-pink-100 text-pink-700 flex items-center justify-center">
+                  <LogOut size={18} strokeWidth={2.5} aria-hidden="true" />
+                </span>
                 <span>{t("logout")}</span>
               </button>
             </div>
