@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 
 const ROLE_DASHBOARDS: Record<string, string> = {
@@ -23,20 +23,22 @@ const ROLE_DASHBOARDS: Record<string, string> = {
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const redirected = useRef(false);
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && !redirected.current) {
+      redirected.current = true;
       if (user) {
-        router.push(ROLE_DASHBOARDS[user.role] || "/dashboard/parent");
+        router.replace(ROLE_DASHBOARDS[user.role] || "/dashboard/parent");
       } else {
-        router.push("/login");
+        router.replace("/login");
       }
     }
   }, [user, loading, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-cyan-50">
-      <div className="animate-pulse motion-reduce:animate-none">
+      <div>
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={200} height={60} priority style={{ width: "auto", height: "auto" }} />
       </div>
     </div>

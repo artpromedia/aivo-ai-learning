@@ -95,8 +95,8 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
-    if (!loading && user && user.role !== "PARENT" && user.role !== "PLATFORM_ADMIN") router.push("/");
+    if (!loading && !user) router.replace("/login");
+    if (!loading && user && user.role !== "PARENT" && user.role !== "PLATFORM_ADMIN") router.replace("/");
   }, [user, loading, router]);
 
   const refreshLearners = useCallback(() => {

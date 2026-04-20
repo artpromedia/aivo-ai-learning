@@ -106,7 +106,7 @@ async function verifyGoogleToken(idToken: string): Promise<{ email: string; name
   }
 }
 
-const COMMS_URL = process.env.COMMS_SERVICE_URL || "http://localhost:3003";
+const COMMS_URL = process.env.COMMS_SVC_URL || process.env.COMMS_SERVICE_URL || "http://localhost:3003";
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
 
 function generateMfaCode(): string {
@@ -623,7 +623,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
 
       // Always return success to avoid account enumeration
-      if (!user || !user.passwordHash) {
+      if (!user) {
         return genericResponse;
       }
 

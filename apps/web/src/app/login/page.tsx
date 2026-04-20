@@ -53,7 +53,17 @@ export default function LoginPage() {
         router.push(`/verify-mfa?token=${encodeURIComponent(result.mfaToken)}&returnTo=/`);
         return;
       }
-      router.push("/");
+      const roleDashboards: Record<string, string> = {
+        PARENT: "/dashboard/parent",
+        LEARNER: "/dashboard/learner",
+        TEACHER: "/dashboard/teacher",
+        CAREGIVER: "/dashboard/caregiver",
+        THERAPIST: "/dashboard/therapist",
+        PLATFORM_ADMIN: "/dashboard/admin",
+        DISTRICT_ADMIN: "/dashboard/district",
+      };
+      const dest = roleDashboards[result?.user?.role] || "/dashboard/parent";
+      router.replace(dest);
     } catch (err: any) {
       setError(err.message || t("login_failed"));
     }
