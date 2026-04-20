@@ -238,6 +238,47 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
+  app.post("/api/comms/internal/admin-alert", async (request, reply) => {
+    const internalKey = request.headers["x-internal-key"];
+    const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+    if (!internalKey || !expectedKey || internalKey !== expectedKey) {
+      return reply.status(401).send({ error: "Unauthorized" });
+    }
+    const body = request.body as any;
+    const { to, severity, tutorSku, modelUsed, learnerId, flagReason, flagConfidence, contentSnippet, timestamp } = body || {};
+    if (!to || !flagReason) {
+      return reply.code(400).send({ error: "to and flagReason required" });
+    }
+    const subject = `[AIVO Safety ${String(severity || "alert").toUpperCase()}] ${flagReason} flagged on ${tutorSku || "unknown tutor"}`;
+    const anonLearner = learnerId ? `learner:${String(learnerId).slice(0, 8)}…` : "unknown learner";
+    const lines = [
+      `Severity: ${severity || "high"}`,
+      `Time: ${timestamp || new Date().toISOString()}`,
+      `Tutor SKU: ${tutorSku || "n/a"}`,
+      `Model: ${modelUsed || "n/a"}`,
+      `Learner (anonymized): ${anonLearner}`,
+      `Flag reason: ${flagReason}`,
+      `Confidence: ${flagConfidence != null ? flagConfidence : "n/a"}`,
+      ``,
+      `--- Content snippet ---`,
+      String(contentSnippet || "").slice(0, 500),
+    ];
+    const text = lines.join("\n");
+    const html = `<pre style="font-family:ui-monospace,monospace;font-size:13px;line-height:1.5">${text.replace(/[<>&]/g, (c) => ({"<":"&lt;",">":"&gt;","&":"&amp;"} as any)[c])}</pre>`;
+
+    if (!isConfigured()) {
+      logger.warn({ to, flagReason, tutorSku }, "Admin safety alert (email not configured, logged to stdout)");
+      return { status: "logged_only", to, subject };
+    }
+    try {
+      const result = await sendEmail({ to, subject, htmlBody: html, textBody: text, tag: "safety_alert" });
+      return { status: result.status, messageId: result.messageId, to };
+    } catch (err: any) {
+      logger.error({ err, to }, "Failed to send admin safety alert");
+      return reply.code(500).send({ error: "Failed to send admin alert" });
+    }
+  });
+
   app.get("/api/comms/status", async () => {
     return {
       postmark: isConfigured() ? "connected" : "not_configured",

@@ -42,9 +42,18 @@ async def generate_completion(
     else:
         models_to_try = MODEL_PRIORITY
 
+    try:
+        from .moderation_client import is_model_disabled
+    except Exception:
+        def is_model_disabled(_m: str) -> bool:  # type: ignore
+            return False
+
     last_error = None
     for model in models_to_try:
         if model is None:
+            continue
+        if is_model_disabled(model):
+            logger.warning("Skipping model %s (disabled by safety circuit breaker)", model)
             continue
         try:
             response = await litellm.acompletion(
@@ -85,9 +94,18 @@ async def generate_chat_completion(
 ):
     models_to_try = [preferred_model] + MODEL_PRIORITY if preferred_model else MODEL_PRIORITY
 
+    try:
+        from .moderation_client import is_model_disabled
+    except Exception:
+        def is_model_disabled(_m: str) -> bool:  # type: ignore
+            return False
+
     last_error = None
     for model in models_to_try:
         if model is None:
+            continue
+        if is_model_disabled(model):
+            logger.warning("Skipping model %s (disabled by safety circuit breaker)", model)
             continue
         try:
             if stream:

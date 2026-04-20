@@ -77,6 +77,10 @@ async def generate_content(req: ContentRequest):
         functioning_level=req.functioning_level,
         sensory_profile=req.brain_context.get("sensory_profile"),
         accommodations=req.brain_context.get("active_accommodations"),
+        model_used=result.get("model"),
+        learner_id=req.brain_context.get("learner_id"),
+        tenant_id=req.brain_context.get("tenant_id"),
+        content_type="lesson_content",
     )
 
     return ContentResponse(

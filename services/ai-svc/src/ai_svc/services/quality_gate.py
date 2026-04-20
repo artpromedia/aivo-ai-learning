@@ -102,6 +102,13 @@ def run_quality_gate(
     functioning_level: str,
     sensory_profile: dict | None = None,
     accommodations: list[str] | None = None,
+    *,
+    tutor_sku: str | None = None,
+    model_used: str | None = None,
+    learner_id: str | None = None,
+    tenant_id: str | None = None,
+    session_id: str | None = None,
+    content_type: str = "ai_response",
 ) -> dict:
     gates = []
 
@@ -119,6 +126,47 @@ def run_quality_gate(
 
     passed = all(g["passed"] for g in gates)
     score = sum(g["score"] for g in gates) / len(gates)
+
+    # Persist moderation events: failures, PII leaks, and low-confidence passes.
+    try:
+        from .moderation_client import log_moderation_event
+
+        if not safety_result["passed"]:
+            log_moderation_event(
+                content=content, flag_reason="safety_regex", content_type=content_type,
+                flag_confidence=0.95, gate_results={"gates": gates},
+                tutor_sku=tutor_sku, model_used=model_used,
+                learner_id=learner_id, tenant_id=tenant_id, session_id=session_id,
+                status="PENDING",
+            )
+        elif not pii_result["passed"]:
+            log_moderation_event(
+                content=content, flag_reason="pii_leak", content_type=content_type,
+                flag_confidence=0.99, gate_results={"gates": gates},
+                tutor_sku=tutor_sku, model_used=model_used,
+                learner_id=learner_id, tenant_id=tenant_id, session_id=session_id,
+                status="PENDING",
+            )
+        elif not passed:
+            log_moderation_event(
+                content=content, flag_reason="quality_gate_failure", content_type=content_type,
+                flag_confidence=round(1.0 - score, 3), gate_results={"gates": gates},
+                tutor_sku=tutor_sku, model_used=model_used,
+                learner_id=learner_id, tenant_id=tenant_id, session_id=session_id,
+                status="PENDING",
+            )
+        elif score < 0.7:
+            # Passed but borderline — queue for periodic batch review,
+            # the AI response is still delivered to the learner.
+            log_moderation_event(
+                content=content, flag_reason="low_confidence_pass", content_type=content_type,
+                flag_confidence=round(1.0 - score, 3), gate_results={"gates": gates},
+                tutor_sku=tutor_sku, model_used=model_used,
+                learner_id=learner_id, tenant_id=tenant_id, session_id=session_id,
+                status="LOW_CONFIDENCE",
+            )
+    except Exception as exc:
+        logger.warning("moderation_client logging failed: %s", exc)
 
     if not passed:
         _log_moderation_event({
@@ -177,6 +225,15 @@ async def run_semantic_safety(content: str) -> dict:
             "reason": reason,
             "content_preview": content[:300],
         })
+        try:
+            from .moderation_client import log_moderation_event
+            log_moderation_event(
+                content=content, flag_reason="semantic_unsafe",
+                content_type="ai_response", flag_confidence=0.92,
+                gate_results={"semantic_reason": reason}, status="PENDING",
+            )
+        except Exception as exc:
+            logger.warning("semantic moderation log failed: %s", exc)
         return {"gate": "semantic_safety", "passed": False, "score": 0.0, "details": {"reason": reason}}
     return {"gate": "semantic_safety", "passed": True, "score": 1.0, "details": {}}
 
