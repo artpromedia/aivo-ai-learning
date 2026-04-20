@@ -19,12 +19,12 @@ const EXERCISES = [
 ];
 
 const MUSIC_VISUALS = [
-  { emoji: "🎵", color: "#8B5CF6" },
-  { emoji: "🎶", color: "#06B6D4" },
-  { emoji: "🎹", color: "#EC4899" },
-  { emoji: "🎸", color: "#F59E0B" },
-  { emoji: "🥁", color: "#10B981" },
-  { emoji: "🎺", color: "#EF4444" },
+  { emoji: "🎵", color: "hsl(var(--visual-primary))" },
+  { emoji: "🎶", color: "hsl(var(--visual-reading))" },
+  { emoji: "🎹", color: "hsl(var(--visual-math))" },
+  { emoji: "🎸", color: "hsl(var(--visual-sel))" },
+  { emoji: "🥁", color: "hsl(var(--visual-science))" },
+  { emoji: "🎺", color: "hsl(var(--visual-math))" },
 ];
 
 const WORD_GAME_WORDS = [
@@ -98,15 +98,15 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
 
   if (!selectedBreak) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-950 flex items-center justify-center px-4">
+      <div className="fixed inset-0 vi-bg flex items-center justify-center px-4">
         <div className={`max-w-md w-full text-center transition-all duration-700 ${show ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}>
           <div className="text-5xl mb-4">🎉</div>
           {!isTextFree && (
             <>
-              <h2 className="text-2xl font-heading font-bold text-white mb-2">
+              <h2 className="text-2xl font-heading font-extrabold text-slate-900 mb-2">
                 Great job on Chapter {chapterNumber}!
               </h2>
-              <p className="text-white/60 font-body mb-8">
+              <p className="vi-text-muted font-body mb-8">
                 Time for a break. Pick what feels good — take as long as you need!
               </p>
             </>
@@ -120,7 +120,7 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
               <button
                 key={option.type}
                 onClick={() => startBreak(option)}
-                className="w-full flex items-center gap-4 bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-4 hover:bg-white/20 hover:scale-[1.02] active:scale-[0.98] transition-all text-left group"
+                className="vi-card w-full flex items-center gap-4 p-4 hover:bg-[hsl(var(--visual-surface-soft))] hover:scale-[1.02] active:scale-[0.98] transition-all text-left group focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))]"
                 style={{ minHeight: "72px" }}
                 aria-label={option.label}
               >
@@ -129,8 +129,8 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
                 </div>
                 {!isTextFree && (
                   <div className="flex-1">
-                    <p className="font-heading font-bold text-white text-lg">{option.label}</p>
-                    <p className="text-white/50 text-sm font-body">{option.description}</p>
+                    <p className="font-heading font-extrabold text-slate-900 text-lg">{option.label}</p>
+                    <p className="vi-text-muted text-sm font-body">{option.description}</p>
                   </div>
                 )}
               </button>
@@ -140,7 +140,7 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
           {parentMinDurationSec <= 0 && (
             <button
               onClick={onBreakComplete}
-              className="mt-6 text-white/40 hover:text-white/60 text-sm font-body transition"
+              className="mt-6 vi-text-muted hover:text-slate-700 text-sm font-body transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--visual-primary))] rounded-md px-2 py-1"
               style={{ minHeight: "48px" }}
             >
               {isTextFree ? "➡️" : "Skip break"}
@@ -152,18 +152,18 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-950 flex items-center justify-center px-4">
+    <div className="fixed inset-0 vi-bg flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">
         {selectedBreak === "music" && (
           <div className="space-y-6">
             <div className="text-6xl mb-4 animate-pulse">🎵</div>
             {!isTextFree && (
               <>
-                <h2 className="text-2xl font-heading font-bold text-white mb-2">Relax & Listen</h2>
-                <p className="text-white/60 font-body mb-6">Close your eyes and enjoy the moment...</p>
+                <h2 className="text-2xl font-heading font-extrabold text-slate-900 mb-2">Relax & Listen</h2>
+                <p className="vi-text-muted font-body mb-6">Close your eyes and enjoy the moment...</p>
               </>
             )}
-            <div className="flex justify-center gap-4 h-32 items-end">
+            <div className="vi-card p-6 flex justify-center gap-4 h-32 items-end">
               {MUSIC_VISUALS.map((note, i) => (
                 <div
                   key={i}
@@ -183,7 +183,7 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
                   className="text-3xl transition-all duration-300"
                   style={{
                     transform: i === musicNoteIdx % MUSIC_VISUALS.length ? "scale(1.5) translateY(-8px)" : "scale(1)",
-                    opacity: i === musicNoteIdx % MUSIC_VISUALS.length ? 1 : 0.3,
+                    opacity: i === musicNoteIdx % MUSIC_VISUALS.length ? 1 : 0.4,
                   }}
                 >
                   {note.emoji}
@@ -196,22 +196,23 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
         {selectedBreak === "word_game" && (
           <div className="space-y-6">
             <div className="text-6xl mb-4">🔤</div>
-            <h2 className="text-2xl font-heading font-bold text-white mb-2">Word Scramble!</h2>
-            <p className="text-white/60 font-body mb-2">Unscramble the letters to find the word</p>
-            <div className="bg-white/10 backdrop-blur rounded-2xl p-6 border border-white/20">
+            <h2 className="text-2xl font-heading font-extrabold text-slate-900 mb-2">Word Scramble!</h2>
+            <p className="vi-text-muted font-body mb-2">Unscramble the letters to find the word</p>
+            <div className="vi-card p-6">
               <div className="flex justify-center gap-2 mb-4">
                 {WORD_GAME_WORDS[wordIdx].scrambled.split("").map((letter, i) => (
                   <div
                     key={i}
-                    className="w-12 h-12 rounded-xl bg-amber-400 flex items-center justify-center text-xl font-heading font-bold text-slate-900 shadow-lg"
+                    className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-heading font-extrabold text-slate-900 shadow-md"
+                    style={{ backgroundColor: "hsl(var(--visual-sel))" }}
                   >
                     {letter}
                   </div>
                 ))}
               </div>
-              <p className="text-white/40 text-sm mb-4">Hint: {WORD_GAME_WORDS[wordIdx].hint}</p>
+              <p className="vi-text-muted text-sm mb-4">Hint: {WORD_GAME_WORDS[wordIdx].hint}</p>
               {wordSolved ? (
-                <div className="text-emerald-400 font-heading font-bold text-lg">
+                <div className="font-heading font-extrabold text-lg" style={{ color: "hsl(var(--visual-science))" }}>
                   Correct! Great job! 🎉
                 </div>
               ) : (
@@ -229,7 +230,7 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
                       }
                     }}
                     placeholder="Type your answer..."
-                    className="px-4 py-2 rounded-xl bg-white/20 text-white placeholder-white/30 font-heading font-bold text-center focus:outline-none focus:ring-2 focus:ring-amber-400 w-40"
+                    className="px-4 py-2 rounded-xl bg-[hsl(var(--visual-surface-soft))] vi-border border-2 text-slate-900 placeholder-[hsl(var(--visual-text-muted))] font-heading font-extrabold text-center focus:outline-none focus:ring-[3px] focus:ring-[hsl(var(--visual-sel))] w-40"
                     maxLength={WORD_GAME_WORDS[wordIdx].scrambled.length}
                   />
                 </div>
@@ -245,10 +246,10 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
             </div>
             {!isTextFree && (
               <>
-                <h2 className="text-2xl font-heading font-bold text-white mb-2">
+                <h2 className="text-2xl font-heading font-extrabold text-slate-900 mb-2">
                   {EXERCISES[exerciseIdx].name}
                 </h2>
-                <p className="text-white/70 font-body text-lg mb-4">
+                <p className="text-slate-700 font-body text-lg mb-4">
                   {EXERCISES[exerciseIdx].instruction}
                 </p>
               </>
@@ -258,8 +259,11 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
                 <div
                   key={i}
                   className={`w-3 h-3 rounded-full transition-all ${
-                    i === exerciseIdx ? "bg-amber-400 scale-125" : "bg-white/20"
+                    i === exerciseIdx ? "scale-125" : ""
                   }`}
+                  style={{
+                    backgroundColor: i === exerciseIdx ? "hsl(var(--visual-sel))" : "hsl(var(--visual-border))",
+                  }}
                 />
               ))}
             </div>
@@ -270,18 +274,18 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
           <button
             onClick={onBreakComplete}
             disabled={!minDurationMet}
-            className={`px-8 py-4 rounded-full text-white font-heading font-bold text-lg shadow-xl transition-all ${
+            className={`px-8 py-4 rounded-full font-heading font-extrabold text-lg shadow-md transition-all focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))] ${
               minDurationMet
-                ? "bg-gradient-to-r from-amber-400 to-orange-500 hover:scale-105 active:scale-95"
-                : "bg-white/10 cursor-not-allowed opacity-50"
+                ? "text-white hover:scale-105 active:scale-95"
+                : "vi-text-muted cursor-not-allowed opacity-60 bg-[hsl(var(--visual-surface-soft))]"
             }`}
-            style={{ minHeight: "56px" }}
+            style={minDurationMet ? { backgroundColor: "hsl(var(--visual-sel))" } : undefined}
             aria-label="I'm ready to go back"
           >
             {isTextFree ? "✅ ➡️" : "I'm ready to go back"}
           </button>
           {!minDurationMet && !isTextFree && (
-            <p className="text-white/30 text-xs mt-2 font-body">
+            <p className="vi-text-muted text-xs mt-2 font-body">
               Take your time — {parentMinDurationSec - elapsedSec}s before you can continue
             </p>
           )}

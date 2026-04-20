@@ -11,7 +11,7 @@ export function StageContent({ beat, adaptations, phase }: StageContentProps) {
   if (!beat) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="animate-pulse text-white/30 text-lg font-body">Preparing the stage...</div>
+        <div className="animate-pulse vi-text-muted text-lg font-body">Preparing the stage...</div>
       </div>
     );
   }
@@ -47,15 +47,17 @@ export function StageContent({ beat, adaptations, phase }: StageContentProps) {
         >
           {el.type === "card" && (
             <div
-              className={`bg-white/15 backdrop-blur-md rounded-2xl border-2 border-white/20 px-6 py-5 max-w-md text-center shadow-xl
-                ${adaptations.boldOutlines ? "border-3 border-white/40" : ""}
-                ${adaptations.contrastBoost ? "bg-white/25" : ""}
+              className={`vi-card px-6 py-5 max-w-md text-center
+                ${adaptations.contrastBoost ? "vi-surface-soft" : ""}
                 ${adaptations.pulseAttention ? "animate-pulse-gentle" : ""}
               `}
-              style={el.color ? { borderColor: el.color } : undefined}
+              style={{
+                ...(el.color ? { borderColor: el.color } : {}),
+                borderWidth: adaptations.boldOutlines ? 3 : 2,
+              }}
             >
               {el.emoji && <div className="text-5xl mb-3">{el.emoji}</div>}
-              <p className={`text-white font-heading font-bold leading-relaxed ${
+              <p className={`text-slate-900 font-heading font-extrabold leading-relaxed ${
                 adaptations.contrastBoost ? "text-xl" : "text-lg"
               }`}>
                 {el.content}
@@ -64,9 +66,8 @@ export function StageContent({ beat, adaptations, phase }: StageContentProps) {
           )}
 
           {el.type === "text" && (
-            <p className={`text-white/90 font-body text-center max-w-lg leading-relaxed drop-shadow
+            <p className={`text-slate-800 font-body text-center max-w-lg leading-relaxed
               ${adaptations.contrastBoost ? "text-xl font-bold" : "text-lg"}
-              ${adaptations.boldOutlines ? "text-shadow-strong" : ""}
             `}>
               {el.content}
             </p>
@@ -75,10 +76,10 @@ export function StageContent({ beat, adaptations, phase }: StageContentProps) {
           {el.type === "shape" && (
             <div className="flex items-center justify-center">
               <div
-                className={`w-24 h-24 rounded-2xl bg-white/15 backdrop-blur border-2 border-white/25 flex items-center justify-center text-4xl
+                className={`w-24 h-24 rounded-2xl vi-card border-2 flex items-center justify-center text-4xl
                   ${adaptations.pulseAttention ? "animate-pulse-gentle" : ""}
                 `}
-                style={el.color ? { backgroundColor: `${el.color}30`, borderColor: el.color } : undefined}
+                style={el.color ? { backgroundColor: `${el.color}1A`, borderColor: el.color } : undefined}
               >
                 {el.emoji || el.content}
               </div>
@@ -90,7 +91,7 @@ export function StageContent({ beat, adaptations, phase }: StageContentProps) {
               {el.content.split(",").map((part, j) => (
                 <div
                   key={j}
-                  className={`w-16 h-16 rounded-xl bg-white/20 backdrop-blur border-2 border-white/30 flex items-center justify-center text-2xl cursor-pointer hover:scale-110 active:scale-95 transition-transform
+                  className={`w-16 h-16 rounded-xl vi-card border-2 vi-border flex items-center justify-center text-2xl cursor-pointer hover:scale-110 active:scale-95 transition-transform
                     ${adaptations.pulseAttention ? "animate-pulse-gentle" : ""}
                   `}
                   style={el.color ? { borderColor: el.color } : undefined}
@@ -102,16 +103,16 @@ export function StageContent({ beat, adaptations, phase }: StageContentProps) {
           )}
 
           {el.type === "diagram" && (
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl border-2 border-white/20 p-6 max-w-sm">
+            <div className="vi-card p-6 max-w-sm">
               {el.emoji && <div className="text-4xl text-center mb-2">{el.emoji}</div>}
-              <p className="text-white font-body text-center">{el.content}</p>
+              <p className="text-slate-800 font-body text-center">{el.content}</p>
             </div>
           )}
 
           {el.type === "image" && (
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden border-2 border-white/20 max-w-sm">
+            <div className="vi-card overflow-hidden max-w-sm">
               {el.emoji && <div className="text-6xl text-center py-6">{el.emoji}</div>}
-              {el.content && <p className="text-white font-body text-center px-4 pb-3">{el.content}</p>}
+              {el.content && <p className="text-slate-800 font-body text-center px-4 pb-3">{el.content}</p>}
             </div>
           )}
         </div>

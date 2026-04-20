@@ -18,10 +18,10 @@ interface RewardsTabProps {
 }
 
 function rarityIcon(rarity: string) {
-  if (rarity === "legendary") return <Gem className="w-7 h-7 text-[hsl(262_83%_58%)]" strokeWidth={2.5} />;
-  if (rarity === "epic") return <Star className="w-7 h-7 text-[hsl(340_82%_52%)] fill-[hsl(340_82%_52%)]" strokeWidth={2.5} />;
-  if (rarity === "rare") return <Star className="w-7 h-7 text-[hsl(199_89%_48%)] fill-[hsl(199_89%_48%)]" strokeWidth={2.5} />;
-  return <Medal className="w-7 h-7 text-[hsl(43_100%_50%)]" strokeWidth={2.5} />;
+  if (rarity === "legendary") return <Gem className="w-7 h-7 text-[hsl(var(--visual-primary))]" strokeWidth={2.5} />;
+  if (rarity === "epic") return <Star className="w-7 h-7 text-[hsl(var(--visual-math))] fill-[hsl(var(--visual-math))]" strokeWidth={2.5} />;
+  if (rarity === "rare") return <Star className="w-7 h-7 text-[hsl(var(--visual-reading))] fill-[hsl(var(--visual-reading))]" strokeWidth={2.5} />;
+  return <Medal className="w-7 h-7 text-[hsl(var(--visual-sel))]" strokeWidth={2.5} />;
 }
 
 export function RewardsTab({ badges, streakCurrent, streakLongest, onNavigate }: RewardsTabProps) {
@@ -29,9 +29,9 @@ export function RewardsTab({ badges, streakCurrent, streakLongest, onNavigate }:
 
   const chip = (key: "shop" | "badges" | "leaderboard") => {
     const map = {
-      shop: { color: "hsl(142 71% 45%)", tint: "hsl(142 71% 45% / 0.12)", label: "Shop", path: "/dashboard/learner/shop", Icon: ShoppingBag },
-      badges: { color: "hsl(43 100% 50%)", tint: "hsl(43 100% 50% / 0.16)", label: "Badges", path: "/dashboard/learner/badges", Icon: Award },
-      leaderboard: { color: "hsl(262 83% 58%)", tint: "hsl(262 83% 58% / 0.12)", label: "Leaderboard", path: "/dashboard/learner/leaderboard", Icon: Trophy },
+      shop: { color: "hsl(var(--visual-science))", tint: "hsl(var(--visual-science) / 0.12)", label: "Shop", path: "/dashboard/learner/shop", Icon: ShoppingBag },
+      badges: { color: "hsl(var(--visual-sel))", tint: "hsl(var(--visual-sel) / 0.16)", label: "Badges", path: "/dashboard/learner/badges", Icon: Award },
+      leaderboard: { color: "hsl(var(--visual-primary))", tint: "hsl(var(--visual-primary) / 0.12)", label: "Leaderboard", path: "/dashboard/learner/leaderboard", Icon: Trophy },
     } as const;
     const { color, tint, label, path, Icon } = map[key];
     return (
@@ -72,7 +72,7 @@ export function RewardsTab({ badges, streakCurrent, streakLongest, onNavigate }:
       <LearnerCard>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[hsl(43_100%_50%/0.16)] text-[hsl(43_100%_50%)]">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))]">
               <Flame className="w-5 h-5" strokeWidth={2.5} aria-hidden />
             </div>
             <span className="font-extrabold text-slate-900">Streak: {streakCurrent} days</span>

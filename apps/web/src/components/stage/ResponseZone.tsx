@@ -69,7 +69,7 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
     return (
       <div className="w-full px-4 md:px-12" role="group" aria-label="Answer choices">
         {interaction.prompt && (
-          <p className="text-white/80 text-center text-sm font-body mb-3" id="mc-prompt">{interaction.prompt}</p>
+          <p className="vi-text-muted text-center text-sm font-body mb-3" id="mc-prompt">{interaction.prompt}</p>
         )}
         <div className={`grid gap-3 ${choices.length <= 2 ? "grid-cols-2" : choices.length === 3 ? "grid-cols-3" : "grid-cols-2 md:grid-cols-4"}`} aria-describedby={interaction.prompt ? "mc-prompt" : undefined}>
           {choices.map((choice) => {
@@ -83,17 +83,17 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
                 onClick={() => handleChoice(choice.id, choice.isCorrect)}
                 disabled={!!selected}
                 aria-label={`${choice.label}${showCorrect ? ", correct" : showIncorrect ? ", try again" : ""}`}
-                className={`relative rounded-2xl border-3 transition-all duration-300 font-heading font-bold text-center
+                className={`relative rounded-2xl border-2 transition-all duration-300 font-heading font-extrabold text-center
                   ${isLargeTarget ? "py-6 px-4 text-lg" : "py-4 px-3 text-base"}
-                  ${showCorrect ? "bg-green-500/30 border-green-400 scale-105 ring-4 ring-green-400/50" :
-                    showIncorrect ? "bg-red-500/30 border-red-400 scale-95 ring-4 ring-red-400/50" :
+                  ${showCorrect ? "bg-[hsl(var(--visual-science)/0.16)] border-[hsl(var(--visual-science))] scale-105 ring-4 ring-[hsl(var(--visual-science)/0.4)]" :
+                    showIncorrect ? "bg-[hsl(var(--visual-math)/0.16)] border-[hsl(var(--visual-math))] scale-95 ring-4 ring-[hsl(var(--visual-math)/0.4)]" :
                     isSelected ? "opacity-50" :
-                    "bg-white/10 border-white/20 hover:bg-white/20 hover:border-white/40 hover:scale-105 active:scale-95"
-                  } backdrop-blur`}
+                    "bg-white vi-border hover:vi-surface-soft hover:scale-105 active:scale-95 shadow-sm"
+                  } focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))]`}
               >
                 {choice.emoji && <span className="text-3xl block mb-1" aria-hidden="true">{choice.emoji}</span>}
                 {choice.image && <span className="text-4xl block mb-1" aria-hidden="true">{choice.image}</span>}
-                <span className="text-white drop-shadow">{choice.label}</span>
+                <span className="text-slate-900">{choice.label}</span>
                 {showCorrect && (
                   <span className="absolute -top-2 -right-2 text-2xl animate-bounce" aria-hidden="true">⭐</span>
                 )}
@@ -116,7 +116,7 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
     return (
       <div className="w-full px-4 md:px-12">
         {interaction.prompt && (
-          <p className="text-white/80 text-center text-sm font-body mb-3">{interaction.prompt}</p>
+          <p className="vi-text-muted text-center text-sm font-body mb-3">{interaction.prompt}</p>
         )}
         <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
           <div className="flex gap-2 flex-wrap justify-center">
@@ -127,7 +127,7 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
                 draggable
                 onDragStart={() => handleDragStart(item.id)}
                 onTouchStart={() => handleDragStart(item.id)}
-                className="bg-white/20 backdrop-blur border-2 border-white/30 rounded-xl px-4 py-3 cursor-grab active:cursor-grabbing hover:bg-white/30 hover:scale-105 transition-all text-white font-heading font-bold"
+                className="bg-white vi-border border-2 rounded-xl px-4 py-3 cursor-grab active:cursor-grabbing hover:vi-surface-soft hover:scale-105 transition-all text-slate-900 font-heading font-extrabold shadow-sm"
               >
                 {item.emoji && <span className="mr-1">{item.emoji}</span>}
                 {item.label}
@@ -135,7 +135,7 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
             ))}
           </div>
 
-          <div className="text-white/40 text-2xl">→</div>
+          <div className="vi-text-muted text-2xl">→</div>
 
           <div className="flex gap-3 flex-wrap justify-center">
             {interaction.dragZones.map((zone) => (
@@ -145,11 +145,11 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => handleDrop(zone.id)}
                 onTouchEnd={() => handleDrop(zone.id)}
-                className="w-28 h-20 rounded-xl border-2 border-dashed border-white/30 flex items-center justify-center text-white/50 text-sm font-body bg-white/5 hover:bg-white/10 transition-all"
+                className="w-28 h-20 rounded-xl border-2 border-dashed vi-border flex items-center justify-center vi-text-muted text-sm font-body vi-surface-soft hover:bg-white transition-all"
                 style={{ borderColor: draggedId ? accentColor : undefined }}
               >
                 {Object.entries(droppedItems).find(([_, z]) => z === zone.id)?.[0]
-                  ? <span className="text-white font-bold">✓</span>
+                  ? <span className="text-slate-900 font-extrabold">✓</span>
                   : zone.label
                 }
               </div>
@@ -164,17 +164,17 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
     return (
       <div className="w-full flex flex-col items-center gap-3">
         {interaction.prompt && (
-          <p className="text-white/80 text-center text-sm font-body">{interaction.prompt}</p>
+          <p className="vi-text-muted text-center text-sm font-body">{interaction.prompt}</p>
         )}
         <button
-          className="w-20 h-20 rounded-full flex items-center justify-center text-3xl bg-white/20 backdrop-blur border-3 border-white/30 hover:bg-white/30 hover:scale-110 active:scale-95 transition-all"
-          style={{ boxShadow: `0 0 20px ${accentColor}40` }}
+          className="w-20 h-20 rounded-full flex items-center justify-center text-3xl bg-white vi-border border-[3px] hover:vi-surface-soft hover:scale-110 active:scale-95 transition-all shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))]"
+          style={{ boxShadow: `0 4px 14px ${accentColor}33` }}
           onClick={() => onAnswer(true)}
           aria-label="Tap to speak your answer"
         >
           <span aria-hidden="true">🎤</span>
         </button>
-        <p className="text-white/40 text-xs font-body" aria-hidden="true">Tap to speak your answer</p>
+        <p className="vi-text-muted text-xs font-body" aria-hidden="true">Tap to speak your answer</p>
       </div>
     );
   }
@@ -184,8 +184,8 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
       <div className="w-full flex justify-center">
         <button
           onClick={() => onAnswer(true)}
-          className="px-8 py-4 rounded-2xl bg-white/20 backdrop-blur border-2 border-white/30 text-white font-heading font-bold text-lg hover:bg-white/30 hover:scale-105 active:scale-95 transition-all"
-          style={{ boxShadow: `0 0 15px ${accentColor}30` }}
+          className="px-8 py-4 rounded-2xl bg-white vi-border border-2 text-slate-900 font-heading font-extrabold text-lg hover:vi-surface-soft hover:scale-105 active:scale-95 transition-all shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))]"
+          style={{ boxShadow: `0 4px 14px ${accentColor}30` }}
         >
           {interaction.prompt || "Tap to continue"}
         </button>

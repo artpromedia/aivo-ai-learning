@@ -54,9 +54,11 @@ export function StageLayout({
 
   const shouldShowPreview = currentBeat && !beatPreviewAcked[currentBeatIndex] && phase !== "loading" && phase !== "celebration" && motionBudget.previewDurationMs > 0;
 
+  const accentColor = theme?.accentColor || tutor.color;
+
   return (
     <div
-      className={`fixed inset-0 flex flex-col overflow-hidden bg-gradient-to-br ${theme?.bgGradient || "from-slate-900 to-purple-900"}`}
+      className="fixed inset-0 flex flex-col overflow-hidden vi-bg"
       style={{
         filter: `saturate(${adaptations.colorSaturation}%)`,
       }}
@@ -67,24 +69,28 @@ export function StageLayout({
         <StageBackground tutorKey={tutorKey} motionReduced={adaptations.motionReduced} functioningLevel={functioningLevel} />
       </div>
 
-      <header className="relative z-10 flex items-center justify-between px-4 py-2 bg-black/30 backdrop-blur-md" role="banner">
+      <header
+        className="relative z-10 flex items-center justify-between px-4 py-2 bg-white/90 backdrop-blur-md border-b-2"
+        style={{ borderColor: "hsl(var(--visual-border))" }}
+        role="banner"
+      >
         <div className="flex items-center gap-3">
           {onHome && (
             <button
               onClick={onHome}
-              className="w-9 h-9 rounded-full bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center text-sm hover:bg-white/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="w-9 h-9 rounded-full vi-surface-soft vi-border border flex items-center justify-center text-sm hover:bg-white transition-all focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))]"
               aria-label="Back home"
               style={{ minHeight: "var(--learner-hit-target, 36px)", minWidth: "var(--learner-hit-target, 36px)" }}
             >
               🏠
             </button>
           )}
-          <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/30">
+          <div className="w-8 h-8 rounded-full overflow-hidden border-2" style={{ borderColor: accentColor }}>
             <Image src={tutor.avatar} alt={tutor.name} width={32} height={32} className="object-cover" />
           </div>
           <div>
-            <p className="text-white text-sm font-heading font-bold leading-none">{tutor.name}</p>
-            <p className="text-white/50 text-xs">{theme?.envName}</p>
+            <p className="text-slate-900 text-sm font-heading font-extrabold leading-none">{tutor.name}</p>
+            <p className="vi-text-muted text-xs">{theme?.envName}</p>
           </div>
         </div>
 
@@ -92,36 +98,40 @@ export function StageLayout({
           progress={progress}
           totalSteps={totalBeats}
           currentStep={currentBeatIndex}
-          accentColor={theme?.accentColor || tutor.color}
+          accentColor={accentColor}
           beatsUntilBreak={beatsUntilBreak}
         />
 
         <div className="flex items-center gap-2">
           {isParentWatching && (
-            <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur rounded-full px-3 py-1">
+            <div className="flex items-center gap-1.5 vi-surface-soft rounded-full px-3 py-1">
               <span className="text-xs" aria-hidden="true">❤️</span>
-              <span className="text-white/60 text-xs font-bold hidden md:inline">Your grown-up is watching too</span>
+              <span className="vi-text-muted text-xs font-bold hidden md:inline">Your grown-up is watching too</span>
             </div>
           )}
           {onHelp && (
             <button
               onClick={onHelp}
-              className="h-9 px-3 rounded-full bg-amber-500/20 backdrop-blur border border-amber-400/30 flex items-center justify-center gap-1.5 text-sm text-amber-200 hover:bg-amber-500/30 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+              className="h-9 px-3 rounded-full flex items-center justify-center gap-1.5 text-sm font-extrabold transition-all focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-sel))]"
+              style={{
+                backgroundColor: "hsl(var(--visual-sel) / 0.16)",
+                color: "hsl(var(--visual-sel))",
+                minHeight: "var(--learner-hit-target, 36px)",
+              }}
               aria-label="I need help"
-              style={{ minHeight: "var(--learner-hit-target, 36px)" }}
             >
               <span aria-hidden="true">🙋</span>
-              <span className="hidden md:inline font-bold">Help</span>
+              <span className="hidden md:inline">Help</span>
             </button>
           )}
           <button
             onClick={() => setShowBreak(true)}
-            className="h-9 px-3 rounded-full bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center gap-1.5 text-sm text-white/80 hover:bg-white/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="h-9 px-3 rounded-full vi-surface-soft vi-border border flex items-center justify-center gap-1.5 text-sm text-slate-700 font-bold hover:bg-white transition-all focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))]"
             aria-label="Take a break"
             style={{ minHeight: "var(--learner-hit-target, 36px)" }}
           >
             <span aria-hidden="true">☁️</span>
-            <span className="hidden md:inline font-bold">Break</span>
+            <span className="hidden md:inline">Break</span>
           </button>
         </div>
       </header>
@@ -194,7 +204,6 @@ function StageBackground({ tutorKey, motionReduced, functioningLevel }: { tutorK
     delay: (i * 0.4) % 5,
     duration: 8 + (i % 5) * 2.5,
   }));
-
   const emojis: Record<string, string[]> = {
     nova: ["✨", "⭐", "💫", "🌟"],
     sage: ["📖", "✏️", "📝", "📚"],

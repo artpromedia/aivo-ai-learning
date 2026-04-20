@@ -24,11 +24,11 @@ export function TopBar({ userName, coins, gems, onLogout, onSettings }: TopBarPr
       <div className="flex items-center gap-3">
         {!isPreSymbolic && (
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[hsl(43_100%_50%/0.16)] text-[hsl(43_100%_50%)] text-sm font-extrabold">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))] text-sm font-extrabold">
               <Coins className="w-4 h-4" strokeWidth={2.5} aria-hidden /> {coins}
             </span>
             {!isLow && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[hsl(262_83%_58%/0.12)] text-[hsl(262_83%_58%)] text-sm font-extrabold">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] text-sm font-extrabold">
                 <Gem className="w-4 h-4" strokeWidth={2.5} aria-hidden /> {gems}
               </span>
             )}
@@ -37,7 +37,7 @@ export function TopBar({ userName, coins, gems, onLogout, onSettings }: TopBarPr
         <span className="hidden sm:inline text-base font-extrabold text-slate-900">Hi, {userName}!</span>
         <button
           onClick={onSettings}
-          className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%)]"
+          className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--visual-primary))]"
           aria-label="Settings"
           style={{ minHeight: "var(--learner-hit-target, 40px)", minWidth: "var(--learner-hit-target, 40px)" }}
         >
@@ -45,7 +45,7 @@ export function TopBar({ userName, coins, gems, onLogout, onSettings }: TopBarPr
         </button>
         <button
           onClick={onLogout}
-          className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-[hsl(340_82%_52%/0.1)] hover:text-[hsl(340_82%_52%)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(340_82%_52%)]"
+          className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-[hsl(var(--visual-math)/0.1)] hover:text-[hsl(var(--visual-math))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--visual-math))]"
           aria-label="Log out"
           style={{ minHeight: "var(--learner-hit-target, 40px)", minWidth: "var(--learner-hit-target, 40px)" }}
         >

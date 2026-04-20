@@ -22,7 +22,7 @@ export function AdventuresTab({ onNavigate }: AdventuresTabProps) {
     <div className="space-y-6">
       <LearnerCard>
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[hsl(262_83%_58%/0.12)] text-[hsl(262_83%_58%)]">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]">
             <Map className="w-5 h-5" strokeWidth={2.5} aria-hidden />
           </div>
           <h3 className="font-extrabold text-slate-900">{isLow ? "Adventures" : "Quest Worlds"}</h3>
@@ -36,7 +36,7 @@ export function AdventuresTab({ onNavigate }: AdventuresTabProps) {
               <button
                 key={world.slug}
                 onClick={() => onNavigate(`/dashboard/learner/quests/${world.slug}`)}
-                className="w-full flex items-center gap-3 bg-slate-50 hover:bg-white rounded-2xl px-4 py-3 border border-slate-100 hover:border-[hsl(262_83%_58%/0.3)] transition-all text-left group focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(262_83%_58%)]"
+                className="w-full flex items-center gap-3 bg-slate-50 hover:bg-white rounded-2xl px-4 py-3 border border-slate-100 hover:border-[hsl(var(--visual-primary)/0.3)] transition-all text-left group focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))]"
                 style={{ minHeight: "var(--learner-hit-target, 56px)" }}
               >
                 <div
@@ -50,7 +50,7 @@ export function AdventuresTab({ onNavigate }: AdventuresTabProps) {
                   <p className="text-sm font-extrabold text-slate-900">{world.name}</p>
                   <p className="text-xs text-slate-500 font-semibold">Explore quests</p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-[hsl(262_83%_58%)] transition-colors" aria-hidden />
+                <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-[hsl(var(--visual-primary))] transition-colors" aria-hidden />
               </button>
             );
           })}
@@ -61,14 +61,14 @@ export function AdventuresTab({ onNavigate }: AdventuresTabProps) {
         <div className="flex flex-wrap justify-center gap-3">
           <button
             onClick={() => onNavigate("/dashboard/learner/challenges")}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[hsl(340_82%_52%/0.1)] text-[hsl(340_82%_52%)] font-extrabold text-sm hover:bg-[hsl(340_82%_52%/0.16)] transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(340_82%_52%)]"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[hsl(var(--visual-math)/0.1)] text-[hsl(var(--visual-math))] font-extrabold text-sm hover:bg-[hsl(var(--visual-math)/0.16)] transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-math))]"
             style={{ minHeight: "var(--learner-hit-target, 40px)" }}
           >
             <Swords className="w-4 h-4" strokeWidth={2.5} aria-hidden /> Challenges
           </button>
           <button
             onClick={() => onNavigate("/dashboard/learner/homework")}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[hsl(262_83%_58%/0.12)] text-[hsl(262_83%_58%)] font-extrabold text-sm hover:bg-[hsl(262_83%_58%/0.18)] transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(262_83%_58%)]"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] font-extrabold text-sm hover:bg-[hsl(var(--visual-primary)/0.18)] transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))]"
             style={{ minHeight: "var(--learner-hit-target, 40px)" }}
           >
             <Camera className="w-4 h-4" strokeWidth={2.5} aria-hidden /> Homework Helper

@@ -9,17 +9,32 @@
   --visual-sel: 43 100% 50%;
   --visual-bg: 0 0% 98%;
   --visual-surface: 0 0% 100%;
+  --visual-surface-soft: 220 20% 97%;
+  --visual-border: 220 14% 90%;
   --visual-text: 220 20% 20%;
+  --visual-text-muted: 220 9% 46%;
 }
 
 .vi-card {
   background-color: hsl(var(--visual-surface));
   border-radius: 24px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.04);
-  border: 2px solid rgba(0,0,0,0.02);
+  border: 2px solid hsl(var(--visual-border));
 }
 .vi-bg {
   background-color: hsl(var(--visual-bg));
+}
+.vi-surface-soft {
+  background-color: hsl(var(--visual-surface-soft));
+}
+.vi-border {
+  border-color: hsl(var(--visual-border));
+}
+.vi-text {
+  color: hsl(var(--visual-text));
+}
+.vi-text-muted {
+  color: hsl(var(--visual-text-muted));
 }
 
 @theme {
