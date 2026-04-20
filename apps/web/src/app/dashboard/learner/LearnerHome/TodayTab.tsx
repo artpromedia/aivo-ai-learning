@@ -2,6 +2,7 @@
 import { Target } from "lucide-react";
 import { TUTORS } from "@aivo/brand";
 import { useFlVariant, LearnerCard } from "@aivo/learner-ui";
+import { useTranslations } from "next-intl";
 import { SelCheckIn } from "./SelCheckIn";
 
 interface SelExercise {
@@ -24,6 +25,7 @@ interface TodayTabProps {
 
 export function TodayTab({ missions, onSelCheckin }: TodayTabProps) {
   const { isLow } = useFlVariant();
+  const t = useTranslations("learner");
 
   return (
     <div className="space-y-6">
@@ -35,7 +37,7 @@ export function TodayTab({ missions, onSelCheckin }: TodayTabProps) {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))]">
               <Target className="w-5 h-5" strokeWidth={2.5} aria-hidden />
             </div>
-            <h3 className="font-extrabold text-slate-900">Daily Missions</h3>
+            <h3 className="font-extrabold text-slate-900">{t("missions_title")}</h3>
           </div>
           <div className="space-y-3">
             {missions.map((mission) => {
@@ -59,7 +61,7 @@ export function TodayTab({ missions, onSelCheckin }: TodayTabProps) {
                       <span className="text-xs text-slate-500 font-bold">{mission.progress}/{mission.target}</span>
                     </div>
                   </div>
-                  <span className="text-xs font-extrabold text-[hsl(var(--visual-sel))] shrink-0">+{mission.xpReward} XP</span>
+                  <span className="text-xs font-extrabold text-[hsl(var(--visual-sel))] shrink-0">{t("xp_reward", { xp: mission.xpReward })}</span>
                 </div>
               );
             })}

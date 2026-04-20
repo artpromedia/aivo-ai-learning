@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { TUTORS } from "@aivo/brand";
 import { SkipLink } from "@aivo/learner-ui";
+import { useTranslations } from "next-intl";
 
 interface PreSymbolicViewProps {
   userName: string;
@@ -13,6 +14,8 @@ interface PreSymbolicViewProps {
 
 export function PreSymbolicView({ userName, totalXp, xpPercent, onLogout, onSelectTutor }: PreSymbolicViewProps) {
   const allTutors = Object.entries(TUTORS).slice(0, 4);
+  const t = useTranslations("learner");
+  const tc = useTranslations("common");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-pink-50">
@@ -21,19 +24,19 @@ export function PreSymbolicView({ userName, totalXp, xpPercent, onLogout, onSele
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} style={{ height: "auto" }} />
         <div className="flex items-center gap-4">
           <span className="text-lg font-heading font-bold text-primary">{userName}</span>
-          <button onClick={onLogout} aria-label="Log out" className="text-sm text-slate-500 hover:text-red-500 font-semibold">
-            Log out
+          <button onClick={onLogout} aria-label={tc("logout")} className="text-sm text-slate-500 hover:text-red-500 font-semibold">
+            {tc("logout")}
           </button>
         </div>
       </header>
       <main id="main-content" tabIndex={-1} className="max-w-3xl mx-auto px-8 py-12 text-center space-y-8">
         <div className="text-6xl" aria-hidden="true">⭐</div>
-        <h1 className="text-3xl font-heading font-bold text-slate-900">Welcome, {userName}!</h1>
-        <p className="text-lg text-slate-500 font-semibold">Parent Managed Learning</p>
+        <h1 className="text-3xl font-heading font-bold text-slate-900">{t("presymbolic_welcome", { userName })}</h1>
+        <p className="text-lg text-slate-500 font-semibold">{t("parent_managed_learning")}</p>
 
         <div className="bg-white rounded-3xl p-8 border border-yellow-200 shadow-sm">
           <div className="text-5xl mb-3" aria-hidden="true">⭐</div>
-          <div className="text-2xl font-heading font-bold text-amber-600">{totalXp} Stars</div>
+          <div className="text-2xl font-heading font-bold text-amber-600">{t("stars_count", { count: totalXp })}</div>
           <div className="mt-4 bg-yellow-100 rounded-full h-4 overflow-hidden max-w-xs mx-auto">
             <div className="bg-gradient-to-r from-yellow-400 to-amber-500 h-full rounded-full transition-all" style={{ width: `${xpPercent}%` }} />
           </div>

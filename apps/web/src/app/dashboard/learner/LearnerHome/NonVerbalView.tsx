@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Cloud } from "lucide-react";
 import { TUTORS } from "@aivo/brand";
 import type { NextAction } from "@aivo/learner-ui";
+import { useTranslations } from "next-intl";
 
 interface NonVerbalViewProps {
   action: NextAction | null;
@@ -13,6 +14,7 @@ interface NonVerbalViewProps {
 export function NonVerbalView({ action, onStart, onBreak }: NonVerbalViewProps) {
   const tutorKey = action?.tutorKey || "nova";
   const tutor = TUTORS[tutorKey as keyof typeof TUTORS] || TUTORS.nova;
+  const t = useTranslations("learner");
 
   return (
     <div className="flex flex-col items-center justify-center flex-1 px-6 py-12 gap-8">
@@ -29,7 +31,7 @@ export function NonVerbalView({ action, onStart, onBreak }: NonVerbalViewProps) 
           <Image src={tutor.avatar} alt={tutor.name} fill className="object-cover object-top" sizes="128px" />
         </div>
         <div className="text-2xl font-heading font-bold" style={{ color: tutor.color }}>
-          {action?.title || `Play with ${tutor.name}`}
+          {action?.title || t("play_with_tutor", { name: tutor.name })}
         </div>
       </button>
 
@@ -39,7 +41,7 @@ export function NonVerbalView({ action, onStart, onBreak }: NonVerbalViewProps) 
         style={{ minHeight: "var(--learner-hit-target, 88px)" }}
       >
         <Cloud className="w-12 h-12 mx-auto mb-2 text-sky-400" strokeWidth={2} aria-hidden="true" />
-        <span className="text-xl font-heading font-bold text-sky-700">Take a break</span>
+        <span className="text-xl font-heading font-bold text-sky-700">{t("take_a_break")}</span>
       </button>
     </div>
   );
