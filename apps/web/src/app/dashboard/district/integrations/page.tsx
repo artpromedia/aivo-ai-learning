@@ -66,10 +66,36 @@ const STATUS_STYLES: Record<string, string> = {
 
 const SYNC_STATUS_STYLES: Record<string, string> = {
   completed: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  success: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
   running: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
   partial: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
   failed: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
+  failure: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
   pending: "vi-surface-soft vi-text-muted",
+};
+
+const CONNECTION_STATUS_KEYS: Record<string, string> = {
+  active: "integrations_conn_status_active",
+  authorized: "integrations_conn_status_authorized",
+  syncing: "integrations_conn_status_syncing",
+  pending: "integrations_conn_status_pending",
+  error: "integrations_conn_status_error",
+  disconnected: "integrations_conn_status_disconnected",
+};
+
+const SYNC_STATUS_KEYS: Record<string, string> = {
+  completed: "integrations_sync_status_completed",
+  running: "integrations_sync_status_running",
+  partial: "integrations_sync_status_partial",
+  failed: "integrations_sync_status_failed",
+  pending: "integrations_sync_status_pending",
+  success: "integrations_sync_status_success",
+  failure: "integrations_sync_status_failure",
+};
+
+const SYNC_TYPE_KEYS: Record<string, string> = {
+  full: "integrations_sync_type_full",
+  incremental: "integrations_sync_type_incremental",
 };
 
 export default function IntegrationsPage() {
@@ -287,6 +313,21 @@ export default function IntegrationsPage() {
 
   const connectedIds = connections.filter((c) => c.status !== "disconnected").map((c) => c.connectorId);
 
+  const getConnectionStatusLabel = (status: string) => {
+    const key = CONNECTION_STATUS_KEYS[status];
+    return key ? t(key) : status;
+  };
+
+  const getSyncStatusLabel = (status: string) => {
+    const key = SYNC_STATUS_KEYS[status];
+    return key ? t(key) : status;
+  };
+
+  const getSyncTypeLabel = (type: string) => {
+    const key = SYNC_TYPE_KEYS[type];
+    return key ? t(key) : t("integrations_sync_type_label", { type });
+  };
+
   const formatDuration = (ms: number | null) => {
     if (!ms) return "—";
     if (ms < 1000) return `${ms}ms`;
@@ -502,7 +543,7 @@ export default function IntegrationsPage() {
                           <h3 className="font-heading font-bold text-lg vi-text">{conn.connectorName}</h3>
                           <div className="flex items-center gap-3 mt-1">
                             <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${STATUS_STYLES[conn.status] || "vi-surface-soft vi-text-muted"}`}>
-                              {conn.status}
+                              {getConnectionStatusLabel(conn.status)}
                             </span>
                             <span className="text-xs vi-text-muted">
                               {t("integrations_connected_at", { when: formatTime(conn.connectedAt) })}
@@ -538,8 +579,8 @@ export default function IntegrationsPage() {
                       <div className="flex items-center gap-6">
                         <div>
                           <p className="text-[10px] vi-text-muted font-semibold uppercase">{t("integrations_label_last_sync_status")}</p>
-                          <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${SYNC_STATUS_STYLES[lastSync.status]}`}>
-                            {lastSync.status}
+                          <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${SYNC_STATUS_STYLES[lastSync.status] || "vi-surface-soft vi-text-muted"}`}>
+                            {getSyncStatusLabel(lastSync.status)}
                           </span>
                         </div>
                         <div>
@@ -573,10 +614,10 @@ export default function IntegrationsPage() {
                         {logs.slice(0, 5).map((log) => (
                           <div key={log.id} className="flex items-center justify-between py-2 border-b vi-border last:border-0">
                             <div className="flex items-center gap-3">
-                              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${SYNC_STATUS_STYLES[log.status]}`}>
-                                {log.status}
+                              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${SYNC_STATUS_STYLES[log.status] || "vi-surface-soft vi-text-muted"}`}>
+                                {getSyncStatusLabel(log.status)}
                               </span>
-                              <span className="text-xs vi-text-muted">{t("integrations_sync_type_label", { type: log.syncType })}</span>
+                              <span className="text-xs vi-text-muted">{getSyncTypeLabel(log.syncType)}</span>
                             </div>
                             <div className="flex items-center gap-4 text-xs vi-text-muted">
                               <span>{t("integrations_records_count", { count: log.recordsSynced })}</span>
