@@ -50,6 +50,13 @@ describe("parseIntFlag", () => {
     assert.equal(parseIntFlag("abc", 30), 30);
     assert.equal(parseIntFlag("NaN", 30), 30);
   });
+
+  it("rejects partial-numeric and decimal input strictly", () => {
+    assert.equal(parseIntFlag("900abc", 30), 30);
+    assert.equal(parseIntFlag("1.5", 30), 30);
+    assert.equal(parseIntFlag("1e3", 30), 30);
+    assert.equal(parseIntFlag(" 900 ", 30), 900);
+  });
 });
 
 describe("loadAdminEnterpriseFlags", () => {

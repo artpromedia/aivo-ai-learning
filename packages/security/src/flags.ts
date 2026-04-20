@@ -38,8 +38,9 @@ export function parseIntFlag(raw: string | undefined, defaultValue: number): num
   if (raw === undefined) return defaultValue;
   const v = raw.trim();
   if (v === "") return defaultValue;
+  if (!/^\d+$/.test(v)) return defaultValue;
   const n = Number.parseInt(v, 10);
-  if (!Number.isFinite(n) || n < 0) return defaultValue;
+  if (!Number.isFinite(n)) return defaultValue;
   return n;
 }
 
