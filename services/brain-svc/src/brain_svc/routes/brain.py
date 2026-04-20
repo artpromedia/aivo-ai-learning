@@ -1,3 +1,4 @@
+import os
 import uuid
 import json
 import re
@@ -9,6 +10,8 @@ from brain_svc.models.database import get_db
 from brain_svc.models.schemas import BrainCloneRequest, BrainRollbackRequest, BrainApproveRequest, BrainAmendRequest, BrainDeclineRequest
 from brain_svc.services.clone_pipeline import clone_brain
 from brain_svc.auth import AuthClaims, require_auth
+
+LEARNING_SVC_URL = os.environ.get("LEARNING_SVC_URL", "http://localhost:3005")
 
 router = APIRouter()
 
@@ -383,7 +386,7 @@ async def approve_brain(learner_id: str, request: BrainApproveRequest, db: Sessi
             fl = json.loads(fl)
         for subject in list(mastery.keys()):
             httpx.post(
-                f"http://localhost:3005/api/learning/path/{learner_id}/{subject}/init",
+                f"{LEARNING_SVC_URL}/api/learning/path/{learner_id}/{subject}/init",
                 json={"functioning_level": fl.get("level", "STANDARD")},
                 timeout=5.0,
             )
@@ -478,7 +481,7 @@ async def amend_brain(learner_id: str, request: BrainAmendRequest, db: Session =
             fl = json.loads(fl)
         for subject in list(mastery.keys()):
             httpx.post(
-                f"http://localhost:3005/api/learning/path/{learner_id}/{subject}/init",
+                f"{LEARNING_SVC_URL}/api/learning/path/{learner_id}/{subject}/init",
                 json={"functioning_level": fl.get("level", "STANDARD")},
                 timeout=5.0,
             )

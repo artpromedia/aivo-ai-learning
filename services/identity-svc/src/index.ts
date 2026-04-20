@@ -27,8 +27,19 @@ async function start() {
     logger: false,
   });
 
+  const isDev = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
+  let corsOrigin: boolean | string[];
+  if (process.env.CORS_ORIGINS) {
+    corsOrigin = process.env.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean);
+  } else if (!isDev) {
+    corsOrigin = process.env.APP_URL ? [process.env.APP_URL] : [];
+  } else {
+    corsOrigin = true;
+  }
+  logger.info({ origins: corsOrigin }, "CORS origins");
+
   await app.register(cors, {
-    origin: true,
+    origin: corsOrigin,
     credentials: true,
   });
 

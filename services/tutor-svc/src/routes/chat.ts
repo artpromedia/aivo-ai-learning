@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { eq, and, desc } from "drizzle-orm";
 import { TUTORS } from "@aivo/brand";
 import { tutorSessions } from "@aivo/db";
+import { resolveTenantIdForLearner } from "../lib/tenant.js";
 
 const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
 const BRAIN_SVC_URL = process.env.BRAIN_SVC_URL || "http://localhost:3002";
@@ -51,8 +52,13 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
     const brainContext = await fetchBrainContext(learnerId);
     const functioningLevel = (brainContext as any).functioning_level_profile?.level || "STANDARD";
 
+    const tenantId = await resolveTenantIdForLearner(request, db, learnerId);
+    if (!tenantId) {
+      return reply.code(400).send({ error: "Unable to resolve tenantId for learner" });
+    }
+
     const [session] = await db.insert(tutorSessions).values({
-      tenantId: "00000000-0000-0000-0000-000000000001",
+      tenantId,
       learnerId,
       tutorSku,
       tutorName,

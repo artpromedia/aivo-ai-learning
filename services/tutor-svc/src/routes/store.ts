@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { eq, and } from "drizzle-orm";
 import { TUTORS } from "@aivo/brand";
 import { tutorSubscriptions } from "@aivo/db";
+import { resolveTenantIdForUser } from "../lib/tenant.js";
 
 const TUTOR_SKU_MAP: Record<string, string> = {
   nova: "ADDON_TUTOR_MATH",
@@ -75,8 +76,13 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
       return { status: "reactivated", subscription: { ...deactivated[0], status: "active" } };
     }
 
+    const resolvedTenantId = await resolveTenantIdForUser(request, db, userId, tenantId);
+    if (!resolvedTenantId) {
+      return reply.code(400).send({ error: "Unable to resolve tenantId for user" });
+    }
+
     const [sub] = await db.insert(tutorSubscriptions).values({
-      tenantId: tenantId || "00000000-0000-0000-0000-000000000001",
+      tenantId: resolvedTenantId,
       userId,
       tutorSku,
       status: "active",
@@ -96,6 +102,11 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
       return reply.code(400).send({ error: "Invalid bundle key" });
     }
 
+    const resolvedTenantId = await resolveTenantIdForUser(request, db, userId, tenantId);
+    if (!resolvedTenantId) {
+      return reply.code(400).send({ error: "Unable to resolve tenantId for user" });
+    }
+
     const results = [];
     for (const tutorKey of bundle.tutors) {
       const sku = TUTOR_SKU_MAP[tutorKey];
@@ -110,7 +121,7 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
       }
 
       const [sub] = await db.insert(tutorSubscriptions).values({
-        tenantId: tenantId || "00000000-0000-0000-0000-000000000001",
+        tenantId: resolvedTenantId,
         userId,
         tutorSku: sku,
         status: "active",

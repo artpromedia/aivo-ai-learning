@@ -1,9 +1,12 @@
+import os
 import uuid
 import json
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from brain_svc.models.schemas import BrainCloneRequest
+
+LEARNING_SVC_URL = os.environ.get("LEARNING_SVC_URL", "http://localhost:3005")
 
 SEED_TEMPLATES = {
     "STANDARD": {
@@ -378,11 +381,10 @@ def clone_brain(db: Session, request: BrainCloneRequest) -> dict:
 
     try:
         import httpx
-        learning_svc_url = "http://localhost:3005"
         subjects = list(brain_data["mastery_levels"].keys())
         for subject in subjects:
             httpx.post(
-                f"{learning_svc_url}/api/learning/path/{request.learner_id}/{subject}/init",
+                f"{LEARNING_SVC_URL}/api/learning/path/{request.learner_id}/{subject}/init",
                 json={"functioning_level": request.functioning_level},
                 timeout=5.0,
             )

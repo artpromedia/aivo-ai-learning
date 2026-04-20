@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { eq, and, desc } from "drizzle-orm";
 import { lessonSessions, lessonContent, gradebookEntries, learningPaths } from "@aivo/db";
 import { generateLessonContent, getSubjectForTutor } from "../services/content-generator.js";
+import { resolveTenantId } from "../lib/tenant.js";
 
 const BRAIN_SVC_URL = process.env.BRAIN_SVC_URL || "http://localhost:3002";
 
@@ -27,8 +28,13 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     const brainContext = await fetchBrainContext(learnerId);
     const functioningLevel = (brainContext as any).functioning_level_profile?.level || "STANDARD";
 
+    const tenantId = await resolveTenantId(request, db, learnerId);
+    if (!tenantId) {
+      return reply.code(400).send({ error: "Unable to resolve tenantId for learner" });
+    }
+
     const [session] = await db.insert(lessonSessions).values({
-      tenantId: "00000000-0000-0000-0000-000000000001",
+      tenantId,
       learnerId,
       tutorSku,
       subject,
@@ -147,6 +153,11 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
       return reply.code(400).send({ error: "learnerId and skill required" });
     }
 
+    const tenantId = await resolveTenantId(request, db, learnerId);
+    if (!tenantId) {
+      return reply.code(400).send({ error: "Unable to resolve tenantId for learner" });
+    }
+
     const existing = await db.select().from(gradebookEntries).where(
       and(eq(gradebookEntries.learnerId, learnerId), eq(gradebookEntries.skill, skill))
     );
@@ -161,7 +172,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
       }).where(eq(gradebookEntries.id, existing[0].id));
     } else {
       await db.insert(gradebookEntries).values({
-        tenantId: "00000000-0000-0000-0000-000000000001",
+        tenantId,
         learnerId,
         subject: skill.replace("homework_", ""),
         skill,
@@ -193,14 +204,18 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     return entries;
   });
 
-  app.get("/api/learning/path/:learnerId/:subject", async (request) => {
+  app.get("/api/learning/path/:learnerId/:subject", async (request, reply) => {
     const { learnerId, subject } = request.params as any;
     const [path] = await db.select().from(learningPaths)
       .where(and(eq(learningPaths.learnerId, learnerId), eq(learningPaths.subject, subject)));
 
     if (!path) {
+      const tenantId = await resolveTenantId(request, db, learnerId);
+      if (!tenantId) {
+        return { error: "Unable to resolve tenantId for learner" };
+      }
       const [newPath] = await db.insert(learningPaths).values({
-        tenantId: "00000000-0000-0000-0000-000000000001",
+        tenantId,
         learnerId,
         subject,
         topicSequence: getDefaultTopics(subject),
@@ -226,8 +241,13 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
 
     const topicSequence = getDefaultTopics(subject);
 
+    const tenantId = await resolveTenantId(request, db, learnerId);
+    if (!tenantId) {
+      return reply.code(400).send({ error: "Unable to resolve tenantId for learner" });
+    }
+
     const [newPath] = await db.insert(learningPaths).values({
-      tenantId: "00000000-0000-0000-0000-000000000001",
+      tenantId,
       learnerId,
       subject,
       topicSequence,
