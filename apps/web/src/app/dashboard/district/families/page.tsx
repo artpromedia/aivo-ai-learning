@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { IconWell } from "@/components/discovery/_vi";
+import { Users } from "lucide-react";
 
 interface Family {
   id: string;
@@ -31,9 +33,14 @@ export default function DistrictFamiliesPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <header>
-        <h1 className="text-2xl font-heading font-bold vi-text">Parents & Families</h1>
-        <p className="text-sm vi-text-muted mt-1">View parent accounts and their linked learners across the district.</p>
+      <header className="flex items-center gap-4">
+        <IconWell color="math">
+          <Users size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
+        <div>
+          <h1 className="text-2xl font-heading font-bold vi-text">Parents & Families</h1>
+          <p className="text-sm vi-text-muted mt-1">View parent accounts and their linked learners across the district.</p>
+        </div>
       </header>
 
       <div className="flex items-center gap-4">
@@ -53,7 +60,9 @@ export default function DistrictFamiliesPage() {
         </div>
       ) : families.length === 0 ? (
         <div className="vi-card p-12 text-center">
-          <span className="text-4xl mb-4 block">👨‍👩‍👧</span>
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]">
+            <Users size={28} strokeWidth={2.5} aria-hidden="true" />
+          </div>
           <p className="vi-text-muted font-medium">No families found</p>
           <p className="text-sm vi-text-muted mt-1">Parent accounts will appear here once learners are enrolled.</p>
         </div>

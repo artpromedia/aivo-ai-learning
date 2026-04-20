@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { ClipboardList, Target, Brain } from "lucide-react";
 
 const FL_COLORS: Record<string, string> = {
   STANDARD: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
@@ -122,7 +123,9 @@ export default function LearnerDetailPage() {
         <div className="space-y-4">
           {(data.ieps || []).length === 0 ? (
             <div className="vi-card p-8 text-center">
-              <span className="text-3xl block mb-2">📋</span>
+              <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]">
+                <ClipboardList size={28} strokeWidth={2.5} aria-hidden="true" />
+              </div>
               <p className="vi-text-muted">No IEP records found for this learner.</p>
             </div>
           ) : (
@@ -162,7 +165,9 @@ export default function LearnerDetailPage() {
         <div className="space-y-4">
           {(data.interventions || []).length === 0 ? (
             <div className="vi-card p-8 text-center">
-              <span className="text-3xl block mb-2">🎯</span>
+              <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]">
+                <Target size={28} strokeWidth={2.5} aria-hidden="true" />
+              </div>
               <p className="vi-text-muted">No interventions found for this learner.</p>
             </div>
           ) : (
@@ -199,7 +204,9 @@ export default function LearnerDetailPage() {
             </div>
           ) : (
             <div className="text-center py-8">
-              <span className="text-3xl block mb-2">🧠</span>
+              <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]">
+                <Brain size={28} strokeWidth={2.5} aria-hidden="true" />
+              </div>
               <p className="vi-text-muted">No sensory profile configured for this learner.</p>
             </div>
           )}

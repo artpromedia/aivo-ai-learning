@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useState } from "react";
 import Link from "next/link";
+import { IconWell } from "@/components/discovery/_vi";
+import { KeyRound, Plus } from "lucide-react";
 
 interface ApiKey {
   id: string;
@@ -64,16 +66,21 @@ export default function ApiKeysPage() {
         <span className="vi-text font-medium">API Keys</span>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-heading font-bold vi-text">API Keys</h1>
-          <p className="text-sm vi-text-muted mt-1">Manage API keys for programmatic access to the AIVO platform.</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <IconWell color="reading">
+            <KeyRound size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div>
+            <h1 className="text-2xl font-heading font-bold vi-text">API Keys</h1>
+            <p className="text-sm vi-text-muted mt-1">Manage API keys for programmatic access to the AIVO platform.</p>
+          </div>
         </div>
         <button
           onClick={() => { setShowCreate(true); setCreatedKey(null); }}
           className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 transition flex items-center gap-2"
         >
-          <span className="text-lg leading-none">+</span>
+          <Plus size={18} strokeWidth={2.5} aria-hidden="true" />
           Generate Key
         </button>
       </div>
@@ -94,7 +101,9 @@ export default function ApiKeysPage() {
 
       {keys.length === 0 && !showCreate ? (
         <div className="vi-card p-12 text-center">
-          <p className="text-4xl mb-4">🔑</p>
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]">
+            <KeyRound size={28} strokeWidth={2.5} aria-hidden="true" />
+          </div>
           <p className="text-lg font-semibold vi-text">No API keys</p>
           <p className="text-sm vi-text-muted mt-1">Generate an API key to start using the AIVO REST API.</p>
         </div>

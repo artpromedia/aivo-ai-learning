@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Building2, School, Users, ClipboardList, type LucideIcon } from "lucide-react";
 
 interface TenantUser {
   id: string;
@@ -36,10 +37,10 @@ interface TenantDetail {
   learnerCount: number;
 }
 
-const TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
-  B2C_FAMILY: { label: "Family", icon: "👨‍👩‍👧", color: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" },
-  B2B_SCHOOL: { label: "School", icon: "🏫", color: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" },
-  B2B_DISTRICT: { label: "District", icon: "🏛️", color: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" },
+const TYPE_CONFIG: Record<string, { label: string; Icon: LucideIcon; color: string; well: string }> = {
+  B2C_FAMILY: { label: "Family", Icon: Users, color: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]", well: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" },
+  B2B_SCHOOL: { label: "School", Icon: School, color: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]", well: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" },
+  B2B_DISTRICT: { label: "District", Icon: Building2, color: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]", well: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" },
 };
 
 const LEVEL_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -166,7 +167,8 @@ export default function TenantDetailPage() {
     );
   }
 
-  const typeConfig = TYPE_CONFIG[tenant.type] || { label: tenant.type, icon: "📋", color: "vi-surface-soft vi-text-muted" };
+  const typeConfig = TYPE_CONFIG[tenant.type] || { label: tenant.type, Icon: ClipboardList, color: "vi-surface-soft vi-text-muted", well: "vi-surface-soft vi-text-muted" };
+  const HeroIcon = typeConfig.Icon;
   const isSuspended = tenant.status === "suspended";
 
   return (
@@ -177,7 +179,9 @@ export default function TenantDetailPage() {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-[hsl(var(--visual-primary)/0.12)] flex items-center justify-center text-2xl">{typeConfig.icon}</div>
+          <div className={`w-14 h-14 rounded-full flex items-center justify-center ${typeConfig.well}`}>
+            <HeroIcon size={26} strokeWidth={2.5} aria-hidden="true" />
+          </div>
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-heading font-bold vi-text">{tenant.name}</h1>

@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { IconWell } from "@/components/discovery/_vi";
+import { BarChart3, BookOpen, Clock, CheckCircle2, type LucideIcon } from "lucide-react";
 
 interface EngagementMetrics {
   totalSessions: number;
@@ -75,10 +77,15 @@ export default function AdminAnalyticsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-heading font-bold vi-text">{td("analytics")}</h1>
-          <p className="text-sm vi-text-muted mt-1">Platform-wide engagement metrics, mastery growth, and research data.</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <IconWell color="reading">
+            <BarChart3 size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div>
+            <h1 className="text-2xl font-heading font-bold vi-text">{td("analytics")}</h1>
+            <p className="text-sm vi-text-muted mt-1">Platform-wide engagement metrics, mastery growth, and research data.</p>
+          </div>
         </div>
         <button
           onClick={() => {
@@ -97,20 +104,25 @@ export default function AdminAnalyticsPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: "Total Sessions", value: engagement?.totalSessions ?? "—", icon: "📚" },
-              { label: "Avg Session Length", value: engagement?.avgSessionLength ? `${Math.round(engagement.avgSessionLength)}min` : "—", icon: "⏱️" },
-              { label: "Completion Rate", value: engagement?.completionRate ? `${Math.round(engagement.completionRate * 100)}%` : "—", icon: "✅" },
-              { label: "Total Duration", value: engagement?.totalDuration ? `${Math.round(engagement.totalDuration / 60)}h` : "—", icon: "📊" },
-            ].map((m) => (
-              <div key={m.label} className="bg-white rounded-xl p-5 shadow-sm border vi-border">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-2xl">{m.icon}</span>
+            {([
+              { label: "Total Sessions", value: engagement?.totalSessions ?? "—", Icon: BookOpen, color: "primary" },
+              { label: "Avg Session Length", value: engagement?.avgSessionLength ? `${Math.round(engagement.avgSessionLength)}min` : "—", Icon: Clock, color: "reading" },
+              { label: "Completion Rate", value: engagement?.completionRate ? `${Math.round(engagement.completionRate * 100)}%` : "—", Icon: CheckCircle2, color: "science" },
+              { label: "Total Duration", value: engagement?.totalDuration ? `${Math.round(engagement.totalDuration / 60)}h` : "—", Icon: BarChart3, color: "math" },
+            ] as { label: string; value: string | number; Icon: LucideIcon; color: string }[]).map((m) => {
+              const Icon = m.Icon;
+              return (
+                <div key={m.label} className="bg-white rounded-xl p-5 shadow-sm border vi-border">
+                  <div className="mb-3">
+                    <IconWell color={m.color} size="sm">
+                      <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
+                    </IconWell>
+                  </div>
+                  <p className="text-2xl font-bold vi-text">{m.value}</p>
+                  <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
                 </div>
-                <p className="text-2xl font-bold vi-text">{m.value}</p>
-                <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { IconWell } from "@/components/discovery/_vi";
+import { CreditCard, Building2, User, GraduationCap, Smartphone, Check, type LucideIcon } from "lucide-react";
 
 export default function AdminBillingPage() {
   const { accessToken } = useAuth();
@@ -40,33 +42,45 @@ export default function AdminBillingPage() {
     { name: "Enterprise", price: "Custom", period: "", features: ["Unlimited learners", "District management", "SSO/SAML", "Custom branding", "Dedicated support", "API access"], color: "bg-amber-600" },
   ];
 
-  const billingMetrics = [
-    { label: "Total Tenants", value: stats?.totalTenants ?? "—", icon: "🏢" },
-    { label: "Total Users", value: stats?.totalUsers ?? "—", icon: "👤" },
-    { label: "Active Learners", value: stats?.totalLearners ?? "—", icon: "🎓" },
-    { label: "Payment Gateways", value: "2", icon: "💳" },
+  const billingMetrics: { label: string; value: string | number; Icon: LucideIcon; color: string }[] = [
+    { label: "Total Tenants", value: stats?.totalTenants ?? "—", Icon: Building2, color: "math" },
+    { label: "Total Users", value: stats?.totalUsers ?? "—", Icon: User, color: "primary" },
+    { label: "Active Learners", value: stats?.totalLearners ?? "—", Icon: GraduationCap, color: "science" },
+    { label: "Payment Gateways", value: "2", Icon: CreditCard, color: "reading" },
   ];
 
-  const gateways = [
-    { name: "Stripe", status: "active", desc: "Primary payment processor for credit/debit cards", icon: "💳" },
-    { name: "M-Pesa", status: "configured", desc: "Mobile money for East Africa markets", icon: "📱" },
+  const gateways: { name: string; status: string; desc: string; Icon: LucideIcon; color: string }[] = [
+    { name: "Stripe", status: "active", desc: "Primary payment processor for credit/debit cards", Icon: CreditCard, color: "primary" },
+    { name: "M-Pesa", status: "configured", desc: "Mobile money for East Africa markets", Icon: Smartphone, color: "science" },
   ];
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-heading font-bold vi-text">{tp("services")}</h1>
-        <p className="text-sm vi-text-muted mt-1">Manage subscription plans, payment gateways, and licensing.</p>
+      <div className="flex items-center gap-4">
+        <IconWell color="primary">
+          <CreditCard size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
+        <div>
+          <h1 className="text-2xl font-heading font-bold vi-text">{tp("services")}</h1>
+          <p className="text-sm vi-text-muted mt-1">Manage subscription plans, payment gateways, and licensing.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {billingMetrics.map((m) => (
-          <div key={m.label} className="bg-white rounded-xl p-5 shadow-sm border vi-border text-center">
-            <span className="text-2xl">{m.icon}</span>
-            <p className="text-2xl font-bold vi-text mt-2">{m.value}</p>
-            <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
-          </div>
-        ))}
+        {billingMetrics.map((m) => {
+          const Icon = m.Icon;
+          return (
+            <div key={m.label} className="bg-white rounded-xl p-5 shadow-sm border vi-border">
+              <div className="mb-2">
+                <IconWell color={m.color} size="sm">
+                  <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
+                </IconWell>
+              </div>
+              <p className="text-2xl font-bold vi-text mt-2">{m.value}</p>
+              <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
+            </div>
+          );
+        })}
       </div>
 
       <div>
@@ -85,7 +99,7 @@ export default function AdminBillingPage() {
                 <ul className="space-y-2">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-sm vi-text-muted">
-                      <span className="text-green-500 text-xs">✓</span>
+                      <Check size={14} strokeWidth={3} className="text-green-500 flex-shrink-0" aria-hidden="true" />
                       {f}
                     </li>
                   ))}
@@ -99,10 +113,14 @@ export default function AdminBillingPage() {
       <div className="vi-card p-6">
         <h2 className="font-heading font-bold text-lg vi-text mb-4">Payment Gateways</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {gateways.map((gw) => (
+          {gateways.map((gw) => {
+            const Icon = gw.Icon;
+            return (
             <div key={gw.name} className="flex items-center justify-between p-4 rounded-xl border vi-border">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{gw.icon}</span>
+                <IconWell color={gw.color} size="sm">
+                  <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
+                </IconWell>
                 <div>
                   <p className="text-sm font-semibold vi-text">{gw.name}</p>
                   <p className="text-xs vi-text-muted">{gw.desc}</p>
@@ -114,7 +132,8 @@ export default function AdminBillingPage() {
                 {gw.status}
               </span>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

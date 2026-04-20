@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { IconWell } from "@/components/discovery/_vi";
+import { ClipboardList, Clock, AlertTriangle } from "lucide-react";
 
 interface IepSummary {
   active: number;
@@ -56,9 +58,14 @@ export default function DistrictIepPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <header>
-        <h1 className="text-2xl font-heading font-bold vi-text">IEP Management</h1>
-        <p className="text-sm vi-text-muted mt-1">Track individualized education programs, review dates, and compliance status.</p>
+      <header className="flex items-center gap-4">
+        <IconWell color="science">
+          <ClipboardList size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
+        <div>
+          <h1 className="text-2xl font-heading font-bold vi-text">IEP Management</h1>
+          <p className="text-sm vi-text-muted mt-1">Track individualized education programs, review dates, and compliance status.</p>
+        </div>
       </header>
 
       {loading ? (
@@ -73,22 +80,28 @@ export default function DistrictIepPage() {
           {summary && (
             <div className="grid gap-4 md:grid-cols-3">
               <div className="vi-card p-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">📋</span>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]">
+                    <ClipboardList size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </div>
                   <span className="text-xs vi-text-muted font-medium uppercase">Active IEPs</span>
                 </div>
                 <p className="text-3xl font-bold vi-text">{summary.active}</p>
               </div>
               <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">⏰</span>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-amber-100 text-amber-700">
+                    <Clock size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </div>
                   <span className="text-xs text-amber-600 font-medium uppercase">Due for Review (30d)</span>
                 </div>
                 <p className="text-3xl font-bold text-[hsl(var(--visual-sel))]">{summary.dueForReview}</p>
               </div>
               <div className="bg-white rounded-2xl border border-red-200 shadow-sm p-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">🚨</span>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-red-100 text-red-700">
+                    <AlertTriangle size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </div>
                   <span className="text-xs text-red-600 font-medium uppercase">Overdue</span>
                 </div>
                 <p className="text-3xl font-bold text-[hsl(var(--visual-math))]">{summary.overdue}</p>

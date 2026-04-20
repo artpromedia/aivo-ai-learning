@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { IconWell } from "@/components/discovery/_vi";
+import { Settings, Mail, Webhook, KeyRound, type LucideIcon } from "lucide-react";
 
 interface PlatformConfig {
   featureFlags: Record<string, boolean>;
@@ -132,10 +134,15 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-heading font-bold vi-text">{t("general")}</h1>
-          <p className="text-sm vi-text-muted mt-1">Configure feature flags, system limits, and global platform settings.</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <IconWell color="primary">
+            <Settings size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div>
+            <h1 className="text-2xl font-heading font-bold vi-text">{t("general")}</h1>
+            <p className="text-sm vi-text-muted mt-1">Configure feature flags, system limits, and global platform settings.</p>
+          </div>
         </div>
         {isPlatformAdmin && (
           <div className="flex items-center gap-3">
@@ -208,17 +215,22 @@ export default function AdminSettingsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          { href: "/dashboard/admin/settings/emails", label: "Email Templates", desc: "Manage transactional email templates", icon: "📧" },
-          { href: "/dashboard/admin/settings/webhooks", label: "Webhooks", desc: "Configure webhook endpoints for events", icon: "🔗" },
-          { href: "/dashboard/admin/settings/api-keys", label: "API Keys", desc: "Manage programmatic API access", icon: "🔑" },
-        ].map((item) => (
-          <a key={item.href} href={item.href} className="vi-card p-5 hover:border-purple-300 hover:shadow-md transition group">
-            <span className="text-2xl">{item.icon}</span>
-            <h3 className="font-heading font-bold vi-text mt-2 group-hover:text-[hsl(var(--visual-primary))] transition">{item.label}</h3>
-            <p className="text-sm vi-text-muted mt-1">{item.desc}</p>
-          </a>
-        ))}
+        {([
+          { href: "/dashboard/admin/settings/emails", label: "Email Templates", desc: "Manage transactional email templates", Icon: Mail, color: "primary" as const },
+          { href: "/dashboard/admin/settings/webhooks", label: "Webhooks", desc: "Configure webhook endpoints for events", Icon: Webhook, color: "math" as const },
+          { href: "/dashboard/admin/settings/api-keys", label: "API Keys", desc: "Manage programmatic API access", Icon: KeyRound, color: "reading" as const },
+        ] as { href: string; label: string; desc: string; Icon: LucideIcon; color: "primary" | "math" | "reading" | "science" | "sel" }[]).map((item) => {
+          const Icon = item.Icon;
+          return (
+            <a key={item.href} href={item.href} className="vi-card p-5 hover:border-purple-300 hover:shadow-md transition group">
+              <IconWell color={item.color} size="sm">
+                <Icon size={20} strokeWidth={2.5} aria-hidden="true" />
+              </IconWell>
+              <h3 className="font-heading font-bold vi-text mt-3 group-hover:text-[hsl(var(--visual-primary))] transition">{item.label}</h3>
+              <p className="text-sm vi-text-muted mt-1">{item.desc}</p>
+            </a>
+          );
+        })}
       </div>
 
       <div className="vi-bg rounded-2xl p-6 border vi-border">

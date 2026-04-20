@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { IconWell } from "@/components/discovery/_vi";
+import { TrendingUp, DollarSign, BarChart3, User, TrendingDown, type LucideIcon } from "lucide-react";
 
 export default function BillingRevenuePage() {
   const { accessToken } = useAuth();
@@ -47,27 +49,37 @@ export default function BillingRevenuePage() {
         <span className="vi-text font-medium">Revenue</span>
       </div>
 
-      <div>
-        <h1 className="text-2xl font-heading font-bold vi-text">Revenue Dashboard</h1>
-        <p className="text-sm vi-text-muted mt-1">Track MRR, subscriber growth, and churn metrics.</p>
+      <div className="flex items-center gap-4">
+        <IconWell color="science">
+          <TrendingUp size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
+        <div>
+          <h1 className="text-2xl font-heading font-bold vi-text">Revenue Dashboard</h1>
+          <p className="text-sm vi-text-muted mt-1">Track MRR, subscriber growth, and churn metrics.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Monthly Recurring Revenue", value: `$${currentMRR.toLocaleString()}`, icon: "💰", change: "+12.3%" },
-          { label: "Active Subscriptions", value: totalSubs, icon: "📊", change: "+8 this month" },
-          { label: "Avg Revenue Per User", value: `$${totalSubs > 0 ? Math.round(currentMRR / totalSubs) : 0}`, icon: "👤", change: "" },
-          { label: "Churn Rate", value: "2.1%", icon: "📉", change: "-0.3% vs last month" },
-        ].map((m) => (
-          <div key={m.label} className="bg-white rounded-xl p-5 shadow-sm border vi-border">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">{m.icon}</span>
+        {([
+          { label: "Monthly Recurring Revenue", value: `$${currentMRR.toLocaleString()}`, Icon: DollarSign, color: "science", change: "+12.3%" },
+          { label: "Active Subscriptions", value: totalSubs, Icon: BarChart3, color: "reading", change: "+8 this month" },
+          { label: "Avg Revenue Per User", value: `$${totalSubs > 0 ? Math.round(currentMRR / totalSubs) : 0}`, Icon: User, color: "primary", change: "" },
+          { label: "Churn Rate", value: "2.1%", Icon: TrendingDown, color: "math", change: "-0.3% vs last month" },
+        ] as { label: string; value: string | number; Icon: LucideIcon; color: string; change: string }[]).map((m) => {
+          const Icon = m.Icon;
+          return (
+            <div key={m.label} className="bg-white rounded-xl p-5 shadow-sm border vi-border">
+              <div className="mb-2">
+                <IconWell color={m.color} size="sm">
+                  <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
+                </IconWell>
+              </div>
+              <p className="text-2xl font-bold vi-text mt-2">{m.value}</p>
+              <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
+              {m.change && <p className="text-xs text-green-600 mt-1">{m.change}</p>}
             </div>
-            <p className="text-2xl font-bold vi-text mt-2">{m.value}</p>
-            <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
-            {m.change && <p className="text-xs text-green-600 mt-1">{m.change}</p>}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="vi-card p-6">

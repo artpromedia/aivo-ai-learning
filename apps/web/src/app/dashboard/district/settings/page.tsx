@@ -1,6 +1,8 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState, useCallback } from "react";
+import { IconWell } from "@/components/discovery/_vi";
+import { Settings, Lock } from "lucide-react";
 
 interface DistrictSettingsData {
   notificationPrefs: Record<string, boolean>;
@@ -83,10 +85,15 @@ export default function DistrictSettingsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-heading font-bold vi-text">District Settings</h1>
-          <p className="text-sm vi-text-muted mt-1">Configure your district organization and preferences.</p>
+      <header className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <IconWell color="primary">
+            <Settings size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div>
+            <h1 className="text-2xl font-heading font-bold vi-text">District Settings</h1>
+            <p className="text-sm vi-text-muted mt-1">Configure your district organization and preferences.</p>
+          </div>
         </div>
         {saveMsg && <span className="text-sm text-emerald-600 font-medium">{saveMsg}</span>}
       </header>
@@ -136,7 +143,9 @@ export default function DistrictSettingsPage() {
 
       <div className="vi-surface-soft rounded-2xl border border-[hsl(var(--visual-primary)/0.3)] p-6">
         <div className="flex items-start gap-3">
-          <span className="text-2xl">🔒</span>
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex-shrink-0">
+            <Lock size={22} strokeWidth={2.5} aria-hidden="true" />
+          </div>
           <div>
             <h3 className="font-semibold text-violet-900">Advanced Settings</h3>
             <p className="text-sm text-[hsl(var(--visual-primary))] mt-1">

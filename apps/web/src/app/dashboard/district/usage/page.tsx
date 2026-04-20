@@ -1,6 +1,8 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { IconWell } from "@/components/discovery/_vi";
+import { Gauge, Users, GraduationCap, UserCog, School, Lightbulb, type LucideIcon } from "lucide-react";
 
 interface UsageData {
   users: { used: number; limit: number };
@@ -38,10 +40,15 @@ export default function DistrictUsagePage() {
 
   return (
     <div className="p-8 space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-heading font-bold vi-text">Usage & Limits</h1>
-          <p className="text-sm vi-text-muted mt-1">Monitor your district&apos;s platform usage against your subscription limits.</p>
+      <header className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <IconWell color="math">
+            <Gauge size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div>
+            <h1 className="text-2xl font-heading font-bold vi-text">Usage & Limits</h1>
+            <p className="text-sm vi-text-muted mt-1">Monitor your district&apos;s platform usage against your subscription limits.</p>
+          </div>
         </div>
         {usage && (
           <span className="px-3 py-1 bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] rounded-full text-xs font-semibold">
@@ -53,10 +60,10 @@ export default function DistrictUsagePage() {
       {usage && (
         <>
           <div className="grid gap-4 md:grid-cols-2">
-            <UsageCard label="User Accounts" used={usage.users.used} limit={usage.users.limit} icon="👥" />
-            <UsageCard label="Learners" used={usage.learners.used} limit={usage.learners.limit} icon="🎓" />
-            <UsageCard label="Teachers" used={usage.teachers.used} limit={usage.teachers.limit} icon="👩‍🏫" />
-            <UsageCard label="Schools" used={usage.schools.used} limit={usage.schools.limit} icon="🏫" />
+            <UsageCard label="User Accounts" used={usage.users.used} limit={usage.users.limit} Icon={Users} well="bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" />
+            <UsageCard label="Learners" used={usage.learners.used} limit={usage.learners.limit} Icon={GraduationCap} well="bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" />
+            <UsageCard label="Teachers" used={usage.teachers.used} limit={usage.teachers.limit} Icon={UserCog} well="bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" />
+            <UsageCard label="Schools" used={usage.schools.used} limit={usage.schools.limit} Icon={School} well="bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]" />
           </div>
 
           <div className="vi-card p-6 space-y-4">
@@ -75,7 +82,9 @@ export default function DistrictUsagePage() {
 
       <div className="vi-surface-soft rounded-2xl border border-[hsl(var(--visual-primary)/0.3)] p-6">
         <div className="flex items-start gap-3">
-          <span className="text-2xl">💡</span>
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex-shrink-0">
+            <Lightbulb size={22} strokeWidth={2.5} aria-hidden="true" />
+          </div>
           <div>
             <h3 className="font-semibold text-violet-900">Need higher limits?</h3>
             <p className="text-sm text-[hsl(var(--visual-primary))] mt-1">
@@ -88,14 +97,16 @@ export default function DistrictUsagePage() {
   );
 }
 
-function UsageCard({ label, used, limit, icon }: { label: string; used: number; limit: number; icon: string }) {
+function UsageCard({ label, used, limit, Icon, well }: { label: string; used: number; limit: number; Icon: LucideIcon; well: string }) {
   const pct = Math.min(100, Math.round((used / limit) * 100));
   const isHigh = pct > 80;
 
   return (
     <div className="vi-card p-5 hover:shadow-md transition">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-lg">{icon}</span>
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${well}`}>
+          <Icon size={22} strokeWidth={2.5} aria-hidden="true" />
+        </div>
         <span className="text-sm vi-text-muted font-medium">{label}</span>
       </div>
       <div className="flex items-baseline gap-1 mb-2">

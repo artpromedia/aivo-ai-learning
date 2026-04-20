@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { IconWell } from "@/components/discovery/_vi";
+import { Megaphone, User, Globe, Target, DollarSign, type LucideIcon } from "lucide-react";
 
 export default function MarketingDashboard() {
   const { accessToken } = useAuth();
@@ -36,21 +38,28 @@ export default function MarketingDashboard() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-heading font-bold vi-text">{t("overview")}</h1>
-        <p className="text-sm vi-text-muted mt-1">User acquisition, campaign performance, and content analytics.</p>
+      <div className="flex items-center gap-4">
+        <IconWell color="primary">
+          <Megaphone size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
+        <div>
+          <h1 className="text-2xl font-heading font-bold vi-text">{t("overview")}</h1>
+          <p className="text-sm vi-text-muted mt-1">User acquisition, campaign performance, and content analytics.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Signups", value: stats?.totalUsers ?? "—", icon: "👤", trend: "+24% MoM" },
-          { label: "Monthly Visitors", value: "38.5K", icon: "🌐", trend: "+15% MoM" },
-          { label: "Conversion Rate", value: "3.1%", icon: "🎯", trend: "+0.4pp" },
-          { label: "Cost per Lead", value: "$5.82", icon: "💰", trend: "-12% MoM" },
-        ].map((m) => (
+        {([
+          { label: "Total Signups", value: stats?.totalUsers ?? "—", Icon: User, well: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]", trend: "+24% MoM" },
+          { label: "Monthly Visitors", value: "38.5K", Icon: Globe, well: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]", trend: "+15% MoM" },
+          { label: "Conversion Rate", value: "3.1%", Icon: Target, well: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]", trend: "+0.4pp" },
+          { label: "Cost per Lead", value: "$5.82", Icon: DollarSign, well: "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]", trend: "-12% MoM" },
+        ] as Array<{label: string; value: any; Icon: LucideIcon; well: string; trend: string}>).map((m) => (
           <div key={m.label} className="vi-card p-5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">{m.icon}</span>
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${m.well}`}>
+                <m.Icon size={22} strokeWidth={2.5} aria-hidden="true" />
+              </div>
               <span className="text-xs text-green-600 font-semibold">{m.trend}</span>
             </div>
             <p className="text-2xl font-bold vi-text">{m.value}</p>

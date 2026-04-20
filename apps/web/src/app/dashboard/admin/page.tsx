@@ -3,6 +3,21 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { IconWell } from "@/components/discovery/_vi";
+import {
+  LayoutDashboard,
+  User,
+  GraduationCap,
+  Building2,
+  Zap,
+  School,
+  Brain,
+  ShieldCheck,
+  Settings,
+  CreditCard,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
 
 interface AdminStats {
   totalUsers: number;
@@ -72,28 +87,33 @@ export default function AdminOverview() {
   const totalServices = statusOverview?.services?.length ?? 0;
   const platformStatus = statusOverview?.overall ?? "checking";
 
-  const statCards = [
-    { title: t("total_users"), value: stats?.totalUsers ?? "—", icon: "👤", bg: "bg-[hsl(var(--visual-primary))]", link: "/dashboard/admin/users" },
-    { title: td("total_learners"), value: stats?.totalLearners ?? "—", icon: "🎓", bg: "bg-[hsl(var(--visual-science))]", link: "/dashboard/admin/learners" },
-    { title: t("tenants"), value: stats?.totalTenants ?? "—", icon: "🏢", bg: "bg-[hsl(var(--visual-math))]", link: "/dashboard/admin/tenants" },
-    { title: t("services"), value: totalServices > 0 ? `${healthyCount}/${totalServices}` : "—", icon: "⚡", bg: "bg-[hsl(var(--visual-reading))]", link: "/dashboard/admin/services" },
+  const statCards: { title: string; value: string | number; Icon: LucideIcon; bg: string; link: string }[] = [
+    { title: t("total_users"), value: stats?.totalUsers ?? "—", Icon: User, bg: "bg-[hsl(var(--visual-primary))]", link: "/dashboard/admin/users" },
+    { title: td("total_learners"), value: stats?.totalLearners ?? "—", Icon: GraduationCap, bg: "bg-[hsl(var(--visual-science))]", link: "/dashboard/admin/learners" },
+    { title: t("tenants"), value: stats?.totalTenants ?? "—", Icon: Building2, bg: "bg-[hsl(var(--visual-math))]", link: "/dashboard/admin/tenants" },
+    { title: t("services"), value: totalServices > 0 ? `${healthyCount}/${totalServices}` : "—", Icon: Zap, bg: "bg-[hsl(var(--visual-reading))]", link: "/dashboard/admin/services" },
   ];
 
-  const quickActions = [
-    { label: "Create District", href: "/dashboard/admin/tenants", icon: "🏫" },
-    { label: "View Brain Models", href: "/dashboard/admin/ai", icon: "🧠" },
-    { label: "Audit Logs", href: "/dashboard/admin/compliance", icon: "🛡️" },
-    { label: "Platform Settings", href: "/dashboard/admin/settings", icon: "⚙️" },
-    { label: "Billing", href: "/dashboard/admin/billing", icon: "💳" },
-    { label: "Research Data", href: "/dashboard/admin/analytics", icon: "📈" },
+  const quickActions: { label: string; href: string; Icon: LucideIcon; color: string }[] = [
+    { label: "Create District", href: "/dashboard/admin/tenants", Icon: School, color: "math" },
+    { label: "View Brain Models", href: "/dashboard/admin/ai", Icon: Brain, color: "primary" },
+    { label: "Audit Logs", href: "/dashboard/admin/compliance", Icon: ShieldCheck, color: "science" },
+    { label: "Platform Settings", href: "/dashboard/admin/settings", Icon: Settings, color: "reading" },
+    { label: "Billing", href: "/dashboard/admin/billing", Icon: CreditCard, color: "primary" },
+    { label: "Research Data", href: "/dashboard/admin/analytics", Icon: TrendingUp, color: "sel" },
   ];
 
   return (
     <div className="p-8 space-y-8">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-heading font-bold vi-text">{td("overview")}</h1>
-          <p className="text-sm vi-text-muted mt-1">{td("welcome_message", { name: user?.name ?? "" })}</p>
+        <div className="flex items-center gap-4">
+          <IconWell color="primary">
+            <LayoutDashboard size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div>
+            <h1 className="text-2xl font-heading font-bold vi-text">{td("overview")}</h1>
+            <p className="text-sm vi-text-muted mt-1">{td("welcome_message", { name: user?.name ?? "" })}</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
@@ -114,18 +134,23 @@ export default function AdminOverview() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        {statCards.map((c) => (
-          <Link key={c.title} href={c.link} className="group">
-            <div className={`${c.bg} rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all group-hover:scale-[1.02]`}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-3xl">{c.icon}</span>
-                <span className="text-xs opacity-75 group-hover:opacity-100">View →</span>
+        {statCards.map((c) => {
+          const Icon = c.Icon;
+          return (
+            <Link key={c.title} href={c.link} className="group">
+              <div className={`${c.bg} rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all group-hover:scale-[1.02]`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center">
+                    <Icon size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </div>
+                  <span className="text-xs opacity-75 group-hover:opacity-100">View →</span>
+                </div>
+                <div className="text-3xl font-bold">{c.value}</div>
+                <div className="text-sm opacity-80 mt-1">{c.title}</div>
               </div>
-              <div className="text-3xl font-bold">{c.value}</div>
-              <div className="text-sm opacity-80 mt-1">{c.title}</div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -160,13 +185,20 @@ export default function AdminOverview() {
         <div className="vi-card p-6">
           <h2 className="font-heading font-bold text-lg vi-text mb-5">{td("quick_actions")}</h2>
           <div className="grid grid-cols-2 gap-2">
-            {quickActions.map((a) => (
-              <Link key={a.label} href={a.href}
-                className="flex flex-col items-center gap-2 p-3 rounded-xl border vi-border hover:border-[hsl(var(--visual-primary)/0.3)] hover:vi-surface-soft transition text-center group">
-                <span className="text-2xl group-hover:scale-110 transition-transform">{a.icon}</span>
-                <span className="text-xs font-semibold vi-text-muted group-hover:text-[hsl(var(--visual-primary))]">{a.label}</span>
-              </Link>
-            ))}
+            {quickActions.map((a) => {
+              const Icon = a.Icon;
+              return (
+                <Link key={a.label} href={a.href}
+                  className="flex flex-col items-center gap-2 p-3 rounded-xl border vi-border hover:border-[hsl(var(--visual-primary)/0.3)] hover:vi-surface-soft transition text-center group">
+                  <div className="group-hover:scale-110 transition-transform">
+                    <IconWell color={a.color} size="sm">
+                      <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
+                    </IconWell>
+                  </div>
+                  <span className="text-xs font-semibold vi-text-muted group-hover:text-[hsl(var(--visual-primary))]">{a.label}</span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>

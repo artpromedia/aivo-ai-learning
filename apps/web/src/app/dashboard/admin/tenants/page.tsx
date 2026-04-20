@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Pagination from "@/components/Pagination";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { IconWell } from "@/components/discovery/_vi";
+import { Building2, School, Users, ClipboardList, Plus, type LucideIcon } from "lucide-react";
 
 interface Tenant {
   id: string;
@@ -13,10 +15,10 @@ interface Tenant {
   settings?: any;
 }
 
-const TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
-  B2C_FAMILY: { label: "Family", icon: "👨‍👩‍👧", color: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" },
-  B2B_SCHOOL: { label: "School", icon: "🏫", color: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" },
-  B2B_DISTRICT: { label: "District", icon: "🏛️", color: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" },
+const TYPE_CONFIG: Record<string, { label: string; Icon: LucideIcon; color: string; well: string }> = {
+  B2C_FAMILY: { label: "Family", Icon: Users, color: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]", well: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" },
+  B2B_SCHOOL: { label: "School", Icon: School, color: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]", well: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" },
+  B2B_DISTRICT: { label: "District", Icon: Building2, color: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]", well: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" },
 };
 
 export default function AdminTenantsPage() {
@@ -90,39 +92,50 @@ export default function AdminTenantsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-heading font-bold vi-text">{t("tenants")}</h1>
-          <p className="text-sm vi-text-muted mt-1">Manage organizations, schools, and family accounts.</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <IconWell color="primary">
+            <Building2 size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div>
+            <h1 className="text-2xl font-heading font-bold vi-text">{t("tenants")}</h1>
+            <p className="text-sm vi-text-muted mt-1">Manage organizations, schools, and family accounts.</p>
+          </div>
         </div>
         {isPlatformAdmin && (
           <button
             onClick={() => setShowCreate(!showCreate)}
-            className="px-5 py-2.5 rounded-xl bg-[hsl(var(--visual-primary))] text-white font-semibold text-sm hover:opacity-90 transition shadow-sm"
+            className="px-5 py-2.5 rounded-xl bg-[hsl(var(--visual-primary))] text-white font-semibold text-sm hover:opacity-90 transition shadow-sm flex items-center gap-2"
           >
-            + Create District
+            <Plus size={18} strokeWidth={2.5} aria-hidden="true" />
+            Create District
           </button>
         )}
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        {Object.entries(TYPE_CONFIG).map(([type, config]) => (
-          <button
-            key={type}
-            onClick={() => setTypeFilter(typeFilter === type ? "ALL" : type)}
-            className={`p-5 rounded-2xl border transition text-left ${
-              typeFilter === type ? "border-purple-300 vi-surface-soft shadow-sm" : "vi-border bg-white hover:border-slate-300"
-            }`}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <span className="text-2xl">{config.icon}</span>
-              <div>
-                <p className="text-2xl font-bold vi-text">{typeCounts[type] || 0}</p>
-                <p className="text-xs vi-text-muted font-semibold">{config.label} Accounts</p>
+        {Object.entries(TYPE_CONFIG).map(([type, config]) => {
+          const Icon = config.Icon;
+          return (
+            <button
+              key={type}
+              onClick={() => setTypeFilter(typeFilter === type ? "ALL" : type)}
+              className={`p-5 rounded-2xl border transition text-left ${
+                typeFilter === type ? "border-purple-300 vi-surface-soft shadow-sm" : "vi-border bg-white hover:border-slate-300"
+              }`}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${config.well}`}>
+                  <Icon size={22} strokeWidth={2.5} aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold vi-text">{typeCounts[type] || 0}</p>
+                  <p className="text-xs vi-text-muted font-semibold">{config.label} Accounts</p>
+                </div>
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
 
       {showCreate && isPlatformAdmin && (
@@ -197,12 +210,15 @@ export default function AdminTenantsPage() {
               </thead>
               <tbody>
                 {paginatedTenants.map((t) => {
-                  const tc = TYPE_CONFIG[t.type] || { label: t.type, icon: "📋", color: "vi-surface-soft vi-text-muted" };
+                  const tc = TYPE_CONFIG[t.type] || { label: t.type, Icon: ClipboardList, color: "vi-surface-soft vi-text-muted", well: "vi-surface-soft vi-text-muted" };
+                  const RowIcon = tc.Icon;
                   return (
                     <tr key={t.id} className="border-b vi-border hover:vi-bg/50 transition">
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
-                          <span className="text-xl">{tc.icon}</span>
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${tc.well}`}>
+                            <RowIcon size={16} strokeWidth={2.5} aria-hidden="true" />
+                          </div>
                           <Link href={`/dashboard/admin/tenants/${t.id}`} className="font-medium text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))]">{t.name}</Link>
                         </div>
                       </td>

@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { IconWell } from "@/components/discovery/_vi";
+import { ShieldCheck, Check, X, Circle, ClipboardList, Trash2, Upload, type LucideIcon } from "lucide-react";
 
 interface AuditEntry {
   action: string;
@@ -79,10 +81,10 @@ export default function AdminCompliancePage() {
     { action: "CONFIG_UPDATED", actor: "admin@aivo.test", resource: "Settings", timestamp: new Date(Date.now() - 172800000).toISOString(), details: "Updated feature flags" },
   ];
 
-  const dataRequests = [
-    { type: "Access Request", count: 0, desc: "Pending data access requests", icon: "📋" },
-    { type: "Deletion Request", count: 0, desc: "Pending data deletion requests", icon: "🗑️" },
-    { type: "Export Request", count: 0, desc: "Pending data export requests", icon: "📤" },
+  const dataRequests: { type: string; count: number; desc: string; Icon: LucideIcon; color: string }[] = [
+    { type: "Access Request", count: 0, desc: "Pending data access requests", Icon: ClipboardList, color: "primary" },
+    { type: "Deletion Request", count: 0, desc: "Pending data deletion requests", Icon: Trash2, color: "math" },
+    { type: "Export Request", count: 0, desc: "Pending data export requests", Icon: Upload, color: "reading" },
   ];
 
   const ACTION_COLORS: Record<string, string> = {
@@ -108,10 +110,15 @@ export default function AdminCompliancePage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-heading font-bold vi-text">{t("audit_logs")}</h1>
-          <p className="text-sm vi-text-muted mt-1">COPPA, FERPA, GDPR compliance status, security controls, and audit trail.</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <IconWell color="science">
+            <ShieldCheck size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div>
+            <h1 className="text-2xl font-heading font-bold vi-text">{t("audit_logs")}</h1>
+            <p className="text-sm vi-text-muted mt-1">COPPA, FERPA, GDPR compliance status, security controls, and audit trail.</p>
+          </div>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))] text-sm font-semibold">
           <span className="w-2 h-2 rounded-full bg-[hsl(var(--visual-science))]" />
@@ -136,9 +143,11 @@ export default function AdminCompliancePage() {
               <div className="space-y-2">
                 {fw.items.map((item, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <span className={`mt-0.5 text-xs flex-shrink-0 ${item.status ? "text-[hsl(var(--visual-science))]" : "vi-text-muted opacity-70"}`}>
-                      {item.status ? "✓" : "○"}
-                    </span>
+                    {item.status ? (
+                      <Check size={12} strokeWidth={3} className="mt-0.5 text-[hsl(var(--visual-science))] flex-shrink-0" aria-hidden="true" />
+                    ) : (
+                      <Circle size={12} strokeWidth={2.5} className="mt-0.5 vi-text-muted opacity-70 flex-shrink-0" aria-hidden="true" />
+                    )}
                     <span className="text-xs vi-text-muted">{item.label}</span>
                   </div>
                 ))}
@@ -158,7 +167,11 @@ export default function AdminCompliancePage() {
           <div className="space-y-2">
             {securityControls.map((ctrl) => (
               <div key={ctrl.label} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:vi-bg transition">
-                <span className={`font-bold flex-shrink-0 ${ctrl.status ? "text-[hsl(var(--visual-science))]" : "text-[hsl(var(--visual-math))]"}`}>{ctrl.status ? "✓" : "✗"}</span>
+                {ctrl.status ? (
+                  <Check size={16} strokeWidth={3} className="text-[hsl(var(--visual-science))] flex-shrink-0" aria-hidden="true" />
+                ) : (
+                  <X size={16} strokeWidth={3} className="text-[hsl(var(--visual-math))] flex-shrink-0" aria-hidden="true" />
+                )}
                 <div className="flex-1">
                   <p className="text-sm font-medium vi-text">{ctrl.label}</p>
                 </div>
@@ -193,10 +206,14 @@ export default function AdminCompliancePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {dataRequests.map((dr) => (
+        {dataRequests.map((dr) => {
+          const Icon = dr.Icon;
+          return (
           <div key={dr.type} className="vi-card p-5">
             <div className="flex items-center gap-3 mb-3">
-              <span className="text-2xl">{dr.icon}</span>
+              <IconWell color={dr.color} size="sm">
+                <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
+              </IconWell>
               <div>
                 <p className="text-sm font-semibold vi-text">{dr.type}</p>
                 <p className="text-xs vi-text-muted">{dr.desc}</p>
@@ -207,7 +224,8 @@ export default function AdminCompliancePage() {
               <span className="px-2.5 py-0.5 text-xs rounded-full bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))] font-semibold">Clear</span>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="vi-card p-6">

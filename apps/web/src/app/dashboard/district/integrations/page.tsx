@@ -3,6 +3,8 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { IconWell } from "@/components/discovery/_vi";
+import { Plug, School, Circle, Link2, Palette, BookOpen, Zap, type LucideIcon } from "lucide-react";
 
 interface Connector {
   id: string;
@@ -44,13 +46,13 @@ interface SyncLog {
   errors: any[];
 }
 
-const CONNECTOR_ICONS: Record<string, string> = {
-  google_classroom: "🏫",
-  clever: "🔵",
-  classlink: "🔗",
-  canvas_lms: "🎨",
-  schoology: "📚",
-  powerschool: "⚡",
+const CONNECTOR_ICONS: Record<string, LucideIcon> = {
+  google_classroom: School,
+  clever: Circle,
+  classlink: Link2,
+  canvas_lms: Palette,
+  schoology: BookOpen,
+  powerschool: Zap,
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -330,12 +332,17 @@ export default function IntegrationsPage() {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-heading font-bold vi-text">{t("integrations")}</h1>
-          <p className="text-sm vi-text-muted mt-1">
-            Connect your district's learning tools to automatically sync rosters, classes, and student data.
-          </p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <IconWell color="primary">
+            <Plug size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div>
+            <h1 className="text-2xl font-heading font-bold vi-text">{t("integrations")}</h1>
+            <p className="text-sm vi-text-muted mt-1">
+              Connect your district's learning tools to automatically sync rosters, classes, and student data.
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-1 vi-surface-soft rounded-lg p-1">
           <button
@@ -370,9 +377,14 @@ export default function IntegrationsPage() {
                   isConnected ? "border-[hsl(var(--visual-science)/0.30)] bg-[hsl(var(--visual-science)/0.05)]" : isComingSoon ? "vi-border opacity-60" : "vi-border hover:border-[hsl(var(--visual-primary)/0.3)] hover:shadow-md"
                 }`}>
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 vi-surface-soft rounded-xl flex items-center justify-center text-2xl">
-                      {CONNECTOR_ICONS[connector.id] || "🔌"}
-                    </div>
+                    {(() => {
+                      const ConnIcon = CONNECTOR_ICONS[connector.id] || Plug;
+                      return (
+                        <div className="w-12 h-12 vi-surface-soft text-[hsl(var(--visual-primary))] rounded-2xl flex items-center justify-center">
+                          <ConnIcon size={24} strokeWidth={2.5} aria-hidden="true" />
+                        </div>
+                      );
+                    })()}
                     <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold uppercase ${
                       isConnected ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" :
                       isComingSoon ? "vi-surface-soft vi-text-muted" :
@@ -448,7 +460,9 @@ export default function IntegrationsPage() {
         <div className="space-y-6">
           {connections.filter((c) => c.status !== "disconnected").length === 0 ? (
             <div className="bg-white rounded-2xl p-12 border vi-border text-center">
-              <div className="w-16 h-16 bg-[hsl(var(--visual-primary)/0.12)] rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">🔗</div>
+              <div className="w-16 h-16 bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Plug size={32} strokeWidth={2.5} aria-hidden="true" />
+              </div>
               <h3 className="font-heading font-bold text-lg vi-text mb-2">No integrations connected</h3>
               <p className="text-sm vi-text-muted mb-4">
                 Connect Google Classroom, Clever, or ClassLink to automatically sync your district's roster data.
@@ -470,9 +484,14 @@ export default function IntegrationsPage() {
                   <div className="p-6 border-b vi-border">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 vi-surface-soft rounded-xl flex items-center justify-center text-2xl">
-                          {CONNECTOR_ICONS[conn.connectorId] || "🔌"}
-                        </div>
+                        {(() => {
+                          const ConnIcon = CONNECTOR_ICONS[conn.connectorId] || Plug;
+                          return (
+                            <div className="w-12 h-12 vi-surface-soft text-[hsl(var(--visual-primary))] rounded-2xl flex items-center justify-center">
+                              <ConnIcon size={24} strokeWidth={2.5} aria-hidden="true" />
+                            </div>
+                          );
+                        })()}
                         <div>
                           <h3 className="font-heading font-bold text-lg vi-text">{conn.connectorName}</h3>
                           <div className="flex items-center gap-3 mt-1">

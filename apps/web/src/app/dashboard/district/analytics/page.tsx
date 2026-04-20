@@ -1,6 +1,8 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { IconWell } from "@/components/discovery/_vi";
+import { BarChart3, GraduationCap, UserCog, School, ClipboardList, TrendingUp, Trophy, Bell, type LucideIcon } from "lucide-react";
 
 interface Cohort {
   level: string;
@@ -46,9 +48,14 @@ export default function DistrictAnalyticsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <header>
-        <h1 className="text-2xl font-heading font-bold vi-text">Analytics & Reports</h1>
-        <p className="text-sm vi-text-muted mt-1">District-wide performance metrics, functioning level distribution, and engagement data.</p>
+      <header className="flex items-center gap-4">
+        <IconWell color="science">
+          <BarChart3 size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
+        <div>
+          <h1 className="text-2xl font-heading font-bold vi-text">Analytics & Reports</h1>
+          <p className="text-sm vi-text-muted mt-1">District-wide performance metrics, functioning level distribution, and engagement data.</p>
+        </div>
       </header>
 
       {loading ? (
@@ -61,10 +68,10 @@ export default function DistrictAnalyticsPage() {
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-4">
-            <StatCard label="Total Learners" value={stats?.totalLearners ?? 0} icon="🎓" />
-            <StatCard label="Total Staff" value={stats?.totalStaff ?? 0} icon="👩‍🏫" />
-            <StatCard label="Schools" value={stats?.totalSchools ?? 0} icon="🏫" />
-            <StatCard label="Active IEPs" value={stats?.activeIeps ?? 0} icon="📋" />
+            <StatCard label="Total Learners" value={stats?.totalLearners ?? 0} Icon={GraduationCap} well="bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" />
+            <StatCard label="Total Staff" value={stats?.totalStaff ?? 0} Icon={UserCog} well="bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" />
+            <StatCard label="Schools" value={stats?.totalSchools ?? 0} Icon={School} well="bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" />
+            <StatCard label="Active IEPs" value={stats?.activeIeps ?? 0} Icon={ClipboardList} well="bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]" />
           </div>
 
           {cohorts.length > 0 && (
@@ -126,9 +133,9 @@ export default function DistrictAnalyticsPage() {
           <div className="vi-card p-6">
             <h2 className="text-lg font-heading font-semibold vi-text mb-3">Quick Insights</h2>
             <div className="grid gap-3 md:grid-cols-3">
-              <InsightCard icon="📊" title="Enrollment Growth" description="Track new student enrollments over time to identify trends." />
-              <InsightCard icon="🏆" title="Mastery Tracking" description="Monitor domain mastery across all learners in your district." />
-              <InsightCard icon="🔔" title="Intervention Alerts" description="Get notified when learners need additional support or accommodations." />
+              <InsightCard Icon={TrendingUp} well="bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" title="Enrollment Growth" description="Track new student enrollments over time to identify trends." />
+              <InsightCard Icon={Trophy} well="bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" title="Mastery Tracking" description="Monitor domain mastery across all learners in your district." />
+              <InsightCard Icon={Bell} well="bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" title="Intervention Alerts" description="Get notified when learners need additional support or accommodations." />
             </div>
           </div>
         </>
@@ -137,11 +144,13 @@ export default function DistrictAnalyticsPage() {
   );
 }
 
-function StatCard({ label, value, icon }: { label: string; value: number; icon: string }) {
+function StatCard({ label, value, Icon, well }: { label: string; value: number; Icon: LucideIcon; well: string }) {
   return (
     <div className="vi-card p-5 hover:shadow-md transition">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg">{icon}</span>
+      <div className="flex items-center gap-3 mb-2">
+        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${well}`}>
+          <Icon size={22} strokeWidth={2.5} aria-hidden="true" />
+        </div>
         <span className="text-xs vi-text-muted font-medium uppercase">{label}</span>
       </div>
       <p className="text-3xl font-bold vi-text">{value}</p>
@@ -158,10 +167,12 @@ function EngagementRow({ label, value }: { label: string; value: string | number
   );
 }
 
-function InsightCard({ icon, title, description }: { icon: string; title: string; description: string }) {
+function InsightCard({ Icon, well, title, description }: { Icon: LucideIcon; well: string; title: string; description: string }) {
   return (
     <div className="flex items-start gap-3 p-3 rounded-xl vi-bg border vi-border">
-      <span className="text-lg flex-shrink-0">{icon}</span>
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${well}`}>
+        <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
+      </div>
       <div>
         <p className="text-sm font-semibold vi-text">{title}</p>
         <p className="text-xs vi-text-muted mt-0.5">{description}</p>

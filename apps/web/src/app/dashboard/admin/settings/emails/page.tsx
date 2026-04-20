@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { IconWell } from "@/components/discovery/_vi";
+import { Mail } from "lucide-react";
 
 interface EmailTemplate {
   id: string;
@@ -35,7 +37,10 @@ export default function EmailTemplatesPage() {
         <span className="vi-text font-medium">Email Templates</span>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <IconWell color="primary">
+          <Mail size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
         <div>
           <h1 className="text-2xl font-heading font-bold vi-text">Email Templates</h1>
           <p className="text-sm vi-text-muted mt-1">Manage transactional and notification email templates.</p>

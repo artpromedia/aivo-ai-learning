@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { IconWell } from "@/components/discovery/_vi";
+import { Wallet, DollarSign, TrendingUp, User, TrendingDown, type LucideIcon } from "lucide-react";
 
 export default function FinanceDashboard() {
   const { accessToken } = useAuth();
@@ -17,11 +19,11 @@ export default function FinanceDashboard() {
       .catch(() => {});
   }, [accessToken]);
 
-  const revenueMetrics = [
-    { label: "Monthly Recurring Revenue", value: "$48,200", trend: "+18%", icon: "💰" },
-    { label: "Annual Run Rate", value: "$578,400", trend: "+22%", icon: "📈" },
-    { label: "Avg Revenue per User", value: "$24.50", trend: "+$2.30", icon: "👤" },
-    { label: "Churn Rate", value: "3.2%", trend: "-0.8pp", icon: "📉" },
+  const revenueMetrics: Array<{label: string; value: string; trend: string; Icon: LucideIcon; well: string}> = [
+    { label: "Monthly Recurring Revenue", value: "$48,200", trend: "+18%", Icon: DollarSign, well: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" },
+    { label: "Annual Run Rate", value: "$578,400", trend: "+22%", Icon: TrendingUp, well: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" },
+    { label: "Avg Revenue per User", value: "$24.50", trend: "+$2.30", Icon: User, well: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" },
+    { label: "Churn Rate", value: "3.2%", trend: "-0.8pp", Icon: TrendingDown, well: "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]" },
   ];
 
   const subscriptionBreakdown = [
@@ -60,16 +62,23 @@ export default function FinanceDashboard() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-heading font-bold vi-text">{t("overview")}</h1>
-        <p className="text-sm vi-text-muted mt-1">Revenue tracking, subscription analytics, and financial health.</p>
+      <div className="flex items-center gap-4">
+        <IconWell color="science">
+          <Wallet size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
+        <div>
+          <h1 className="text-2xl font-heading font-bold vi-text">{t("overview")}</h1>
+          <p className="text-sm vi-text-muted mt-1">Revenue tracking, subscription analytics, and financial health.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {revenueMetrics.map((m) => (
           <div key={m.label} className="vi-card p-5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">{m.icon}</span>
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${m.well}`}>
+                <m.Icon size={22} strokeWidth={2.5} aria-hidden="true" />
+              </div>
               <span className="text-xs text-green-600 font-semibold">{m.trend}</span>
             </div>
             <p className="text-2xl font-bold vi-text">{m.value}</p>

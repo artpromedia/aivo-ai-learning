@@ -1,6 +1,8 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import { IconWell } from "@/components/discovery/_vi";
+import { Home, Plus } from "lucide-react";
 
 interface Classroom {
   id: string;
@@ -42,16 +44,22 @@ export default function DistrictClassroomsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-heading font-bold vi-text">Classrooms</h1>
-          <p className="text-sm vi-text-muted mt-1">Manage classroom assignments across all schools.</p>
+      <header className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <IconWell color="primary">
+            <Home size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div>
+            <h1 className="text-2xl font-heading font-bold vi-text">Classrooms</h1>
+            <p className="text-sm vi-text-muted mt-1">Manage classroom assignments across all schools.</p>
+          </div>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition shadow-sm"
+          className="px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition shadow-sm flex items-center gap-2"
         >
-          + Add Classroom
+          <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
+          Add Classroom
         </button>
       </header>
 
@@ -73,7 +81,9 @@ export default function DistrictClassroomsPage() {
         </div>
       ) : classrooms.length === 0 ? (
         <div className="vi-card p-12 text-center">
-          <span className="text-4xl mb-4 block">🏠</span>
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]">
+            <Home size={28} strokeWidth={2.5} aria-hidden="true" />
+          </div>
           <p className="vi-text-muted font-medium">No classrooms found</p>
           <p className="text-sm vi-text-muted mt-1">Create classrooms and assign them to schools.</p>
         </div>
@@ -94,7 +104,7 @@ export default function DistrictClassroomsPage() {
                 <tr key={c.id} className="border-b vi-border hover:vi-surface-soft transition">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[hsl(var(--visual-reading)/0.12)] rounded-lg flex items-center justify-center text-sm">🏠</div>
+                      <div className="w-8 h-8 bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] rounded-lg flex items-center justify-center"><Home size={16} strokeWidth={2.5} aria-hidden="true" /></div>
                       <span className="font-medium vi-text">{c.name}</span>
                     </div>
                   </td>

@@ -3,6 +3,8 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
+import { IconWell } from "@/components/discovery/_vi";
+import { ScrollText } from "lucide-react";
 
 interface AuditEntry {
   id: string;
@@ -106,8 +108,16 @@ export default function AuditLogPage() {
         </Link>
       </div>
 
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-heading font-bold vi-text">Audit Log</h1>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <IconWell color="science">
+            <ScrollText size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div>
+            <h1 className="text-2xl font-heading font-bold vi-text">Audit Log</h1>
+            <p className="text-sm vi-text-muted mt-1">Searchable record of every admin action and security event.</p>
+          </div>
+        </div>
         <button
           onClick={handleExport}
           className="px-4 py-2 text-sm font-medium rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"

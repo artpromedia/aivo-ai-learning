@@ -2,6 +2,7 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useState } from "react";
 import Link from "next/link";
+import { Brain } from "lucide-react";
 
 const TUTORS = [
   { key: "nova", name: "Nova", desc: "General knowledge & curiosity" },
@@ -173,7 +174,7 @@ export default function AIPlaygroundPage() {
           <div className="vi-card flex flex-col h-[600px]">
             <div className="p-4 border-b vi-border flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-lg">🧠</span>
+                <Brain size={18} strokeWidth={2.5} className="text-[hsl(var(--visual-primary))]" aria-hidden="true" />
                 <span className="font-semibold vi-text">{tutor?.name}</span>
                 <span className="text-xs vi-surface-soft vi-text-muted px-2 py-0.5 rounded-full">{selectedModel}</span>
               </div>

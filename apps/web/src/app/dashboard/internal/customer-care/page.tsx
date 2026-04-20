@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { IconWell } from "@/components/discovery/_vi";
+import { Headphones, Inbox, RefreshCw, CheckCircle2, Star, type LucideIcon } from "lucide-react";
 
 export default function CustomerCareDashboard() {
   const { accessToken } = useAuth();
@@ -49,20 +51,27 @@ export default function CustomerCareDashboard() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-heading font-bold vi-text">{t("overview")}</h1>
-        <p className="text-sm vi-text-muted mt-1">Ticket management, customer satisfaction, and response metrics.</p>
+      <div className="flex items-center gap-4">
+        <IconWell color="primary">
+          <Headphones size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
+        <div>
+          <h1 className="text-2xl font-heading font-bold vi-text">{t("overview")}</h1>
+          <p className="text-sm vi-text-muted mt-1">Ticket management, customer satisfaction, and response metrics.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Open Tickets", value: ticketMetrics.open, icon: "📬", color: "bg-red-600" },
-          { label: "In Progress", value: ticketMetrics.inProgress, icon: "🔄", color: "bg-amber-600" },
-          { label: "Resolved (30d)", value: ticketMetrics.resolved, icon: "✅", color: "bg-[hsl(var(--visual-reading))]" },
-          { label: "CSAT Score", value: `${ticketMetrics.csat}%`, icon: "⭐", color: "bg-[hsl(var(--visual-primary))]" },
-        ].map((m) => (
+        {([
+          { label: "Open Tickets", value: ticketMetrics.open, Icon: Inbox, color: "bg-red-600" },
+          { label: "In Progress", value: ticketMetrics.inProgress, Icon: RefreshCw, color: "bg-amber-600" },
+          { label: "Resolved (30d)", value: ticketMetrics.resolved, Icon: CheckCircle2, color: "bg-[hsl(var(--visual-reading))]" },
+          { label: "CSAT Score", value: `${ticketMetrics.csat}%`, Icon: Star, color: "bg-[hsl(var(--visual-primary))]" },
+        ] as Array<{label: string; value: any; Icon: LucideIcon; color: string}>).map((m) => (
           <div key={m.label} className={`${m.color} rounded-2xl p-5 text-white`}>
-            <span className="text-2xl">{m.icon}</span>
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-white/20">
+              <m.Icon size={22} strokeWidth={2.5} aria-hidden="true" />
+            </div>
             <p className="text-3xl font-bold mt-2">{m.value}</p>
             <p className="text-sm opacity-80 mt-1">{m.label}</p>
           </div>

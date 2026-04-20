@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { GraduationCap } from "lucide-react";
 
 interface LearnerDetail {
   id: string;
@@ -131,7 +132,9 @@ export default function LearnerDetailPage() {
       </Link>
 
       <div className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-full bg-[hsl(var(--visual-primary)/0.12)] flex items-center justify-center text-2xl">🎓</div>
+        <div className="w-14 h-14 rounded-full bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center">
+          <GraduationCap size={26} strokeWidth={2.5} aria-hidden="true" />
+        </div>
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-heading font-bold vi-text">{learner.name}</h1>

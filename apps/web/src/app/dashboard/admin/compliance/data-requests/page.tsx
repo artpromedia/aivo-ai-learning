@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useState } from "react";
 import Link from "next/link";
+import { IconWell } from "@/components/discovery/_vi";
+import { ClipboardList, Clock, Loader2, CheckCircle2, Plus, type LucideIcon } from "lucide-react";
 
 interface DataRequest {
   id: string;
@@ -64,33 +66,45 @@ export default function DataRequestsPage() {
         <span className="vi-text font-medium">Data Requests</span>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-heading font-bold vi-text">Data Requests</h1>
-          <p className="text-sm vi-text-muted mt-1">Manage DSAR, GDPR, and FERPA data subject requests with SLA tracking.</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <IconWell color="primary">
+            <ClipboardList size={28} strokeWidth={2.5} aria-hidden="true" />
+          </IconWell>
+          <div>
+            <h1 className="text-2xl font-heading font-bold vi-text">Data Requests</h1>
+            <p className="text-sm vi-text-muted mt-1">Manage DSAR, GDPR, and FERPA data subject requests with SLA tracking.</p>
+          </div>
         </div>
         <button
           onClick={() => setShowCreate(true)}
           className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 transition flex items-center gap-2"
         >
-          <span className="text-lg leading-none">+</span>
+          <Plus size={18} strokeWidth={2.5} aria-hidden="true" />
           New Request
         </button>
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        {[
-          { label: "Total Requests", value: requests.length, icon: "📋" },
-          { label: "Pending", value: requests.filter((r) => r.status === "submitted").length, icon: "🔵" },
-          { label: "In Progress", value: requests.filter((r) => r.status === "in_progress").length, icon: "🟡" },
-          { label: "Completed", value: requests.filter((r) => r.status === "completed").length, icon: "🟢" },
-        ].map((m) => (
-          <div key={m.label} className="bg-white rounded-xl p-4 shadow-sm border vi-border text-center">
-            <span className="text-xl">{m.icon}</span>
-            <p className="text-xl font-bold vi-text mt-1">{m.value}</p>
-            <p className="text-xs vi-text-muted font-semibold">{m.label}</p>
-          </div>
-        ))}
+        {([
+          { label: "Total Requests", value: requests.length, Icon: ClipboardList, well: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" },
+          { label: "Pending", value: requests.filter((r) => r.status === "submitted").length, Icon: Clock, well: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" },
+          { label: "In Progress", value: requests.filter((r) => r.status === "in_progress").length, Icon: Loader2, well: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" },
+          { label: "Completed", value: requests.filter((r) => r.status === "completed").length, Icon: CheckCircle2, well: "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]" },
+        ] as { label: string; value: number; Icon: LucideIcon; well: string }[]).map((m) => {
+          const Icon = m.Icon;
+          return (
+            <div key={m.label} className="bg-white rounded-xl p-4 shadow-sm border vi-border flex items-center gap-3">
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${m.well}`}>
+                <Icon size={22} strokeWidth={2.5} aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-xl font-bold vi-text leading-tight">{m.value}</p>
+                <p className="text-xs vi-text-muted font-semibold">{m.label}</p>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="vi-card overflow-hidden">

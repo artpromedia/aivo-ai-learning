@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState, useCallback } from "react";
 import Pagination from "@/components/Pagination";
+import { IconWell } from "@/components/discovery/_vi";
+import { Activity as ActivityIcon, ScrollText, School, UserCog, Ban, Home, Settings, ClipboardList, Target, FileEdit, type LucideIcon } from "lucide-react";
 
 interface Activity {
   id: string;
@@ -15,16 +17,16 @@ interface Activity {
 
 const PAGE_SIZE = 30;
 
-const ACTION_ICONS: Record<string, string> = {
-  "school.created": "🏫",
-  "school.updated": "🏫",
-  "staff.invited": "👩‍🏫",
-  "staff.updated": "👩‍🏫",
-  "staff.deactivated": "🚫",
-  "classroom.created": "🏠",
-  "settings.updated": "⚙️",
-  "iep.created": "📋",
-  "intervention.created": "🎯",
+const ACTION_ICONS: Record<string, LucideIcon> = {
+  "school.created": School,
+  "school.updated": School,
+  "staff.invited": UserCog,
+  "staff.updated": UserCog,
+  "staff.deactivated": Ban,
+  "classroom.created": Home,
+  "settings.updated": Settings,
+  "iep.created": ClipboardList,
+  "intervention.created": Target,
 };
 
 export default function DistrictActivityPage() {
@@ -51,9 +53,14 @@ export default function DistrictActivityPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <header>
-        <h1 className="text-2xl font-heading font-bold vi-text">Activity Log</h1>
-        <p className="text-sm vi-text-muted mt-1">Track all administrative actions across your district.</p>
+      <header className="flex items-center gap-4">
+        <IconWell color="primary">
+          <ActivityIcon size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
+        <div>
+          <h1 className="text-2xl font-heading font-bold vi-text">Activity Log</h1>
+          <p className="text-sm vi-text-muted mt-1">Track all administrative actions across your district.</p>
+        </div>
       </header>
 
       {loading ? (
@@ -62,16 +69,20 @@ export default function DistrictActivityPage() {
         </div>
       ) : activities.length === 0 ? (
         <div className="vi-card p-12 text-center">
-          <span className="text-4xl mb-4 block">📜</span>
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]">
+            <ScrollText size={28} strokeWidth={2.5} aria-hidden="true" />
+          </div>
           <p className="vi-text-muted font-medium">No activity recorded yet</p>
           <p className="text-sm vi-text-muted mt-1">Administrative actions will be logged here.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {activities.map((a) => (
+          {activities.map((a) => {
+            const RowIcon = ACTION_ICONS[a.action] || FileEdit;
+            return (
             <div key={a.id} className="vi-card !rounded-xl p-4 flex items-start gap-4">
-              <div className="w-10 h-10 vi-surface-soft rounded-xl flex items-center justify-center text-lg flex-shrink-0">
-                {ACTION_ICONS[a.action] || "📝"}
+              <div className="w-10 h-10 vi-surface-soft rounded-xl flex items-center justify-center text-[hsl(var(--visual-primary))] flex-shrink-0">
+                <RowIcon size={20} strokeWidth={2.5} aria-hidden="true" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -93,7 +104,8 @@ export default function DistrictActivityPage() {
                 {new Date(a.createdAt).toLocaleString()}
               </span>
             </div>
-          ))}
+            );
+          })}
           {totalPages > 1 && (
             <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={total} pageSize={PAGE_SIZE} />
           )}

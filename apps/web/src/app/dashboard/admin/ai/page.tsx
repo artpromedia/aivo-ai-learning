@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
 import { useTranslations } from "next-intl";
+import { IconWell } from "@/components/discovery/_vi";
+import { Brain, Check, Circle, type LucideIcon } from "lucide-react";
 
 interface BrainOverview {
   total: number;
@@ -28,9 +30,9 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 const AI_PROVIDERS = [
-  { name: "Claude Sonnet", provider: "Anthropic", status: "primary", model: "claude-sonnet-4-20250514", icon: "🟣" },
-  { name: "Gemini Flash", provider: "Google", status: "fallback", model: "gemini-2.0-flash", icon: "🔵" },
-  { name: "GPT-4o Mini", provider: "OpenAI", status: "fallback", model: "gpt-4o-mini", icon: "🟢" },
+  { name: "Claude Sonnet", provider: "Anthropic", status: "primary", model: "claude-sonnet-4-20250514", color: "text-[hsl(var(--visual-primary))]" },
+  { name: "Gemini Flash", provider: "Google", status: "fallback", model: "gemini-2.0-flash", color: "text-[hsl(var(--visual-reading))]" },
+  { name: "GPT-4o Mini", provider: "OpenAI", status: "fallback", model: "gpt-4o-mini", color: "text-[hsl(var(--visual-science))]" },
 ];
 
 export default function AdminAIPage() {
@@ -63,9 +65,14 @@ export default function AdminAIPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-heading font-bold vi-text">{t("ai_usage")}</h1>
-        <p className="text-sm vi-text-muted mt-1">Monitor brain clones, AI model performance, and content generation across the platform.</p>
+      <div className="flex items-center gap-4">
+        <IconWell color="primary">
+          <Brain size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
+        <div>
+          <h1 className="text-2xl font-heading font-bold vi-text">{t("ai_usage")}</h1>
+          <p className="text-sm vi-text-muted mt-1">Monitor brain clones, AI model performance, and content generation across the platform.</p>
+        </div>
       </div>
 
       <div className="bg-[hsl(var(--visual-primary))] rounded-2xl p-6 text-white">
@@ -98,7 +105,7 @@ export default function AdminAIPage() {
             {AI_PROVIDERS.map((p) => (
               <div key={p.name} className="flex items-center justify-between p-4 rounded-xl border vi-border hover:border-[hsl(var(--visual-primary)/0.3)] transition">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">{p.icon}</span>
+                  <Circle size={20} strokeWidth={2.5} className={`${p.color} fill-current`} aria-hidden="true" />
                   <div>
                     <p className="text-sm font-semibold vi-text">{p.name}</p>
                     <p className="text-xs vi-text-muted">{p.provider} &middot; {p.model}</p>
@@ -154,7 +161,7 @@ export default function AdminAIPage() {
             { label: "Full Audit Trail", status: true, detail: "Every brain version tracked with decision rationale" },
           ].map((c) => (
             <div key={c.label} className="flex items-start gap-3 p-4 rounded-xl bg-green-50 border border-green-100">
-              <span className="text-green-500 mt-0.5 flex-shrink-0 font-bold">✓</span>
+              <Check size={16} strokeWidth={3} className="text-green-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
               <div>
                 <p className="text-sm font-bold vi-text">{c.label}</p>
                 <p className="text-xs vi-text-muted mt-0.5">{c.detail}</p>

@@ -2,6 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { IconWell } from "@/components/discovery/_vi";
+import { Briefcase, Building2, GraduationCap, DollarSign, Target, type LucideIcon } from "lucide-react";
 
 export default function SalesDashboard() {
   const { accessToken } = useAuth();
@@ -36,21 +38,28 @@ export default function SalesDashboard() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-heading font-bold vi-text">{t("overview")}</h1>
-        <p className="text-sm vi-text-muted mt-1">Pipeline management, deal tracking, and revenue forecasting.</p>
+      <div className="flex items-center gap-4">
+        <IconWell color="math">
+          <Briefcase size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
+        <div>
+          <h1 className="text-2xl font-heading font-bold vi-text">{t("overview")}</h1>
+          <p className="text-sm vi-text-muted mt-1">Pipeline management, deal tracking, and revenue forecasting.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Tenants", value: stats?.totalTenants ?? "—", icon: "🏢", trend: "+12% MoM" },
-          { label: "Active Learners", value: stats?.totalLearners ?? "—", icon: "🎓", trend: "+8% MoM" },
-          { label: "Pipeline Value", value: "$155,500", icon: "💰", trend: "+23% QoQ" },
-          { label: "Win Rate", value: "32%", icon: "🎯", trend: "+5pp" },
-        ].map((m) => (
+        {([
+          { label: "Total Tenants", value: stats?.totalTenants ?? "—", Icon: Building2, well: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]", trend: "+12% MoM" },
+          { label: "Active Learners", value: stats?.totalLearners ?? "—", Icon: GraduationCap, well: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]", trend: "+8% MoM" },
+          { label: "Pipeline Value", value: "$155,500", Icon: DollarSign, well: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]", trend: "+23% QoQ" },
+          { label: "Win Rate", value: "32%", Icon: Target, well: "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]", trend: "+5pp" },
+        ] as Array<{label: string; value: any; Icon: LucideIcon; well: string; trend: string}>).map((m) => (
           <div key={m.label} className="vi-card p-5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">{m.icon}</span>
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${m.well}`}>
+                <m.Icon size={22} strokeWidth={2.5} aria-hidden="true" />
+              </div>
               <span className="text-xs text-green-600 font-semibold">{m.trend}</span>
             </div>
             <p className="text-2xl font-bold vi-text">{m.value}</p>

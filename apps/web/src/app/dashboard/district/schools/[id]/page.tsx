@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { School as SchoolIcon } from "lucide-react";
 
 interface SchoolDetail {
   school: any;
@@ -59,7 +60,7 @@ export default function SchoolDetailPage() {
       <header>
         <Link href="/dashboard/district/schools" className="text-sm text-[hsl(var(--visual-primary))] hover:underline mb-2 inline-block">&larr; Back to Schools</Link>
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-[hsl(var(--visual-primary)/0.12)] rounded-xl flex items-center justify-center text-2xl">🏫</div>
+          <div className="w-12 h-12 bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] rounded-2xl flex items-center justify-center"><SchoolIcon size={24} strokeWidth={2.5} aria-hidden="true" /></div>
           <div>
             <h1 className="text-2xl font-heading font-bold vi-text">{s.name}</h1>
             <p className="text-sm vi-text-muted">{[s.city, s.state].filter(Boolean).join(", ") || "No location set"}</p>

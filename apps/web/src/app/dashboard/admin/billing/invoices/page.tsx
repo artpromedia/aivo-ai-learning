@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { IconWell } from "@/components/discovery/_vi";
+import { Receipt } from "lucide-react";
 
 interface Invoice {
   id: string;
@@ -46,9 +48,14 @@ export default function InvoicesPage() {
         <span className="vi-text font-medium">Invoices</span>
       </div>
 
-      <div>
-        <h1 className="text-2xl font-heading font-bold vi-text">Invoices</h1>
-        <p className="text-sm vi-text-muted mt-1">View and manage all platform invoices.</p>
+      <div className="flex items-center gap-4">
+        <IconWell color="primary">
+          <Receipt size={28} strokeWidth={2.5} aria-hidden="true" />
+        </IconWell>
+        <div>
+          <h1 className="text-2xl font-heading font-bold vi-text">Invoices</h1>
+          <p className="text-sm vi-text-muted mt-1">View and manage all platform invoices.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
