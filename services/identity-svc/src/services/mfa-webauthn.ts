@@ -9,7 +9,7 @@
  * Challenge envelopes are short-lived signed JWTs so we don't need a
  * server-side challenge store.
  */
-import { signJWT, verifyJWT } from "@aivo/security";
+import { signJWT, verifyJWT, type WebauthnChallengeJWT } from "@aivo/security";
 
 const PROD_RP_ID = process.env.WEBAUTHN_RP_ID || "aivolearning.com";
 const PROD_RP_NAME = process.env.WEBAUTHN_RP_NAME || "AIVO Learning";
@@ -52,24 +52,21 @@ export async function signWebauthnChallenge(opts: {
   challenge: string;
   purpose: "register" | "login";
 }): Promise<string> {
-  return signJWT(
-    {
-      sub: opts.userId,
-      tenantId: "",
-      role: "",
-      // @ts-expect-error - extending JWT with custom claims
-      challenge: opts.challenge,
-      purpose: `webauthn-${opts.purpose}`,
-    },
-    CHALLENGE_TTL
-  );
+  const claims: WebauthnChallengeJWT = {
+    sub: opts.userId,
+    tenantId: "",
+    role: "",
+    challenge: opts.challenge,
+    purpose: `webauthn-${opts.purpose}`,
+  };
+  return signJWT<WebauthnChallengeJWT>(claims, CHALLENGE_TTL);
 }
 
 export async function verifyWebauthnChallengeToken(
   token: string,
   expectedPurpose: "register" | "login"
 ): Promise<{ userId: string; challenge: string }> {
-  const payload = (await verifyJWT(token)) as any;
+  const payload = await verifyJWT<WebauthnChallengeJWT>(token);
   if (payload.purpose !== `webauthn-${expectedPurpose}`) {
     throw new Error("Invalid challenge purpose");
   }

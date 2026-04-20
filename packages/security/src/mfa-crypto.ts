@@ -36,6 +36,20 @@ function loadKey(): Buffer {
   return cachedKey;
 }
 
+/**
+ * Eagerly validate the MFA encryption key. Call this at service boot from
+ * each process that touches MFA so misconfiguration fails the process
+ * startup, rather than being discovered when a user first attempts to enroll
+ * a TOTP secret. Returns the key length (32) on success; throws otherwise.
+ */
+export function assertMfaKeyConfigured(): number {
+  const key = loadKey();
+  if (key.length !== 32) {
+    throw new Error(`${ENV_KEY} must decode to exactly 32 bytes`);
+  }
+  return key.length;
+}
+
 /** Reset the cached key — for tests only. */
 export function _resetMfaKeyCache(): void {
   cachedKey = null;

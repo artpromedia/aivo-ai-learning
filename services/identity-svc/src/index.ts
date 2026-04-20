@@ -6,7 +6,7 @@ import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
-import { initKeys, logAdminEnterpriseFlags } from "@aivo/security";
+import { initKeys, logAdminEnterpriseFlags, assertMfaKeyConfigured } from "@aivo/security";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerTestHelperRoutes } from "./routes/test-helpers.js";
 import { registerUserRoutes } from "./routes/users.js";
@@ -21,6 +21,16 @@ const PORT = parseInt(process.env.PORT || "3001", 10);
 
 async function start() {
   await initKeys();
+  // Fail fast at boot — never let an MFA-encryption-key misconfiguration
+  // become a latent issue that only surfaces when a user tries to enroll
+  // their first TOTP secret. In production a missing key will throw here
+  // and stop the service from starting.
+  try {
+    assertMfaKeyConfigured();
+  } catch (e) {
+    logger.error(e, "MFA encryption key validation failed at boot");
+    throw e;
+  }
   logAdminEnterpriseFlags(logger);
 
   const dbUrl = process.env.DATABASE_URL || "";

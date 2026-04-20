@@ -11,6 +11,26 @@ export interface JWTPayload {
   impersonatedBy?: string;
 }
 
+/** Short-lived MFA challenge token claims. */
+export interface MfaChallengeJWT {
+  sub: string;
+  tenantId: string;
+  role: string;
+  email?: string;
+  purpose: "mfa";
+  mfaMethod: "email" | "totp" | "webauthn";
+}
+
+/** WebAuthn challenge token claims (registration or assertion). */
+export interface WebauthnChallengeJWT {
+  sub: string;
+  tenantId: string;
+  role: string;
+  email?: string;
+  purpose: `webauthn-${"register" | "login"}`;
+  challenge: string;
+}
+
 let privateKey: jose.CryptoKey | Uint8Array;
 let publicKey: jose.CryptoKey | Uint8Array;
 
@@ -51,7 +71,10 @@ export async function initKeys() {
   } catch {}
 }
 
-export async function signJWT(payload: JWTPayload, expiresIn = "15m"): Promise<string> {
+export async function signJWT<T extends object = JWTPayload>(
+  payload: T,
+  expiresIn = "15m",
+): Promise<string> {
   if (!privateKey) await initKeys();
   return new jose.SignJWT(payload as unknown as jose.JWTPayload)
     .setProtectedHeader({ alg: "RS256" })
@@ -61,12 +84,12 @@ export async function signJWT(payload: JWTPayload, expiresIn = "15m"): Promise<s
     .sign(privateKey);
 }
 
-export async function verifyJWT(token: string): Promise<JWTPayload> {
+export async function verifyJWT<T = JWTPayload>(token: string): Promise<T> {
   if (!publicKey) await initKeys();
   const { payload } = await jose.jwtVerify(token, publicKey, {
     issuer: "aivo:identity-svc",
   });
-  return payload as unknown as JWTPayload;
+  return payload as unknown as T;
 }
 
 export function getPublicKey() {
@@ -100,6 +123,7 @@ export {
   canonicalizeRecoveryCode,
   looksLikeRecoveryCode,
   _resetMfaKeyCache,
+  assertMfaKeyConfigured,
   type RecoveryHasher,
   type RecoveryVerifier,
 } from "./mfa-crypto.js";

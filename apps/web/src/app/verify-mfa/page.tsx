@@ -268,8 +268,12 @@ function VerifyMfaContent() {
 
           <div className="mt-6 flex flex-col items-center gap-2 text-sm">
             {mode === "email" && (
-              <button onClick={handleResend} disabled={resending || resendCooldown > 0}
-                className="text-violet-600 font-semibold hover:text-violet-800 disabled:opacity-50">
+              <button
+                data-testid="resend-email-code"
+                onClick={handleResend}
+                disabled={resending || resendCooldown > 0}
+                className="text-violet-600 font-semibold hover:text-violet-800 disabled:opacity-50"
+              >
                 {resending ? t("resending") : resendCooldown > 0 ? `${t("resend_code")} (${resendCooldown}s)` : t("resend_code")}
               </button>
             )}

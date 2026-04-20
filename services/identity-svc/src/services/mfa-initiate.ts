@@ -7,7 +7,7 @@
  */
 import { eq } from "drizzle-orm";
 import { webauthnCredentials } from "@aivo/db";
-import { ADMIN_ENTERPRISE, signJWT } from "@aivo/security";
+import { ADMIN_ENTERPRISE, signJWT, type MfaChallengeJWT } from "@aivo/security";
 
 export type MfaMethod = "email" | "totp" | "webauthn";
 
@@ -17,10 +17,15 @@ export interface MfaChallenge {
 }
 
 async function signMfaToken(userId: string, email: string, method: MfaMethod): Promise<string> {
-  return signJWT(
-    { sub: userId, tenantId: "", role: "", email, purpose: "mfa", mfaMethod: method } as any,
-    "15m"
-  );
+  const claims: MfaChallengeJWT = {
+    sub: userId,
+    tenantId: "",
+    role: "",
+    email,
+    purpose: "mfa",
+    mfaMethod: method,
+  };
+  return signJWT<MfaChallengeJWT>(claims, "15m");
 }
 
 export async function pickMfaMethod(

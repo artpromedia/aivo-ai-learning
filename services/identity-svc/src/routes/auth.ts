@@ -6,6 +6,7 @@ import {
   encryptSecret, decryptSecret,
   hashOtpCode, timingSafeEqualHex,
   looksLikeRecoveryCode,
+  type MfaChallengeJWT,
 } from "@aivo/security";
 import { eq, and, sql, lt, isNull } from "drizzle-orm";
 import crypto from "crypto";
@@ -212,7 +213,15 @@ async function createAndSendMfaCode(db: any, userId: string, email: string, name
 }
 
 async function signMfaToken(userId: string, email: string, method: MfaMethod = "email"): Promise<string> {
-  return signJWT({ sub: userId, tenantId: "", role: "", email, purpose: "mfa", mfaMethod: method } as any, "15m");
+  const claims: MfaChallengeJWT = {
+    sub: userId,
+    tenantId: "",
+    role: "",
+    email,
+    purpose: "mfa",
+    mfaMethod: method,
+  };
+  return signJWT<MfaChallengeJWT>(claims, "15m");
 }
 
 /**
@@ -1064,7 +1073,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const db = (app as any).db;
 
     let payload: any;
-    try { payload = await verifyJWT(mfaToken); }
+    try { payload = await verifyJWT<MfaChallengeJWT>(mfaToken); }
     catch { return reply.status(401).send({ error: "MFA session expired. Please login again." }); }
     if (payload.purpose !== "mfa") return reply.status(401).send({ error: "Invalid MFA token" });
 
@@ -1198,7 +1207,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     let payload: any;
     try {
-      payload = await verifyJWT(mfaToken);
+      payload = await verifyJWT<MfaChallengeJWT>(mfaToken);
     } catch {
       return reply.status(401).send({ error: "MFA session expired. Please login again." });
     }
@@ -1302,7 +1311,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const db = (app as any).db;
 
     let payload: any;
-    try { payload = await verifyJWT(mfaToken); } catch { return reply.status(401).send({ error: "Session expired" }); }
+    try { payload = await verifyJWT<MfaChallengeJWT>(mfaToken); } catch { return reply.status(401).send({ error: "Session expired" }); }
     if (payload.purpose !== "mfa") return reply.status(401).send({ error: "Invalid token" });
 
     const [mfaRecord] = await db.select().from(mfaCodes)
@@ -1658,7 +1667,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const { mfaToken } = req.body as any;
     const db = (app as any).db;
     let payload: any;
-    try { payload = await verifyJWT(mfaToken); } catch { return reply.status(401).send({ error: "MFA session expired" }); }
+    try { payload = await verifyJWT<MfaChallengeJWT>(mfaToken); } catch { return reply.status(401).send({ error: "MFA session expired" }); }
     if (payload.purpose !== "mfa") return reply.status(401).send({ error: "Invalid MFA token" });
     if (await isMfaLocked(db, payload.sub)) return reply.status(429).send({ error: "Account temporarily locked" });
 
