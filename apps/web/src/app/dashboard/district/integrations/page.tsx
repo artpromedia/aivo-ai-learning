@@ -54,19 +54,19 @@ const CONNECTOR_ICONS: Record<string, string> = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  active: "bg-green-100 text-green-700",
-  authorized: "bg-blue-100 text-blue-700",
+  active: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  authorized: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
   syncing: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
-  pending: "bg-amber-100 text-amber-700",
-  error: "bg-red-100 text-red-700",
+  pending: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  error: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
   disconnected: "vi-surface-soft vi-text-muted",
 };
 
 const SYNC_STATUS_STYLES: Record<string, string> = {
-  completed: "bg-green-100 text-green-700",
-  running: "bg-blue-100 text-blue-700",
-  partial: "bg-amber-100 text-amber-700",
-  failed: "bg-red-100 text-red-700",
+  completed: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  running: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  partial: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  failed: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
   pending: "vi-surface-soft vi-text-muted",
 };
 
@@ -323,7 +323,7 @@ export default function IntegrationsPage() {
     <div className="p-8 space-y-6">
       {notification && (
         <div className={`p-4 rounded-xl text-sm font-medium flex items-center justify-between ${
-          notification.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"
+          notification.type === "success" ? "bg-green-50 text-[hsl(var(--visual-science))] border border-green-200" : "bg-red-50 text-[hsl(var(--visual-math))] border border-red-200"
         }`}>
           <span>{notification.message}</span>
           <button onClick={() => setNotification(null)} className="text-current opacity-50 hover:opacity-100">x</button>
@@ -374,7 +374,7 @@ export default function IntegrationsPage() {
                       {CONNECTOR_ICONS[connector.id] || "🔌"}
                     </div>
                     <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold uppercase ${
-                      isConnected ? "bg-green-100 text-green-700" :
+                      isConnected ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" :
                       isComingSoon ? "vi-surface-soft vi-text-muted" :
                       "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]"
                     }`}>
@@ -397,7 +397,7 @@ export default function IntegrationsPage() {
                     {isConnected ? (
                       <button
                         onClick={() => setActiveTab("connected")}
-                        className="flex-1 py-2 rounded-lg text-sm font-semibold bg-green-100 text-green-700 hover:bg-green-200 transition"
+                        className="flex-1 py-2 rounded-lg text-sm font-semibold bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))] hover:bg-green-200 transition"
                       >
                         View Connection
                       </button>
@@ -585,7 +585,7 @@ export default function IntegrationsPage() {
             {requestSubmitted ? (
               <>
                 <div className="text-center py-4">
-                  <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
+                  <div className="w-14 h-14 bg-[hsl(var(--visual-science)/0.14)] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
                   <h3 className="font-heading font-bold text-lg vi-text mb-2">Request Submitted</h3>
                   <p className="text-sm vi-text-muted">Thank you! We&apos;ll review your request and keep you updated on its status.</p>
                 </div>

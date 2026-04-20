@@ -100,8 +100,8 @@ export default function MarketingDashboard() {
                 <td className="px-5 py-3 font-medium vi-text">{c.name}</td>
                 <td className="px-5 py-3">
                   <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
-                    c.status === "active" ? "bg-green-100 text-green-700" :
-                    c.status === "scheduled" ? "bg-blue-100 text-blue-700" :
+                    c.status === "active" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" :
+                    c.status === "scheduled" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" :
                     "vi-surface-soft vi-text-muted"
                   }`}>{c.status}</span>
                 </td>

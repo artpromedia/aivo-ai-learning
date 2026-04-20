@@ -86,12 +86,12 @@ export default function AdminCompliancePage() {
   ];
 
   const ACTION_COLORS: Record<string, string> = {
-    USER_CREATED: "bg-green-100 text-green-700",
-    ROLE_ASSIGNED: "bg-blue-100 text-blue-700",
+    USER_CREATED: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+    ROLE_ASSIGNED: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
     TENANT_CREATED: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
     LOGIN: "vi-surface-soft vi-text",
-    IMPERSONATION: "bg-amber-100 text-amber-700",
-    CONFIG_UPDATED: "bg-cyan-100 text-cyan-700",
+    IMPERSONATION: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+    CONFIG_UPDATED: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
   };
 
   if (loading) {
@@ -113,7 +113,7 @@ export default function AdminCompliancePage() {
           <h1 className="text-2xl font-heading font-bold vi-text">{t("audit_logs")}</h1>
           <p className="text-sm vi-text-muted mt-1">COPPA, FERPA, GDPR compliance status, security controls, and audit trail.</p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-semibold">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))] text-sm font-semibold">
           <span className="w-2 h-2 rounded-full bg-green-500" />
           3/4 Frameworks Compliant
         </div>
@@ -128,7 +128,7 @@ export default function AdminCompliancePage() {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-heading font-bold vi-text">{fw.framework}</h3>
                 <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${
-                  fw.status === "compliant" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                  fw.status === "compliant" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]"
                 }`}>
                   {fw.status === "compliant" ? "Compliant" : "In Progress"}
                 </span>
@@ -204,7 +204,7 @@ export default function AdminCompliancePage() {
             </div>
             <div className="flex items-center justify-between">
               <p className="text-3xl font-bold vi-text">{dr.count}</p>
-              <span className="px-2.5 py-0.5 text-xs rounded-full bg-green-100 text-green-700 font-semibold">Clear</span>
+              <span className="px-2.5 py-0.5 text-xs rounded-full bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))] font-semibold">Clear</span>
             </div>
           </div>
         ))}
@@ -215,11 +215,11 @@ export default function AdminCompliancePage() {
         <p className="text-sm vi-text-muted mb-4">COPPA parental consent is required before any child data is collected. All consent records are tracked with timestamps and can be revoked.</p>
         <div className="grid grid-cols-3 gap-4">
           <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-center">
-            <p className="text-2xl font-bold text-green-700">{stats?.totalLearners ?? 0}</p>
+            <p className="text-2xl font-bold text-[hsl(var(--visual-science))]">{stats?.totalLearners ?? 0}</p>
             <p className="text-xs text-green-600 font-medium mt-1">Active Consents</p>
           </div>
           <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-center">
-            <p className="text-2xl font-bold text-blue-700">Enforced</p>
+            <p className="text-2xl font-bold text-[hsl(var(--visual-reading))]">Enforced</p>
             <p className="text-xs text-blue-600 font-medium mt-1">Data Minimization</p>
           </div>
           <div className="p-4 rounded-xl vi-surface-soft border border-[hsl(var(--visual-primary)/0.3)] text-center">

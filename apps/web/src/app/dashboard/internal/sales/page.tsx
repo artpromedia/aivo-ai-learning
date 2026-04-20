@@ -100,7 +100,7 @@ export default function SalesDashboard() {
                 <td className="px-5 py-3 font-medium vi-text">{deal.name}</td>
                 <td className="px-5 py-3">
                   <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
-                    deal.type === "B2B_DISTRICT" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"
+                    deal.type === "B2B_DISTRICT" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" : "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]"
                   }`}>
                     {deal.type === "B2B_DISTRICT" ? "District" : "School"}
                   </span>

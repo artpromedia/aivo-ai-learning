@@ -86,7 +86,7 @@ export default function DistrictSchoolsPage() {
                     {[s.city, s.state].filter(Boolean).join(", ") || "No location"}
                   </p>
                 </div>
-                <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${s.status === "active" ? "bg-emerald-100 text-emerald-700" : "vi-surface-soft vi-text-muted"}`}>
+                <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${s.status === "active" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : "vi-surface-soft vi-text-muted"}`}>
                   {s.status}
                 </span>
               </div>

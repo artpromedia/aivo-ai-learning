@@ -80,8 +80,8 @@ export default function ApiKeysPage() {
 
       {createdKey && (
         <div className="bg-green-50 border border-green-200 rounded-2xl p-5">
-          <p className="text-green-800 font-semibold mb-2">API Key Created Successfully</p>
-          <p className="text-sm text-green-700 mb-1">Copy this key now. You won&apos;t be able to see it again.</p>
+          <p className="text-[hsl(var(--visual-science))] font-semibold mb-2">API Key Created Successfully</p>
+          <p className="text-sm text-[hsl(var(--visual-science))] mb-1">Copy this key now. You won&apos;t be able to see it again.</p>
           <div className="bg-white border border-green-300 rounded-xl px-4 py-3 font-mono text-sm select-all break-all">{createdKey}</div>
           <button
             onClick={() => setCreatedKey(null)}
@@ -131,7 +131,7 @@ export default function ApiKeysPage() {
                   <td className="px-5 py-3">
                     <button
                       onClick={() => setKeys(keys.filter((key) => key.id !== k.id))}
-                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition"
+                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-[hsl(var(--visual-math)/0.12)] border border-red-200 transition"
                     >
                       Revoke
                     </button>

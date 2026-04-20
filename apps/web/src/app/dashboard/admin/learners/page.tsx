@@ -19,11 +19,11 @@ interface Cohort {
 }
 
 const LEVEL_CONFIG: Record<string, { label: string; color: string; bg: string; desc: string }> = {
-  STANDARD: { label: "Standard", color: "text-green-700", bg: "bg-green-100", desc: "General education curriculum" },
-  SUPPORTED: { label: "Supported", color: "text-blue-700", bg: "bg-blue-100", desc: "Modified with accommodations" },
-  LOW_VERBAL: { label: "Low Verbal", color: "text-amber-700", bg: "bg-amber-100", desc: "Visual/picture-based supports" },
-  NON_VERBAL: { label: "Non-Verbal", color: "text-orange-700", bg: "bg-orange-100", desc: "AAC & switch scanning" },
-  PRE_SYMBOLIC: { label: "Pre-Symbolic", color: "text-red-700", bg: "bg-red-100", desc: "Sensory-based engagement" },
+  STANDARD: { label: "Standard", color: "text-[hsl(var(--visual-science))]", bg: "bg-[hsl(var(--visual-science)/0.14)]", desc: "General education curriculum" },
+  SUPPORTED: { label: "Supported", color: "text-[hsl(var(--visual-reading))]", bg: "bg-[hsl(var(--visual-reading)/0.12)]", desc: "Modified with accommodations" },
+  LOW_VERBAL: { label: "Low Verbal", color: "text-[hsl(var(--visual-sel))]", bg: "bg-[hsl(var(--visual-sel)/0.18)]", desc: "Visual/picture-based supports" },
+  NON_VERBAL: { label: "Non-Verbal", color: "text-[hsl(var(--visual-sel))]", bg: "bg-[hsl(var(--visual-sel)/0.18)]", desc: "AAC & switch scanning" },
+  PRE_SYMBOLIC: { label: "Pre-Symbolic", color: "text-[hsl(var(--visual-math))]", bg: "bg-[hsl(var(--visual-math)/0.12)]", desc: "Sensory-based engagement" },
 };
 
 export default function AdminLearnersPage() {

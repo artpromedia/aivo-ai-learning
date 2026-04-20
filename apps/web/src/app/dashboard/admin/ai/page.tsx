@@ -13,18 +13,18 @@ interface BrainOverview {
 }
 
 const STATUS_COLORS: Record<string, { label: string; color: string }> = {
-  active: { label: "Active", color: "bg-green-100 text-green-700" },
-  pending_parent_review: { label: "Pending Review", color: "bg-amber-100 text-amber-700" },
+  active: { label: "Active", color: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" },
+  pending_parent_review: { label: "Pending Review", color: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" },
   archived: { label: "Archived", color: "vi-surface-soft vi-text-muted" },
-  declined: { label: "Declined", color: "bg-red-100 text-red-700" },
+  declined: { label: "Declined", color: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" },
 };
 
 const LEVEL_COLORS: Record<string, string> = {
-  STANDARD: "bg-green-100 text-green-700",
-  SUPPORTED: "bg-blue-100 text-blue-700",
-  LOW_VERBAL: "bg-amber-100 text-amber-700",
-  NON_VERBAL: "bg-orange-100 text-orange-700",
-  PRE_SYMBOLIC: "bg-red-100 text-red-700",
+  STANDARD: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  SUPPORTED: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  LOW_VERBAL: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  NON_VERBAL: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  PRE_SYMBOLIC: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
 };
 
 const AI_PROVIDERS = [
@@ -105,7 +105,7 @@ export default function AdminAIPage() {
                   </div>
                 </div>
                 <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${
-                  p.status === "primary" ? "bg-green-100 text-green-700" : "vi-surface-soft vi-text-muted"
+                  p.status === "primary" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : "vi-surface-soft vi-text-muted"
                 }`}>
                   {p.status}
                 </span>
@@ -209,7 +209,7 @@ export default function AdminAIPage() {
                     <h3 className="font-heading font-bold text-lg" style={{ color: t.color }}>{t.name}</h3>
                     <span className="text-xl">{t.icon}</span>
                     <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
-                      t.tier === "core" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                      t.tier === "core" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" : "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]"
                     }`}>{t.tier}</span>
                   </div>
                   <p className="text-sm vi-text-muted font-semibold">{t.domain}</p>

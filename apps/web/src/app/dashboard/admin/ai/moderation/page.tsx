@@ -16,9 +16,9 @@ interface ModerationItem {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
+  pending: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  approved: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  rejected: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
   escalated: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
 };
 
@@ -105,13 +105,13 @@ export default function ContentModerationPage() {
                     <>
                       <button
                         onClick={() => handleAction(item.id, "approved")}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 transition"
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-50 text-[hsl(var(--visual-science))] hover:bg-[hsl(var(--visual-science)/0.14)] border border-green-200 transition"
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => handleAction(item.id, "rejected")}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition"
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-[hsl(var(--visual-math)/0.12)] border border-red-200 transition"
                       >
                         Reject
                       </button>

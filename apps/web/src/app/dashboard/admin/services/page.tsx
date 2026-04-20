@@ -114,8 +114,8 @@ export default function AdminServicesPage() {
           <p className="text-sm vi-text-muted mt-1">Real-time health monitoring across all {ALL_SERVICES.length} microservices.</p>
         </div>
         <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
-          overallStatus === "operational" ? "bg-green-100 text-green-700" :
-          overallStatus === "degraded" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+          overallStatus === "operational" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" :
+          overallStatus === "degraded" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" : "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]"
         }`}>
           <span className={`w-2 h-2 rounded-full ${
             overallStatus === "operational" ? "bg-green-500" : overallStatus === "degraded" ? "bg-amber-500 animate-pulse" : "bg-red-500 animate-pulse"
@@ -130,15 +130,15 @@ export default function AdminServicesPage() {
           <p className="text-xs vi-text-muted font-semibold mt-1">Total Services</p>
         </div>
         <div className="bg-green-50 rounded-xl p-4 border border-green-200 text-center">
-          <p className="text-3xl font-bold text-green-700">{healthyCount}</p>
+          <p className="text-3xl font-bold text-[hsl(var(--visual-science))]">{healthyCount}</p>
           <p className="text-xs text-green-600 font-semibold mt-1">Operational</p>
         </div>
         <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 text-center">
-          <p className="text-3xl font-bold text-amber-700">{degradedCount}</p>
+          <p className="text-3xl font-bold text-[hsl(var(--visual-sel))]">{degradedCount}</p>
           <p className="text-xs text-amber-600 font-semibold mt-1">Degraded</p>
         </div>
         <div className="bg-red-50 rounded-xl p-4 border border-red-200 text-center">
-          <p className="text-3xl font-bold text-red-700">{downCount}</p>
+          <p className="text-3xl font-bold text-[hsl(var(--visual-math))]">{downCount}</p>
           <p className="text-xs text-red-600 font-semibold mt-1">Down</p>
         </div>
       </div>
@@ -193,7 +193,7 @@ export default function AdminServicesPage() {
                       </span>
                     )}
                     <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${
-                      status === "operational" ? "bg-green-100 text-green-700" : status === "degraded" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+                      status === "operational" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : status === "degraded" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" : "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]"
                     }`}>
                       {status}
                     </span>
@@ -210,7 +210,7 @@ export default function AdminServicesPage() {
           <h2 className="font-heading font-bold text-lg vi-text">Incidents</h2>
           {user?.role === "PLATFORM_ADMIN" && (
             <button onClick={() => setShowIncidentForm(!showIncidentForm)}
-              className="px-4 py-2 rounded-lg bg-red-50 text-red-700 text-sm font-semibold hover:bg-red-100 transition">
+              className="px-4 py-2 rounded-lg bg-red-50 text-[hsl(var(--visual-math))] text-sm font-semibold hover:bg-[hsl(var(--visual-math)/0.12)] transition">
               + Report Incident
             </button>
           )}
@@ -243,10 +243,10 @@ export default function AdminServicesPage() {
               </div>
               <div className="flex items-center gap-2">
                 <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
-                  inc.severity === "critical" ? "bg-red-100 text-red-700" : inc.severity === "major" ? "bg-orange-100 text-orange-700" : "bg-amber-100 text-amber-700"
+                  inc.severity === "critical" ? "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" : inc.severity === "major" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" : "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]"
                 }`}>{inc.severity}</span>
                 <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
-                  inc.status === "resolved" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                  inc.status === "resolved" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]"
                 }`}>{inc.status}</span>
               </div>
             </div>

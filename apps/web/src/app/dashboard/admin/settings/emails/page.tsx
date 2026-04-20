@@ -68,7 +68,7 @@ export default function EmailTemplatesPage() {
                   </div>
                 </td>
                 <td className="px-5 py-3">
-                  <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${tmpl.active ? "bg-green-100 text-green-700" : "vi-surface-soft vi-text-muted"}`}>
+                  <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${tmpl.active ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : "vi-surface-soft vi-text-muted"}`}>
                     {tmpl.active ? "Active" : "Inactive"}
                   </span>
                 </td>

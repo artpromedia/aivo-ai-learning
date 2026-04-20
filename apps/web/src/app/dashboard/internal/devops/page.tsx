@@ -73,8 +73,8 @@ export default function DevOpsDashboard() {
           <p className="text-sm vi-text-muted mt-1">Infrastructure monitoring, deployments, and system performance.</p>
         </div>
         <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
-          overallStatus === "operational" ? "bg-green-100 text-green-700" :
-          overallStatus === "degraded" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+          overallStatus === "operational" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" :
+          overallStatus === "degraded" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" : "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]"
         }`}>
           <span className={`w-2 h-2 rounded-full ${
             overallStatus === "operational" ? "bg-green-500" : overallStatus === "degraded" ? "bg-amber-500 animate-pulse" : "bg-red-500 animate-pulse"
@@ -86,7 +86,7 @@ export default function DevOpsDashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-green-50 rounded-xl p-5 border border-green-200 text-center">
-          <p className="text-3xl font-bold text-green-700">{healthyCount}/{totalServices}</p>
+          <p className="text-3xl font-bold text-[hsl(var(--visual-science))]">{healthyCount}/{totalServices}</p>
           <p className="text-xs text-green-600 font-semibold mt-1">Services Healthy</p>
         </div>
         <div className="bg-white rounded-xl p-5 border vi-border text-center">
@@ -122,7 +122,7 @@ export default function DevOpsDashboard() {
                     svc.latencyMs < 200 ? "text-green-600" : svc.latencyMs < 500 ? "text-amber-600" : "text-red-600"
                   }`}>{svc.latencyMs}ms</span>
                   <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
-                    svc.status === "healthy" ? "bg-green-100 text-green-700" : svc.status === "degraded" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+                    svc.status === "healthy" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : svc.status === "degraded" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" : "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]"
                   }`}>{svc.status}</span>
                 </div>
               </div>
@@ -143,7 +143,7 @@ export default function DevOpsDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs vi-text-muted">{infra.uptime}</span>
-                  <span className="px-2 py-0.5 text-xs rounded-full font-semibold bg-green-100 text-green-700">{infra.status}</span>
+                  <span className="px-2 py-0.5 text-xs rounded-full font-semibold bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]">{infra.status}</span>
                 </div>
               </div>
             ))}
@@ -156,7 +156,7 @@ export default function DevOpsDashboard() {
           <div key={pm.metric} className={`rounded-xl p-3 border text-center ${
             pm.status === "good" ? "bg-green-50 border-green-200" : pm.status === "warning" ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200"
           }`}>
-            <p className={`text-lg font-bold ${pm.status === "good" ? "text-green-700" : pm.status === "warning" ? "text-amber-700" : "text-red-700"}`}>
+            <p className={`text-lg font-bold ${pm.status === "good" ? "text-[hsl(var(--visual-science))]" : pm.status === "warning" ? "text-[hsl(var(--visual-sel))]" : "text-[hsl(var(--visual-math))]"}`}>
               {pm.value}
             </p>
             <p className="text-[10px] vi-text-muted font-semibold mt-0.5">{pm.metric}</p>
@@ -178,7 +178,7 @@ export default function DevOpsDashboard() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs vi-text-muted">{d.version}</span>
-                  <span className="px-2 py-0.5 text-xs rounded-full font-semibold bg-green-100 text-green-700">{d.status}</span>
+                  <span className="px-2 py-0.5 text-xs rounded-full font-semibold bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]">{d.status}</span>
                 </div>
               </div>
             ))}
@@ -202,7 +202,7 @@ export default function DevOpsDashboard() {
                   </div>
                 </div>
                 {!a.acked && (
-                  <span className="px-2 py-0.5 text-[10px] rounded-full font-bold bg-red-100 text-red-700">NEW</span>
+                  <span className="px-2 py-0.5 text-[10px] rounded-full font-bold bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]">NEW</span>
                 )}
               </div>
             ))}

@@ -94,7 +94,7 @@ export default function DistrictClassroomsPage() {
                 <tr key={c.id} className="border-b vi-border hover:vi-surface-soft transition">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-sm">🏠</div>
+                      <div className="w-8 h-8 bg-[hsl(var(--visual-reading)/0.12)] rounded-lg flex items-center justify-center text-sm">🏠</div>
                       <span className="font-medium vi-text">{c.name}</span>
                     </div>
                   </td>

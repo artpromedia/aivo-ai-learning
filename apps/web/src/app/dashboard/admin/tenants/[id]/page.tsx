@@ -38,16 +38,16 @@ interface TenantDetail {
 
 const TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
   B2C_FAMILY: { label: "Family", icon: "👨‍👩‍👧", color: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" },
-  B2B_SCHOOL: { label: "School", icon: "🏫", color: "bg-blue-100 text-blue-700" },
-  B2B_DISTRICT: { label: "District", icon: "🏛️", color: "bg-orange-100 text-orange-700" },
+  B2B_SCHOOL: { label: "School", icon: "🏫", color: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" },
+  B2B_DISTRICT: { label: "District", icon: "🏛️", color: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" },
 };
 
 const LEVEL_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  STANDARD: { label: "Standard", color: "text-green-700", bg: "bg-green-100" },
-  SUPPORTED: { label: "Supported", color: "text-blue-700", bg: "bg-blue-100" },
-  LOW_VERBAL: { label: "Low Verbal", color: "text-amber-700", bg: "bg-amber-100" },
-  NON_VERBAL: { label: "Non-Verbal", color: "text-orange-700", bg: "bg-orange-100" },
-  PRE_SYMBOLIC: { label: "Pre-Symbolic", color: "text-red-700", bg: "bg-red-100" },
+  STANDARD: { label: "Standard", color: "text-[hsl(var(--visual-science))]", bg: "bg-[hsl(var(--visual-science)/0.14)]" },
+  SUPPORTED: { label: "Supported", color: "text-[hsl(var(--visual-reading))]", bg: "bg-[hsl(var(--visual-reading)/0.12)]" },
+  LOW_VERBAL: { label: "Low Verbal", color: "text-[hsl(var(--visual-sel))]", bg: "bg-[hsl(var(--visual-sel)/0.18)]" },
+  NON_VERBAL: { label: "Non-Verbal", color: "text-[hsl(var(--visual-sel))]", bg: "bg-[hsl(var(--visual-sel)/0.18)]" },
+  PRE_SYMBOLIC: { label: "Pre-Symbolic", color: "text-[hsl(var(--visual-math))]", bg: "bg-[hsl(var(--visual-math)/0.12)]" },
 };
 
 export default function TenantDetailPage() {
@@ -183,9 +183,9 @@ export default function TenantDetailPage() {
               <h1 className="text-2xl font-heading font-bold vi-text">{tenant.name}</h1>
               <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${typeConfig.color}`}>{typeConfig.label}</span>
               {isSuspended ? (
-                <span className="px-2.5 py-0.5 text-xs rounded-full font-semibold bg-red-100 text-red-700">Suspended</span>
+                <span className="px-2.5 py-0.5 text-xs rounded-full font-semibold bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]">Suspended</span>
               ) : (
-                <span className="px-2.5 py-0.5 text-xs rounded-full font-semibold bg-green-100 text-green-700">Active</span>
+                <span className="px-2.5 py-0.5 text-xs rounded-full font-semibold bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]">Active</span>
               )}
             </div>
             <p className="text-sm vi-text-muted mt-0.5">Created {new Date(tenant.createdAt).toLocaleDateString()}</p>
@@ -258,7 +258,7 @@ export default function TenantDetailPage() {
               </div>
               <div>
                 <span className="text-red-500">Reason</span>
-                <p className="mt-1 text-red-800 font-medium">{tenant.suspensionReason || "No reason provided"}</p>
+                <p className="mt-1 text-[hsl(var(--visual-math))] font-medium">{tenant.suspensionReason || "No reason provided"}</p>
               </div>
             </div>
           </div>

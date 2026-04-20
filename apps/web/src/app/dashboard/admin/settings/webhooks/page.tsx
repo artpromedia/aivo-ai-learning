@@ -97,12 +97,12 @@ export default function WebhooksPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${wh.active ? "bg-green-100 text-green-700" : "vi-surface-soft vi-text-muted"}`}>
+                  <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${wh.active ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : "vi-surface-soft vi-text-muted"}`}>
                     {wh.active ? "Active" : "Inactive"}
                   </span>
                   <button
                     onClick={() => setWebhooks(webhooks.filter((w) => w.id !== wh.id))}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition"
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-[hsl(var(--visual-math)/0.12)] border border-red-200 transition"
                   >
                     Delete
                   </button>

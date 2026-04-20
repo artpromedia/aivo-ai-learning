@@ -15,8 +15,8 @@ interface Tenant {
 
 const TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
   B2C_FAMILY: { label: "Family", icon: "👨‍👩‍👧", color: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" },
-  B2B_SCHOOL: { label: "School", icon: "🏫", color: "bg-blue-100 text-blue-700" },
-  B2B_DISTRICT: { label: "District", icon: "🏛️", color: "bg-orange-100 text-orange-700" },
+  B2B_SCHOOL: { label: "School", icon: "🏫", color: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" },
+  B2B_DISTRICT: { label: "District", icon: "🏛️", color: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" },
 };
 
 export default function AdminTenantsPage() {
@@ -132,8 +132,8 @@ export default function AdminTenantsPage() {
 
           {createResult && (
             <div className="mb-5 p-4 rounded-xl bg-green-50 border border-green-200">
-              <h4 className="font-semibold text-green-800 mb-2">District created successfully</h4>
-              <div className="text-sm text-green-700 space-y-1">
+              <h4 className="font-semibold text-[hsl(var(--visual-science))] mb-2">District created successfully</h4>
+              <div className="text-sm text-[hsl(var(--visual-science))] space-y-1">
                 <p><span className="font-medium">District:</span> {createResult.district?.name}</p>
                 <p><span className="font-medium">Admin:</span> {createResult.admin?.name} ({createResult.admin?.email})</p>
                 <div className="mt-3 p-3 bg-white rounded-lg border border-green-300">

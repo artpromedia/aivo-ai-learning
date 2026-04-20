@@ -35,15 +35,15 @@ function resourceLink(type: string, id: string): string | null {
 }
 
 const ACTION_COLORS: Record<string, string> = {
-  USER_CREATED: "bg-green-100 text-green-700",
-  USER_UPDATED: "bg-blue-100 text-blue-700",
-  USER_DELETED: "bg-red-100 text-red-700",
-  ROLE_ASSIGNED: "bg-blue-100 text-blue-700",
+  USER_CREATED: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  USER_UPDATED: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  USER_DELETED: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
+  ROLE_ASSIGNED: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
   TENANT_CREATED: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
   LOGIN: "vi-surface-soft vi-text",
   LOGOUT: "vi-surface-soft vi-text",
-  IMPERSONATION: "bg-amber-100 text-amber-700",
-  CONFIG_UPDATED: "bg-cyan-100 text-cyan-700",
+  IMPERSONATION: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  CONFIG_UPDATED: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
 };
 
 export default function ActivityFeedPage() {
@@ -101,7 +101,7 @@ export default function ActivityFeedPage() {
                         {resourceLink(entry.resourceType, entry.resourceId) ? (
                           <Link
                             href={resourceLink(entry.resourceType, entry.resourceId)!}
-                            className="text-xs text-[hsl(var(--visual-primary))] hover:text-purple-800 transition"
+                            className="text-xs text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))] transition"
                           >
                             {entry.resourceType} #{entry.resourceId}
                           </Link>

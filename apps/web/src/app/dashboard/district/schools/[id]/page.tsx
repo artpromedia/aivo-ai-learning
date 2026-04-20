@@ -64,7 +64,7 @@ export default function SchoolDetailPage() {
             <h1 className="text-2xl font-heading font-bold vi-text">{s.name}</h1>
             <p className="text-sm vi-text-muted">{[s.city, s.state].filter(Boolean).join(", ") || "No location set"}</p>
           </div>
-          <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${s.status === "active" ? "bg-emerald-100 text-emerald-700" : "vi-surface-soft vi-text-muted"}`}>
+          <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${s.status === "active" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : "vi-surface-soft vi-text-muted"}`}>
             {s.status}
           </span>
         </div>
@@ -103,11 +103,11 @@ export default function SchoolDetailPage() {
                 <p className="text-xs vi-text-muted mt-1">Learners</p>
               </div>
               <div className="bg-blue-50 rounded-xl p-4">
-                <p className="text-2xl font-bold text-blue-700">{data.staff.length}</p>
+                <p className="text-2xl font-bold text-[hsl(var(--visual-reading))]">{data.staff.length}</p>
                 <p className="text-xs vi-text-muted mt-1">Staff</p>
               </div>
               <div className="bg-emerald-50 rounded-xl p-4">
-                <p className="text-2xl font-bold text-emerald-700">{data.classrooms.length}</p>
+                <p className="text-2xl font-bold text-[hsl(var(--visual-science))]">{data.classrooms.length}</p>
                 <p className="text-xs vi-text-muted mt-1">Classrooms</p>
               </div>
             </div>
@@ -168,7 +168,7 @@ export default function SchoolDetailPage() {
                   </td>
                   <td className="px-5 py-3 vi-text-muted">{u.email || "—"}</td>
                   <td className="px-5 py-3">
-                    <span className="px-2.5 py-0.5 text-xs rounded-full font-semibold bg-green-100 text-green-700">
+                    <span className="px-2.5 py-0.5 text-xs rounded-full font-semibold bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]">
                       {u.role?.replace(/_/g, " ")}
                     </span>
                   </td>

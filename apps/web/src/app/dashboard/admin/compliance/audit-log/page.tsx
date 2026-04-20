@@ -100,7 +100,7 @@ export default function AuditLogPage() {
       <div className="flex items-center gap-3">
         <Link
           href="/dashboard/admin/compliance"
-          className="text-sm text-[hsl(var(--visual-primary))] hover:text-purple-800 transition"
+          className="text-sm text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))] transition"
         >
           ← Back to Compliance
         </Link>
@@ -223,7 +223,7 @@ export default function AuditLogPage() {
                         {entry.details ? (
                           <button
                             onClick={() => setExpandedRow(expandedRow === entry.id ? null : entry.id)}
-                            className="text-xs text-[hsl(var(--visual-primary))] hover:text-purple-800 font-medium transition"
+                            className="text-xs text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))] font-medium transition"
                           >
                             {expandedRow === entry.id ? "Hide" : "View"}
                           </button>

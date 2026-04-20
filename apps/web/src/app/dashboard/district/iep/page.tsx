@@ -48,10 +48,10 @@ export default function DistrictIepPage() {
 
   const getReviewStatus = (reviewDate: string) => {
     if (!reviewDate) return { label: "No date", cls: "vi-surface-soft vi-text-muted" };
-    if (reviewDate < today) return { label: "Overdue", cls: "bg-red-100 text-red-700" };
+    if (reviewDate < today) return { label: "Overdue", cls: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" };
     const thirtyDays = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
-    if (reviewDate <= thirtyDays) return { label: "Due soon", cls: "bg-amber-100 text-amber-700" };
-    return { label: "On track", cls: "bg-emerald-100 text-emerald-700" };
+    if (reviewDate <= thirtyDays) return { label: "Due soon", cls: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" };
+    return { label: "On track", cls: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" };
   };
 
   return (
@@ -84,14 +84,14 @@ export default function DistrictIepPage() {
                   <span className="text-lg">⏰</span>
                   <span className="text-xs text-amber-600 font-medium uppercase">Due for Review (30d)</span>
                 </div>
-                <p className="text-3xl font-bold text-amber-700">{summary.dueForReview}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--visual-sel))]">{summary.dueForReview}</p>
               </div>
               <div className="bg-white rounded-2xl border border-red-200 shadow-sm p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-lg">🚨</span>
                   <span className="text-xs text-red-600 font-medium uppercase">Overdue</span>
                 </div>
-                <p className="text-3xl font-bold text-red-700">{summary.overdue}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--visual-math))]">{summary.overdue}</p>
               </div>
             </div>
           )}

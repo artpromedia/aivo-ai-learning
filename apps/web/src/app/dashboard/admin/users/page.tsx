@@ -25,18 +25,18 @@ interface Tenant {
 
 const ROLE_COLORS: Record<string, string> = {
   PARENT: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
-  LEARNER: "bg-cyan-100 text-cyan-700",
-  TEACHER: "bg-green-100 text-green-700",
-  THERAPIST: "bg-amber-100 text-amber-700",
-  CAREGIVER: "bg-blue-100 text-blue-700",
-  PLATFORM_ADMIN: "bg-red-100 text-red-700",
-  DISTRICT_ADMIN: "bg-orange-100 text-orange-700",
-  SALES: "bg-emerald-100 text-emerald-700",
-  MARKETING: "bg-pink-100 text-pink-700",
-  CUSTOMER_CARE: "bg-sky-100 text-sky-700",
-  SUPPORT: "bg-amber-100 text-amber-700",
+  LEARNER: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  TEACHER: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  THERAPIST: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  CAREGIVER: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  PLATFORM_ADMIN: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
+  DISTRICT_ADMIN: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  SALES: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  MARKETING: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
+  CUSTOMER_CARE: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  SUPPORT: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
   FINANCE: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
-  DEVOPS: "bg-cyan-100 text-cyan-700",
+  DEVOPS: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
 };
 
 const ROLES = ["ALL", "PARENT", "LEARNER", "TEACHER", "CAREGIVER", "THERAPIST", "PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
@@ -156,13 +156,13 @@ function CreateUserModal({
         {result ? (
           <div className="p-6 space-y-4">
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-2">
-              <p className="text-green-800 font-semibold">User created successfully!</p>
+              <p className="text-[hsl(var(--visual-science))] font-semibold">User created successfully!</p>
               <div className="text-sm space-y-1">
-                <p className="text-green-700">
+                <p className="text-[hsl(var(--visual-science))]">
                   Email: <span className="font-mono font-semibold">{result.email}</span>
                 </p>
-                <p className="text-green-700">
-                  Temporary Password: <span className="font-mono font-semibold bg-green-100 px-2 py-0.5 rounded select-all">{result.temporaryPassword}</span>
+                <p className="text-[hsl(var(--visual-science))]">
+                  Temporary Password: <span className="font-mono font-semibold bg-[hsl(var(--visual-science)/0.14)] px-2 py-0.5 rounded select-all">{result.temporaryPassword}</span>
                 </p>
               </div>
               <p className="text-xs text-green-600 mt-2">
@@ -179,7 +179,7 @@ function CreateUserModal({
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+              <div className="bg-red-50 border border-red-200 text-[hsl(var(--visual-math))] px-4 py-3 rounded-xl text-sm">
                 {error}
               </div>
             )}
@@ -348,7 +348,7 @@ export default function AdminUsersPage() {
   return (
     <div className="p-8 space-y-6">
       {impersonateError && (
-        <div className="fixed top-4 right-4 z-[9999] bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl shadow-lg text-sm font-medium">
+        <div className="fixed top-4 right-4 z-[9999] bg-red-50 border border-red-200 text-[hsl(var(--visual-math))] px-4 py-3 rounded-xl shadow-lg text-sm font-medium">
           {impersonateError}
         </div>
       )}
@@ -441,7 +441,7 @@ export default function AdminUsersPage() {
                         {u.name?.charAt(0) || "?"}
                       </div>
                       <span className="font-medium vi-text group-hover:text-[hsl(var(--visual-primary))] transition">{u.name}</span>
-                      {u.deactivatedAt && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">Deactivated</span>}
+                      {u.deactivatedAt && <span className="text-xs bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))] px-1.5 py-0.5 rounded-full">Deactivated</span>}
                     </Link>
                   </td>
                   <td className="px-5 py-3 vi-text-muted">{u.email || "—"}</td>
@@ -456,7 +456,7 @@ export default function AdminUsersPage() {
                       <button
                         onClick={() => handleImpersonate(u.id, u.role)}
                         disabled={impersonating === u.id}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition disabled:opacity-50"
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 text-[hsl(var(--visual-sel))] hover:bg-[hsl(var(--visual-sel)/0.18)] border border-amber-200 transition disabled:opacity-50"
                       >
                         {impersonating === u.id ? "Switching..." : "Login as"}
                       </button>

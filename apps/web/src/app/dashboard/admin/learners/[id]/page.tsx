@@ -37,11 +37,11 @@ interface LearnerDetail {
 }
 
 const LEVEL_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  STANDARD: { label: "Standard", color: "text-green-700", bg: "bg-green-100" },
-  SUPPORTED: { label: "Supported", color: "text-blue-700", bg: "bg-blue-100" },
-  LOW_VERBAL: { label: "Low Verbal", color: "text-amber-700", bg: "bg-amber-100" },
-  NON_VERBAL: { label: "Non-Verbal", color: "text-orange-700", bg: "bg-orange-100" },
-  PRE_SYMBOLIC: { label: "Pre-Symbolic", color: "text-red-700", bg: "bg-red-100" },
+  STANDARD: { label: "Standard", color: "text-[hsl(var(--visual-science))]", bg: "bg-[hsl(var(--visual-science)/0.14)]" },
+  SUPPORTED: { label: "Supported", color: "text-[hsl(var(--visual-reading))]", bg: "bg-[hsl(var(--visual-reading)/0.12)]" },
+  LOW_VERBAL: { label: "Low Verbal", color: "text-[hsl(var(--visual-sel))]", bg: "bg-[hsl(var(--visual-sel)/0.18)]" },
+  NON_VERBAL: { label: "Non-Verbal", color: "text-[hsl(var(--visual-sel))]", bg: "bg-[hsl(var(--visual-sel)/0.18)]" },
+  PRE_SYMBOLIC: { label: "Pre-Symbolic", color: "text-[hsl(var(--visual-math))]", bg: "bg-[hsl(var(--visual-math)/0.12)]" },
 };
 
 const SENSORY_LABELS: Record<string, string> = {

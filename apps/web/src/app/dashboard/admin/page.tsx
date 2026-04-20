@@ -27,18 +27,18 @@ interface StatusOverview {
 
 const ROLE_COLORS: Record<string, string> = {
   PARENT: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
-  LEARNER: "bg-cyan-100 text-cyan-700",
-  TEACHER: "bg-green-100 text-green-700",
-  THERAPIST: "bg-amber-100 text-amber-700",
-  CAREGIVER: "bg-blue-100 text-blue-700",
-  PLATFORM_ADMIN: "bg-red-100 text-red-700",
-  DISTRICT_ADMIN: "bg-orange-100 text-orange-700",
-  SALES: "bg-emerald-100 text-emerald-700",
-  MARKETING: "bg-pink-100 text-pink-700",
-  CUSTOMER_CARE: "bg-sky-100 text-sky-700",
-  SUPPORT: "bg-teal-100 text-teal-700",
+  LEARNER: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  TEACHER: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  THERAPIST: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  CAREGIVER: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  PLATFORM_ADMIN: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
+  DISTRICT_ADMIN: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  SALES: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  MARKETING: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
+  CUSTOMER_CARE: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  SUPPORT: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
   FINANCE: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
-  DEVOPS: "bg-indigo-100 text-indigo-700",
+  DEVOPS: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
 };
 
 export default function AdminOverview() {
@@ -97,9 +97,9 @@ export default function AdminOverview() {
         </div>
         <div className="flex items-center gap-3">
           <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
-            platformStatus === "operational" ? "bg-green-100 text-green-700" :
-            platformStatus === "degraded" ? "bg-amber-100 text-amber-700" :
-            "bg-red-100 text-red-700"
+            platformStatus === "operational" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" :
+            platformStatus === "degraded" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" :
+            "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]"
           }`}>
             <span className={`w-2 h-2 rounded-full ${
               platformStatus === "operational" ? "bg-green-500" :
@@ -189,7 +189,7 @@ export default function AdminOverview() {
                 <div className="flex items-center gap-3">
                   {svc.latencyMs > 0 && <span className="text-xs vi-text-muted">{svc.latencyMs}ms</span>}
                   <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                    svc.status === "healthy" ? "bg-green-100 text-green-700" : svc.status === "degraded" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+                    svc.status === "healthy" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : svc.status === "degraded" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" : "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]"
                   }`}>
                     {svc.status}
                   </span>

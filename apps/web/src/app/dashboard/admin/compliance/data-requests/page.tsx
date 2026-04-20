@@ -14,10 +14,10 @@ interface DataRequest {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  submitted: "bg-blue-100 text-blue-700",
-  in_progress: "bg-amber-100 text-amber-700",
-  completed: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
+  submitted: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  in_progress: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  completed: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  rejected: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
 };
 
 const SAMPLE_REQUESTS: DataRequest[] = [

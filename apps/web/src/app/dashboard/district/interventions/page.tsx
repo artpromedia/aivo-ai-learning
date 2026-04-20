@@ -17,9 +17,9 @@ interface Intervention {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  active: "bg-emerald-100 text-emerald-700",
-  completed: "bg-blue-100 text-blue-700",
-  paused: "bg-amber-100 text-amber-700",
+  active: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  completed: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  paused: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
   cancelled: "vi-surface-soft vi-text-muted",
 };
 
@@ -102,7 +102,7 @@ export default function DistrictInterventionsPage() {
                   </td>
                   <td className="px-5 py-3 vi-text-muted">{iv.type}</td>
                   <td className="px-5 py-3">
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-semibold">Tier {iv.tier}</span>
+                    <span className="px-2 py-0.5 text-xs rounded-full bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] font-semibold">Tier {iv.tier}</span>
                   </td>
                   <td className="px-5 py-3">
                     <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${STATUS_COLORS[iv.status] || "vi-surface-soft vi-text-muted"}`}>

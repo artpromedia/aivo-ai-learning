@@ -14,9 +14,9 @@ interface Invoice {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  paid: "bg-green-100 text-green-700",
-  pending: "bg-amber-100 text-amber-700",
-  overdue: "bg-red-100 text-red-700",
+  paid: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  pending: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  overdue: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
   void: "vi-surface-soft vi-text-muted",
 };
 

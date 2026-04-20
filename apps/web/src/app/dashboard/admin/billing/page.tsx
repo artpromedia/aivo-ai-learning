@@ -109,7 +109,7 @@ export default function AdminBillingPage() {
                 </div>
               </div>
               <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${
-                gw.status === "active" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
+                gw.status === "active" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]"
               }`}>
                 {gw.status}
               </span>

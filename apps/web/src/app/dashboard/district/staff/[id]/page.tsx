@@ -5,9 +5,9 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 
 const ROLE_COLORS: Record<string, string> = {
-  TEACHER: "bg-green-100 text-green-700",
-  THERAPIST: "bg-amber-100 text-amber-700",
-  CAREGIVER: "bg-blue-100 text-blue-700",
+  TEACHER: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  THERAPIST: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  CAREGIVER: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
   DISTRICT_ADMIN: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
 };
 
@@ -61,7 +61,7 @@ export default function StaffDetailPage() {
                 {u.role?.replace(/_/g, " ")}
               </span>
               {u.deactivatedAt && (
-                <span className="px-2.5 py-0.5 text-xs rounded-full font-semibold bg-red-100 text-red-700">Deactivated</span>
+                <span className="px-2.5 py-0.5 text-xs rounded-full font-semibold bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]">Deactivated</span>
               )}
             </div>
           </div>

@@ -162,7 +162,7 @@ export default function AdminSettingsPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold vi-text">{info.label}</p>
-                    {info.critical && <span className="px-1.5 py-0.5 text-[10px] rounded bg-red-100 text-red-700 font-bold">CRITICAL</span>}
+                    {info.critical && <span className="px-1.5 py-0.5 text-[10px] rounded bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))] font-bold">CRITICAL</span>}
                   </div>
                   <p className="text-xs vi-text-muted mt-0.5">{info.desc}</p>
                 </div>

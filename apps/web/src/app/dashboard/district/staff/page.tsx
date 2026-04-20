@@ -15,9 +15,9 @@ interface StaffMember {
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  TEACHER: "bg-green-100 text-green-700",
-  THERAPIST: "bg-amber-100 text-amber-700",
-  CAREGIVER: "bg-blue-100 text-blue-700",
+  TEACHER: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  THERAPIST: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  CAREGIVER: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
   DISTRICT_ADMIN: "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]",
 };
 
@@ -204,7 +204,7 @@ function InviteStaffModal({ accessToken, schools, onClose, onCreated }: {
         {result ? (
           <div className="space-y-3">
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-              <p className="text-sm font-semibold text-emerald-800">Staff member invited successfully!</p>
+              <p className="text-sm font-semibold text-[hsl(var(--visual-science))]">Staff member invited successfully!</p>
               <p className="text-xs text-emerald-600 mt-1">Share this temporary password with the new staff member:</p>
               <p className="mt-2 font-mono text-sm bg-white rounded-lg px-3 py-2 border border-emerald-200 select-all">{result.temporaryPassword}</p>
             </div>

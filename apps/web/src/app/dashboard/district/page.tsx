@@ -85,19 +85,19 @@ export default function DistrictDashboardPage() {
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Active Learners" value={stats?.totalLearners ?? 0} helper="Students enrolled" icon="🎓" accent="bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" />
-        <MetricCard label="Staff" value={stats?.totalStaff ?? 0} helper="Teachers, therapists, caregivers" icon="👩‍🏫" accent="bg-blue-100 text-blue-600" />
-        <MetricCard label="Schools" value={stats?.totalSchools ?? 0} helper="Active campuses" icon="🏫" accent="bg-emerald-100 text-emerald-600" />
-        <MetricCard label="Active IEPs" value={stats?.activeIeps ?? 0} helper="Individualized plans" icon="📋" accent="bg-amber-100 text-amber-600" />
+        <MetricCard label="Staff" value={stats?.totalStaff ?? 0} helper="Teachers, therapists, caregivers" icon="👩‍🏫" accent="bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" />
+        <MetricCard label="Schools" value={stats?.totalSchools ?? 0} helper="Active campuses" icon="🏫" accent="bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" />
+        <MetricCard label="Active IEPs" value={stats?.activeIeps ?? 0} helper="Individualized plans" icon="📋" accent="bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" />
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Parents" value={stats?.totalParents ?? 0} helper="Family accounts" icon="👨‍👩‍👧" accent="bg-pink-100 text-pink-600" />
+        <MetricCard label="Parents" value={stats?.totalParents ?? 0} helper="Family accounts" icon="👨‍👩‍👧" accent="bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" />
         <MetricCard label="Total Users" value={stats?.totalUsers ?? 0} helper="All platform users" icon="👥" accent="vi-surface-soft vi-text-muted" />
         {stats?.roleCounts?.filter(r => r.role === "TEACHER").map(r => (
-          <MetricCard key="teachers" label="Teachers" value={Number(r.count)} helper="Educators on platform" icon="📚" accent="bg-green-100 text-green-600" />
+          <MetricCard key="teachers" label="Teachers" value={Number(r.count)} helper="Educators on platform" icon="📚" accent="bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" />
         ))}
         {stats?.roleCounts?.filter(r => r.role === "THERAPIST").map(r => (
-          <MetricCard key="therapists" label="Therapists" value={Number(r.count)} helper="Specialists on platform" icon="🧠" accent="bg-teal-100 text-teal-600" />
+          <MetricCard key="therapists" label="Therapists" value={Number(r.count)} helper="Specialists on platform" icon="🧠" accent="bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" />
         ))}
       </section>
 

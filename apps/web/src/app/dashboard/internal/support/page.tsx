@@ -92,15 +92,15 @@ export default function SupportDashboard() {
                 <td className="px-5 py-3 font-medium vi-text max-w-xs truncate">{e.title}</td>
                 <td className="px-5 py-3">
                   <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
-                    e.severity === "P1" ? "bg-red-100 text-red-700" : e.severity === "P2" ? "bg-orange-100 text-orange-700" : "bg-amber-100 text-amber-700"
+                    e.severity === "P1" ? "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" : e.severity === "P2" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" : "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]"
                   }`}>{e.severity}</span>
                 </td>
                 <td className="px-5 py-3 vi-text-muted">{e.assignee}</td>
                 <td className="px-5 py-3">
                   <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
-                    e.status === "investigating" ? "bg-red-100 text-red-700" :
-                    e.status === "mitigating" ? "bg-amber-100 text-amber-700" :
-                    e.status === "monitoring" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+                    e.status === "investigating" ? "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" :
+                    e.status === "mitigating" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" :
+                    e.status === "monitoring" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" : "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]"
                   }`}>{e.status.replace(/_/g, " ")}</span>
                 </td>
                 <td className="px-5 py-3 vi-text-muted">{e.affected} users</td>

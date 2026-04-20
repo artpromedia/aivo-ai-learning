@@ -126,7 +126,7 @@ export default function FinanceDashboard() {
       <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
         {paymentHealth.map((ph) => (
           <div key={ph.metric} className="bg-white rounded-xl p-4 border vi-border text-center">
-            <p className={`text-xl font-bold ${ph.status === "good" ? "text-green-700" : ph.status === "warning" ? "text-amber-700" : "vi-text"}`}>
+            <p className={`text-xl font-bold ${ph.status === "good" ? "text-[hsl(var(--visual-science))]" : ph.status === "warning" ? "text-[hsl(var(--visual-sel))]" : "vi-text"}`}>
               {ph.value}
             </p>
             <p className="text-[10px] vi-text-muted font-semibold mt-1">{ph.metric}</p>
@@ -157,9 +157,9 @@ export default function FinanceDashboard() {
                 <td className="px-5 py-3 vi-text-muted">{tx.method}</td>
                 <td className="px-5 py-3">
                   <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
-                    tx.status === "completed" ? "bg-green-100 text-green-700" :
-                    tx.status === "pending" ? "bg-amber-100 text-amber-700" :
-                    tx.status === "failed" ? "bg-red-100 text-red-700" :
+                    tx.status === "completed" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" :
+                    tx.status === "pending" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" :
+                    tx.status === "failed" ? "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" :
                     "vi-surface-soft vi-text-muted"
                   }`}>{tx.status}</span>
                 </td>

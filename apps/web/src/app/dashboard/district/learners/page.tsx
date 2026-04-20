@@ -16,11 +16,11 @@ interface Learner {
 }
 
 const FL_COLORS: Record<string, string> = {
-  STANDARD: "bg-emerald-100 text-emerald-700",
-  SUPPORTED: "bg-blue-100 text-blue-700",
-  LOW_VERBAL: "bg-amber-100 text-amber-700",
-  NON_VERBAL: "bg-orange-100 text-orange-700",
-  PRE_SYMBOLIC: "bg-red-100 text-red-700",
+  STANDARD: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  SUPPORTED: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  LOW_VERBAL: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  NON_VERBAL: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  PRE_SYMBOLIC: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
 };
 
 const PAGE_SIZE = 15;

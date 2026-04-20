@@ -5,11 +5,11 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 
 const FL_COLORS: Record<string, string> = {
-  STANDARD: "bg-emerald-100 text-emerald-700",
-  SUPPORTED: "bg-blue-100 text-blue-700",
-  LOW_VERBAL: "bg-amber-100 text-amber-700",
-  NON_VERBAL: "bg-orange-100 text-orange-700",
-  PRE_SYMBOLIC: "bg-red-100 text-red-700",
+  STANDARD: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  SUPPORTED: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
+  LOW_VERBAL: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  NON_VERBAL: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
+  PRE_SYMBOLIC: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
 };
 
 export default function LearnerDetailPage() {
@@ -131,7 +131,7 @@ export default function LearnerDetailPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-semibold vi-text">IEP Record</h3>
                   <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${
-                    iep.status === "active" ? "bg-emerald-100 text-emerald-700" : "vi-surface-soft vi-text-muted"
+                    iep.status === "active" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : "vi-surface-soft vi-text-muted"
                   }`}>
                     {iep.status}
                   </span>
@@ -171,10 +171,10 @@ export default function LearnerDetailPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-semibold vi-text">{iv.type}</h3>
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-semibold">Tier {iv.tier}</span>
+                    <span className="px-2 py-0.5 text-xs rounded-full bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] font-semibold">Tier {iv.tier}</span>
                   </div>
                   <span className={`px-2.5 py-0.5 text-xs rounded-full font-semibold ${
-                    iv.status === "active" ? "bg-emerald-100 text-emerald-700" : iv.status === "completed" ? "bg-blue-100 text-blue-700" : "vi-surface-soft vi-text-muted"
+                    iv.status === "active" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" : iv.status === "completed" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" : "vi-surface-soft vi-text-muted"
                   }`}>
                     {iv.status}
                   </span>

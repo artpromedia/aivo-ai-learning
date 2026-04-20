@@ -114,12 +114,12 @@ export default function CustomerCareDashboard() {
                 <td className="px-5 py-3"><span className="px-2 py-0.5 text-xs rounded-full vi-surface-soft vi-text-muted font-semibold">{t.category}</span></td>
                 <td className="px-5 py-3">
                   <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
-                    t.priority === "high" ? "bg-red-100 text-red-700" : t.priority === "medium" ? "bg-amber-100 text-amber-700" : "vi-surface-soft vi-text-muted"
+                    t.priority === "high" ? "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]" : t.priority === "medium" ? "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]" : "vi-surface-soft vi-text-muted"
                   }`}>{t.priority}</span>
                 </td>
                 <td className="px-5 py-3">
                   <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${
-                    t.status === "open" ? "bg-blue-100 text-blue-700" : t.status === "in_progress" ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "bg-amber-100 text-amber-700"
+                    t.status === "open" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" : t.status === "in_progress" ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]" : "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]"
                   }`}>{t.status.replace(/_/g, " ")}</span>
                 </td>
                 <td className="px-5 py-3 vi-text-muted">{t.age}</td>
