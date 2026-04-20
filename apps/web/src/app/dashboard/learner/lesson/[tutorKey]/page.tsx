@@ -3,6 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
+import { Play, ChevronLeft, Wind, LogOut, Sparkles } from "lucide-react";
 import { TUTORS, type TutorKey } from "@aivo/brand";
 import { useTranslations } from "next-intl";
 import { StageLayout } from "@/components/stage/StageLayout";
@@ -339,48 +340,48 @@ export default function LessonPage() {
 
   if (!started) {
     return (
-      <div className={`min-h-screen flex flex-col items-center justify-center bg-gradient-to-br ${theme?.bgGradient || "from-slate-900 to-purple-900"} relative overflow-hidden`}>
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="absolute animate-stage-particle text-3xl opacity-20"
-              style={{ left: `${(i * 13 + 7) % 100}%`, top: `${(i * 17 + 11) % 100}%`, animationDelay: `${i * 0.6}s`, animationDuration: `${8 + (i % 4) * 2}s` }}>
-              {tutor.icon}
+      <div className="min-h-screen vi-bg flex flex-col items-center justify-center px-6 py-8">
+        <div className="w-full max-w-md">
+          <section
+            className="vi-card p-8 md:p-10 text-center relative overflow-hidden bg-gradient-to-br from-white"
+            style={{
+              background: `linear-gradient(135deg, white, ${tutor.color}10)`,
+              borderColor: `${tutor.color}26`,
+            }}
+          >
+            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-2xl" style={{ backgroundColor: `${tutor.color}30` }} aria-hidden />
+            <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-[hsl(43_100%_50%/0.18)] blur-2xl" aria-hidden />
+            <div className="relative">
+              <div className="relative w-32 h-32 md:w-36 md:h-36 rounded-3xl overflow-hidden border-4 shadow-xl mx-auto mb-6 animate-breathe" style={{ borderColor: tutor.color }}>
+                <Image src={tutor.avatar} alt={tutor.name} fill className="object-cover" priority />
+              </div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: tutor.color }}>{tutor.domain}</p>
+              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2 leading-tight">
+                Learn with {tutor.name} <Sparkles className="inline w-7 h-7 text-[hsl(43_100%_50%)]" aria-hidden />
+              </h1>
+              <p className="text-base text-slate-600 mb-1">{theme?.envName || tutor.domain}</p>
+              {learnerName && (
+                <p className="text-slate-500 mb-6">Ready for an adventure, {learnerName}!</p>
+              )}
+
+              <button
+                onClick={startStage}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-white font-extrabold text-xl shadow-xl hover:scale-105 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2 mt-3"
+                style={{ backgroundColor: tutor.color, boxShadow: `0 8px 24px ${tutor.color}60` }}
+              >
+                <Play className="w-5 h-5 fill-white" /> {tLearner("start_learning")}
+              </button>
+
+              <div>
+                <button
+                  onClick={() => router.push("/dashboard/learner")}
+                  className="mt-5 inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 rounded-full px-3 py-2"
+                >
+                  <ChevronLeft className="w-4 h-4" /> {tCommon("back")}
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-
-        <div className="relative z-10 flex flex-col items-center gap-8 animate-fade-in">
-          <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-4 shadow-2xl animate-breathe"
-            style={{ borderColor: tutor.color, boxShadow: `0 0 60px ${tutor.color}40` }}>
-            <Image src={tutor.avatar} alt={tutor.name} fill className="object-cover" priority />
-          </div>
-
-          <div className="text-center space-y-3">
-            <h1 className="text-4xl md:text-5xl font-heading font-bold text-white drop-shadow-lg">
-              Learn with {tutor.name}
-            </h1>
-            <p className="text-white/60 font-body text-lg">{theme?.envName || tutor.domain}</p>
-            {learnerName && (
-              <p className="text-white/80 font-body">
-                Ready for an adventure, {learnerName}!
-              </p>
-            )}
-          </div>
-
-          <button
-            onClick={startStage}
-            className="px-12 py-4 rounded-full text-white font-heading font-bold text-xl shadow-2xl transition-all hover:scale-110 active:scale-95 animate-pulse-gentle"
-            style={{ backgroundColor: tutor.color, boxShadow: `0 0 40px ${tutor.color}60` }}
-          >
-            {tLearner("start_learning")}
-          </button>
-
-          <button
-            onClick={() => router.push("/dashboard/learner")}
-            className="text-white/40 text-sm font-body hover:text-white/60 transition"
-          >
-            {tCommon("back")}
-          </button>
+          </section>
         </div>
       </div>
     );
@@ -404,31 +405,31 @@ export default function LessonPage() {
       />
 
       {showPause && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white/95 backdrop-blur rounded-3xl p-8 max-w-sm w-full mx-4 text-center space-y-6 animate-scale-in">
-            <div className="text-5xl">☁️</div>
-            <h2 className="text-2xl font-heading font-bold text-slate-900">{tLearner("taking_break")}</h2>
-            <p className="text-slate-500 font-body">{tLearner("take_breath")}</p>
-
-            <div className="flex items-center justify-center gap-4 py-4">
-              <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-3xl animate-breathe">
-                🌬️
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in px-4">
+          <div className="vi-card p-8 max-w-sm w-full text-center space-y-5 animate-scale-in border-2" style={{ borderColor: `${tutor.color}26` }}>
+            <div className="mx-auto inline-flex">
+              <div className="w-16 h-16 rounded-3xl flex items-center justify-center bg-[hsl(199_89%_48%/0.12)] text-[hsl(199_89%_48%)] animate-breathe">
+                <Wind className="w-8 h-8" strokeWidth={2.5} aria-hidden />
               </div>
+            </div>
+            <div>
+              <h2 className="text-2xl font-extrabold text-slate-900 mb-1">{tLearner("taking_break")}</h2>
+              <p className="text-slate-600">{tLearner("take_breath")}</p>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => setShowPause(false)}
-                className="flex-1 py-3 rounded-xl font-heading font-bold text-white transition hover:scale-105"
-                style={{ backgroundColor: tutor.color }}
+                className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-full font-extrabold text-white shadow-lg hover:scale-105 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
+                style={{ backgroundColor: tutor.color, boxShadow: `0 8px 24px ${tutor.color}40` }}
               >
-                {tLearner("resume")}
+                <Play className="w-4 h-4 fill-white" /> {tLearner("resume")}
               </button>
               <button
                 onClick={() => { cleanup(); router.push("/dashboard/learner"); }}
-                className="flex-1 py-3 rounded-xl font-heading font-bold text-slate-600 bg-slate-100 transition hover:bg-slate-200"
+                className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-full font-extrabold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
               >
-                {tLearner("log_out")}
+                <LogOut className="w-4 h-4" /> {tLearner("log_out")}
               </button>
             </div>
           </div>

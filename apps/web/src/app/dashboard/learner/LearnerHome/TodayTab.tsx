@@ -1,4 +1,5 @@
 "use client";
+import { Target } from "lucide-react";
 import { TUTORS } from "@aivo/brand";
 import { useFlVariant, LearnerCard } from "@aivo/learner-ui";
 import { SelCheckIn } from "./SelCheckIn";
@@ -8,7 +9,6 @@ interface SelExercise {
   steps: string[];
   durationMinutes: number;
 }
-
 interface DailyMission {
   id: string;
   title: string;
@@ -17,7 +17,6 @@ interface DailyMission {
   target: number;
   xpReward: number;
 }
-
 interface TodayTabProps {
   missions: DailyMission[];
   onSelCheckin: (emotion: string) => Promise<SelExercise | null>;
@@ -32,33 +31,35 @@ export function TodayTab({ missions, onSelCheckin }: TodayTabProps) {
 
       {!isLow && missions.length > 0 && (
         <LearnerCard>
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl" aria-hidden="true">🎯</span>
-            <h3 className="font-heading font-bold text-amber-800">Daily Missions</h3>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[hsl(43_100%_50%/0.16)] text-[hsl(43_100%_50%)]">
+              <Target className="w-5 h-5" strokeWidth={2.5} aria-hidden />
+            </div>
+            <h3 className="font-extrabold text-slate-900">Daily Missions</h3>
           </div>
           <div className="space-y-3">
             {missions.map((mission) => {
               const tutor = TUTORS[mission.tutorKey as keyof typeof TUTORS];
               const percent = mission.target > 0 ? (mission.progress / mission.target) * 100 : 0;
               return (
-                <div key={mission.id} className="flex items-center gap-3 bg-amber-50/50 rounded-xl px-4 py-3">
+                <div key={mission.id} className="flex items-center gap-3 bg-slate-50 rounded-2xl px-4 py-3 border border-slate-100">
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0"
-                    style={{ backgroundColor: tutor ? `${tutor.color}15` : "#f5f5f5" }}
-                    aria-hidden="true"
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0"
+                    style={{ backgroundColor: tutor ? `${tutor.color}1f` : "#f1f5f9", color: tutor?.color }}
+                    aria-hidden
                   >
                     {tutor?.icon || "🎯"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-700 truncate">{mission.title}</p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <div className="w-24 bg-amber-100 rounded-full h-2">
-                        <div className="h-2 rounded-full bg-amber-400 transition-all" style={{ width: `${percent}%` }} />
+                    <p className="text-sm font-extrabold text-slate-900 truncate">{mission.title}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex-1 max-w-[140px] bg-slate-200 rounded-full h-2 overflow-hidden">
+                        <div className="h-2 rounded-full bg-[hsl(43_100%_50%)] transition-all" style={{ width: `${percent}%` }} />
                       </div>
-                      <span className="text-xs text-amber-500 font-bold">{mission.progress}/{mission.target}</span>
+                      <span className="text-xs text-slate-500 font-bold">{mission.progress}/{mission.target}</span>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-amber-600 shrink-0">+{mission.xpReward} XP</span>
+                  <span className="text-xs font-extrabold text-[hsl(43_100%_50%)] shrink-0">+{mission.xpReward} XP</span>
                 </div>
               );
             })}

@@ -1,8 +1,10 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
-import { TUTORS, type TutorKey } from "@aivo/brand";
+import { Compass, Sparkles, Play, Map } from "lucide-react";
+import { TUTORS } from "@aivo/brand";
 import { TUTOR_INTROS } from "./types";
+import { IconWell } from "./_vi";
 
 interface PreAdventureProps {
   learnerName: string;
@@ -11,134 +13,105 @@ interface PreAdventureProps {
   lightMode?: boolean;
 }
 
-export default function PreAdventure({ learnerName, onStart, onShowMap, lightMode = false }: PreAdventureProps) {
+export default function PreAdventure({ learnerName, onStart, onShowMap }: PreAdventureProps) {
   const [currentTutor, setCurrentTutor] = useState(0);
   const [allRevealed, setAllRevealed] = useState(false);
   const [replayingIdx, setReplayingIdx] = useState<number | null>(null);
 
   const handleNext = () => {
-    if (currentTutor < TUTOR_INTROS.length - 1) {
-      setCurrentTutor(currentTutor + 1);
-    } else {
-      setAllRevealed(true);
-    }
+    if (currentTutor < TUTOR_INTROS.length - 1) setCurrentTutor(currentTutor + 1);
+    else setAllRevealed(true);
   };
-
-  const handleReplay = (idx: number) => {
-    setReplayingIdx(idx);
-  };
-
-  const bgClass = lightMode
-    ? "from-amber-50 via-white to-purple-50"
-    : "from-indigo-950 via-purple-950 to-slate-950";
-
-  const textPrimary = lightMode ? "text-slate-900" : "text-white";
-  const textSecondary = lightMode ? "text-slate-600" : "text-white/70";
-  const textMuted = lightMode ? "text-slate-400" : "text-white/60";
-  const starColor = lightMode ? "bg-purple-200/40" : "bg-white/30";
 
   const displayIdx = replayingIdx !== null ? replayingIdx : currentTutor;
   const displayIntro = TUTOR_INTROS[displayIdx];
   const displayTutor = TUTORS[displayIntro.tutorKey];
 
   return (
-    <div className={`fixed inset-0 bg-gradient-to-br ${bgClass} flex flex-col items-center justify-center overflow-hidden`}>
-      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div
-            key={i}
-            className={`absolute w-1 h-1 ${starColor} rounded-full`}
-            style={{
-              left: `${(i * 37 + 13) % 100}%`,
-              top: `${(i * 23 + 7) % 100}%`,
-              animationName: "twinkle",
-              animationDuration: `${2 + (i % 3)}s`,
-              animationDelay: `${(i * 0.3) % 2}s`,
-              animationIterationCount: "infinite",
-            }}
-          />
-        ))}
-      </div>
+    <div className="fixed inset-0 vi-bg flex flex-col items-center justify-center overflow-y-auto py-8">
+      <div className="relative w-full max-w-xl mx-auto px-6">
+        <section className="vi-card p-8 md:p-10 bg-gradient-to-br from-white via-[hsl(262_83%_58%/0.04)] to-[hsl(43_100%_50%/0.06)] border-2 border-[hsl(262_83%_58%/0.15)] text-center relative overflow-hidden">
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[hsl(43_100%_50%/0.18)] blur-2xl" aria-hidden />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-[hsl(262_83%_58%/0.18)] blur-2xl" aria-hidden />
 
-      <div className="relative z-10 text-center px-6 max-w-lg w-full">
-        <h1 className={`text-3xl md:text-4xl font-heading font-bold ${textPrimary} mb-2`}>
-          Hi{learnerName ? `, ${learnerName}` : ""}!
-        </h1>
-        <p className={`text-lg ${textSecondary} font-body mb-8`}>
-          Some really cool friends want to meet you!
-        </p>
-
-        <div className="mb-8">
-          <div
-            className="flex flex-col items-center gap-3 transition-all duration-500"
-            key={displayIdx}
-          >
-            <div
-              className="w-24 h-24 rounded-full overflow-hidden border-4 shadow-xl"
-              style={{ borderColor: displayIntro.color, boxShadow: `0 0 30px ${displayIntro.color}40` }}
-            >
-              <Image src={displayTutor.avatar} alt={displayIntro.name} width={96} height={96} className="object-cover" />
+          <div className="relative">
+            <div className="mx-auto mb-5 inline-flex">
+              <IconWell color="primary" size="lg"><Compass className="w-10 h-10" strokeWidth={2.5} /></IconWell>
             </div>
-            <p className={`text-xl font-heading font-bold ${textPrimary}`}>{displayIntro.name}</p>
-            <p className={`text-sm ${textMuted} font-body leading-relaxed max-w-xs`}>
-              &ldquo;{displayIntro.line}&rdquo;
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(262_83%_58%)] mb-3">A Quick Adventure</p>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2 leading-tight">
+              Hi{learnerName ? `, ${learnerName}` : ""}! <Sparkles className="inline w-7 h-7 text-[hsl(43_100%_50%)]" aria-hidden />
+            </h1>
+            <p className="text-base text-slate-600 max-w-md mx-auto mb-6 leading-relaxed">
+              Some really cool friends want to meet you!
             </p>
-          </div>
-        </div>
 
-        <div className="flex items-center justify-center gap-2 mb-6">
-          {TUTOR_INTROS.map((intro, idx) => {
-            const isRevealed = idx <= currentTutor;
-            const isCurrent = idx === displayIdx;
-            return (
-              <button
-                key={intro.tutorKey}
-                onClick={() => isRevealed && handleReplay(idx)}
-                disabled={!isRevealed}
-                className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
-                  isCurrent ? "scale-110 ring-2 ring-white/50" : isRevealed ? "opacity-70 hover:opacity-100" : "opacity-20 grayscale"
-                }`}
-                style={{ borderColor: isRevealed ? intro.color : "transparent" }}
-                aria-label={isRevealed ? `Replay ${intro.name}'s intro` : `${intro.name} — not yet revealed`}
-              >
-                <Image src={TUTORS[intro.tutorKey].avatar} alt={intro.name} width={40} height={40} className="object-cover" />
-              </button>
-            );
-          })}
-        </div>
+            <div className="mb-6" key={displayIdx}>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-24 h-24 rounded-3xl overflow-hidden border-4 shadow-lg" style={{ borderColor: displayIntro.color }}>
+                  <Image src={displayTutor.avatar} alt={displayIntro.name} width={96} height={96} className="object-cover" />
+                </div>
+                <p className="text-xl font-extrabold text-slate-900">{displayIntro.name}</p>
+                <p className="text-sm text-slate-600 leading-relaxed max-w-xs">&ldquo;{displayIntro.line}&rdquo;</p>
+              </div>
+            </div>
 
-        {!allRevealed ? (
-          <div className="space-y-3">
-            <button
-              onClick={() => { setReplayingIdx(null); handleNext(); }}
-              className="px-10 py-4 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xl font-heading font-bold shadow-2xl shadow-amber-500/30 hover:scale-105 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-amber-400"
-              style={{ minHeight: "var(--learner-hit-target, 56px)" }}
-            >
-              Meet the next friend →
-            </button>
-            <p className={`text-xs ${textMuted}`}>
-              {currentTutor + 1} of {TUTOR_INTROS.length} friends
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <button
-              onClick={onStart}
-              className="px-10 py-4 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xl font-heading font-bold shadow-2xl shadow-amber-500/30 hover:scale-105 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-amber-400"
-              style={{ minHeight: "var(--learner-hit-target, 56px)" }}
-            >
-              Let&apos;s Go! 🚀
-            </button>
-            {onShowMap && (
-              <button
-                onClick={onShowMap}
-                className={`block mx-auto text-sm ${lightMode ? "text-purple-600 hover:text-purple-800" : "text-white/60 hover:text-white/80"} font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-lg px-4 py-2`}
-              >
-                🗺️ Show me the map first
-              </button>
+            <div className="flex items-center justify-center gap-2 mb-6" role="radiogroup" aria-label="Tutor friends">
+              {TUTOR_INTROS.map((intro, idx) => {
+                const isRevealed = idx <= currentTutor;
+                const isCurrent = idx === displayIdx;
+                return (
+                  <button
+                    key={intro.tutorKey}
+                    onClick={() => isRevealed && setReplayingIdx(idx)}
+                    disabled={!isRevealed}
+                    role="radio"
+                    aria-checked={isCurrent}
+                    aria-label={isRevealed ? `Replay ${intro.name}'s intro` : `${intro.name} — not yet revealed`}
+                    className={`w-10 h-10 rounded-2xl overflow-hidden border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%)] ${
+                      isCurrent ? "scale-110 shadow-md" : isRevealed ? "opacity-70 hover:opacity-100" : "opacity-30 grayscale"
+                    }`}
+                    style={{ borderColor: isRevealed ? intro.color : "#e2e8f0" }}
+                  >
+                    <Image src={TUTORS[intro.tutorKey].avatar} alt={intro.name} width={40} height={40} className="object-cover" />
+                  </button>
+                );
+              })}
+            </div>
+
+            {!allRevealed ? (
+              <div className="space-y-3">
+                <button
+                  onClick={() => { setReplayingIdx(null); handleNext(); }}
+                  className="inline-flex items-center gap-2 px-7 py-4 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold text-lg shadow-xl shadow-[hsl(262_83%_58%/0.3)] hover:scale-105 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(262_83%_58%)] focus-visible:ring-offset-2"
+                  style={{ minHeight: "var(--learner-hit-target, 56px)" }}
+                >
+                  Meet the next friend <Sparkles className="w-5 h-5" />
+                </button>
+                <p className="text-xs text-slate-400 font-semibold">{currentTutor + 1} of {TUTOR_INTROS.length} friends</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <button
+                  onClick={onStart}
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold text-xl shadow-xl shadow-[hsl(262_83%_58%/0.3)] hover:scale-105 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(262_83%_58%)] focus-visible:ring-offset-2"
+                  style={{ minHeight: "var(--learner-hit-target, 56px)" }}
+                >
+                  <Play className="w-5 h-5 fill-white" /> Let&apos;s Go!
+                </button>
+                {onShowMap && (
+                  <button
+                    onClick={onShowMap}
+                    className="block mx-auto inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white border-2 border-slate-200 text-slate-700 font-bold text-sm hover:border-[hsl(262_83%_58%/0.3)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%)]"
+                  >
+                    <Map className="w-4 h-4" /> Show me the map first
+                  </button>
+                )}
+              </div>
             )}
+            <p className="mt-5 text-xs text-slate-400 font-semibold">About 10 minutes · Pause anytime</p>
           </div>
-        )}
+        </section>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 "use client";
+import { ShoppingBag, Award, Trophy, Flame, Gem, Star, Medal } from "lucide-react";
 import { useFlVariant, LearnerCard } from "@aivo/learner-ui";
 
 interface Badge {
@@ -16,51 +17,52 @@ interface RewardsTabProps {
   onNavigate: (path: string) => void;
 }
 
-export function RewardsTab({ badges, streakCurrent, streakLongest, coins, gems, onNavigate }: RewardsTabProps) {
+function rarityIcon(rarity: string) {
+  if (rarity === "legendary") return <Gem className="w-7 h-7 text-[hsl(262_83%_58%)]" strokeWidth={2.5} />;
+  if (rarity === "epic") return <Star className="w-7 h-7 text-[hsl(340_82%_52%)] fill-[hsl(340_82%_52%)]" strokeWidth={2.5} />;
+  if (rarity === "rare") return <Star className="w-7 h-7 text-[hsl(199_89%_48%)] fill-[hsl(199_89%_48%)]" strokeWidth={2.5} />;
+  return <Medal className="w-7 h-7 text-[hsl(43_100%_50%)]" strokeWidth={2.5} />;
+}
+
+export function RewardsTab({ badges, streakCurrent, streakLongest, onNavigate }: RewardsTabProps) {
   const { isLow } = useFlVariant();
+
+  const chip = (key: "shop" | "badges" | "leaderboard") => {
+    const map = {
+      shop: { color: "hsl(142 71% 45%)", tint: "hsl(142 71% 45% / 0.12)", label: "Shop", path: "/dashboard/learner/shop", Icon: ShoppingBag },
+      badges: { color: "hsl(43 100% 50%)", tint: "hsl(43 100% 50% / 0.16)", label: "Badges", path: "/dashboard/learner/badges", Icon: Award },
+      leaderboard: { color: "hsl(262 83% 58%)", tint: "hsl(262 83% 58% / 0.12)", label: "Leaderboard", path: "/dashboard/learner/leaderboard", Icon: Trophy },
+    } as const;
+    const { color, tint, label, path, Icon } = map[key];
+    return (
+      <button
+        onClick={() => onNavigate(path)}
+        className={`inline-flex items-center gap-2 rounded-full font-extrabold transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2 ${
+          isLow ? "px-7 py-4 text-lg" : "px-5 py-2.5 text-sm"
+        }`}
+        style={{ backgroundColor: tint, color, ["--tw-ring-color" as string]: color, minHeight: "var(--learner-hit-target, 40px)" } as React.CSSProperties}
+      >
+        <Icon className="w-4 h-4" strokeWidth={2.5} aria-hidden /> {label}
+      </button>
+    );
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-center gap-3">
-        <button
-          onClick={() => onNavigate("/dashboard/learner/shop")}
-          className={`inline-flex items-center gap-2 rounded-xl bg-green-50 text-green-700 font-bold hover:bg-green-100 transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-green-400 ${
-            isLow ? "px-8 py-4 text-lg" : "px-5 py-2.5 text-sm"
-          }`}
-          style={{ minHeight: "var(--learner-hit-target, 40px)" }}
-        >
-          <span aria-hidden="true">🛒</span> Shop
-        </button>
-        <button
-          onClick={() => onNavigate("/dashboard/learner/badges")}
-          className={`inline-flex items-center gap-2 rounded-xl bg-amber-50 text-amber-700 font-bold hover:bg-amber-100 transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-amber-400 ${
-            isLow ? "px-8 py-4 text-lg" : "px-5 py-2.5 text-sm"
-          }`}
-          style={{ minHeight: "var(--learner-hit-target, 40px)" }}
-        >
-          <span aria-hidden="true">🏅</span> Badges
-        </button>
-        {!isLow && (
-          <button
-            onClick={() => onNavigate("/dashboard/learner/leaderboard")}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-50 text-purple-700 font-bold text-sm hover:bg-purple-100 transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-purple-400"
-            style={{ minHeight: "var(--learner-hit-target, 40px)" }}
-          >
-            <span aria-hidden="true">🏆</span> Leaderboard
-          </button>
-        )}
+        {chip("shop")}
+        {chip("badges")}
+        {!isLow && chip("leaderboard")}
       </div>
 
       {badges.length > 0 && (
         <LearnerCard>
-          <h3 className="font-heading font-bold text-slate-800 mb-3">Recent Badges</h3>
+          <h3 className="font-extrabold text-slate-900 mb-3">Recent Badges</h3>
           <div className={`grid gap-3 ${isLow ? "grid-cols-2" : "grid-cols-3 md:grid-cols-4"}`}>
             {badges.slice(0, isLow ? 4 : 8).map((b) => (
-              <div key={b.id} className="bg-slate-50 rounded-xl p-3 text-center">
-                <div className="text-3xl mb-1" aria-hidden="true">
-                  {b.rarity === "legendary" ? "💎" : b.rarity === "epic" ? "🌟" : b.rarity === "rare" ? "⭐" : "🏅"}
-                </div>
-                <div className="text-xs font-bold text-slate-700 truncate">{b.name}</div>
+              <div key={b.id} className="bg-slate-50 rounded-2xl p-3 text-center border border-slate-100">
+                <div className="mb-1 flex justify-center" aria-hidden>{rarityIcon(b.rarity)}</div>
+                <div className="text-xs font-extrabold text-slate-700 truncate">{b.name}</div>
               </div>
             ))}
           </div>
@@ -69,11 +71,13 @@ export function RewardsTab({ badges, streakCurrent, streakLongest, coins, gems, 
 
       <LearnerCard>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg" aria-hidden="true">🔥</span>
-            <span className="font-heading font-bold text-slate-700">Streak: {streakCurrent} days</span>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[hsl(43_100%_50%/0.16)] text-[hsl(43_100%_50%)]">
+              <Flame className="w-5 h-5" strokeWidth={2.5} aria-hidden />
+            </div>
+            <span className="font-extrabold text-slate-900">Streak: {streakCurrent} days</span>
           </div>
-          <span className="text-sm text-slate-400">Best: {streakLongest}</span>
+          <span className="text-sm text-slate-500 font-semibold">Best: {streakLongest}</span>
         </div>
       </LearnerCard>
     </div>

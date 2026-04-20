@@ -1,8 +1,10 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import { Play, RotateCw, Users, ChevronRight } from "lucide-react";
 import { TUTORS } from "@aivo/brand";
 import type { AdventureChapter } from "./types";
+import { colorForTutor, VI_COLOR, VI_TINT } from "./_vi";
 
 interface ChapterIntroProps {
   chapter: AdventureChapter;
@@ -13,99 +15,94 @@ interface ChapterIntroProps {
   lightMode?: boolean;
 }
 
-export default function ChapterIntro({ chapter, chapterNumber, totalChapters, onReady, onBringGrownUp, lightMode = false }: ChapterIntroProps) {
+export default function ChapterIntro({ chapter, chapterNumber, totalChapters, onReady, onBringGrownUp }: ChapterIntroProps) {
   const [phase, setPhase] = useState<"intro" | "ready">("intro");
-  const [replayCount, setReplayCount] = useState(0);
   const tutor = TUTORS[chapter.tutorKey];
-
-  const textPrimary = lightMode ? "text-slate-900" : "text-white";
-  const textSecondary = lightMode ? "text-slate-500" : "text-white/60";
-  const textMuted = lightMode ? "text-slate-400" : "text-white/40";
+  const subjectKey = colorForTutor(tutor?.color);
+  const subjectColor = VI_COLOR[subjectKey];
+  const subjectTint = VI_TINT[subjectKey];
 
   if (phase === "ready") {
     return (
-      <div className={`fixed inset-0 bg-gradient-to-br ${lightMode ? "from-amber-50 via-white to-purple-50" : chapter.bgGradient} flex flex-col items-center justify-center overflow-hidden`}>
-        <div className="relative z-10 text-center px-6 max-w-md">
-          <div
-            className="w-20 h-20 rounded-full overflow-hidden border-3 shadow-xl mx-auto mb-6"
-            style={{ borderColor: tutor.color, boxShadow: `0 0 30px ${tutor.color}40` }}
-          >
-            <Image src={tutor.avatar} alt={tutor.name} width={80} height={80} className="object-cover" />
-          </div>
+      <div className="fixed inset-0 vi-bg flex flex-col items-center justify-center overflow-y-auto py-8 pt-20">
+        <div className="relative w-full max-w-md mx-auto px-6">
+          <section className="vi-card p-8 text-center" style={{ borderColor: `${subjectColor}26` }}>
+            <div className="mx-auto mb-5 inline-flex">
+              <div className="w-20 h-20 rounded-3xl overflow-hidden border-4 shadow-md" style={{ borderColor: subjectColor }}>
+                <Image src={tutor.avatar} alt={tutor.name} width={80} height={80} className="object-cover" />
+              </div>
+            </div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] mb-2" style={{ color: subjectColor }}>Ready?</p>
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Let&apos;s Begin</h2>
+            <p className="text-slate-600 mb-6">{tutor.name} will guide you through this chapter.</p>
 
-          <h2 className={`text-2xl font-heading font-bold ${textPrimary} mb-2`}>Ready?</h2>
-          <p className={`${textSecondary} mb-8`}>
-            {tutor.name} will guide you through this chapter
-          </p>
-
-          <div className="space-y-3 max-w-xs mx-auto">
-            <button
-              onClick={onReady}
-              className="w-full px-8 py-4 rounded-2xl text-white font-heading font-bold text-lg shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
-              style={{
-                background: `linear-gradient(135deg, ${tutor.color}, ${tutor.color}cc)`,
-                minHeight: "var(--learner-hit-target, 56px)",
-              }}
-            >
-              ▶ Start
-            </button>
-            <button
-              onClick={() => { setReplayCount(replayCount + 1); setPhase("intro"); }}
-              className={`w-full px-8 py-3 rounded-2xl ${lightMode ? "bg-slate-100 text-slate-700 hover:bg-slate-200" : "bg-white/10 text-white/80 hover:bg-white/20"} font-heading font-bold transition-all focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2`}
-              style={{ minHeight: "var(--learner-hit-target, 48px)" }}
-            >
-              🔄 Hear it again
-            </button>
-            {onBringGrownUp && (
+            <div className="space-y-3 max-w-xs mx-auto">
               <button
-                onClick={onBringGrownUp}
-                className={`w-full px-8 py-3 rounded-2xl ${lightMode ? "bg-pink-50 text-pink-700 hover:bg-pink-100" : "bg-pink-500/10 text-pink-300 hover:bg-pink-500/20"} font-heading font-bold transition-all focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2`}
+                onClick={onReady}
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-full text-white font-extrabold text-lg shadow-xl hover:scale-105 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
+                style={{ backgroundColor: subjectColor, boxShadow: `0 8px 24px ${subjectColor}40`, minHeight: "var(--learner-hit-target, 56px)" }}
+              >
+                <Play className="w-5 h-5 fill-white" /> Start
+              </button>
+              <button
+                onClick={() => setPhase("intro")}
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border-2 border-slate-200 text-slate-700 font-bold text-sm hover:border-slate-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
                 style={{ minHeight: "var(--learner-hit-target, 48px)" }}
               >
-                👨‍👩‍👧 Bring my grown-up
+                <RotateCw className="w-4 h-4" /> Hear it again
               </button>
-            )}
-          </div>
+              {onBringGrownUp && (
+                <button
+                  onClick={onBringGrownUp}
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[hsl(340_82%_52%/0.1)] text-[hsl(340_82%_52%)] font-bold text-sm hover:bg-[hsl(340_82%_52%/0.16)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(340_82%_52%)]"
+                  style={{ minHeight: "var(--learner-hit-target, 48px)" }}
+                >
+                  <Users className="w-4 h-4" /> Bring my grown-up
+                </button>
+              )}
+            </div>
+          </section>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`fixed inset-0 bg-gradient-to-br ${lightMode ? "from-amber-50 via-white to-purple-50" : chapter.bgGradient} flex flex-col items-center justify-center overflow-hidden`}>
-      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full opacity-10 blur-3xl" style={{ backgroundColor: tutor.color }} />
-        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 rounded-full opacity-10 blur-3xl" style={{ backgroundColor: tutor.color }} />
-      </div>
-
-      <div className="relative z-10 text-center px-6 max-w-md">
-        <p className={`${textMuted} text-sm font-heading font-bold uppercase tracking-widest mb-2`}>
-          Chapter {chapterNumber} of {totalChapters}
-        </p>
-        <div className="text-6xl mb-4" aria-hidden="true">{chapter.landmark.emoji}</div>
-
-        <h1 className={`text-3xl font-heading font-bold ${textPrimary} mb-1`}>{chapter.title}</h1>
-        <p className={`text-lg ${textSecondary} font-body mb-8`}>{chapter.subtitle}</p>
-
-        <div className="flex items-center justify-center gap-4 mb-6">
-          <div
-            className="w-20 h-20 rounded-full overflow-hidden border-3 shadow-xl"
-            style={{ borderColor: tutor.color, boxShadow: `0 0 30px ${tutor.color}40` }}
-          >
-            <Image src={tutor.avatar} alt={tutor.name} width={80} height={80} className="object-cover" />
-          </div>
-        </div>
-        <p className={`${lightMode ? "text-slate-600" : "text-white/70"} font-body text-sm leading-relaxed max-w-xs mx-auto mb-8`}>
-          {chapter.sceneDescription}
-        </p>
-
-        <button
-          onClick={() => setPhase("ready")}
-          className="px-8 py-3 rounded-full text-white font-heading font-bold text-lg shadow-xl hover:scale-105 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
-          style={{ backgroundColor: tutor.color, boxShadow: `0 8px 30px ${tutor.color}40`, minHeight: "var(--learner-hit-target, 56px)" }}
+    <div className="fixed inset-0 vi-bg flex flex-col items-center justify-center overflow-y-auto py-8 pt-20">
+      <div className="relative w-full max-w-md mx-auto px-6">
+        <section
+          className="vi-card p-8 text-center relative overflow-hidden"
+          style={{ background: `linear-gradient(135deg, white, ${subjectTint})`, borderColor: `${subjectColor}26` }}
         >
-          I'm ready! {chapter.landmark.emoji}
-        </button>
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-2xl" style={{ backgroundColor: `${subjectColor}26` }} aria-hidden />
+          <div className="relative">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">
+              Chapter {chapterNumber} of {totalChapters}
+            </p>
+            <div className="text-6xl mb-3" aria-hidden>{chapter.landmark.emoji}</div>
+            <h1 className="text-3xl font-extrabold text-slate-900 mb-1">{chapter.title}</h1>
+            <p className="text-lg text-slate-600 mb-6">{chapter.subtitle}</p>
+
+            <div className="flex items-center justify-center gap-3 mb-5">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden border-4 shadow-md" style={{ borderColor: subjectColor }}>
+                <Image src={tutor.avatar} alt={tutor.name} width={64} height={64} className="object-cover" />
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Your guide</p>
+                <p className="font-extrabold text-slate-900">{tutor.name}</p>
+              </div>
+            </div>
+            <p className="text-slate-600 text-sm leading-relaxed max-w-xs mx-auto mb-6">{chapter.sceneDescription}</p>
+
+            <button
+              onClick={() => setPhase("ready")}
+              className="inline-flex items-center gap-2 px-7 py-3 rounded-full text-white font-extrabold text-lg shadow-xl hover:scale-105 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
+              style={{ backgroundColor: subjectColor, boxShadow: `0 8px 24px ${subjectColor}40`, minHeight: "var(--learner-hit-target, 56px)" }}
+            >
+              I&apos;m ready! <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   );
