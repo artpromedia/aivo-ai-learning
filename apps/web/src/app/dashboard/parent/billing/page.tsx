@@ -181,7 +181,7 @@ export default function ParentBillingPage() {
   return (
     <div className="vi-bg">
       <header className="bg-[hsl(var(--visual-surface)/0.95)] backdrop-blur border-b vi-border px-8 py-4 flex items-center justify-between">
-        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
+        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} style={{ height: "auto" }} />
         <div className="flex items-center gap-4">
           <Link href="/dashboard/parent" className="text-sm text-[hsl(var(--visual-primary))] font-semibold hover:underline">{t("dashboard")}</Link>
           <Link href="/dashboard/parent/settings" className="text-sm vi-text-muted font-semibold hover:text-[hsl(var(--visual-primary))]">{t("settings")}</Link>

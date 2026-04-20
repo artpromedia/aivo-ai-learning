@@ -182,7 +182,7 @@ function TutorStoreContent() {
           <button onClick={() => router.push("/dashboard/parent")} className="text-sm vi-text-muted hover:text-[hsl(var(--visual-primary))] font-semibold">
             {t("back_to_dashboard")}
           </button>
-          <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
+          <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} style={{ height: "auto" }} />
         </div>
         <div className="flex items-center gap-3">
           <span className="px-3 py-1 text-sm rounded-full bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] font-bold">

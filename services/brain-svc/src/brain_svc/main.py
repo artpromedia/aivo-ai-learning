@@ -1,9 +1,28 @@
+import logging
 import os
+import re
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from brain_svc.routes import health, brain, snapshots, recommendations, analysis, curriculum
 from brain_svc.models.database import engine, Base
+
+
+_EXPECTED_404_RE = re.compile(
+    r'"GET /api/brain/[0-9a-fA-F-]+(?:/review|/pre-clone-data|/next-action)? HTTP/[\d.]+" 404'
+)
+
+
+class _ExpectedNotFoundFilter(logging.Filter):
+    """Suppress uvicorn access-log noise for the by-design 404 the frontend
+    uses to detect that a learner's brain has not been cloned yet."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        return not _EXPECTED_404_RE.search(msg)
+
+
+logging.getLogger("uvicorn.access").addFilter(_ExpectedNotFoundFilter())
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

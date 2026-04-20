@@ -97,7 +97,7 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-yellow-50">
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
-        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
+        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} style={{ height: "auto" }} />
         <div className="flex items-center gap-4">
           <span className="font-bold text-amber-600">{balance.coins} coins</span>
           <span className="font-bold text-purple-600">{balance.gems} gems</span>

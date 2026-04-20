@@ -92,7 +92,7 @@ export default function NotificationsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50">
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
-        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} />
+        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} style={{ height: "auto" }} />
         <div className="flex items-center gap-4">
           <Link href={dashboardLink} className="text-sm text-primary font-semibold hover:underline">Dashboard</Link>
           <span className="text-sm font-semibold text-slate-600">{user.name}</span>

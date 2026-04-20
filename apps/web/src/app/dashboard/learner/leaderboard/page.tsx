@@ -44,7 +44,7 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-yellow-50">
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between">
-        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
+        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} style={{ height: "auto" }} />
         <div className="flex items-center gap-4">
           <button onClick={() => router.push("/dashboard/learner")}
             className="text-sm text-primary font-semibold hover:underline">{tCommon("back")}</button>

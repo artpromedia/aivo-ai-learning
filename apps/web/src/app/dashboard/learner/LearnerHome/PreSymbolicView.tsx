@@ -18,7 +18,7 @@ export function PreSymbolicView({ userName, totalXp, xpPercent, onLogout, onSele
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-pink-50">
       <SkipLink />
       <header className="bg-white/80 backdrop-blur border-b border-slate-200 px-8 py-4 flex items-center justify-between" role="banner">
-        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} />
+        <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} style={{ height: "auto" }} />
         <div className="flex items-center gap-4">
           <span className="text-lg font-heading font-bold text-primary">{userName}</span>
           <button onClick={onLogout} aria-label="Log out" className="text-sm text-slate-500 hover:text-red-500 font-semibold">
