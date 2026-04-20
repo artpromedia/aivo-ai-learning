@@ -174,7 +174,7 @@ export default function TutorStoreScreen() {
                   </Text>
                 </View>
                 <Text style={styles.tutorDesc}>
-                  {selectedTutor.tutor.name} specializes in {selectedTutor.tutor.domain} and adapts to each learner's unique needs and pace.
+                  {selectedTutor.tutor.name} specializes in {selectedTutor.tutor.domain} and adapts to each learner&apos;s unique needs and pace.
                 </Text>
                 {selectedTutor.tutor.tier === 'core' ? (
                   <View style={styles.activeRow}>
