@@ -149,7 +149,7 @@ async def process_ocr(
 async def _process_pdf(pdf_base64: str) -> ExtractedDocument:
     """Extract text from a PDF and process as text input.
 
-    Uses PyPDF2 for text extraction. If text extraction yields
+    Uses pypdf for text extraction. If text extraction yields
     content, processes as text. Otherwise falls back to sending
     individual pages as images to vision model.
     """
@@ -158,7 +158,7 @@ async def _process_pdf(pdf_base64: str) -> ExtractedDocument:
         pdf_bytes = base64.b64decode(pdf_base64)
 
         try:
-            from PyPDF2 import PdfReader
+            from pypdf import PdfReader
             reader = PdfReader(io.BytesIO(pdf_bytes))
             pages_text = []
             for page in reader.pages[:10]:
@@ -170,7 +170,7 @@ async def _process_pdf(pdf_base64: str) -> ExtractedDocument:
                 combined_text = "\n\n".join(pages_text)
                 return await _process_text_input(combined_text)
         except ImportError:
-            logger.warning("PyPDF2 not available, falling back to LLM text extraction")
+            logger.warning("pypdf not available, falling back to LLM text extraction")
 
         result = await generate_completion(
             system_prompt=_OCR_SYSTEM_PROMPT,
