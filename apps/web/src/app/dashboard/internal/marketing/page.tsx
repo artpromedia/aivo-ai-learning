@@ -20,12 +20,12 @@ export default function MarketingDashboard() {
   }, [accessToken]);
 
   const channels = [
-    { name: "Organic Search", visitors: 12400, signups: 186, conversion: 1.5, cost: "$0", color: "bg-green-500" },
-    { name: "Paid Search (Google)", visitors: 8200, signups: 328, conversion: 4.0, cost: "$4,920", color: "bg-blue-500" },
+    { name: "Organic Search", visitors: 12400, signups: 186, conversion: 1.5, cost: "$0", color: "bg-[hsl(var(--visual-science))]" },
+    { name: "Paid Search (Google)", visitors: 8200, signups: 328, conversion: 4.0, cost: "$4,920", color: "bg-[hsl(var(--visual-reading))]" },
     { name: "Social Media", visitors: 6800, signups: 102, conversion: 1.5, cost: "$1,200", color: "bg-pink-500" },
     { name: "Email Campaigns", visitors: 3400, signups: 272, conversion: 8.0, cost: "$340", color: "bg-[hsl(var(--visual-primary))]" },
-    { name: "Referral Program", visitors: 2100, signups: 168, conversion: 8.0, cost: "$840", color: "bg-amber-500" },
-    { name: "Content Marketing", visitors: 5600, signups: 112, conversion: 2.0, cost: "$800", color: "bg-cyan-500" },
+    { name: "Referral Program", visitors: 2100, signups: 168, conversion: 8.0, cost: "$840", color: "bg-[hsl(var(--visual-sel))]" },
+    { name: "Content Marketing", visitors: 5600, signups: 112, conversion: 2.0, cost: "$800", color: "bg-[hsl(var(--visual-reading)/0.7)]" },
   ];
 
   const campaigns = [
@@ -60,7 +60,7 @@ export default function MarketingDashboard() {
               <StatIconWell wellClass={m.well}>
                 <m.Icon size={22} strokeWidth={2.5} aria-hidden="true" />
               </StatIconWell>
-              <span className="text-xs text-green-600 font-semibold">{m.trend}</span>
+              <span className="text-xs text-[hsl(var(--visual-science))] font-semibold">{m.trend}</span>
             </div>
             <p className="text-2xl font-bold vi-text">{m.value}</p>
             <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
@@ -129,9 +129,9 @@ export default function MarketingDashboard() {
           <div className="space-y-3">
             {[
               { segment: "Parents (B2C)", pct: 62, color: "bg-purple-400" },
-              { segment: "Schools (B2B)", pct: 24, color: "bg-blue-400" },
-              { segment: "Districts (Enterprise)", pct: 10, color: "bg-amber-400" },
-              { segment: "Therapists/Specialists", pct: 4, color: "bg-green-400" },
+              { segment: "Schools (B2B)", pct: 24, color: "bg-[hsl(var(--visual-reading))]" },
+              { segment: "Districts (Enterprise)", pct: 10, color: "bg-[hsl(var(--visual-sel))]" },
+              { segment: "Therapists/Specialists", pct: 4, color: "bg-[hsl(var(--visual-science))]" },
             ].map((s) => (
               <div key={s.segment}>
                 <div className="flex justify-between mb-1">

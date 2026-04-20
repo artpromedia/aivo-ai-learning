@@ -51,7 +51,7 @@ export default function StaffDetailPage() {
       <header>
         <Link href="/dashboard/district/staff" className="text-sm text-[hsl(var(--visual-primary))] hover:underline mb-2 inline-block">&larr; Back to Staff</Link>
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white text-xl font-bold">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[hsl(var(--visual-science)/0.85)] to-[hsl(var(--visual-science))] flex items-center justify-center text-white text-xl font-bold">
             {u.name?.charAt(0) || "?"}
           </div>
           <div>

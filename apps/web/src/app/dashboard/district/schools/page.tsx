@@ -174,7 +174,7 @@ function CreateSchoolModal({ accessToken, onClose, onCreated }: { accessToken: s
           <h2 className="text-lg font-heading font-semibold vi-text">Add School</h2>
           <button onClick={onClose} className="vi-text-muted hover:vi-text-muted text-xl">&times;</button>
         </div>
-        {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+        {error && <p className="text-sm text-[hsl(var(--visual-math))] bg-[hsl(var(--visual-math)/0.08)] rounded-lg px-3 py-2">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-3">
           <Field label="School Name *" value={name} onChange={setName} placeholder="e.g. Westside Elementary" />
           <div className="grid grid-cols-2 gap-3">

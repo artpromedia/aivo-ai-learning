@@ -29,8 +29,8 @@ export default function FinanceDashboard() {
   const subscriptionBreakdown = [
     { plan: "Free Trial", count: 245, revenue: "$0", pct: 0, color: "bg-slate-300" },
     { plan: "Family ($29/mo)", count: 680, revenue: "$19,720", pct: 41, color: "bg-purple-400" },
-    { plan: "Family Plus ($49/mo)", count: 420, revenue: "$20,580", pct: 43, color: "bg-cyan-400" },
-    { plan: "Enterprise", count: 12, revenue: "$7,900", pct: 16, color: "bg-amber-400" },
+    { plan: "Family Plus ($49/mo)", count: 420, revenue: "$20,580", pct: 43, color: "bg-[hsl(var(--visual-reading))]" },
+    { plan: "Enterprise", count: 12, revenue: "$7,900", pct: 16, color: "bg-[hsl(var(--visual-sel))]" },
   ];
 
   const paymentHealth = [
@@ -79,7 +79,7 @@ export default function FinanceDashboard() {
               <StatIconWell wellClass={m.well}>
                 <m.Icon size={22} strokeWidth={2.5} aria-hidden="true" />
               </StatIconWell>
-              <span className="text-xs text-green-600 font-semibold">{m.trend}</span>
+              <span className="text-xs text-[hsl(var(--visual-science))] font-semibold">{m.trend}</span>
             </div>
             <p className="text-2xl font-bold vi-text">{m.value}</p>
             <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
@@ -115,7 +115,7 @@ export default function FinanceDashboard() {
               <div key={cost.category} className="flex items-center gap-4">
                 <span className="text-sm font-medium vi-text w-48">{cost.category}</span>
                 <div className="flex-1 vi-surface-soft rounded-full h-2.5 overflow-hidden">
-                  <div className="h-full rounded-full bg-red-400 transition-all" style={{ width: `${cost.pct}%` }} />
+                  <div className="h-full rounded-full bg-[hsl(var(--visual-math))] transition-all" style={{ width: `${cost.pct}%` }} />
                 </div>
                 <span className="text-sm font-bold vi-text w-20 text-right">{cost.amount}</span>
               </div>
@@ -127,7 +127,7 @@ export default function FinanceDashboard() {
           </div>
           <div className="flex justify-between mt-1">
             <span className="text-xs vi-text-muted">Gross Margin</span>
-            <span className="text-xs font-bold text-green-600">58.5%</span>
+            <span className="text-xs font-bold text-[hsl(var(--visual-science))]">58.5%</span>
           </div>
         </div>
       </div>

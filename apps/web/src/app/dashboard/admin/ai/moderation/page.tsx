@@ -55,9 +55,9 @@ export default function ContentModerationPage() {
 
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: "Pending Review", value: items.filter((i) => i.status === "pending").length, color: "text-amber-600" },
-          { label: "Approved", value: items.filter((i) => i.status === "approved").length, color: "text-green-600" },
-          { label: "Rejected", value: items.filter((i) => i.status === "rejected").length, color: "text-red-600" },
+          { label: "Pending Review", value: items.filter((i) => i.status === "pending").length, color: "text-[hsl(var(--visual-sel))]" },
+          { label: "Approved", value: items.filter((i) => i.status === "approved").length, color: "text-[hsl(var(--visual-science))]" },
+          { label: "Rejected", value: items.filter((i) => i.status === "rejected").length, color: "text-[hsl(var(--visual-math))]" },
           { label: "Total Flagged", value: items.length, color: "vi-text" },
         ].map((m) => (
           <div key={m.label} className="bg-white rounded-xl p-4 shadow-sm border vi-border text-center">
@@ -105,13 +105,13 @@ export default function ContentModerationPage() {
                     <>
                       <button
                         onClick={() => handleAction(item.id, "approved")}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-50 text-[hsl(var(--visual-science))] hover:bg-[hsl(var(--visual-science)/0.14)] border border-green-200 transition"
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[hsl(var(--visual-science)/0.08)] text-[hsl(var(--visual-science))] hover:bg-[hsl(var(--visual-science)/0.14)] border border-[hsl(var(--visual-science)/0.25)] transition"
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => handleAction(item.id, "rejected")}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-[hsl(var(--visual-math)/0.12)] border border-red-200 transition"
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[hsl(var(--visual-math)/0.08)] text-[hsl(var(--visual-math))] hover:bg-[hsl(var(--visual-math)/0.12)] border border-[hsl(var(--visual-math)/0.25)] transition"
                       >
                         Reject
                       </button>

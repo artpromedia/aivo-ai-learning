@@ -115,11 +115,11 @@ function UsageCard({ label, used, limit, Icon, well }: { label: string; used: nu
       </div>
       <div className="h-2.5 rounded-full vi-surface-soft overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${isHigh ? "bg-amber-500" : "bg-[hsl(var(--visual-primary))]"}`}
+          className={`h-full rounded-full transition-all ${isHigh ? "bg-[hsl(var(--visual-sel))]" : "bg-[hsl(var(--visual-primary))]"}`}
           style={{ width: `${Math.max(2, pct)}%` }}
         />
       </div>
-      <p className={`text-xs mt-1 font-medium ${isHigh ? "text-amber-600" : "vi-text-muted"}`}>
+      <p className={`text-xs mt-1 font-medium ${isHigh ? "text-[hsl(var(--visual-sel))]" : "vi-text-muted"}`}>
         {pct}% used
       </p>
     </div>

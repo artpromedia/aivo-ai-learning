@@ -161,7 +161,7 @@ export default function AdminAnalyticsPage() {
                         <span className="text-sm font-semibold vi-text">{s.subject}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold vi-text">{Math.round(s.avgMastery)}%</span>
-                          {s.growth > 0 && <span className="text-xs text-green-600">+{s.growth}%</span>}
+                          {s.growth > 0 && <span className="text-xs text-[hsl(var(--visual-science))]">+{s.growth}%</span>}
                         </div>
                       </div>
                       <div className="vi-surface-soft rounded-full h-3 overflow-hidden">

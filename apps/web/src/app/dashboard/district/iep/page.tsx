@@ -88,21 +88,21 @@ export default function DistrictIepPage() {
                 </div>
                 <p className="text-3xl font-bold vi-text">{summary.active}</p>
               </div>
-              <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-5">
+              <div className="bg-white rounded-2xl border border-[hsl(var(--visual-sel)/0.30)] shadow-sm p-5">
                 <div className="flex items-center gap-3 mb-2">
                   <StatIconWell color="amber">
                     <Clock size={22} strokeWidth={2.5} aria-hidden="true" />
                   </StatIconWell>
-                  <span className="text-xs text-amber-600 font-medium uppercase">Due for Review (30d)</span>
+                  <span className="text-xs text-[hsl(var(--visual-sel))] font-medium uppercase">Due for Review (30d)</span>
                 </div>
                 <p className="text-3xl font-bold text-[hsl(var(--visual-sel))]">{summary.dueForReview}</p>
               </div>
-              <div className="bg-white rounded-2xl border border-red-200 shadow-sm p-5">
+              <div className="bg-white rounded-2xl border border-[hsl(var(--visual-math)/0.25)] shadow-sm p-5">
                 <div className="flex items-center gap-3 mb-2">
                   <StatIconWell color="red">
                     <AlertTriangle size={22} strokeWidth={2.5} aria-hidden="true" />
                   </StatIconWell>
-                  <span className="text-xs text-red-600 font-medium uppercase">Overdue</span>
+                  <span className="text-xs text-[hsl(var(--visual-math))] font-medium uppercase">Overdue</span>
                 </div>
                 <p className="text-3xl font-bold text-[hsl(var(--visual-math))]">{summary.overdue}</p>
               </div>

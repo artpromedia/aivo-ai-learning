@@ -76,7 +76,7 @@ export default function BillingRevenuePage() {
               </div>
               <p className="text-2xl font-bold vi-text mt-2">{m.value}</p>
               <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
-              {m.change && <p className="text-xs text-green-600 mt-1">{m.change}</p>}
+              {m.change && <p className="text-xs text-[hsl(var(--visual-science))] mt-1">{m.change}</p>}
             </div>
           );
         })}
@@ -121,10 +121,10 @@ export default function BillingRevenuePage() {
               <tr key={d.month} className="border-b vi-border hover:vi-bg/50 transition">
                 <td className="px-5 py-3 font-medium vi-text">{d.month} 2026</td>
                 <td className="px-5 py-3 vi-text">${d.mrr.toLocaleString()}</td>
-                <td className="px-5 py-3 text-green-600">+{d.newSubs}</td>
-                <td className="px-5 py-3 text-red-600">-{d.churn}</td>
+                <td className="px-5 py-3 text-[hsl(var(--visual-science))]">+{d.newSubs}</td>
+                <td className="px-5 py-3 text-[hsl(var(--visual-math))]">-{d.churn}</td>
                 <td className="px-5 py-3">
-                  <span className={d.newSubs - d.churn >= 0 ? "text-green-600" : "text-red-600"}>
+                  <span className={d.newSubs - d.churn >= 0 ? "text-[hsl(var(--visual-science))]" : "text-[hsl(var(--visual-math))]"}>
                     {d.newSubs - d.churn >= 0 ? "+" : ""}{d.newSubs - d.churn}
                   </span>
                 </td>

@@ -103,11 +103,11 @@ export default function SchoolDetailPage() {
                 <p className="text-2xl font-bold text-[hsl(var(--visual-primary))]">{data.learnerCount}</p>
                 <p className="text-xs vi-text-muted mt-1">Learners</p>
               </div>
-              <div className="bg-blue-50 rounded-xl p-4">
+              <div className="bg-[hsl(var(--visual-reading)/0.08)] border border-[hsl(var(--visual-reading)/0.25)] rounded-xl p-4">
                 <p className="text-2xl font-bold text-[hsl(var(--visual-reading))]">{data.staff.length}</p>
                 <p className="text-xs vi-text-muted mt-1">Staff</p>
               </div>
-              <div className="bg-emerald-50 rounded-xl p-4">
+              <div className="bg-[hsl(var(--visual-science)/0.08)] border border-[hsl(var(--visual-science)/0.25)] rounded-xl p-4">
                 <p className="text-2xl font-bold text-[hsl(var(--visual-science))]">{data.classrooms.length}</p>
                 <p className="text-xs vi-text-muted mt-1">Classrooms</p>
               </div>

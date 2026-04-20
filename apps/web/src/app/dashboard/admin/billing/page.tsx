@@ -39,7 +39,7 @@ export default function AdminBillingPage() {
     { name: "Free Trial", price: "$0", period: "14 days", features: ["1 learner", "3 AI tutors", "Basic assessments", "Limited sessions"], color: "bg-slate-600" },
     { name: "Family", price: "$29", period: "/month", features: ["Up to 3 learners", "All 14 AI tutors", "Full assessments", "Brain clone", "Recommendations"], color: "bg-[hsl(var(--visual-primary))]" },
     { name: "Family Plus", price: "$49", period: "/month", features: ["Up to 6 learners", "All 14 AI tutors", "IEP integration", "Priority support", "Learning team"], color: "bg-[hsl(var(--visual-science))]" },
-    { name: "Enterprise", price: "Custom", period: "", features: ["Unlimited learners", "District management", "SSO/SAML", "Custom branding", "Dedicated support", "API access"], color: "bg-amber-600" },
+    { name: "Enterprise", price: "Custom", period: "", features: ["Unlimited learners", "District management", "SSO/SAML", "Custom branding", "Dedicated support", "API access"], color: "bg-[hsl(var(--visual-sel))]" },
   ];
 
   const billingMetrics: { label: string; value: string | number; Icon: LucideIcon; color: string }[] = [
@@ -99,7 +99,7 @@ export default function AdminBillingPage() {
                 <ul className="space-y-2">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-sm vi-text-muted">
-                      <Check size={14} strokeWidth={3} className="text-green-500 flex-shrink-0" aria-hidden="true" />
+                      <Check size={14} strokeWidth={3} className="text-[hsl(var(--visual-science))] flex-shrink-0" aria-hidden="true" />
                       {f}
                     </li>
                   ))}

@@ -118,7 +118,7 @@ export default function DistrictStaffPage() {
                 <tr key={u.id} className="border-b vi-border hover:vi-surface-soft transition cursor-pointer">
                   <td className="px-5 py-3">
                     <Link href={`/dashboard/district/staff/${u.id}`} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white text-xs font-bold">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[hsl(var(--visual-science)/0.85)] to-[hsl(var(--visual-science))] flex items-center justify-center text-white text-xs font-bold">
                         {u.name?.charAt(0) || "?"}
                       </div>
                       <span className="font-medium vi-text hover:text-[hsl(var(--visual-primary))]">{u.name}</span>
@@ -200,13 +200,13 @@ function InviteStaffModal({ accessToken, schools, onClose, onCreated }: {
           <h2 className="text-lg font-heading font-semibold vi-text">Invite Staff Member</h2>
           <button onClick={onClose} className="vi-text-muted hover:vi-text-muted text-xl">&times;</button>
         </div>
-        {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+        {error && <p className="text-sm text-[hsl(var(--visual-math))] bg-[hsl(var(--visual-math)/0.08)] rounded-lg px-3 py-2">{error}</p>}
         {result ? (
           <div className="space-y-3">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <div className="bg-[hsl(var(--visual-science)/0.08)] border border-[hsl(var(--visual-science)/0.25)] rounded-xl p-4">
               <p className="text-sm font-semibold text-[hsl(var(--visual-science))]">Staff member invited successfully!</p>
-              <p className="text-xs text-emerald-600 mt-1">Share this temporary password with the new staff member:</p>
-              <p className="mt-2 font-mono text-sm bg-white rounded-lg px-3 py-2 border border-emerald-200 select-all">{result.temporaryPassword}</p>
+              <p className="text-xs text-[hsl(var(--visual-science))] mt-1">Share this temporary password with the new staff member:</p>
+              <p className="mt-2 font-mono text-sm bg-white rounded-lg px-3 py-2 border border-[hsl(var(--visual-science)/0.25)] select-all">{result.temporaryPassword}</p>
             </div>
             <button onClick={onCreated} className="w-full px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700">Done</button>
           </div>

@@ -139,7 +139,7 @@ export default function AdminAIPage() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold vi-text">{s.label}</p>
-                    <span className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="w-2 h-2 rounded-full bg-[hsl(var(--visual-science))]" />
                   </div>
                   <p className="text-xs vi-text-muted">{s.desc}</p>
                 </div>
@@ -160,8 +160,8 @@ export default function AdminAIPage() {
             { label: "Parent Approval Loop", status: true, detail: "Level changes and accommodations require parent consent" },
             { label: "Full Audit Trail", status: true, detail: "Every brain version tracked with decision rationale" },
           ].map((c) => (
-            <div key={c.label} className="flex items-start gap-3 p-4 rounded-xl bg-green-50 border border-green-100">
-              <Check size={16} strokeWidth={3} className="text-green-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
+            <div key={c.label} className="flex items-start gap-3 p-4 rounded-xl bg-[hsl(var(--visual-science)/0.08)] border border-[hsl(var(--visual-science)/0.25)]">
+              <Check size={16} strokeWidth={3} className="text-[hsl(var(--visual-science))] mt-0.5 flex-shrink-0" aria-hidden="true" />
               <div>
                 <p className="text-sm font-bold vi-text">{c.label}</p>
                 <p className="text-xs vi-text-muted mt-0.5">{c.detail}</p>
@@ -175,8 +175,8 @@ export default function AdminAIPage() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-heading font-bold text-lg vi-text">{t("ai_usage")}</h2>
           <div className="flex items-center gap-3 text-xs vi-text-muted">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400" /> 7 Core</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> 7 Expansion</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[hsl(var(--visual-reading))]" /> 7 Core</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[hsl(var(--visual-sel))]" /> 7 Expansion</span>
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -197,7 +197,7 @@ export default function AdminAIPage() {
               <p className="text-xs font-bold vi-text">{t.name}</p>
               <p className="text-[10px] vi-text-muted leading-tight">{t.domain}</p>
               <span className={`inline-block mt-1 px-1.5 py-0.5 text-[9px] font-bold rounded-full ${
-                t.tier === "core" ? "bg-blue-50 text-blue-600" : "bg-amber-50 text-amber-600"
+                t.tier === "core" ? "bg-[hsl(var(--visual-reading)/0.08)] text-[hsl(var(--visual-reading))]" : "bg-[hsl(var(--visual-sel)/0.10)] text-[hsl(var(--visual-sel))]"
               }`}>{t.tier}</span>
             </button>
           ))}

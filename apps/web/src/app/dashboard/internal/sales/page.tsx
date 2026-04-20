@@ -21,11 +21,11 @@ export default function SalesDashboard() {
 
   const pipeline = [
     { stage: "Lead", count: 45, value: "$67,500", color: "bg-slate-200" },
-    { stage: "Qualified", count: 28, value: "$42,000", color: "bg-blue-200" },
+    { stage: "Qualified", count: 28, value: "$42,000", color: "bg-[hsl(var(--visual-reading)/0.35)]" },
     { stage: "Demo Scheduled", count: 15, value: "$22,500", color: "bg-purple-200" },
-    { stage: "Proposal Sent", count: 8, value: "$12,000", color: "bg-amber-200" },
-    { stage: "Negotiation", count: 5, value: "$7,500", color: "bg-orange-200" },
-    { stage: "Closed Won", count: 3, value: "$4,500", color: "bg-green-200" },
+    { stage: "Proposal Sent", count: 8, value: "$12,000", color: "bg-[hsl(var(--visual-sel)/0.40)]" },
+    { stage: "Negotiation", count: 5, value: "$7,500", color: "bg-[hsl(var(--visual-sel)/0.55)]" },
+    { stage: "Closed Won", count: 3, value: "$4,500", color: "bg-[hsl(var(--visual-science)/0.35)]" },
   ];
 
   const recentDeals = [
@@ -60,7 +60,7 @@ export default function SalesDashboard() {
               <StatIconWell wellClass={m.well}>
                 <m.Icon size={22} strokeWidth={2.5} aria-hidden="true" />
               </StatIconWell>
-              <span className="text-xs text-green-600 font-semibold">{m.trend}</span>
+              <span className="text-xs text-[hsl(var(--visual-science))] font-semibold">{m.trend}</span>
             </div>
             <p className="text-2xl font-bold vi-text">{m.value}</p>
             <p className="text-xs vi-text-muted font-semibold mt-1">{m.label}</p>
@@ -127,7 +127,7 @@ export default function SalesDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 text-white">
+        <div className="bg-gradient-to-br from-[hsl(var(--visual-science))] to-[hsl(var(--visual-science)/0.85)] rounded-2xl p-5 text-white">
           <p className="text-sm opacity-80">Monthly Recurring Revenue</p>
           <p className="text-3xl font-bold mt-2">$48,200</p>
           <p className="text-xs mt-1 opacity-70">+18% from last month</p>

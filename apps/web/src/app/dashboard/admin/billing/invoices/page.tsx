@@ -60,11 +60,11 @@ export default function InvoicesPage() {
 
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white rounded-xl p-5 shadow-sm border vi-border text-center">
-          <p className="text-2xl font-bold text-green-600">${totalRevenue}</p>
+          <p className="text-2xl font-bold text-[hsl(var(--visual-science))]">${totalRevenue}</p>
           <p className="text-xs vi-text-muted font-semibold mt-1">Collected Revenue</p>
         </div>
         <div className="bg-white rounded-xl p-5 shadow-sm border vi-border text-center">
-          <p className="text-2xl font-bold text-amber-600">${pendingAmount}</p>
+          <p className="text-2xl font-bold text-[hsl(var(--visual-sel))]">${pendingAmount}</p>
           <p className="text-xs vi-text-muted font-semibold mt-1">Outstanding</p>
         </div>
         <div className="bg-white rounded-xl p-5 shadow-sm border vi-border text-center">

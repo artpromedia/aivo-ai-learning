@@ -63,8 +63,8 @@ export default function CustomerCareDashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {([
-          { label: "Open Tickets", value: ticketMetrics.open, Icon: Inbox, color: "bg-red-600" },
-          { label: "In Progress", value: ticketMetrics.inProgress, Icon: RefreshCw, color: "bg-amber-600" },
+          { label: "Open Tickets", value: ticketMetrics.open, Icon: Inbox, color: "bg-[hsl(var(--visual-math))]" },
+          { label: "In Progress", value: ticketMetrics.inProgress, Icon: RefreshCw, color: "bg-[hsl(var(--visual-sel))]" },
           { label: "Resolved (30d)", value: ticketMetrics.resolved, Icon: CheckCircle2, color: "bg-[hsl(var(--visual-reading))]" },
           { label: "CSAT Score", value: `${ticketMetrics.csat}%`, Icon: Star, color: "bg-[hsl(var(--visual-primary))]" },
         ] as Array<{label: string; value: any; Icon: LucideIcon; color: string}>).map((m) => (

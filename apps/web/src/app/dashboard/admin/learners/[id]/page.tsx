@@ -55,10 +55,10 @@ const SENSORY_LABELS: Record<string, string> = {
 
 const SENSORY_COLORS: Record<string, string> = {
   visual: "bg-[hsl(var(--visual-primary))]",
-  auditory: "bg-blue-500",
-  tactile: "bg-green-500",
-  vestibular: "bg-amber-500",
-  proprioceptive: "bg-red-500",
+  auditory: "bg-[hsl(var(--visual-reading))]",
+  tactile: "bg-[hsl(var(--visual-science))]",
+  vestibular: "bg-[hsl(var(--visual-sel))]",
+  proprioceptive: "bg-[hsl(var(--visual-math))]",
 };
 
 function calcAge(dob: string | null): string {
@@ -116,7 +116,7 @@ export default function LearnerDetailPage() {
         <Link href="/dashboard/admin/learners" className="text-sm text-[hsl(var(--visual-primary))] hover:text-[hsl(var(--visual-primary))] font-medium">
           ← Back to Learners
         </Link>
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-red-600">
+        <div className="bg-[hsl(var(--visual-math)/0.08)] border border-[hsl(var(--visual-math)/0.25)] rounded-2xl p-6 text-[hsl(var(--visual-math))]">
           {error || "Learner not found"}
         </div>
       </div>
