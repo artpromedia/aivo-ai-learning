@@ -4,6 +4,7 @@ import { signJWT, verifyJWT } from "@aivo/security";
 import { eq, sql, desc, ilike, or, and, count, asc } from "drizzle-orm";
 import argon2 from "argon2";
 import crypto from "crypto";
+import { requireStepUp } from "./step-up.js";
 
 const ADMIN_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN"];
 const INTERNAL_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
@@ -180,7 +181,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.put("/api/admin/users/:id", {
-    preHandler: requirePlatformAdmin,
+    preHandler: [requirePlatformAdmin, requireStepUp("role:change")],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const body = req.body as any;
@@ -206,7 +207,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.delete("/api/admin/users/:id", {
-    preHandler: requirePlatformAdmin,
+    preHandler: [requirePlatformAdmin, requireStepUp("user:delete")],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const adminUser = (req as any).user;
@@ -248,7 +249,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/admin/users/:id/reset-password", {
-    preHandler: requirePlatformAdmin,
+    preHandler: [requirePlatformAdmin, requireStepUp("config:update")],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
 
@@ -394,7 +395,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.put("/api/admin/tenants/:id", {
-    preHandler: requirePlatformAdmin,
+    preHandler: [requirePlatformAdmin, requireStepUp("tenant:suspend")],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const body = req.body as any;
@@ -427,7 +428,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/admin/impersonate", {
-    preHandler: requirePlatformAdmin,
+    preHandler: [requirePlatformAdmin, requireStepUp("user:impersonate")],
     schema: {
       tags: ["Admin"],
       body: {

@@ -3,7 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { IconWell } from "@/components/discovery/_vi";
-import { ShieldCheck, Check, X, Circle, ClipboardList, Trash2, Upload, type LucideIcon } from "lucide-react";
+import { ShieldCheck, Check, X, Circle, ClipboardList, Trash2, Upload, AlertTriangle, type LucideIcon } from "lucide-react";
 
 interface AuditEntry {
   action: string;
@@ -13,20 +13,46 @@ interface AuditEntry {
   details?: string;
 }
 
+interface RuntimeControl {
+  id: string;
+  label: string;
+  category: "Auth" | "Access" | "Network" | "Encryption" | "Audit" | "Scanning";
+  status: "pass" | "warn" | "fail" | "unknown";
+  evidence: string;
+  runbook?: string;
+  lastCheckedAt: string;
+}
+
 export default function AdminCompliancePage() {
   const { accessToken } = useAuth();
   const t = useTranslations("platformAdmin");
   const tc = useTranslations("common");
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
+  const [runtimeControls, setRuntimeControls] = useState<RuntimeControl[] | null>(null);
+  const [controlsLastChecked, setControlsLastChecked] = useState<string | null>(null);
+  const [controlsErr, setControlsErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
-    fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then((r) => r.ok ? r.json() : null)
-      .then(setStats)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+      fetch("/api/admin-svc/compliance/controls", { headers: { Authorization: `Bearer ${accessToken}` } })
+        .then(async (r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+        .catch((e) => ({ __err: String(e?.message ?? e) })),
+    ]).then(([s, c]: any) => {
+      setStats(s);
+      if (c?.__err) {
+        setControlsErr(c.__err);
+        setRuntimeControls([]);
+      } else {
+        setRuntimeControls(c.controls);
+        setControlsLastChecked(c.generatedAt);
+      }
+      setLoading(false);
+    });
   }, [accessToken]);
 
   const complianceChecks = [
@@ -57,20 +83,7 @@ export default function AdminCompliancePage() {
     ]},
   ];
 
-  const securityControls = [
-    { label: "JWT RS256 Token Authentication", status: true, category: "Auth" },
-    { label: "Multi-Factor Authentication (MFA)", status: !!(stats?.mfaAdoptionRate && stats.mfaAdoptionRate > 0), category: "Auth" },
-    { label: "Step-Up Authentication for Sensitive Ops", status: true, category: "Auth" },
-    { label: "Role-Based Access Control (RBAC)", status: true, category: "Access" },
-    { label: "Tenant Data Isolation", status: true, category: "Access" },
-    { label: "API Rate Limiting", status: true, category: "Network" },
-    { label: "HTTPS/TLS Encryption in Transit", status: true, category: "Encryption" },
-    { label: "AES-256 Encryption at Rest", status: true, category: "Encryption" },
-    { label: "Brain State Versioning & Audit Trail", status: true, category: "Audit" },
-    { label: "Admin Action Logging", status: true, category: "Audit" },
-    { label: "Automated Vulnerability Scanning", status: true, category: "Scanning" },
-    { label: "Secret Detection (gitleaks/trufflehog)", status: true, category: "Scanning" },
-  ];
+  // Security controls now come from the runtime probes endpoint; no hardcoded array.
 
   const recentAudit: AuditEntry[] = [
     { action: "USER_CREATED", actor: "admin@aivo.test", resource: "User", timestamp: new Date(Date.now() - 3600000).toISOString(), details: "Created new team member" },
@@ -162,22 +175,60 @@ export default function AdminCompliancePage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="vi-card p-6">
-          <h2 className="font-heading font-bold text-lg vi-text mb-4">{t("system_health")}</h2>
+        <div className="vi-card p-6" data-testid="runtime-controls">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-heading font-bold text-lg vi-text">{t("system_health")}</h2>
+            {controlsLastChecked && (
+              <span className="text-[10px] vi-text-muted">
+                Probed {new Date(controlsLastChecked).toLocaleTimeString()}
+              </span>
+            )}
+          </div>
+          {controlsErr && (
+            <div className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700 mb-3" data-testid="runtime-controls-error">
+              Compliance probes unavailable: {controlsErr}
+            </div>
+          )}
           <div className="space-y-2">
-            {securityControls.map((ctrl) => (
-              <div key={ctrl.label} className="flex items-center gap-3 py-2 px-3 rounded-lg hover:vi-bg transition">
-                {ctrl.status ? (
-                  <Check size={16} strokeWidth={3} className="text-[hsl(var(--visual-science))] flex-shrink-0" aria-hidden="true" />
-                ) : (
-                  <X size={16} strokeWidth={3} className="text-[hsl(var(--visual-math))] flex-shrink-0" aria-hidden="true" />
-                )}
-                <div className="flex-1">
-                  <p className="text-sm font-medium vi-text">{ctrl.label}</p>
+            {(runtimeControls || []).map((ctrl) => {
+              const tone =
+                ctrl.status === "pass"
+                  ? "text-[hsl(var(--visual-science))]"
+                  : ctrl.status === "warn"
+                    ? "text-amber-600"
+                    : ctrl.status === "fail"
+                      ? "text-[hsl(var(--visual-math))]"
+                      : "vi-text-muted";
+              const Icon = ctrl.status === "pass" ? Check : ctrl.status === "fail" ? X : AlertTriangle;
+              return (
+                <div
+                  key={ctrl.id}
+                  className="flex items-start gap-3 py-2 px-3 rounded-lg hover:vi-bg transition"
+                  data-testid={`runtime-control-${ctrl.id}`}
+                  data-status={ctrl.status}
+                >
+                  <Icon size={16} strokeWidth={3} className={`mt-0.5 flex-shrink-0 ${tone}`} aria-hidden="true" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium vi-text">{ctrl.label}</p>
+                    <p className="text-[11px] vi-text-muted mt-0.5">{ctrl.evidence}</p>
+                    {ctrl.status !== "pass" && ctrl.runbook && (
+                      <a
+                        href={ctrl.runbook}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="text-[11px] underline text-blue-700 mt-0.5 inline-block"
+                      >
+                        Runbook ↗
+                      </a>
+                    )}
+                  </div>
+                  <span className="px-2 py-0.5 text-[10px] rounded vi-surface-soft vi-text-muted font-medium">{ctrl.category}</span>
                 </div>
-                <span className="px-2 py-0.5 text-[10px] rounded vi-surface-soft vi-text-muted font-medium">{ctrl.category}</span>
-              </div>
-            ))}
+              );
+            })}
+            {!controlsErr && runtimeControls && runtimeControls.length === 0 && (
+              <p className="text-sm vi-text-muted">No probes returned.</p>
+            )}
           </div>
         </div>
 

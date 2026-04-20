@@ -14,6 +14,7 @@ import { registerHealthRoutes } from "./routes/health.js";
 import { registerConsentRoutes } from "./routes/consent.js";
 import { registerCurriculumRoutes } from "./routes/curriculum.js";
 import { registerAdminRoutes } from "./routes/admin.js";
+import { registerStepUpRoutes } from "./routes/step-up.js";
 import { registerDistrictRoutes } from "./routes/district.js";
 
 const logger = createLogger("identity-svc");
@@ -109,6 +110,7 @@ async function start() {
   await registerUserRoutes(app);
   await registerConsentRoutes(app);
   await registerCurriculumRoutes(app);
+  await registerStepUpRoutes(app);
   await registerAdminRoutes(app);
   await registerDistrictRoutes(app);
   registerTestHelperRoutes(app);

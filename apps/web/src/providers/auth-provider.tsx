@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { fetchWithStepUp } from "@/lib/step-up";
 
 interface User {
   id: string;
@@ -129,13 +130,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!accessToken || !user) throw new Error("Not authenticated");
     if (user.role !== "PLATFORM_ADMIN") throw new Error("Not authorized");
 
-    const res = await fetch("/api/admin/impersonate", {
+    const res = await fetchWithStepUp("/api/admin/impersonate", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId }),
+      accessToken,
     });
     if (!res.ok) {
       const err = await res.json();
