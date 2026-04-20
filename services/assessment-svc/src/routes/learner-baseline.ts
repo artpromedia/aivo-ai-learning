@@ -115,10 +115,13 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
     const { learnerId } = req.params as { learnerId: string };
     const { chapter } = req.body as { chapter: any };
 
-    const [learner] = await db.select().from(learners).where(eq(learners.id, learnerId)).limit(1);
+    let [learner] = await db.select().from(learners).where(eq(learners.id, learnerId)).limit(1);
+    if (!learner) {
+      [learner] = await db.select().from(learners).where(eq(learners.userId, learnerId)).limit(1);
+    }
     if (!learner) return reply.status(404).send({ error: "Learner not found" });
 
-    if (user.role === "LEARNER" && user.sub !== learnerId) {
+    if (user.role === "LEARNER" && user.sub !== learner.userId) {
       return reply.status(403).send({ error: "Access denied" });
     }
     if (user.role === "PARENT" && learner.parentId !== user.sub) {
@@ -128,7 +131,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
     const [parentAssessment] = await db
       .select()
       .from(parentAssessments)
-      .where(eq(parentAssessments.learnerId, learnerId))
+      .where(eq(parentAssessments.learnerId, learner.id))
       .orderBy(desc(parentAssessments.createdAt))
       .limit(1);
 
