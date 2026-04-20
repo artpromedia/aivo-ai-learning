@@ -43,9 +43,7 @@ export default function Home() {
       <StickyHeader scrollY={scrollY} />
 
       <main>
-        <div className="pt-16">
-          <Hero scrollY={scrollY} />
-        </div>
+        <Hero scrollY={scrollY} />
 
         <div id="features">
           <Features scrollY={scrollY} />
