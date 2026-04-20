@@ -90,3 +90,12 @@ export {
   parseIntFlag,
   type AdminEnterpriseFlags,
 } from "./flags.js";
+
+export {
+  SURFACE_COOKIE_NAME,
+  getSurfaceSecret,
+  signSurfaceCookieValue,
+  verifySurfaceCookieValue,
+  b64urlEncode,
+  type SurfaceCookieClaims,
+} from "./surface-cookie.js";

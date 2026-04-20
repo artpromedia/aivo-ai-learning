@@ -4,9 +4,55 @@ import { signJWT, verifyJWT } from "@aivo/security";
 import { eq, and, sql, lt } from "drizzle-orm";
 import crypto from "crypto";
 import argon2 from "argon2";
+import { setSurfaceCookie, clearSurfaceCookie } from "../lib/surface-cookie.js";
 
 async function hashPassword(password: string): Promise<string> {
   return argon2.hash(password);
+}
+
+/**
+ * Build the cross-host login URL the consumer login page should redirect a
+ * misrouted user to. Production hosts are pinned to admin.aivolearning.com /
+ * district.aivolearning.com (defense-in-depth + middleware host allowlist),
+ * so the rejection payload MUST be an absolute URL on the correct host -
+ * a relative `/admin/login` would 404 once host pinning is enforced.
+ *
+ * In development (replit dev domain, localhost) we fall back to the same-host
+ * relative path so the dev preview pane keeps working.
+ *
+ * Override with WEB_ADMIN_LOGIN_URL / WEB_DISTRICT_LOGIN_URL when running
+ * against alternative hosts (staging, sandbox).
+ */
+function buildSurfaceLoginUrl(
+  req: { headers: Record<string, string | string[] | undefined> },
+  envVar: "WEB_ADMIN_LOGIN_URL" | "WEB_DISTRICT_LOGIN_URL",
+  prodDefault: string,
+  devPath: string
+): string {
+  const override = process.env[envVar];
+  if (override) return override;
+  if (process.env.NODE_ENV === "production") return prodDefault;
+  const host = (req.headers["x-forwarded-host"] || req.headers.host) as string | undefined;
+  if (host && /aivolearning\.com$/i.test(host)) return prodDefault;
+  return devPath;
+}
+
+function adminLoginUrl(req: { headers: Record<string, string | string[] | undefined> }): string {
+  return buildSurfaceLoginUrl(
+    req,
+    "WEB_ADMIN_LOGIN_URL",
+    "https://admin.aivolearning.com/admin/login",
+    "/admin/login"
+  );
+}
+
+function districtLoginUrl(req: { headers: Record<string, string | string[] | undefined> }): string {
+  return buildSurfaceLoginUrl(
+    req,
+    "WEB_DISTRICT_LOGIN_URL",
+    "https://district.aivolearning.com/district/login",
+    "/district/login"
+  );
 }
 
 async function verifyPassword(hash: string, password: string): Promise<boolean> {
@@ -211,6 +257,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       path: "/",
       maxAge: 30 * 24 * 60 * 60,
     });
+    await setSurfaceCookie(reply, user.role);
 
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: tenant.id },
@@ -251,14 +298,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (user.role === "DISTRICT_ADMIN") {
       return reply.status(403).send({
         error: "District administrators must sign in at district.aivolearning.com.",
-        redirectTo: "/district/login",
+        redirectTo: districtLoginUrl(req),
         wrongSurface: "district",
       });
     }
     if (["PLATFORM_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"].includes(user.role)) {
       return reply.status(403).send({
         error: "Staff accounts must sign in at admin.aivolearning.com.",
-        redirectTo: "/admin/login",
+        redirectTo: adminLoginUrl(req),
         wrongSurface: "admin",
       });
     }
@@ -305,6 +352,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       path: "/",
       maxAge: 30 * 24 * 60 * 60,
     });
+    await setSurfaceCookie(reply, user.role);
 
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
@@ -391,6 +439,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       path: "/",
       maxAge: 30 * 24 * 60 * 60,
     });
+    await setSurfaceCookie(reply, user.role);
 
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
@@ -477,6 +526,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       path: "/",
       maxAge: 30 * 24 * 60 * 60,
     });
+    await setSurfaceCookie(reply, user.role);
 
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
@@ -583,6 +633,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       path: "/",
       maxAge: 30 * 24 * 60 * 60,
     });
+    await setSurfaceCookie(reply, user.role);
 
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
@@ -678,6 +729,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (user.deactivatedAt) {
       await db.delete(sessions).where(eq(sessions.userId, user.id));
       reply.clearCookie("refreshToken", { path: "/" });
+    clearSurfaceCookie(reply);
       return reply.status(401).send({ error: "Account has been deactivated" });
     }
 
@@ -701,6 +753,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       await db.delete(sessions).where(eq(sessions.refreshToken, hashRefreshToken(token)));
     }
     reply.clearCookie("refreshToken", { path: "/" });
+    clearSurfaceCookie(reply);
     return { success: true };
   });
 
@@ -898,6 +951,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     await deleteUserCascade(db, payload.sub);
 
     reply.clearCookie("refreshToken", { path: "/" });
+    clearSurfaceCookie(reply);
     return { success: true, deleted: true };
   });
 
@@ -1009,6 +1063,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       path: "/",
       maxAge: 30 * 24 * 60 * 60,
     });
+    await setSurfaceCookie(reply, user.role);
 
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },

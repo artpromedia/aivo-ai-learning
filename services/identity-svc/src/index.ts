@@ -8,6 +8,7 @@ import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
 import { initKeys, logAdminEnterpriseFlags } from "@aivo/security";
 import { registerAuthRoutes } from "./routes/auth.js";
+import { registerTestHelperRoutes } from "./routes/test-helpers.js";
 import { registerUserRoutes } from "./routes/users.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerConsentRoutes } from "./routes/consent.js";
@@ -100,6 +101,7 @@ async function start() {
   await registerCurriculumRoutes(app);
   await registerAdminRoutes(app);
   await registerDistrictRoutes(app);
+  registerTestHelperRoutes(app);
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Identity service listening on port ${PORT}`);
