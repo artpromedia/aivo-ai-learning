@@ -3,6 +3,18 @@ set -e
 
 echo "Starting AIVO backend services..."
 
+echo "Building shared packages..."
+cd /home/runner/workspace
+pnpm --filter @aivo/observability run build 2>/dev/null || true
+pnpm --filter @aivo/brand run build 2>/dev/null || true
+pnpm --filter @aivo/events run build 2>/dev/null || true
+pnpm --filter @aivo/security run build 2>/dev/null || true
+pnpm --filter @aivo/scoring run build 2>/dev/null || true
+pnpm --filter @aivo/sso run build 2>/dev/null || true
+pnpm --filter @aivo/db run build 2>/dev/null || true
+pnpm --filter @aivo/learner-ui run build 2>/dev/null || true
+echo "Shared packages built."
+
 TSX_BIN=$(which tsx 2>/dev/null || echo "npx tsx")
 
 echo "Starting identity-svc on port 3001..."
