@@ -187,18 +187,18 @@ export function StepUpModal() {
             {challenge.factor === "totp" && (
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-slate-700">
-                  Authenticator app code
+                  <span>Authenticator app code</span>
+                  <input
+                    ref={firstFocusRef as any}
+                    inputMode="numeric"
+                    pattern="\d{6}"
+                    maxLength={6}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-center text-lg tracking-widest font-mono"
+                    data-testid="stepup-totp-input"
+                  />
                 </label>
-                <input
-                  ref={firstFocusRef as any}
-                  inputMode="numeric"
-                  pattern="\d{6}"
-                  maxLength={6}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-center text-lg tracking-widest font-mono"
-                  data-testid="stepup-totp-input"
-                />
               </div>
             )}
 
@@ -207,17 +207,19 @@ export function StepUpModal() {
                 <p className="text-xs text-slate-500">
                   Code sent to {challenge.email?.sentTo}
                 </p>
-                <label className="block text-sm font-medium text-slate-700">Email code</label>
-                <input
-                  ref={firstFocusRef as any}
-                  inputMode="numeric"
-                  pattern="\d{6}"
-                  maxLength={6}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-center text-lg tracking-widest font-mono"
-                  data-testid="stepup-email-input"
-                />
+                <label className="block text-sm font-medium text-slate-700">
+                  <span>Email code</span>
+                  <input
+                    ref={firstFocusRef as any}
+                    inputMode="numeric"
+                    pattern="\d{6}"
+                    maxLength={6}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-center text-lg tracking-widest font-mono"
+                    data-testid="stepup-email-input"
+                  />
+                </label>
               </div>
             )}
 

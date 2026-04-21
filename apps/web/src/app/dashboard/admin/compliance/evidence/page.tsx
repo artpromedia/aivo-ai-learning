@@ -62,7 +62,9 @@ export default function EvidencePage() {
     }
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [accessToken]);
+  // `load` is defined in the same component and only depends on `accessToken`, which is
+  // already in the deps array, so omitting it here is safe.
+  useEffect(() => { load(); }, [accessToken]);
 
   async function downloadAndVerify(b: Bundle) {
     if (!accessToken) return;
