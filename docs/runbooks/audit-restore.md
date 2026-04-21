@@ -1,53 +1,85 @@
-# Audit Log Restore & Chain Recovery
+# Runbook — Audit Log Restore
 
-The three audit tables — `audit_events`, `admin_audit_log`, `district_activity_log` — are append-only hash chains. The trigger `audit_no_mutate()` aborts any `UPDATE`, `DELETE`, or `TRUNCATE` with `ERRCODE = insufficient_privilege`. Each row carries `prev_hash` and `hash`, where:
+**Audience:** Platform on-call · **Severity:** P2 · **Last reviewed:** Sprint 11
 
-```
-hash = sha256(prev_hash || canonical_json(payload))
-```
+Use this when `pnpm --filter @aivo/admin-svc test:audit-chain` (or the
+`/api/admin-svc/audit-log/verify` endpoint) reports a chain break in
+`admin_audit_log`. The append-only triggers added in Sprint 4 should
+make tampering practically impossible, but a botched migration or a
+storage corruption event can still break the hash chain.
 
-`canonical_json` sorts object keys, drops `undefined`, and renders `Date` as ISO strings. The first row in a chain has `prev_hash = ''`. The verifier endpoint `GET /api/admin-svc/audit-log/verify` (PLATFORM_ADMIN only) walks every row in `seq` order and returns the first `seq` where the chain breaks, plus a per-table summary.
+## Diagnose
 
-## Symptoms
+1. Hit the verify endpoint as PLATFORM_ADMIN:
 
-- An `INSERT` into an audit table fails with `permission denied` → the `audit_writer` role is missing required grants. Re-run `scripts/post-merge.sh` or apply `packages/db/drizzle/0005_audit_immutability.sql` manually.
-- An `UPDATE`/`DELETE` against an audit table fails with `Audit table … is append-only — UPDATE blocked` → expected behavior. The trigger is doing its job. Investigate the caller.
-- `/api/admin-svc/audit-log/verify` reports `ok: false` with a non-null `brokenAtSeq` → the chain has been tampered with or someone bypassed the trigger as a superuser.
-
-## Recovery for a broken chain
-
-1. Snapshot the affected table to a timestamped table for forensics:
-   ```sql
-   CREATE TABLE audit_events_quarantine_2026_04 AS SELECT * FROM audit_events;
+   ```bash
+   curl -H "Authorization: Bearer $TOKEN" \
+        https://admin.aivolearning.com/api/admin-svc/audit-log/verify
    ```
-2. Identify the breakage with the verify endpoint and pull the row:
+
+   The response includes `firstBrokenSeq` (the row whose `prevHash`
+   does not match the previous row's `hash`).
+
+2. Pull the surrounding rows:
+
    ```sql
-   SELECT * FROM audit_events WHERE seq = $brokenAtSeq;
+   SELECT seq, action, actor_email, prev_hash, hash, created_at
+     FROM admin_audit_log
+    WHERE seq BETWEEN $first_broken - 5 AND $first_broken + 5
+    ORDER BY seq;
    ```
-3. **Do not** mutate the live table to "fix" the hash — that is the attack you are defending against. Instead, append a `CHAIN_BREAK_DETECTED` event to a fresh chain segment and notify the security team:
-   ```sql
-   -- Done via appendAudit() so the new row's prev_hash = previous row's hash.
+
+   A row whose `prev_hash` doesn't match the prior row's `hash`, *or*
+   whose `hash` doesn't match `sha256(prev_hash || canonical_json(row))`,
+   is the corruption point.
+
+## Restore from nightly evidence
+
+The nightly SOC 2 evidence bundle (`evidence_bundles` table) contains
+`audit-merkle.json` with `latestSeq` + `latestHash` from each day. Use
+the most recent bundle whose `latestSeq` is **less than**
+`firstBrokenSeq` as your trusted anchor.
+
+1. Download the trusted bundle from `/dashboard/admin/compliance/evidence`
+   (PLATFORM_ADMIN + step-up `data:export`). Verify its sha256 against
+   the hash recorded in the row.
+
+2. Restore the audit table from the most recent backup that is
+   *older than* `firstBrokenSeq`:
+
+   ```bash
+   pg_restore --table admin_audit_log --data-only \
+     --dbname "$DATABASE_URL" /backups/$BACKUP_FILE
    ```
-4. Restore from the most recent verified snapshot if the breakage is recent. Audit tables are part of the standard PITR backup set.
 
-## Role split rationale
+3. Re-verify:
 
-`audit_writer` exists so application connections can hold a low-privilege role that only has `INSERT`/`SELECT` on audit tables. Even if the application is compromised, an attacker cannot rewrite history because `UPDATE`/`DELETE`/`TRUNCATE` are revoked AND the trigger raises. Database superusers can still bypass triggers with `ALTER TABLE … DISABLE TRIGGER`, so the chain hash provides defense-in-depth — any post-hoc edit will leave `verifyAuditRow` returning false.
+   ```bash
+   curl -H "Authorization: Bearer $TOKEN" \
+        https://admin.aivolearning.com/api/admin-svc/audit-log/verify
+   ```
 
-## Manual chain rebuild (last resort)
+   Expect `valid: true`.
 
-Only run this on a **forensic copy**, never on the live table:
+## Backfill missing rows
 
-```sql
--- Rebuild prev_hash/hash deterministically from row contents (canonical JSON).
--- The deterministic JSON ordering must match `canonicalize()` in
--- packages/security/src/audit-chain.ts.
-```
+If the restore drops legitimate rows newer than the chain break, the
+operations performed during that window are unrecoverable from the
+audit chain itself. Pull replacement evidence from:
 
-A node script that pages through the rows and re-derives both fields lives at `packages/security/scripts/rebuild-audit-chain.ts` (write-on-demand — not committed). After rebuild, compare new hashes to stored hashes to enumerate every tampered row.
+- Application logs (`identity-svc`, `admin-svc`) shipped to your log
+  store — these include the same actor + action context.
+- Stripe / IdP / SCIM provider logs for any third-party-side mutations.
 
-## Operating notes
+Insert reconstructed rows at the next available `seq`, prefixed with
+`RECONSTRUCTED:` in the `details` JSON, so auditors can see the chain
+gap was closed manually.
 
-- `appendAudit()` takes a transaction-scoped Postgres advisory lock keyed on the table name (`pg_advisory_xact_lock(hashtext(tableName))`) so two concurrent inserters cannot read the same `prev_hash` and produce a fork.
-- `seq` is `bigserial`, monotonically increasing per table. Gaps are normal (rolled-back transactions consume sequence values).
-- Pre-existing rows from before Sprint 4 have `hash IS NULL`. The verifier treats them as legacy and reports the first chained `seq` as `chainStartSeq`.
+## Postmortem requirements
+
+A chain break is automatically a SOC 2 reportable event:
+
+- File the postmortem within 48h.
+- Attach the corrupted-row diff and the trusted-bundle sha256.
+- Add a one-line entry to `docs/security-architecture.md §1.7` so
+  future audits surface the incident.

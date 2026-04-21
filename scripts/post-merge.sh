@@ -185,6 +185,18 @@ CREATE TABLE IF NOT EXISTS seat_requests (
   created_at timestamp DEFAULT now() NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_seat_requests_tenant ON seat_requests(tenant_id, created_at);
+
+-- Sprint 11: SOC 2 evidence bundle metadata.
+CREATE TABLE IF NOT EXISTS evidence_bundles (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  bundle_date varchar(10) NOT NULL UNIQUE,
+  filename varchar(255) NOT NULL,
+  size_bytes integer NOT NULL,
+  sha256 varchar(64) NOT NULL,
+  summary jsonb NOT NULL,
+  generated_at timestamp DEFAULT now() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_evidence_bundles_date ON evidence_bundles(bundle_date);
 SQL
 fi
 

@@ -84,7 +84,7 @@ export default function LearnerDetailPage() {
   useEffect(() => {
     if (!accessToken || !id) return;
     setLoading(true);
-    fetch(`/api/admin/learners/${id}`, {
+    fetch(`/api/admin-svc/learners/${id}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then((r) => {

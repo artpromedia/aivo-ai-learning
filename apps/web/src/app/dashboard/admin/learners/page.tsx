@@ -42,7 +42,7 @@ export default function AdminLearnersPage() {
     if (!accessToken) return;
     setLoading(true);
     Promise.all([
-      fetch("/api/admin/learners?limit=200", { headers: { Authorization: `Bearer ${accessToken}` } })
+      fetch("/api/admin-svc/learners?limit=200", { headers: { Authorization: `Bearer ${accessToken}` } })
         .then((r) => r.ok ? r.json() : []),
       fetch("/api/research/cohorts", { headers: { Authorization: `Bearer ${accessToken}` } })
         .then((r) => r.ok ? r.json() : [])

@@ -377,6 +377,47 @@ export async function registerStepUpRoutes(app: FastifyInstance) {
 
     return { stepUpToken, scope: challenge.scope, factor: usedFactor, expiresIn: 300 };
   });
+
+  /**
+   * Sprint 11 — internal endpoint so other services (admin-svc) can
+   * delegate step-up verification here. Centralizing keeps the in-memory
+   * single-use jti store authoritative across the platform.
+   *
+   * Caller supplies `{ token, scope, callerSub }`; we reuse the same
+   * `requireStepUp` checks (purpose, sub match, scope match, jti single-
+   * use). Authenticated with the shared `x-internal-key`.
+   */
+  app.post("/api/auth/step-up/verify-internal", async (req: any, reply) => {
+    const internalKey = req.headers["x-internal-key"];
+    if (!INTERNAL_KEY || internalKey !== INTERNAL_KEY) {
+      return reply.status(401).send({ valid: false, reason: "internal-key-mismatch" });
+    }
+    if (!ADMIN_ENTERPRISE.STEP_UP_AUTH) {
+      // Step-up flag off → consider every call valid; keeps behavior
+      // identical to the in-process `requireStepUp` no-op branch.
+      return { valid: true, skipped: true };
+    }
+    const { token, scope, callerSub } = (req.body || {}) as {
+      token?: string; scope?: string; callerSub?: string;
+    };
+    if (!token || !scope || !callerSub) {
+      return reply.status(400).send({ valid: false, reason: "missing-fields" });
+    }
+    let claims: StepUpJWT;
+    try {
+      claims = await verifyJWT<StepUpJWT>(token);
+    } catch {
+      return reply.status(403).send({ valid: false, reason: "invalid-or-expired" });
+    }
+    if (claims.purpose !== "step-up") return reply.status(403).send({ valid: false, reason: "wrong-purpose" });
+    if (claims.sub !== callerSub)     return reply.status(403).send({ valid: false, reason: "sub-mismatch" });
+    if (claims.scope !== scope)       return reply.status(403).send({ valid: false, reason: "scope-mismatch" });
+    if (!claims.jti)                  return reply.status(403).send({ valid: false, reason: "missing-jti" });
+    if (checkAndConsumeJti(claims.jti)) {
+      return reply.status(403).send({ valid: false, reason: "already-used" });
+    }
+    return { valid: true, jti: claims.jti, scope: claims.scope };
+  });
 }
 
 // Avoid unused-import warnings for verifyStepUpChallengeToken (exported for tests).

@@ -138,6 +138,27 @@ export const leadSubmissions = pgTable("lead_submissions", {
 ]);
 
 /**
+ * Sprint 11: nightly SOC 2 evidence bundles. Each row points at a
+ * locally generated tar.gz on disk; `sha256` is the content hash so
+ * the compliance UI can let auditors verify integrity. In production
+ * the bundle should be mirrored to a WORM-locked S3 bucket — see
+ * `services/admin-svc/src/lib/soc2-evidence.ts` for the swap point.
+ */
+export const evidenceBundles = pgTable("evidence_bundles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  /** YYYY-MM-DD the bundle covers (UTC). One bundle per day. */
+  bundleDate: varchar("bundle_date", { length: 10 }).notNull().unique(),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  sha256: varchar("sha256", { length: 64 }).notNull(),
+  /** Counts of items inside each artifact, for at-a-glance review. */
+  summary: jsonb("summary").notNull(),
+  generatedAt: timestamp("generated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_evidence_bundles_date").on(table.bundleDate),
+]);
+
+/**
  * Sprint 7: API keys with rotation grace and expiry.
  * `rotatedFromId` is set on the new key minted by a rotation; the old key
  * keeps working until `gracePeriodEndsAt` so callers have a 24h window to

@@ -105,7 +105,7 @@ export default function AdminUserDetailPage() {
   const loadUser = () => {
     if (!accessToken || !userId) return;
     setLoading(true);
-    fetch(`/api/admin/users/${userId}`, {
+    fetch(`/api/admin-svc/users/${userId}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then((r) => {

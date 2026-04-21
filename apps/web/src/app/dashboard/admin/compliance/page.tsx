@@ -36,7 +36,7 @@ export default function AdminCompliancePage() {
   useEffect(() => {
     if (!accessToken) return;
     Promise.all([
-      fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
+      fetch("/api/admin-svc/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
       fetch("/api/admin-svc/compliance/controls", { headers: { Authorization: `Bearer ${accessToken}` } })

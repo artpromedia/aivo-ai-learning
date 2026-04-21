@@ -95,7 +95,7 @@ function CreateUserModal({
 
   useEffect(() => {
     if (!open) return;
-    fetch("/api/admin/tenants", { headers: { Authorization: `Bearer ${accessToken}` } })
+    fetch("/api/admin-svc/tenants", { headers: { Authorization: `Bearer ${accessToken}` } })
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => setTenants(Array.isArray(data) ? data : []))
       .catch(() => setTenants([]));
@@ -307,7 +307,7 @@ export default function AdminUsersPage() {
     const params = new URLSearchParams({ page: String(currentPage), pageSize: String(PAGE_SIZE) });
     if (roleFilter !== "ALL") params.set("role", roleFilter);
     if (searchDebounce) params.set("search", searchDebounce);
-    fetch(`/api/admin/users?${params}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+    fetch(`/api/admin-svc/users?${params}`, { headers: { Authorization: `Bearer ${accessToken}` } })
       .then((r) => r.ok ? r.json() : { users: [], total: 0 })
       .then((data) => {
         setUsers(data.users || []);

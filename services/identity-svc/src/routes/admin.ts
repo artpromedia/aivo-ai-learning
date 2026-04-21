@@ -9,6 +9,18 @@ import { eq, sql, desc, ilike, or, and, count, asc } from "drizzle-orm";
 import argon2 from "argon2";
 import crypto from "crypto";
 import { requireStepUp } from "./step-up.js";
+import { deprecateRoute } from "../lib/deprecation.js";
+
+// Sprint 10: legacy admin reads now live behind admin-svc. Mark them
+// deprecated for one cycle (default 90 days). Mutations remain canonical
+// here.
+const dStats   = deprecateRoute({ successor: "/api/admin-svc/stats" });
+const dUsers   = deprecateRoute({ successor: "/api/admin-svc/users" });
+const dUserId  = deprecateRoute({ successor: "/api/admin-svc/users/:id" });
+const dLearn   = deprecateRoute({ successor: "/api/admin-svc/learners" });
+const dLearnId = deprecateRoute({ successor: "/api/admin-svc/learners/:id" });
+const dTen     = deprecateRoute({ successor: "/api/admin-svc/tenants" });
+const dTenId   = deprecateRoute({ successor: "/api/admin-svc/tenants/:id" });
 
 const ADMIN_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN"];
 const INTERNAL_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
@@ -49,7 +61,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
   app.get("/api/admin/stats", {
-    preHandler: requireAdmin,
+    preHandler: [dStats, requireAdmin],
   }, async () => {
     const [userCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(users);
     const [learnerCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(learners);
@@ -95,7 +107,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/users", {
-    preHandler: requireAdmin,
+    preHandler: [dUsers, requireAdmin],
   }, async (req) => {
     const { role, page: pageStr, pageSize: pageSizeStr, search, sort, order } = req.query as {
       role?: string; page?: string; pageSize?: string; search?: string; sort?: string; order?: string;
@@ -135,7 +147,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/users/:id", {
-    preHandler: requireAdmin,
+    preHandler: [dUserId, requireAdmin],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
 
@@ -271,7 +283,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/learners", {
-    preHandler: requireAdmin,
+    preHandler: [dLearn, requireAdmin],
   }, async (req) => {
     const { page: pageStr, pageSize: pageSizeStr, search, sort, order } = req.query as {
       page?: string; pageSize?: string; search?: string; sort?: string; order?: string;
@@ -307,7 +319,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/learners/:id", {
-    preHandler: requireAdmin,
+    preHandler: [dLearnId, requireAdmin],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
 
@@ -339,7 +351,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/tenants", {
-    preHandler: requireAdmin,
+    preHandler: [dTen, requireAdmin],
   }, async (req) => {
     const { page: pageStr, pageSize: pageSizeStr, search, sort, order } = req.query as {
       page?: string; pageSize?: string; search?: string; sort?: string; order?: string;
@@ -366,7 +378,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/tenants/:id", {
-    preHandler: requireAdmin,
+    preHandler: [dTenId, requireAdmin],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
 
