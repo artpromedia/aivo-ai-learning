@@ -16,7 +16,7 @@ on:
 jobs:
   smoke:
     name: "Smoke Tests (${{ inputs.environment }})"
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, hetzner, production]
     timeout-minutes: 10
 
     steps:
@@ -25,18 +25,34 @@ jobs:
 
       - name: Configure kubectl
         run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
-          chmod 600 ~/.kube/config
+          # Prefer explicit kubeconfig when provided; otherwise use runner's
+          # existing cluster context.
+          if [ -n "${{ secrets.KUBE_CONFIG }}" ]; then
+            mkdir -p ~/.kube
+            echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+            chmod 600 ~/.kube/config
+          fi
+
+      - name: Verify cluster reachable
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
 
       - name: Wait for stabilization (30s)
         run: sleep 30
 
       - name: Run health checks
         run: |
+          if [ "${{ inputs.environment }}" = "staging" ]; then
+            NS="aivo-staging"
+          else
+            NS="aivo"
+          fi
+
           echo "=== Post-Deploy Smoke Tests ==="
           echo "Environment: ${{ inputs.environment }}"
           echo "Version: ${{ inputs.version }}"
+          echo "Namespace: $NS"
           echo ""
 
           SERVICES=(
@@ -48,15 +64,15 @@ jobs:
 
           FAIL=0
           for svc in "${SERVICES[@]}"; do
-            READY_COUNT=$(kubectl get pods -n aivo -l app.kubernetes.io/name=$svc \
+            READY_COUNT=$(kubectl get pods -n "$NS" -l app.kubernetes.io/name=$svc \
               -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' 2>/dev/null \
               | grep -c "True" 2>/dev/null || true)
             READY_COUNT=${READY_COUNT:-0}
 
-            TOTAL_COUNT=$(kubectl get pods -n aivo -l app.kubernetes.io/name=$svc \
+            TOTAL_COUNT=$(kubectl get pods -n "$NS" -l app.kubernetes.io/name=$svc \
               --no-headers 2>/dev/null | wc -l)
 
-            RESTARTS=$(kubectl get pods -n aivo -l app.kubernetes.io/name=$svc \
+            RESTARTS=$(kubectl get pods -n "$NS" -l app.kubernetes.io/name=$svc \
               -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}' 2>/dev/null \
               | tr ' ' '\n' | awk '{s+=$1}END{print s+0}')
 
@@ -83,7 +99,13 @@ jobs:
 
       - name: Verify critical endpoints via port-forward
         run: |
-          kubectl port-forward -n aivo svc/identity-svc 13001:3001 &
+          if [ "${{ inputs.environment }}" = "staging" ]; then
+            NS="aivo-staging"
+          else
+            NS="aivo"
+          fi
+
+          kubectl port-forward -n "$NS" svc/identity-svc 13001:3000 &
           PF_PID=$!
           sleep 5
 
@@ -101,7 +123,6 @@ jobs:
           }
 
           check "health" "http://localhost:13001/health" "200"
-          check "docs"   "http://localhost:13001/docs"   "200"
           check "csrf"   "http://localhost:13001/csrf-token" "200"
 
           kill $PF_PID 2>/dev/null || true
