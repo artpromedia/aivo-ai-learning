@@ -420,6 +420,27 @@ jobs:
             kubectl -n "$NS" annotate "$kind" "$name" "meta.helm.sh/release-namespace=$NS" --overwrite >/dev/null
           }
 
+          # Unstick any release left in pending-* by a previously cancelled
+          # or timed-out run. Without this, every subsequent svc fails
+          # immediately with "another operation in progress".
+          unstick() {
+            local svc="$1"
+            local status
+            status=$(helm -n "$NS" status "$svc" -o json 2>/dev/null | grep -oE '"status":"[a-z-]+"' | head -1 | cut -d'"' -f4 || true)
+            case "$status" in
+              pending-install)
+                echo "::warning::$svc stuck in pending-install — uninstalling before retry"
+                helm -n "$NS" uninstall "$svc" --wait --timeout 2m >/dev/null 2>&1 || true
+                ;;
+              pending-upgrade|pending-rollback)
+                echo "::warning::$svc stuck in $status — rolling back before retry"
+                helm -n "$NS" rollback "$svc" 0 --wait --timeout 2m >/dev/null 2>&1 \
+                  || helm -n "$NS" history "$svc" --max 1 -o json | grep -q '"status":"deployed"' \
+                  || true
+                ;;
+            esac
+          }
+
           FAILED=0
           for svc in "${SERVICES[@]}"; do
             # Port chosen to match the live container port of each service.
@@ -435,8 +456,13 @@ jobs:
             adopt service        "$svc" "$svc"
             adopt deployment     "$svc" "$svc"
             adopt configmap      "$svc" "$svc"
+            unstick "$svc"
             echo "═══ Prod deploy: $svc ($VERSION) ═══"
 
+            # --atomic + --cleanup-on-fail roll back to the prior revision on
+            # any failure so the release never sits in pending-*, which would
+            # cascade-fail every subsequent service in this loop with
+            # "another operation in progress".
             helm_apply() {
               helm upgrade --install "$svc" "${{ env.CHART_PATH }}" \
                 -f "${{ env.PROD_VALUES }}" \
@@ -447,7 +473,7 @@ jobs:
                 --set service.targetPort=$PORT \
                 --set env.PORT="$PORT" \
                 --set envFrom[0].secretRef.name=aivo-common-env \
-                -n "$NS" --timeout 8m --wait 2>&1
+                -n "$NS" --timeout 8m --wait --atomic --cleanup-on-fail 2>&1
             }
 
             set +e
@@ -463,6 +489,7 @@ jobs:
               if echo "$OUT" | grep -Eq "field is immutable|Duplicate value|invalid: spec\.selector"; then
                 echo "::warning::$svc has incompatible existing Deployment — recreating"
                 kubectl -n "$NS" delete deployment "$svc" --ignore-not-found=true --wait=true >/dev/null 2>&1 || true
+                unstick "$svc"
                 set +e
                 OUT=$(helm_apply)
                 RC=$?
@@ -472,6 +499,9 @@ jobs:
                 echo "$OUT"
                 echo "::warning::$svc deploy incomplete"
                 FAILED=$((FAILED+1))
+                # Belt-and-suspenders: clear any pending-* state left
+                # behind so the next service in the loop is not blocked.
+                unstick "$svc"
               fi
             fi
           done
