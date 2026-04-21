@@ -1,19 +1,24 @@
-import { pgTable, uuid, varchar, timestamp, jsonb, text, integer, decimal, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, jsonb, text, integer, decimal, boolean, index, bigserial } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
 import { tenants } from "./tenants.js";
 
 export const adminAuditLog = pgTable("admin_audit_log", {
   id: uuid("id").defaultRandom().primaryKey(),
+  seq: bigserial("seq", { mode: "number" }).notNull(),
   action: varchar("action", { length: 100 }).notNull(),
   actorId: uuid("actor_id").references(() => users.id).notNull(),
   actorEmail: varchar("actor_email", { length: 255 }).notNull(),
   actorRole: varchar("actor_role", { length: 50 }).notNull(),
+  /** Set when actor was impersonating — actor is the real admin, this is the impersonated user. */
+  onBehalfOfId: uuid("on_behalf_of_id").references(() => users.id),
   resourceType: varchar("resource_type", { length: 50 }).notNull(),
   resourceId: varchar("resource_id", { length: 255 }),
   details: jsonb("details"),
   ipAddress: varchar("ip_address", { length: 45 }),
   userAgent: text("user_agent"),
   tenantId: uuid("tenant_id").references(() => tenants.id),
+  prevHash: varchar("prev_hash", { length: 64 }),
+  hash: varchar("hash", { length: 64 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_audit_log_actor").on(table.actorId),
@@ -132,6 +137,33 @@ export const leadSubmissions = pgTable("lead_submissions", {
   index("idx_lead_submissions_created").on(table.createdAt),
 ]);
 
+/**
+ * Sprint 11: nightly SOC 2 evidence bundles. Each row points at a
+ * locally generated tar.gz on disk; `sha256` is the content hash so
+ * the compliance UI can let auditors verify integrity. In production
+ * the bundle should be mirrored to a WORM-locked S3 bucket — see
+ * `services/admin-svc/src/lib/soc2-evidence.ts` for the swap point.
+ */
+export const evidenceBundles = pgTable("evidence_bundles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  /** YYYY-MM-DD the bundle covers (UTC). One bundle per day. */
+  bundleDate: varchar("bundle_date", { length: 10 }).notNull().unique(),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  sha256: varchar("sha256", { length: 64 }).notNull(),
+  /** Counts of items inside each artifact, for at-a-glance review. */
+  summary: jsonb("summary").notNull(),
+  generatedAt: timestamp("generated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_evidence_bundles_date").on(table.bundleDate),
+]);
+
+/**
+ * Sprint 7: API keys with rotation grace and expiry.
+ * `rotatedFromId` is set on the new key minted by a rotation; the old key
+ * keeps working until `gracePeriodEndsAt` so callers have a 24h window to
+ * roll over. `expiresAt` defaults to now()+90d at creation.
+ */
 export const apiKeys = pgTable("api_keys", {
   id: uuid("id").defaultRandom().primaryKey(),
   keyHash: varchar("key_hash", { length: 255 }).notNull(),
@@ -143,5 +175,29 @@ export const apiKeys = pgTable("api_keys", {
   expiresAt: timestamp("expires_at"),
   lastUsedAt: timestamp("last_used_at"),
   revokedAt: timestamp("revoked_at"),
+  rotatedFromId: uuid("rotated_from_id"),
+  gracePeriodEndsAt: timestamp("grace_period_ends_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  index("idx_api_keys_prefix").on(table.keyPrefix),
+  index("idx_api_keys_tenant").on(table.tenantId),
+]);
+
+/**
+ * Sprint 6: per-tenant SCIM 2.0 bearer tokens. Token plaintext is shown
+ * exactly once at creation; we store sha256 hash + 8-char prefix for
+ * display. Rotation issues a new row and revokes the prior one.
+ */
+export const scimTokens = pgTable("scim_tokens", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
+  prefix: varchar("prefix", { length: 16 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  createdBy: uuid("created_by").references(() => users.id),
+  lastUsedAt: timestamp("last_used_at"),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_scim_tokens_tenant").on(table.tenantId),
+]);

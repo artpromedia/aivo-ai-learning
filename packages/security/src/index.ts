@@ -11,6 +11,87 @@ export interface JWTPayload {
   impersonatedBy?: string;
 }
 
+/** Short-lived MFA challenge token claims. */
+export interface MfaChallengeJWT {
+  sub: string;
+  tenantId: string;
+  role: string;
+  email?: string;
+  purpose: "mfa";
+  mfaMethod: "email" | "totp" | "webauthn";
+}
+
+/** WebAuthn challenge token claims (registration or assertion). */
+export interface WebauthnChallengeJWT {
+  sub: string;
+  tenantId: string;
+  role: string;
+  email?: string;
+  purpose: `webauthn-${"register" | "login"}`;
+  challenge: string;
+}
+
+/**
+ * Sensitive-operation scopes that require step-up re-authentication
+ * before the operation is allowed (Sprint 3).
+ */
+export type StepUpScope =
+  | "tenant:delete"
+  | "tenant:suspend"
+  | "user:delete"
+  | "user:impersonate"
+  | "role:change"
+  | "brain:reset"
+  | "data:export"
+  | "config:update"
+  | "district:admin-mgmt";
+
+export * from "./audit-chain.js";
+export * from "./ip-allowlist.js";
+export * from "./password-policy.js";
+
+export const STEP_UP_SCOPES: readonly StepUpScope[] = [
+  "tenant:delete",
+  "tenant:suspend",
+  "user:delete",
+  "user:impersonate",
+  "role:change",
+  "brain:reset",
+  "data:export",
+  "config:update",
+  "district:admin-mgmt",
+] as const;
+
+/**
+ * Short-lived challenge issued by `/api/auth/step-up/initiate`. The client
+ * presents proof of the requested factor and exchanges it for a `StepUpJWT`.
+ */
+export interface StepUpChallengeJWT {
+  sub: string;
+  tenantId: string;
+  role: string;
+  purpose: "step-up-challenge";
+  scope: StepUpScope;
+  factor: "webauthn" | "totp" | "email";
+  /** Random nonce; for WebAuthn it is also the assertion challenge. */
+  nonce: string;
+}
+
+/**
+ * Token that proves the caller completed a step-up challenge for a given
+ * scope within the last 5 minutes. Presented via `x-step-up-token` header.
+ */
+export interface StepUpJWT {
+  sub: string;
+  tenantId: string;
+  role: string;
+  purpose: "step-up";
+  scope: StepUpScope;
+  factor: "webauthn" | "totp" | "email";
+  /** Unique token id used by `requireStepUp` to enforce single-use replay protection. */
+  jti?: string;
+}
+
 let privateKey: jose.CryptoKey | Uint8Array;
 let publicKey: jose.CryptoKey | Uint8Array;
 
@@ -51,7 +132,10 @@ export async function initKeys() {
   } catch {}
 }
 
-export async function signJWT(payload: JWTPayload, expiresIn = "15m"): Promise<string> {
+export async function signJWT<T extends object = JWTPayload>(
+  payload: T,
+  expiresIn = "15m",
+): Promise<string> {
   if (!privateKey) await initKeys();
   return new jose.SignJWT(payload as unknown as jose.JWTPayload)
     .setProtectedHeader({ alg: "RS256" })
@@ -61,12 +145,12 @@ export async function signJWT(payload: JWTPayload, expiresIn = "15m"): Promise<s
     .sign(privateKey);
 }
 
-export async function verifyJWT(token: string): Promise<JWTPayload> {
+export async function verifyJWT<T = JWTPayload>(token: string): Promise<T> {
   if (!publicKey) await initKeys();
   const { payload } = await jose.jwtVerify(token, publicKey, {
     issuer: "aivo:identity-svc",
   });
-  return payload as unknown as JWTPayload;
+  return payload as unknown as T;
 }
 
 export function getPublicKey() {
@@ -81,3 +165,35 @@ export async function getPublicKeyPEM(): Promise<string | null> {
 }
 
 export { initKeys as initJWTKeys };
+
+export {
+  ADMIN_ENTERPRISE,
+  loadAdminEnterpriseFlags,
+  logAdminEnterpriseFlags,
+  parseBoolFlag,
+  parseIntFlag,
+  type AdminEnterpriseFlags,
+} from "./flags.js";
+
+export {
+  encryptSecret,
+  decryptSecret,
+  hashOtpCode,
+  timingSafeEqualHex,
+  generateRecoveryCodes,
+  canonicalizeRecoveryCode,
+  looksLikeRecoveryCode,
+  _resetMfaKeyCache,
+  assertMfaKeyConfigured,
+  type RecoveryHasher,
+  type RecoveryVerifier,
+} from "./mfa-crypto.js";
+
+export {
+  SURFACE_COOKIE_NAME,
+  getSurfaceSecret,
+  signSurfaceCookieValue,
+  verifySurfaceCookieValue,
+  b64urlEncode,
+  type SurfaceCookieClaims,
+} from "./surface-cookie.js";

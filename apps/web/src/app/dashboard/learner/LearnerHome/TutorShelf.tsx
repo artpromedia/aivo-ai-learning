@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { TUTORS } from "@aivo/brand";
 import { useFlVariant } from "@aivo/learner-ui";
+import { useTranslations } from "next-intl";
 
 interface TutorShelfProps {
   onSelectTutor: (tutorKey: string) => void;
@@ -10,6 +11,7 @@ interface TutorShelfProps {
 
 export function TutorShelf({ onSelectTutor, recentTutorKey }: TutorShelfProps) {
   const { profile, isLow, isPreSymbolic } = useFlVariant();
+  const t = useTranslations("learner");
   const allTutors = Object.entries(TUTORS);
 
   if (isPreSymbolic) return null;
@@ -29,9 +31,9 @@ export function TutorShelf({ onSelectTutor, recentTutorKey }: TutorShelfProps) {
     : visibleTutors;
 
   return (
-    <section className="px-4 md:px-8" aria-label="Your tutors">
+    <section className="px-4 md:px-8" aria-label={t("tutors_shelf_label")}>
       <h2 className={`font-extrabold text-slate-900 mb-4 ${isLow ? "text-2xl text-center" : "text-lg"}`}>
-        {isLow ? "Pick a friend" : "Your Tutors"}
+        {isLow ? t("pick_a_friend") : t("your_tutors")}
       </h2>
       <div
         className={`flex gap-4 pb-2 ${

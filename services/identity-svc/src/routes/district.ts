@@ -3,33 +3,16 @@ import {
   users, sessions, tenants, learners, sensoryProfiles,
   schools, classrooms, classroomEnrollments, staffAssignments,
   districtSettings, districtActivityLog, iepRecords, interventions,
+  seatRequests, appendAudit, adminAuditLog,
 } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
-import { eq, and, sql, ilike, or, count, desc, asc, isNull } from "drizzle-orm";
+import { eq, and, sql, ilike, or, count, desc, asc, isNull, gte, lte, between } from "drizzle-orm";
 import argon2 from "argon2";
 import crypto from "crypto";
-
-async function requireDistrictAdmin(req: any, reply: any) {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith("Bearer ")) {
-    return reply.status(401).send({ error: "Missing authorization" });
-  }
-  try {
-    const payload = await verifyJWT(auth.slice(7));
-    if (!["DISTRICT_ADMIN", "PLATFORM_ADMIN"].includes(payload.role as string)) {
-      return reply.status(403).send({ error: "District admin access required" });
-    }
-    req.tenantId = payload.role === "PLATFORM_ADMIN"
-      ? ((req.query as any).tenantId || payload.tenantId)
-      : payload.tenantId;
-    if (!req.tenantId) {
-      return reply.status(400).send({ error: "No tenant context" });
-    }
-    req.user = payload;
-  } catch {
-    return reply.status(401).send({ error: "Invalid token" });
-  }
-}
+import { requireDistrictAdmin } from "../hooks/require-district-admin.js";
+import { requireStepUp } from "./step-up.js";
+import { parseLogoDataUrl, wcagContrastRatio, WCAG_AA_NORMAL } from "../lib/branding-validation.js";
+void verifyJWT; // kept for potential token introspection helpers
 
 function safePage(val: any): number {
   const n = parseInt(val || "1", 10);
@@ -41,7 +24,18 @@ function safePageSize(val: any, def = 20): number {
 }
 
 async function logActivity(db: any, tenantId: string, action: string, actorId: string, actorName: string, resourceType: string, resourceId?: string, details?: any) {
-  await db.insert(districtActivityLog).values({ tenantId, action, actorId, actorName, resourceType, resourceId, details });
+  // Sprint 4: chain district activity through appendAudit so the verifier
+  // can walk every row.
+  await appendAudit(db, "district_activity_log", districtActivityLog, {
+    tenantId,
+    action,
+    actorId,
+    actorName: actorName ?? null,
+    onBehalfOfId: null,
+    resourceType,
+    resourceId: resourceId ?? null,
+    details: details ?? null,
+  });
 }
 
 export async function registerDistrictRoutes(app: FastifyInstance) {
@@ -426,13 +420,29 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return settings || { notificationPrefs: {}, ssoConfig: {}, branding: {}, featureOverrides: {} };
   });
 
-  app.put("/api/district/settings", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.put("/api/district/settings", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const body = req.body as any;
     const updates: any = { updatedAt: new Date() };
     if (body.notificationPrefs !== undefined) updates.notificationPrefs = body.notificationPrefs;
-    if (body.ssoConfig !== undefined) updates.ssoConfig = body.ssoConfig;
-    if (body.branding !== undefined) updates.branding = body.branding;
+    // SSO config writes MUST go through `/api/district/sso` so the IdP cert
+    // and SP private key are encrypted via @aivo/sso. Reject ssoConfig
+    // payloads on this generic endpoint to prevent bypassing encryption.
+    if (body.ssoConfig !== undefined) {
+      return reply.status(400).send({
+        error: "ssoConfig must be updated via PUT /api/district/sso (encryption required).",
+      });
+    }
+    if (body.branding !== undefined) {
+      const v = validateBrandingPatch(body.branding);
+      if (!v.ok) return reply.status(400).send({ error: v.error });
+      // Preserve any existing logo on the row when caller only sends
+      // primaryColor/displayName/supportEmail; logo is owned by the
+      // dedicated `/branding/logo` endpoint above.
+      const [prior] = await db.select().from(districtSettings).where(eq(districtSettings.tenantId, tid)).limit(1);
+      const priorBranding = (prior?.branding as any) || {};
+      updates.branding = { ...priorBranding, ...body.branding };
+    }
     if (body.featureOverrides !== undefined) updates.featureOverrides = body.featureOverrides;
 
     const [existing] = await db.select().from(districtSettings).where(eq(districtSettings.tenantId, tid)).limit(1);
@@ -444,6 +454,86 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     }
     await logActivity(db, tid, "settings.updated", req.user.sub, req.user.name || req.user.email, "settings", tid, { fields: Object.keys(updates) });
     return result;
+  });
+
+  // Sprint 6: dedicated SSO config GET/PUT that handles encryption of the
+  // IdP cert + SP private key. Reading the config never returns plaintext
+  // — the UI gets `*Set: true` markers instead so it can render "stored,
+  // paste a new value to replace" placeholders.
+  app.get("/api/district/sso", { preHandler: requireDistrictAdmin }, async (req: any) => {
+    const [settings] = await db.select().from(districtSettings)
+      .where(eq(districtSettings.tenantId, req.tenantId)).limit(1);
+    const stored = (settings?.ssoConfig || {}) as any;
+    const { idpCertEnvelope, spPrivateKeyEnvelope, ...safe } = stored;
+    return {
+      config: {
+        ...safe,
+        idpCertSet: !!idpCertEnvelope,
+        spPrivateKeySet: !!spPrivateKeyEnvelope,
+      },
+    };
+  });
+
+  app.put("/api/district/sso", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+    const tid = req.tenantId;
+    const body = req.body as any;
+    const { encryptSsoConfig, IDP_PRESETS } = await import("@aivo/sso");
+
+    const [existing] = await db.select().from(districtSettings)
+      .where(eq(districtSettings.tenantId, tid)).limit(1);
+    const prior = (existing?.ssoConfig || {}) as any;
+
+    // Apply preset defaults first, then overlay the user's input so they
+    // can still customize.
+    const preset = IDP_PRESETS[body.preset as string] || {};
+    const merged: any = {
+      enabled: !!body.enabled,
+      idpLabel: body.idpLabel || preset.idpLabel,
+      emailDomains: Array.isArray(body.emailDomains) ? body.emailDomains : [],
+      requireSso: !!body.requireSso,
+      entryPoint: body.entryPoint || prior.entryPoint,
+      logoutUrl: body.logoutUrl || prior.logoutUrl,
+      issuer: body.issuer || prior.issuer,
+      identifierFormat: body.identifierFormat || preset.identifierFormat || prior.identifierFormat,
+      emailAttribute: body.emailAttribute || preset.emailAttribute || prior.emailAttribute,
+      nameAttribute: body.nameAttribute || preset.nameAttribute || prior.nameAttribute,
+      roleAttribute: body.roleAttribute || preset.roleAttribute || prior.roleAttribute,
+      defaultRole: body.defaultRole || prior.defaultRole || "TEACHER",
+      roleMap: body.roleMap || prior.roleMap || {},
+    };
+    // Only re-encrypt cert/key if the user actually supplied new plaintext.
+    const decryptedInput: any = { ...merged };
+    if (typeof body.idpCert === "string" && body.idpCert.trim()) {
+      decryptedInput.idpCert = body.idpCert.trim();
+    }
+    if (typeof body.spPrivateKey === "string" && body.spPrivateKey.trim()) {
+      decryptedInput.spPrivateKey = body.spPrivateKey.trim();
+    }
+    const encrypted = encryptSsoConfig(decryptedInput);
+    // Preserve existing envelopes when the user didn't supply replacements.
+    if (!encrypted.idpCertEnvelope && prior.idpCertEnvelope) encrypted.idpCertEnvelope = prior.idpCertEnvelope;
+    if (!encrypted.spPrivateKeyEnvelope && prior.spPrivateKeyEnvelope) encrypted.spPrivateKeyEnvelope = prior.spPrivateKeyEnvelope;
+
+    if (encrypted.enabled && !encrypted.entryPoint) {
+      return reply.status(400).send({ error: "entryPoint is required to enable SSO" });
+    }
+    if (encrypted.enabled && !encrypted.idpCertEnvelope) {
+      return reply.status(400).send({ error: "IdP signing certificate is required to enable SSO" });
+    }
+
+    const updates: any = { ssoConfig: encrypted, updatedAt: new Date() };
+    let result;
+    if (existing) {
+      [result] = await db.update(districtSettings).set(updates)
+        .where(eq(districtSettings.tenantId, tid)).returning();
+    } else {
+      [result] = await db.insert(districtSettings).values({ tenantId: tid, ...updates }).returning();
+    }
+    await logActivity(db, tid, "sso.updated", req.user.sub, req.user.name || req.user.email,
+      "sso_config", tid, { enabled: encrypted.enabled, requireSso: encrypted.requireSso });
+    const { idpCertEnvelope: _a, spPrivateKeyEnvelope: _b, ...safe } = encrypted;
+    void _a; void _b;
+    return { ok: true, config: { ...safe, idpCertSet: !!encrypted.idpCertEnvelope, spPrivateKeySet: !!encrypted.spPrivateKeyEnvelope } };
   });
 
   app.get("/api/district/activity", { preHandler: requireDistrictAdmin }, async (req: any) => {
@@ -608,4 +698,204 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     await logActivity(db, req.tenantId, "intervention.created", req.user.sub, req.user.name || req.user.email, "intervention", intervention.id, { learnerName: learner.name });
     return { intervention };
   });
+
+  // ────────────────────────────────────────────────────────────────────
+  // Sprint 9 — branding + seat self-service + activity export
+  // ────────────────────────────────────────────────────────────────────
+
+  // Logo upload. We accept a base64 data URL in JSON instead of multipart
+  // because we deliberately don't pull in @fastify/multipart for one
+  // small endpoint, and because logos are stored inline (no S3) anyway.
+  // Validation enforces PNG/SVG, ≤200KB, and ≥512×128 pixels.
+  app.post("/api/district/settings/branding/logo", { preHandler: requireDistrictAdmin },
+    async (req: any, reply: any) => {
+      const { dataUrl } = (req.body || {}) as { dataUrl?: string };
+      if (!dataUrl) return reply.status(400).send({ error: "dataUrl is required" });
+      const check = parseLogoDataUrl(dataUrl);
+      if (!check.ok) return reply.status(400).send({ error: check.error });
+
+      const tid = req.tenantId;
+      const [existing] = await db.select().from(districtSettings).where(eq(districtSettings.tenantId, tid)).limit(1);
+      const branding = { ...((existing?.branding as any) || {}), logoUrl: dataUrl, logoMime: check.mime, logoBytes: check.bytes };
+      const updates: any = { branding, updatedAt: new Date() };
+      let result;
+      if (existing) {
+        [result] = await db.update(districtSettings).set(updates).where(eq(districtSettings.tenantId, tid)).returning();
+      } else {
+        [result] = await db.insert(districtSettings).values({ tenantId: tid, ...updates }).returning();
+      }
+      await logActivity(db, tid, "branding.logo.updated", req.user.sub, req.user.name || req.user.email,
+        "settings", tid, { mime: check.mime, bytes: check.bytes, width: check.width, height: check.height });
+      return { ok: true, branding: result.branding };
+    });
+
+  // Seat self-service — district admin asks billing for more seats. The
+  // request row is the source of truth; comms-svc just notifies billing.
+  app.post("/api/district/seats/request", { preHandler: requireDistrictAdmin },
+    async (req: any, reply: any) => {
+      const body = (req.body || {}) as { requestedSeats?: number; justification?: string };
+      const requested = Number(body.requestedSeats);
+      if (!Number.isInteger(requested) || requested < 1 || requested > 100000) {
+        return reply.status(400).send({ error: "requestedSeats must be an integer between 1 and 100000" });
+      }
+      const tid = req.tenantId;
+      const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tid)).limit(1);
+      const limits = ((tenant?.settings as any)?.subscription?.limits) || {};
+      const currentSeats = Number(limits.users) || 0;
+      if (requested <= currentSeats) {
+        return reply.status(400).send({ error: `Requested seats (${requested}) must exceed current allocation (${currentSeats})` });
+      }
+      const [row] = await db.insert(seatRequests).values({
+        tenantId: tid, requestedBy: req.user.sub,
+        currentSeats, requestedSeats: requested,
+        justification: (body.justification || "").slice(0, 2000) || null,
+      }).returning();
+
+      await logActivity(db, tid, "seats.requested", req.user.sub, req.user.name || req.user.email,
+        "seat_request", row.id, { currentSeats, requestedSeats: requested });
+
+      // Best-effort billing notification — never block the request on a
+      // downstream comms outage. Calls the dedicated billing-alert
+      // internal endpoint with the shared internal key.
+      const commsUrl = process.env.COMMS_SVC_URL || "http://localhost:3003";
+      const internalKey = process.env.INTERNAL_SERVICE_KEY
+        || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+      try {
+        const r = await fetch(`${commsUrl}/api/comms/internal/billing-alert`, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-internal-key": internalKey },
+          body: JSON.stringify({
+            kind: "seat_request",
+            tenantId: tid,
+            tenantName: tenant?.name,
+            currentSeats,
+            requestedSeats: requested,
+            requesterEmail: req.user.email,
+            justification: body.justification,
+            requestId: row.id,
+          }),
+          signal: AbortSignal.timeout(2500),
+        });
+        if (!r.ok) req.log?.warn({ status: r.status, requestId: row.id }, "seat-request billing-alert non-2xx");
+      } catch (e) { req.log?.warn({ e, requestId: row.id }, "seat-request billing-alert failed"); }
+
+      return { ok: true, request: row };
+    });
+
+  // Roster CSV — current seat usage vs contracted limits, suitable for
+  // download from the usage dashboard.
+  app.get("/api/district/roster.csv", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+    const tid = req.tenantId;
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tid)).limit(1);
+    const limits = ((tenant?.settings as any)?.subscription?.limits) || {};
+
+    const [userCount] = await db.select({ count: count() }).from(users).where(and(eq(users.tenantId, tid), isNull(users.deactivatedAt)));
+    const [learnerCount] = await db.select({ count: count() }).from(learners).where(eq(learners.tenantId, tid));
+    const [teacherCount] = await db.select({ count: count() }).from(users).where(and(eq(users.tenantId, tid), eq(users.role, "TEACHER" as any), isNull(users.deactivatedAt)));
+    const [schoolCount] = await db.select({ count: count() }).from(schools).where(eq(schools.tenantId, tid));
+
+    const rows: Array<[string, number | string, number | string]> = [
+      ["resource", "used", "contracted"],
+      ["users", userCount.count, limits.users ?? ""],
+      ["learners", learnerCount.count, limits.learners ?? ""],
+      ["teachers", teacherCount.count, limits.teachers ?? ""],
+      ["schools", schoolCount.count, limits.schools ?? ""],
+    ];
+    const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n") + "\n";
+    reply.header("content-type", "text/csv; charset=utf-8");
+    reply.header("content-disposition", `attachment; filename="roster-${tid}.csv"`);
+    return csv;
+  });
+
+  // Activity export — gated by step-up `data:export` and writes a
+  // DATA_EXPORT row to admin_audit_log so the platform team can prove
+  // who pulled which slice of activity history. Supports `csv` or
+  // `json` (NDJSON) formats and an optional date range.
+  const exportStepUp = requireStepUp("data:export");
+  app.get("/api/district/activity/export", { preHandler: exportStepUp }, async (req: any, reply: any) => {
+    const tid = req.tenantId;
+    const { from, to, format } = (req.query as any) || {};
+    const fmt: "csv" | "json" = format === "json" ? "json" : "csv";
+    const conds: any[] = [eq(districtActivityLog.tenantId, tid)];
+    let fromDate: Date | undefined; let toDate: Date | undefined;
+    if (from) { const d = new Date(from); if (!isNaN(d.getTime())) { fromDate = d; conds.push(gte(districtActivityLog.createdAt, d)); } }
+    if (to)   { const d = new Date(to);   if (!isNaN(d.getTime())) { toDate = d;   conds.push(lte(districtActivityLog.createdAt, d)); } }
+    void between;
+
+    const where = conds.length === 1 ? conds[0] : and(...conds);
+    const rows = await db.select().from(districtActivityLog).where(where)
+      .orderBy(asc(districtActivityLog.createdAt)).limit(50000);
+
+    await appendAudit(db, "admin_audit_log", adminAuditLog, {
+      tenantId: tid,
+      action: "DATA_EXPORT",
+      actorId: req.user.sub,
+      actorEmail: req.user.email || "unknown",
+      actorRole: req.user.role || "DISTRICT_ADMIN",
+      onBehalfOfId: null,
+      resourceType: "district_activity_log",
+      resourceId: tid,
+      details: { rows: rows.length, format: fmt, from: fromDate?.toISOString() || null, to: toDate?.toISOString() || null },
+      ipAddress: (req.headers["x-forwarded-for"] as string) || req.ip || null,
+      userAgent: req.headers["user-agent"] || null,
+    });
+    await logActivity(db, tid, "activity.exported", req.user.sub, req.user.name || req.user.email,
+      "district_activity_log", tid, { rows: rows.length, format: fmt });
+
+    if (fmt === "json") {
+      reply.header("content-type", "application/x-ndjson; charset=utf-8");
+      reply.header("content-disposition", `attachment; filename="activity-${tid}.ndjson"`);
+      return rows.map((r: any) => JSON.stringify(r)).join("\n") + "\n";
+    }
+    const headers = ["createdAt", "action", "actorId", "actorName", "resourceType", "resourceId", "details"];
+    const lines = [headers.join(",")];
+    for (const r of rows as any[]) {
+      lines.push([
+        r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+        r.action, r.actorId, r.actorName ?? "", r.resourceType, r.resourceId ?? "",
+        r.details ? JSON.stringify(r.details) : "",
+      ].map(csvCell).join(","));
+    }
+    reply.header("content-type", "text/csv; charset=utf-8");
+    reply.header("content-disposition", `attachment; filename="activity-${tid}.csv"`);
+    return lines.join("\n") + "\n";
+  });
+
+  // Seat-request list (so the dashboard can show pending requests).
+  app.get("/api/district/seats/requests", { preHandler: requireDistrictAdmin }, async (req: any) => {
+    const rows = await db.select().from(seatRequests)
+      .where(eq(seatRequests.tenantId, req.tenantId))
+      .orderBy(desc(seatRequests.createdAt)).limit(50);
+    return { requests: rows };
+  });
+}
+
+function csvCell(v: any): string {
+  const s = v === null || v === undefined ? "" : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+// PUT /api/district/settings is defined above; the WCAG check for
+// branding.primaryColor lives in `validateBrandingPatch` so we can
+// reuse it. We export a small helper the existing handler imports.
+export function validateBrandingPatch(branding: any): { ok: boolean; error?: string } {
+  if (!branding || typeof branding !== "object") return { ok: true };
+  if (typeof branding.primaryColor === "string" && branding.primaryColor.trim()) {
+    const ratio = wcagContrastRatio(branding.primaryColor.trim(), "#FFFFFF");
+    if (ratio === null) return { ok: false, error: "primaryColor must be a hex color (#RRGGBB)" };
+    if (ratio < WCAG_AA_NORMAL) {
+      return { ok: false, error: `primaryColor contrast ratio ${ratio.toFixed(2)}:1 against white fails WCAG AA (need ≥ ${WCAG_AA_NORMAL}:1)` };
+    }
+  }
+  if (branding.supportEmail !== undefined && typeof branding.supportEmail === "string") {
+    if (branding.supportEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(branding.supportEmail)) {
+      return { ok: false, error: "supportEmail must be a valid email address" };
+    }
+  }
+  if (branding.displayName !== undefined && typeof branding.displayName === "string") {
+    if (branding.displayName.length > 120) {
+      return { ok: false, error: "displayName must be 120 characters or fewer" };
+    }
+  }
+  return { ok: true };
 }

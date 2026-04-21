@@ -66,10 +66,36 @@ const STATUS_STYLES: Record<string, string> = {
 
 const SYNC_STATUS_STYLES: Record<string, string> = {
   completed: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
+  success: "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]",
   running: "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]",
   partial: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
   failed: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
+  failure: "bg-[hsl(var(--visual-math)/0.12)] text-[hsl(var(--visual-math))]",
   pending: "vi-surface-soft vi-text-muted",
+};
+
+const CONNECTION_STATUS_KEYS: Record<string, string> = {
+  active: "integrations_conn_status_active",
+  authorized: "integrations_conn_status_authorized",
+  syncing: "integrations_conn_status_syncing",
+  pending: "integrations_conn_status_pending",
+  error: "integrations_conn_status_error",
+  disconnected: "integrations_conn_status_disconnected",
+};
+
+const SYNC_STATUS_KEYS: Record<string, string> = {
+  completed: "integrations_sync_status_completed",
+  running: "integrations_sync_status_running",
+  partial: "integrations_sync_status_partial",
+  failed: "integrations_sync_status_failed",
+  pending: "integrations_sync_status_pending",
+  success: "integrations_sync_status_success",
+  failure: "integrations_sync_status_failure",
+};
+
+const SYNC_TYPE_KEYS: Record<string, string> = {
+  full: "integrations_sync_type_full",
+  incremental: "integrations_sync_type_incremental",
 };
 
 export default function IntegrationsPage() {
@@ -140,12 +166,12 @@ export default function IntegrationsPage() {
     const connected = searchParams.get("connected");
     const error = searchParams.get("error");
     if (connected) {
-      setNotification({ type: "success", message: "Integration connected successfully! You can now run your first sync." });
+      setNotification({ type: "success", message: t("integrations_toast_connected_success") });
       setActiveTab("connected");
       fetchData();
     }
     if (error) {
-      setNotification({ type: "error", message: `Connection failed: ${error.replace(/_/g, " ")}` });
+      setNotification({ type: "error", message: t("integrations_toast_connect_failed", { error: error.replace(/_/g, " ") }) });
     }
   }, [searchParams, fetchData]);
 
@@ -188,15 +214,15 @@ export default function IntegrationsPage() {
         });
 
         if (result.ok) {
-          setNotification({ type: "success", message: `${connector.name} connected successfully!` });
+          setNotification({ type: "success", message: t("integrations_toast_connector_connected", { name: connector.name }) });
           setActiveTab("connected");
           fetchData();
         } else {
           const err = await result.json();
-          setNotification({ type: "error", message: err.error || "Failed to connect" });
+          setNotification({ type: "error", message: err.error || t("integrations_toast_connect_failed_generic") });
         }
       } catch {
-        setNotification({ type: "error", message: "Connection failed. Please try again." });
+        setNotification({ type: "error", message: t("integrations_toast_connect_failed_retry") });
       } finally {
         setConnectingId(null);
       }
@@ -222,15 +248,15 @@ export default function IntegrationsPage() {
       });
 
       if (res.ok) {
-        setNotification({ type: "success", message: "Integration connected successfully!" });
+        setNotification({ type: "success", message: t("integrations_toast_api_key_success") });
         setActiveTab("connected");
         fetchData();
       } else {
         const err = await res.json();
-        setNotification({ type: "error", message: err.error || "Connection failed" });
+        setNotification({ type: "error", message: err.error || t("integrations_toast_connect_failed_retry") });
       }
     } catch {
-      setNotification({ type: "error", message: "Connection failed" });
+      setNotification({ type: "error", message: t("integrations_toast_connect_failed_retry") });
     } finally {
       setShowApiKeyModal(null);
       setApiKeyInput("");
@@ -253,22 +279,22 @@ export default function IntegrationsPage() {
       });
 
       if (res.ok) {
-        setNotification({ type: "success", message: "Sync started! This may take a few minutes." });
+        setNotification({ type: "success", message: t("integrations_toast_sync_started") });
         setTimeout(fetchData, 3000);
         setTimeout(fetchData, 10000);
       } else {
         const err = await res.json();
-        setNotification({ type: "error", message: err.error || "Sync failed" });
+        setNotification({ type: "error", message: err.error || t("integrations_toast_sync_failed") });
       }
     } catch {
-      setNotification({ type: "error", message: "Failed to start sync" });
+      setNotification({ type: "error", message: t("integrations_toast_sync_failed_start") });
     } finally {
       setSyncing((prev) => ({ ...prev, [connectionId]: false }));
     }
   };
 
   const handleDisconnect = async (connectionId: string) => {
-    if (!accessToken || !confirm("Are you sure you want to disconnect this integration? Synced data will be preserved.")) return;
+    if (!accessToken || !confirm(t("integrations_toast_disconnect_confirm"))) return;
 
     try {
       const res = await fetch(`/api/integrations/disconnect/${connectionId}`, {
@@ -277,15 +303,30 @@ export default function IntegrationsPage() {
       });
 
       if (res.ok) {
-        setNotification({ type: "success", message: "Integration disconnected." });
+        setNotification({ type: "success", message: t("integrations_toast_disconnected") });
         fetchData();
       }
     } catch {
-      setNotification({ type: "error", message: "Failed to disconnect" });
+      setNotification({ type: "error", message: t("integrations_toast_disconnect_failed") });
     }
   };
 
   const connectedIds = connections.filter((c) => c.status !== "disconnected").map((c) => c.connectorId);
+
+  const getConnectionStatusLabel = (status: string) => {
+    const key = CONNECTION_STATUS_KEYS[status];
+    return key ? t(key) : status;
+  };
+
+  const getSyncStatusLabel = (status: string) => {
+    const key = SYNC_STATUS_KEYS[status];
+    return key ? t(key) : status;
+  };
+
+  const getSyncTypeLabel = (type: string) => {
+    const key = SYNC_TYPE_KEYS[type];
+    return key ? t(key) : t("integrations_sync_type_label", { type });
+  };
 
   const formatDuration = (ms: number | null) => {
     if (!ms) return "—";
@@ -294,17 +335,17 @@ export default function IntegrationsPage() {
   };
 
   const formatTime = (dateStr: string | null) => {
-    if (!dateStr) return "Never";
+    if (!dateStr) return t("integrations_time_never");
     const d = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1) return t("integrations_time_just_now");
+    if (diffMins < 60) return t("integrations_time_minutes_ago", { m: diffMins });
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffHours < 24) return t("integrations_time_hours_ago", { h: diffHours });
     const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays}d ago`;
+    return t("integrations_time_days_ago", { d: diffDays });
   };
 
   if (loading) {
@@ -343,7 +384,7 @@ export default function IntegrationsPage() {
           <div>
             <h1 className="text-2xl font-heading font-bold vi-text">{t("integrations")}</h1>
             <p className="text-sm vi-text-muted mt-1">
-              Connect your district's learning tools to automatically sync rosters, classes, and student data.
+              {t("integrations_subtitle")}
             </p>
           </div>
         </div>
@@ -354,7 +395,7 @@ export default function IntegrationsPage() {
               activeTab === "catalog" ? "bg-white shadow text-[hsl(var(--visual-primary))]" : "vi-text-muted"
             }`}
           >
-            Available ({connectors.filter((c) => c.status !== "coming_soon" && !connectedIds.includes(c.id)).length})
+            {t("integrations_tab_available")} ({connectors.filter((c) => c.status !== "coming_soon" && !connectedIds.includes(c.id)).length})
           </button>
           <button
             onClick={() => setActiveTab("connected")}
@@ -362,7 +403,7 @@ export default function IntegrationsPage() {
               activeTab === "connected" ? "bg-white shadow text-[hsl(var(--visual-primary))]" : "vi-text-muted"
             }`}
           >
-            Connected ({connections.filter((c) => c.status !== "disconnected").length})
+            {t("integrations_tab_connected")} ({connections.filter((c) => c.status !== "disconnected").length})
           </button>
         </div>
       </div>
@@ -393,7 +434,7 @@ export default function IntegrationsPage() {
                       isComingSoon ? "vi-surface-soft vi-text-muted" :
                       "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]"
                     }`}>
-                      {isConnected ? "Connected" : isComingSoon ? "Coming Soon" : "Available"}
+                      {isConnected ? t("integrations_status_connected") : isComingSoon ? t("integrations_status_coming_soon") : t("integrations_status_available")}
                     </span>
                   </div>
 
@@ -414,14 +455,14 @@ export default function IntegrationsPage() {
                         onClick={() => setActiveTab("connected")}
                         className="flex-1 py-2 rounded-lg text-sm font-semibold bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))] hover:bg-[hsl(var(--visual-science)/0.22)] transition"
                       >
-                        View Connection
+                        {t("integrations_button_view_connection")}
                       </button>
                     ) : isComingSoon ? (
                       <button
                         onClick={() => setShowWaitlistFor(connector.id)}
                         className="flex-1 py-2 rounded-lg text-sm font-semibold bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))] hover:bg-[hsl(var(--visual-sel)/0.28)] transition"
                       >
-                        Notify me when available
+                        {t("integrations_button_notify")}
                       </button>
                     ) : (
                       <button
@@ -429,7 +470,7 @@ export default function IntegrationsPage() {
                         disabled={isConnecting}
                         className="flex-1 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition disabled:opacity-50"
                       >
-                        {isConnecting ? "Connecting..." : "Connect"}
+                        {isConnecting ? t("integrations_button_connecting") : t("integrations_button_connect")}
                       </button>
                     )}
                     <a
@@ -437,7 +478,7 @@ export default function IntegrationsPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 rounded-lg vi-text-muted hover:vi-text-muted hover:vi-surface-soft transition"
-                      title="View documentation"
+                      title={t("integrations_docs_title")}
                     >
                       ↗
                     </a>
@@ -448,15 +489,15 @@ export default function IntegrationsPage() {
           </div>
 
           <div className="vi-surface-soft border border-[hsl(var(--visual-primary)/0.3)] rounded-2xl p-6">
-            <h3 className="font-heading font-bold text-lg vi-text mb-2">Need a different integration?</h3>
+            <h3 className="font-heading font-bold text-lg vi-text mb-2">{t("integrations_different_title")}</h3>
             <p className="text-sm vi-text-muted mb-3">
-              We're always adding new connectors. If your district uses a platform not listed here, let us know and we'll prioritize it.
+              {t("integrations_different_desc")}
             </p>
             <button
               onClick={() => { setShowRequestModal(true); setRequestSubmitted(false); setRequestName(""); }}
               className="px-4 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition"
             >
-              Request Integration
+              {t("integrations_different_button")}
             </button>
           </div>
         </div>
@@ -469,15 +510,15 @@ export default function IntegrationsPage() {
               <div className="w-16 h-16 bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Plug size={32} strokeWidth={2.5} aria-hidden="true" />
               </div>
-              <h3 className="font-heading font-bold text-lg vi-text mb-2">No integrations connected</h3>
+              <h3 className="font-heading font-bold text-lg vi-text mb-2">{t("integrations_empty_title")}</h3>
               <p className="text-sm vi-text-muted mb-4">
-                Connect Google Classroom, Clever, or ClassLink to automatically sync your district's roster data.
+                {t("integrations_empty_desc")}
               </p>
               <button
                 onClick={() => setActiveTab("catalog")}
                 className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition"
               >
-                Browse Integrations
+                {t("integrations_empty_button")}
               </button>
             </div>
           ) : (
@@ -502,14 +543,14 @@ export default function IntegrationsPage() {
                           <h3 className="font-heading font-bold text-lg vi-text">{conn.connectorName}</h3>
                           <div className="flex items-center gap-3 mt-1">
                             <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${STATUS_STYLES[conn.status] || "vi-surface-soft vi-text-muted"}`}>
-                              {conn.status}
+                              {getConnectionStatusLabel(conn.status)}
                             </span>
                             <span className="text-xs vi-text-muted">
-                              Connected {formatTime(conn.connectedAt)}
+                              {t("integrations_connected_at", { when: formatTime(conn.connectedAt) })}
                             </span>
                             {conn.lastSyncAt && (
                               <span className="text-xs vi-text-muted">
-                                Last sync: {formatTime(conn.lastSyncAt)}
+                                {t("integrations_last_sync", { when: formatTime(conn.lastSyncAt) })}
                               </span>
                             )}
                           </div>
@@ -521,13 +562,13 @@ export default function IntegrationsPage() {
                           disabled={syncing[conn.id] || conn.status === "syncing"}
                           className="px-4 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition disabled:opacity-50"
                         >
-                          {syncing[conn.id] || conn.status === "syncing" ? "Syncing..." : "Sync Now"}
+                          {syncing[conn.id] || conn.status === "syncing" ? t("integrations_button_syncing") : t("integrations_button_sync_now")}
                         </button>
                         <button
                           onClick={() => handleDisconnect(conn.id)}
                           className="px-4 py-2 rounded-lg text-sm font-semibold text-[hsl(var(--visual-math))] hover:bg-[hsl(var(--visual-math)/0.08)] border border-[hsl(var(--visual-math)/0.25)] transition"
                         >
-                          Disconnect
+                          {t("integrations_button_disconnect")}
                         </button>
                       </div>
                     </div>
@@ -537,29 +578,29 @@ export default function IntegrationsPage() {
                     <div className="px-6 py-4 vi-bg/50 border-b vi-border">
                       <div className="flex items-center gap-6">
                         <div>
-                          <p className="text-[10px] vi-text-muted font-semibold uppercase">Last Sync Status</p>
-                          <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${SYNC_STATUS_STYLES[lastSync.status]}`}>
-                            {lastSync.status}
+                          <p className="text-[10px] vi-text-muted font-semibold uppercase">{t("integrations_label_last_sync_status")}</p>
+                          <span className={`px-2 py-0.5 text-xs rounded-full font-semibold ${SYNC_STATUS_STYLES[lastSync.status] || "vi-surface-soft vi-text-muted"}`}>
+                            {getSyncStatusLabel(lastSync.status)}
                           </span>
                         </div>
                         <div>
-                          <p className="text-[10px] vi-text-muted font-semibold uppercase">Records Synced</p>
+                          <p className="text-[10px] vi-text-muted font-semibold uppercase">{t("integrations_label_records_synced")}</p>
                           <p className="text-sm font-bold vi-text">{lastSync.recordsSynced}</p>
                         </div>
                         {lastSync.recordsFailed > 0 && (
                           <div>
-                            <p className="text-[10px] vi-text-muted font-semibold uppercase">Failed</p>
+                            <p className="text-[10px] vi-text-muted font-semibold uppercase">{t("integrations_label_failed")}</p>
                             <p className="text-sm font-bold text-[hsl(var(--visual-math))]">{lastSync.recordsFailed}</p>
                           </div>
                         )}
                         {lastSync.recordsSkipped > 0 && (
                           <div>
-                            <p className="text-[10px] vi-text-muted font-semibold uppercase">Skipped</p>
+                            <p className="text-[10px] vi-text-muted font-semibold uppercase">{t("integrations_label_skipped")}</p>
                             <p className="text-sm font-bold text-[hsl(var(--visual-sel))]">{lastSync.recordsSkipped}</p>
                           </div>
                         )}
                         <div>
-                          <p className="text-[10px] vi-text-muted font-semibold uppercase">Duration</p>
+                          <p className="text-[10px] vi-text-muted font-semibold uppercase">{t("integrations_label_duration")}</p>
                           <p className="text-sm font-bold vi-text">{formatDuration(lastSync.durationMs)}</p>
                         </div>
                       </div>
@@ -568,18 +609,18 @@ export default function IntegrationsPage() {
 
                   {logs.length > 0 && (
                     <div className="px-6 py-4">
-                      <p className="text-xs font-bold vi-text-muted uppercase mb-3">Sync History</p>
+                      <p className="text-xs font-bold vi-text-muted uppercase mb-3">{t("integrations_label_sync_history")}</p>
                       <div className="space-y-2">
                         {logs.slice(0, 5).map((log) => (
                           <div key={log.id} className="flex items-center justify-between py-2 border-b vi-border last:border-0">
                             <div className="flex items-center gap-3">
-                              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${SYNC_STATUS_STYLES[log.status]}`}>
-                                {log.status}
+                              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${SYNC_STATUS_STYLES[log.status] || "vi-surface-soft vi-text-muted"}`}>
+                                {getSyncStatusLabel(log.status)}
                               </span>
-                              <span className="text-xs vi-text-muted">{log.syncType} sync</span>
+                              <span className="text-xs vi-text-muted">{getSyncTypeLabel(log.syncType)}</span>
                             </div>
                             <div className="flex items-center gap-4 text-xs vi-text-muted">
-                              <span>{log.recordsSynced} records</span>
+                              <span>{t("integrations_records_count", { count: log.recordsSynced })}</span>
                               <span>{formatDuration(log.durationMs)}</span>
                               <span>{formatTime(log.startedAt)}</span>
                             </div>
@@ -591,7 +632,7 @@ export default function IntegrationsPage() {
 
                   {lastSync?.errors && lastSync.errors.length > 0 && (
                     <div className="px-6 py-4 bg-[hsl(var(--visual-math)/0.06)] border-t border-[hsl(var(--visual-math)/0.20)]">
-                      <p className="text-xs font-bold text-[hsl(var(--visual-math))] uppercase mb-2">Errors</p>
+                      <p className="text-xs font-bold text-[hsl(var(--visual-math))] uppercase mb-2">{t("integrations_label_errors")}</p>
                       {lastSync.errors.map((err: any, i: number) => (
                         <p key={i} className="text-xs text-[hsl(var(--visual-math))]">{err.message}</p>
                       ))}
@@ -613,27 +654,27 @@ export default function IntegrationsPage() {
                   <div className="w-14 h-14 bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))] rounded-full flex items-center justify-center mx-auto mb-4">
                     <Check size={28} strokeWidth={3} aria-hidden="true" />
                   </div>
-                  <h3 className="font-heading font-bold text-lg vi-text mb-2">Request Submitted</h3>
-                  <p className="text-sm vi-text-muted">Thank you! We&apos;ll review your request and keep you updated on its status.</p>
+                  <h3 className="font-heading font-bold text-lg vi-text mb-2">{t("integrations_request_submitted_title")}</h3>
+                  <p className="text-sm vi-text-muted">{t("integrations_request_submitted_desc")}</p>
                 </div>
                 <button
                   onClick={() => setShowRequestModal(false)}
                   className="w-full py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition mt-4"
                 >
-                  Done
+                  {t("integrations_request_done")}
                 </button>
               </>
             ) : (
               <>
-                <h3 className="font-heading font-bold text-lg vi-text mb-2">Request an Integration</h3>
-                <p className="text-sm vi-text-muted mb-4">Tell us which platform you&apos;d like us to support and we&apos;ll prioritize it.</p>
-                <label htmlFor="request-name" className="block text-sm font-medium vi-text mb-1">Platform Name</label>
+                <h3 className="font-heading font-bold text-lg vi-text mb-2">{t("integrations_request_modal_title")}</h3>
+                <p className="text-sm vi-text-muted mb-4">{t("integrations_request_modal_desc")}</p>
+                <label htmlFor="request-name" className="block text-sm font-medium vi-text mb-1">{t("integrations_request_platform_label")}</label>
                 <input
                   id="request-name"
                   type="text"
                   value={requestName}
                   onChange={(e) => setRequestName(e.target.value)}
-                  placeholder="e.g. Infinite Campus, Aeries, etc."
+                  placeholder={t("integrations_request_platform_placeholder")}
                   className="w-full px-3 py-2 rounded-lg border vi-border text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none mb-4"
                 />
                 <div className="flex gap-3">
@@ -641,17 +682,17 @@ export default function IntegrationsPage() {
                     onClick={() => setShowRequestModal(false)}
                     className="flex-1 py-2 rounded-lg text-sm font-semibold border vi-border vi-text-muted hover:vi-bg transition"
                   >
-                    Cancel
+                    {t("integrations_cancel")}
                   </button>
                   <button
                     onClick={() => {
                       setRequestSubmitted(true);
-                      setNotification({ type: "success", message: `Integration request for "${requestName}" submitted!` });
+                      setNotification({ type: "success", message: t("integrations_request_toast_submitted", { name: requestName }) });
                     }}
                     disabled={!requestName.trim()}
                     className="flex-1 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition disabled:opacity-50"
                   >
-                    Submit Request
+                    {t("integrations_submit_request")}
                   </button>
                 </div>
               </>
@@ -664,35 +705,35 @@ export default function IntegrationsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
             <h3 className="font-heading font-bold text-lg vi-text mb-4">
-              Connect {connectors.find((c) => c.id === showApiKeyModal)?.name}
+              {t("integrations_apikey_modal_title", { name: connectors.find((c) => c.id === showApiKeyModal)?.name ?? "" })}
             </h3>
 
             {showApiKeyModal === "canvas_lms" && (
               <div className="mb-4">
-                <label htmlFor="canvas-url" className="block text-sm font-medium vi-text mb-1">Canvas Instance URL</label>
+                <label htmlFor="canvas-url" className="block text-sm font-medium vi-text mb-1">{t("integrations_canvas_url_label")}</label>
                 <input
                   id="canvas-url"
                   type="url"
                   value={canvasUrlInput}
                   onChange={(e) => setCanvasUrlInput(e.target.value)}
-                  placeholder="https://yourschool.instructure.com"
+                  placeholder={t("integrations_canvas_url_placeholder")}
                   className="w-full px-3 py-2 rounded-lg border vi-border text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none"
                 />
               </div>
             )}
 
             <div className="mb-4">
-              <label htmlFor="api-token" className="block text-sm font-medium vi-text mb-1">API Access Token</label>
+              <label htmlFor="api-token" className="block text-sm font-medium vi-text mb-1">{t("integrations_api_token_label")}</label>
               <input
                 id="api-token"
                 type="password"
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
-                placeholder="Paste your API token here"
+                placeholder={t("integrations_api_token_placeholder")}
                 className="w-full px-3 py-2 rounded-lg border vi-border text-sm focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none"
               />
               <p className="text-[10px] vi-text-muted mt-1">
-                Generate an access token from your admin settings. This is stored securely and encrypted.
+                {t("integrations_api_token_help")}
               </p>
             </div>
 
@@ -701,14 +742,14 @@ export default function IntegrationsPage() {
                 onClick={() => { setShowApiKeyModal(null); setApiKeyInput(""); setCanvasUrlInput(""); }}
                 className="flex-1 py-2 rounded-lg text-sm font-semibold border vi-border vi-text-muted hover:vi-bg transition"
               >
-                Cancel
+                {t("integrations_cancel")}
               </button>
               <button
                 onClick={handleApiKeyConnect}
                 disabled={!apiKeyInput || (showApiKeyModal === "canvas_lms" && !canvasUrlInput)}
                 className="flex-1 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition disabled:opacity-50"
               >
-                Connect
+                {t("integrations_button_connect")}
               </button>
             </div>
           </div>
@@ -719,20 +760,20 @@ export default function IntegrationsPage() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full">
             <h3 className="font-heading font-bold text-lg vi-text mb-2">
-              Get notified when {connectors.find((c) => c.id === showWaitlistFor)?.name} is ready
+              {t("integrations_waitlist_title", { name: connectors.find((c) => c.id === showWaitlistFor)?.name ?? "" })}
             </h3>
             <p className="text-sm vi-text-muted mb-4">
-              We'll email you the moment this integration is available for your district.
+              {t("integrations_waitlist_desc")}
             </p>
             <label htmlFor="waitlist-email" className="block text-xs font-semibold vi-text-muted mb-1">
-              Contact email
+              {t("integrations_waitlist_email_label")}
             </label>
             <input
               id="waitlist-email"
               type="email"
               value={waitlistEmail}
               onChange={(e) => setWaitlistEmail(e.target.value)}
-              placeholder="you@district.org"
+              placeholder={t("integrations_waitlist_email_placeholder")}
               className="w-full px-3 py-2 rounded-lg border vi-border text-sm mb-4"
             />
             <div className="flex gap-2">
@@ -740,7 +781,7 @@ export default function IntegrationsPage() {
                 onClick={() => { setShowWaitlistFor(null); setWaitlistEmail(""); }}
                 className="flex-1 py-2 rounded-lg text-sm font-semibold border vi-border vi-text-muted hover:vi-bg transition"
               >
-                Cancel
+                {t("integrations_cancel")}
               </button>
               <button
                 onClick={async () => {
@@ -760,12 +801,12 @@ export default function IntegrationsPage() {
                       }),
                     });
                     if (res.ok) {
-                      setNotification({ type: "success", message: "You're on the waitlist. We'll be in touch." });
+                      setNotification({ type: "success", message: t("integrations_waitlist_toast_joined") });
                       setShowWaitlistFor(null);
                       setWaitlistEmail("");
                     } else {
                       const err = await res.json().catch(() => ({}));
-                      setNotification({ type: "error", message: err.error || "Failed to join waitlist" });
+                      setNotification({ type: "error", message: err.error || t("integrations_waitlist_toast_failed") });
                     }
                   } finally {
                     setWaitlistSubmitting(false);
@@ -774,7 +815,7 @@ export default function IntegrationsPage() {
                 disabled={!waitlistEmail.trim() || waitlistSubmitting}
                 className="flex-1 py-2 rounded-lg text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 transition disabled:opacity-50"
               >
-                {waitlistSubmitting ? "Submitting..." : "Notify me"}
+                {waitlistSubmitting ? t("integrations_waitlist_submitting") : t("integrations_waitlist_notify_me")}
               </button>
             </div>
           </div>

@@ -13,7 +13,7 @@ export default function SalesDashboard() {
 
   useEffect(() => {
     if (!accessToken) return;
-    fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
+    fetch("/api/admin-svc/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
       .then((r) => r.ok ? r.json() : null)
       .then(setStats)
       .catch(() => {});

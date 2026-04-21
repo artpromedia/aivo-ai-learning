@@ -20,6 +20,8 @@ import {
   Plug,
   Settings,
   ScrollText,
+  ShieldCheck,
+  Palette,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -66,6 +68,8 @@ const NAV_SECTIONS: { label: string; items: { href: string; label: string; Icon:
   {
     label: "Admin",
     items: [
+      { href: "/dashboard/district/settings/admins", label: "Administrators", Icon: ShieldCheck },
+      { href: "/dashboard/district/settings/branding", label: "Branding", Icon: Palette },
       { href: "/dashboard/district/settings", label: "District Settings", Icon: Settings },
       { href: "/dashboard/district/activity", label: "Activity Log", Icon: ScrollText },
     ],
@@ -79,7 +83,7 @@ export default function DistrictLayout({ children }: { children: React.ReactNode
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
+    if (!loading && !user) router.push("/district/login");
     if (!loading && user && !["DISTRICT_ADMIN", "PLATFORM_ADMIN"].includes(user.role)) router.push("/");
   }, [user, loading, router]);
 

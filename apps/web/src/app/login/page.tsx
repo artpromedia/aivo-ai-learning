@@ -40,17 +40,19 @@ export default function LoginPage() {
   const [parentId, setParentId] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setRedirectTo(null);
     setLoading(true);
     try {
       const result = await login(email, password);
       if (result?.mfaPending) {
-        router.push(`/verify-mfa?token=${encodeURIComponent(result.mfaToken)}&returnTo=/`);
+        router.push(`/verify-mfa?token=${encodeURIComponent(result.mfaToken)}&method=${encodeURIComponent(result.mfaMethod || "email")}&returnTo=/`);
         return;
       }
       const roleDashboards: Record<string, string> = {
@@ -59,13 +61,14 @@ export default function LoginPage() {
         TEACHER: "/dashboard/teacher",
         CAREGIVER: "/dashboard/caregiver",
         THERAPIST: "/dashboard/therapist",
-        PLATFORM_ADMIN: "/dashboard/admin",
-        DISTRICT_ADMIN: "/dashboard/district",
       };
       const dest = roleDashboards[result?.user?.role] || "/dashboard/parent";
       router.replace(dest);
     } catch (err: any) {
       setError(err.message || t("login_failed"));
+      if (err && typeof err === "object" && err.redirectTo) {
+        setRedirectTo(err.redirectTo as string);
+      }
     }
     setLoading(false);
   };
@@ -284,7 +287,17 @@ export default function LoginPage() {
                 <span className="w-8 h-8 rounded-xl bg-white text-[hsl(var(--visual-math))] flex items-center justify-center shrink-0 shadow-sm">
                   <AlertCircle size={18} strokeWidth={2.5} aria-hidden="true" />
                 </span>
-                <span className="pt-1">{error}</span>
+                <span className="pt-1">
+                  {error}
+                  {redirectTo && (
+                    <>
+                      {" "}
+                      <Link href={redirectTo} className="underline font-black">
+                        Go to staff sign-in
+                      </Link>
+                    </>
+                  )}
+                </span>
               </div>
             )}
 

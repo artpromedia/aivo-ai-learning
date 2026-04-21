@@ -4,6 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/providers/auth-provider";
 import { I18nProvider } from "@/providers/i18n-provider";
 import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+import { StepUpModal } from "@/components/admin/StepUpModal";
+import { IdleWarningModal } from "@/components/IdleWarningModal";
 import enMessages from "@/i18n/messages/en.json";
 
 const fredoka = Fredoka({
@@ -33,6 +35,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <I18nProvider initialMessages={enMessages}>
           <AuthProvider>
             <ImpersonationBanner />
+            <StepUpModal />
+            <IdleWarningModal />
             {children}
           </AuthProvider>
         </I18nProvider>

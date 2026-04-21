@@ -24,6 +24,18 @@ metadata:
     # (allow-snippet-annotations: "false" in ingress-nginx ConfigMap).
     # Security headers (HSTS, X-Content-Type-Options, X-Frame-Options)
     # are set by the Next.js apps in their next.config.js headers config.
+    # ModSecurity / OWASP CRS — block obvious admin-surface attacks at the edge.
+    # Sprint 1 (Enterprise Admin Hardening): enable WAF for admin & district
+    # subdomains. Other tenants share the same Ingress object, so this applies
+    # platform-wide; if a learner/parent route trips a CRS rule we will tune it.
+    nginx.ingress.kubernetes.io/enable-modsecurity: "true"
+    nginx.ingress.kubernetes.io/enable-owasp-core-rules: "true"
+    nginx.ingress.kubernetes.io/modsecurity-snippet: |
+      SecRuleEngine On
+      SecRequestBodyAccess On
+      SecAuditEngine RelevantOnly
+      SecAuditLogParts ABIJDEFHZ
+      SecAction "id:900110,phase:1,nolog,pass,t:none,setvar:tx.inbound_anomaly_score_threshold=10,setvar:tx.outbound_anomaly_score_threshold=10"
 spec:
   ingressClassName: nginx
   tls:

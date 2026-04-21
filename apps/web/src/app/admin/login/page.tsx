@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
         throw new Error(data.error || "Login failed");
       }
       if (data.mfaPending) {
-        router.push(`/verify-mfa?token=${encodeURIComponent(data.mfaToken)}&returnTo=/dashboard/admin`);
+        router.push(`/verify-mfa?token=${encodeURIComponent(data.mfaToken)}&method=${encodeURIComponent(data.mfaMethod || "email")}&returnTo=/dashboard/admin`);
         return;
       }
       await refreshToken();

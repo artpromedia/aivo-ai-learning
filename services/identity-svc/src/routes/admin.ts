@@ -1,9 +1,26 @@
 import { FastifyInstance } from "fastify";
-import { users, learners, tenants, sensoryProfiles, consentRecords, sessions } from "@aivo/db";
+import { users, learners, tenants, sensoryProfiles, consentRecords, sessions, adminAuditLog, appendAudit } from "@aivo/db";
 import { signJWT, verifyJWT } from "@aivo/security";
+
+function clientIp(req: any): string | null {
+  return req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
+}
 import { eq, sql, desc, ilike, or, and, count, asc } from "drizzle-orm";
 import argon2 from "argon2";
 import crypto from "crypto";
+import { requireStepUp } from "./step-up.js";
+import { deprecateRoute } from "../lib/deprecation.js";
+
+// Sprint 10: legacy admin reads now live behind admin-svc. Mark them
+// deprecated for one cycle (default 90 days). Mutations remain canonical
+// here.
+const dStats   = deprecateRoute({ successor: "/api/admin-svc/stats" });
+const dUsers   = deprecateRoute({ successor: "/api/admin-svc/users" });
+const dUserId  = deprecateRoute({ successor: "/api/admin-svc/users/:id" });
+const dLearn   = deprecateRoute({ successor: "/api/admin-svc/learners" });
+const dLearnId = deprecateRoute({ successor: "/api/admin-svc/learners/:id" });
+const dTen     = deprecateRoute({ successor: "/api/admin-svc/tenants" });
+const dTenId   = deprecateRoute({ successor: "/api/admin-svc/tenants/:id" });
 
 const ADMIN_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN"];
 const INTERNAL_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
@@ -44,7 +61,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
   app.get("/api/admin/stats", {
-    preHandler: requireAdmin,
+    preHandler: [dStats, requireAdmin],
   }, async () => {
     const [userCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(users);
     const [learnerCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(learners);
@@ -90,7 +107,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/users", {
-    preHandler: requireAdmin,
+    preHandler: [dUsers, requireAdmin],
   }, async (req) => {
     const { role, page: pageStr, pageSize: pageSizeStr, search, sort, order } = req.query as {
       role?: string; page?: string; pageSize?: string; search?: string; sort?: string; order?: string;
@@ -130,7 +147,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/users/:id", {
-    preHandler: requireAdmin,
+    preHandler: [dUserId, requireAdmin],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
 
@@ -180,7 +197,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.put("/api/admin/users/:id", {
-    preHandler: requirePlatformAdmin,
+    preHandler: [requirePlatformAdmin, requireStepUp("role:change")],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const body = req.body as any;
@@ -206,7 +223,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.delete("/api/admin/users/:id", {
-    preHandler: requirePlatformAdmin,
+    preHandler: [requirePlatformAdmin, requireStepUp("user:delete")],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const adminUser = (req as any).user;
@@ -248,7 +265,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/admin/users/:id/reset-password", {
-    preHandler: requirePlatformAdmin,
+    preHandler: [requirePlatformAdmin, requireStepUp("config:update")],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
 
@@ -266,7 +283,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/learners", {
-    preHandler: requireAdmin,
+    preHandler: [dLearn, requireAdmin],
   }, async (req) => {
     const { page: pageStr, pageSize: pageSizeStr, search, sort, order } = req.query as {
       page?: string; pageSize?: string; search?: string; sort?: string; order?: string;
@@ -302,7 +319,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/learners/:id", {
-    preHandler: requireAdmin,
+    preHandler: [dLearnId, requireAdmin],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
 
@@ -334,7 +351,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/tenants", {
-    preHandler: requireAdmin,
+    preHandler: [dTen, requireAdmin],
   }, async (req) => {
     const { page: pageStr, pageSize: pageSizeStr, search, sort, order } = req.query as {
       page?: string; pageSize?: string; search?: string; sort?: string; order?: string;
@@ -361,7 +378,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/admin/tenants/:id", {
-    preHandler: requireAdmin,
+    preHandler: [dTenId, requireAdmin],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
 
@@ -394,7 +411,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.put("/api/admin/tenants/:id", {
-    preHandler: requirePlatformAdmin,
+    preHandler: [requirePlatformAdmin, requireStepUp("tenant:suspend")],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const body = req.body as any;
@@ -427,7 +444,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/admin/impersonate", {
-    preHandler: requirePlatformAdmin,
+    preHandler: [requirePlatformAdmin, requireStepUp("user:impersonate")],
     schema: {
       tags: ["Admin"],
       body: {
@@ -462,6 +479,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: "User not found" });
     }
 
+    const startedAt = Date.now();
     const impersonatedToken = await signJWT({
       sub: targetUser.id,
       tenantId: targetUser.tenantId || "",
@@ -469,6 +487,24 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       email: targetUser.email || "",
       name: targetUser.name,
       impersonatedBy: adminUser.sub,
+      impersonationStartedAt: startedAt,
+    });
+
+    // Sprint 4: write IMPERSONATION_STARTED into the hash-chained admin
+    // audit log. Failure to audit MUST block impersonation — silently
+    // dropping the trail would defeat the control.
+    await appendAudit(db, "admin_audit_log", adminAuditLog, {
+      action: "IMPERSONATION_STARTED",
+      actorId: adminUser.sub,
+      actorEmail: adminUser.email || "",
+      actorRole: adminUser.role,
+      onBehalfOfId: targetUser.id,
+      resourceType: "user",
+      resourceId: targetUser.id,
+      details: { startedAt, targetEmail: targetUser.email, targetRole: targetUser.role },
+      ipAddress: clientIp(req),
+      userAgent: (req.headers["user-agent"] as string) || null,
+      tenantId: adminUser.tenantId || null,
     });
 
     return {
@@ -480,6 +516,76 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         role: targetUser.role,
         tenantId: targetUser.tenantId,
       },
+    };
+  });
+
+  /**
+   * Sprint 4: end an impersonation session. Caller must present a Bearer
+   * token issued by /api/admin/impersonate (i.e. the JWT carries
+   * `impersonatedBy`). Writes an IMPERSONATION_ENDED audit row with the
+   * session duration and returns a fresh admin token for the original
+   * admin so the UI can keep working without a full re-auth.
+   */
+  app.post("/api/admin/impersonate/end", async (req: any, reply: any) => {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) {
+      return reply.status(401).send({ error: "Missing authorization header" });
+    }
+    let payload: any;
+    try {
+      payload = await verifyJWT(auth.slice(7));
+    } catch {
+      return reply.status(401).send({ error: "Invalid token" });
+    }
+    if (!payload.impersonatedBy) {
+      return reply.status(400).send({ error: "Token is not an impersonation token" });
+    }
+
+    const [admin] = await db
+      .select({ id: users.id, email: users.email, name: users.name, role: users.role, tenantId: users.tenantId })
+      .from(users)
+      .where(eq(users.id, payload.impersonatedBy))
+      .limit(1);
+    if (!admin) {
+      return reply.status(404).send({ error: "Original admin not found" });
+    }
+
+    const durationMs = payload.impersonationStartedAt
+      ? Date.now() - payload.impersonationStartedAt
+      : null;
+
+    await appendAudit(db, "admin_audit_log", adminAuditLog, {
+      action: "IMPERSONATION_ENDED",
+      actorId: admin.id,
+      actorEmail: admin.email || "",
+      actorRole: admin.role,
+      onBehalfOfId: payload.sub,
+      resourceType: "user",
+      resourceId: payload.sub,
+      details: { durationMs, startedAt: payload.impersonationStartedAt ?? null },
+      ipAddress: clientIp(req),
+      userAgent: (req.headers["user-agent"] as string) || null,
+      tenantId: admin.tenantId || null,
+    });
+
+    const adminToken = await signJWT({
+      sub: admin.id,
+      tenantId: admin.tenantId || "",
+      role: admin.role,
+      email: admin.email || "",
+      name: admin.name,
+    });
+
+    return {
+      accessToken: adminToken,
+      user: {
+        id: admin.id,
+        email: admin.email,
+        name: admin.name,
+        role: admin.role,
+        tenantId: admin.tenantId,
+      },
+      durationMs,
     };
   });
 

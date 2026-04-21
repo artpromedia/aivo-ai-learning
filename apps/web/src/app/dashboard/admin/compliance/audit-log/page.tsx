@@ -11,11 +11,21 @@ interface AuditEntry {
   action: string;
   actorEmail: string;
   actorRole: string;
+  onBehalfOfId: string | null;
   resourceType: string;
   resourceId: string;
   details: Record<string, unknown> | null;
   ipAddress: string;
   createdAt: string;
+}
+
+interface ChainSummary {
+  table: string;
+  totalRows: number;
+  chainStartSeq: number | null;
+  lastVerifiedSeq: number | null;
+  brokenAtSeq: number | null;
+  ok: boolean;
 }
 
 interface AuditResponse {
@@ -30,6 +40,7 @@ export default function AuditLogPage() {
   const [data, setData] = useState<AuditResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [chainStatus, setChainStatus] = useState<{ ok: boolean; chains: ChainSummary[] } | null>(null);
 
   const [search, setSearch] = useState("");
   const [action, setAction] = useState("");
@@ -63,6 +74,16 @@ export default function AuditLogPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    fetch("/api/admin-svc/audit-log/verify", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setChainStatus(d))
+      .catch(() => {});
+  }, [accessToken]);
 
   const clearFilters = () => {
     setSearch("");
@@ -118,12 +139,26 @@ export default function AuditLogPage() {
             <p className="text-sm vi-text-muted mt-1">Searchable record of every admin action and security event.</p>
           </div>
         </div>
-        <button
-          onClick={handleExport}
-          className="px-4 py-2 text-sm font-medium rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
-        >
-          Export
-        </button>
+        <div className="flex items-center gap-3">
+          {chainStatus && (
+            <span
+              title={chainStatus.chains.map((c) => `${c.table}: ${c.ok ? "ok" : `broken@${c.brokenAtSeq}`} (${c.totalRows} rows)`).join("\n")}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-full ${
+                chainStatus.ok
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {chainStatus.ok ? "✓ Audit chain verified" : "⚠ Audit chain broken"}
+            </span>
+          )}
+          <button
+            onClick={handleExport}
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+          >
+            Export
+          </button>
+        </div>
       </div>
 
       <div className="vi-card p-4">
@@ -220,9 +255,18 @@ export default function AuditLogPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="px-2 py-0.5 text-xs rounded font-semibold bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]">
+                        <span className={`px-2 py-0.5 text-xs rounded font-semibold ${
+                          entry.action.startsWith("IMPERSONATION_")
+                            ? "bg-yellow-100 text-yellow-900"
+                            : "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]"
+                        }`}>
                           {entry.action.replace(/_/g, " ")}
                         </span>
+                        {entry.onBehalfOfId && (
+                          <div className="mt-1 inline-flex items-center px-2 py-0.5 text-[10px] rounded bg-yellow-50 text-yellow-800 border border-yellow-200 font-mono">
+                            on behalf of {entry.onBehalfOfId.slice(0, 8)}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-sm vi-text">{entry.resourceType}</span>

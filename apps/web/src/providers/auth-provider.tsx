@@ -1,5 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { fetchWithStepUp } from "@/lib/step-up";
 
 interface User {
   id: string;
@@ -35,6 +37,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [originalAdmin, setOriginalAdmin] = useState<User | null>(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
   const refreshToken = useCallback(async (): Promise<string | null> => {
     try {
@@ -42,6 +47,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setAccessToken(data.accessToken);
+        // Sprint 7: surface the gate so the SPA can route the user to the
+        // forced change-password screen before letting them touch anything
+        // else.
+        setMustChangePassword(!!data.mustChangePassword);
         const meRes = await fetch("/api/users/me", {
           headers: { Authorization: `Bearer ${data.accessToken}` },
         });
@@ -66,6 +75,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { refreshToken(); }, [refreshToken]);
 
+  // Sprint 7: enforce mustChangePassword by redirecting to the change-
+  // password page from anywhere in the dashboard. We allow the user to
+  // hit /dashboard/change-password itself and the auth pages so they can
+  // actually complete the change.
+  useEffect(() => {
+    if (loading || !user || !mustChangePassword) return;
+    const allowed = ["/dashboard/change-password", "/login", "/district/login", "/admin/login", "/logout"];
+    if (allowed.some((p) => pathname?.startsWith(p))) return;
+    router.push("/dashboard/change-password");
+  }, [loading, user, mustChangePassword, pathname, router]);
+
   const login = async (email: string, password: string) => {
     const res = await fetch("/api/auth/login", {
       method: "POST",
@@ -74,7 +94,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       credentials: "include",
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+    if (!res.ok) {
+      const err = new Error(data.error || "Login failed") as Error & { redirectTo?: string; wrongSurface?: string };
+      if (data.redirectTo) err.redirectTo = data.redirectTo;
+      if (data.wrongSurface) err.wrongSurface = data.wrongSurface;
+      throw err;
+    }
     if (data.mfaPending) {
       return { mfaPending: true, mfaToken: data.mfaToken, mfaMethod: data.mfaMethod };
     }
@@ -124,13 +149,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!accessToken || !user) throw new Error("Not authenticated");
     if (user.role !== "PLATFORM_ADMIN") throw new Error("Not authorized");
 
-    const res = await fetch("/api/admin/impersonate", {
+    const res = await fetchWithStepUp("/api/admin/impersonate", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId }),
+      accessToken,
     });
     if (!res.ok) {
       const err = await res.json();
@@ -146,6 +169,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const exitImpersonation = async () => {
+    // Sprint 4: explicit end-of-impersonation hop so we get an
+    // IMPERSONATION_ENDED audit row with duration, plus a fresh admin
+    // access token for the original admin without forcing re-login.
+    if (accessToken) {
+      try {
+        const res = await fetch("/api/admin/impersonate/end", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+          setAccessToken(data.accessToken);
+          setIsImpersonating(false);
+          setOriginalAdmin(null);
+          sessionStorage.removeItem(IMPERSONATION_FLAG_KEY);
+          return;
+        }
+      } catch {}
+    }
+    // Fallback: clear local state and refresh from cookie session.
     sessionStorage.removeItem(IMPERSONATION_FLAG_KEY);
     setIsImpersonating(false);
     setOriginalAdmin(null);

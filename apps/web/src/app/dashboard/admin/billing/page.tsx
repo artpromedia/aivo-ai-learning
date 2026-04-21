@@ -16,7 +16,7 @@ export default function AdminBillingPage() {
   useEffect(() => {
     if (!accessToken) return;
     setLoading(true);
-    fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
+    fetch("/api/admin-svc/stats", { headers: { Authorization: `Bearer ${accessToken}` } })
       .then((r) => r.ok ? r.json() : null)
       .then(setStats)
       .catch(() => {})

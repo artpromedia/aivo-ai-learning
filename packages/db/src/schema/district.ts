@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, jsonb, text, integer, index, uniqueIndex, date } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, jsonb, text, integer, index, uniqueIndex, date, bigserial } from "drizzle-orm/pg-core";
 import { users } from "./users.js";
 import { tenants } from "./tenants.js";
 import { learners } from "./learners.js";
@@ -70,13 +70,17 @@ export const districtSettings = pgTable("district_settings", {
 
 export const districtActivityLog = pgTable("district_activity_log", {
   id: uuid("id").defaultRandom().primaryKey(),
+  seq: bigserial("seq", { mode: "number" }).notNull(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   action: varchar("action", { length: 100 }).notNull(),
   actorId: uuid("actor_id").references(() => users.id).notNull(),
   actorName: varchar("actor_name", { length: 255 }),
+  onBehalfOfId: uuid("on_behalf_of_id").references(() => users.id),
   resourceType: varchar("resource_type", { length: 50 }).notNull(),
   resourceId: varchar("resource_id", { length: 255 }),
   details: jsonb("details"),
+  prevHash: varchar("prev_hash", { length: 64 }),
+  hash: varchar("hash", { length: 64 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_district_activity_tenant").on(table.tenantId, table.createdAt),
@@ -101,6 +105,41 @@ export const iepRecords = pgTable("iep_records", {
 }, (table) => [
   index("idx_iep_learner").on(table.learnerId),
   index("idx_iep_review").on(table.reviewDate),
+]);
+
+// Sprint 8: invites for delegated district admin management.
+export const districtAdminInvites = pgTable("district_admin_invites", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  invitedBy: uuid("invited_by").references(() => users.id).notNull(),
+  tokenHash: varchar("token_hash", { length: 128 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  acceptedUserId: uuid("accepted_user_id").references(() => users.id),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_district_admin_invites_tenant").on(table.tenantId),
+  index("idx_district_admin_invites_token").on(table.tokenHash),
+]);
+
+// Sprint 9: seat self-service requests routed to billing.
+export const seatRequests = pgTable("seat_requests", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  requestedBy: uuid("requested_by").references(() => users.id).notNull(),
+  currentSeats: integer("current_seats").notNull(),
+  requestedSeats: integer("requested_seats").notNull(),
+  justification: text("justification"),
+  status: varchar("status", { length: 32 }).default("pending").notNull(),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: uuid("resolved_by").references(() => users.id),
+  resolutionNotes: text("resolution_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_seat_requests_tenant").on(table.tenantId, table.createdAt),
 ]);
 
 export const interventions = pgTable("interventions", {

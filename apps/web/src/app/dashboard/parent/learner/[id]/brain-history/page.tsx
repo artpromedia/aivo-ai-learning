@@ -4,6 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Brain, Clock, ChevronDown, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Snapshot {
   id: string;
@@ -15,20 +16,26 @@ interface Snapshot {
   snapshot?: any;
 }
 
-const TRIGGER_LABEL: Record<string, string> = {
-  parent_approval: "Parent approved baseline",
-  parent_amend: "Parent amended profile",
-  parent_decline: "Parent declined recommendation",
-  rollback: "Rolled back to earlier version",
-  regression_check: "Regression check",
-  engagement_update: "Engagement profile updated",
-  initial_clone: "Initial brain created",
-};
+const TRIGGER_KEYS = new Set([
+  "parent_approval",
+  "parent_amend",
+  "parent_decline",
+  "rollback",
+  "regression_check",
+  "engagement_update",
+  "initial_clone",
+]);
 
 export default function BrainHistoryPage() {
   const { user, accessToken, loading: authLoading } = useAuth();
   const router = useRouter();
   const { id: learnerId } = useParams() as { id: string };
+  const t = useTranslations("parent");
+  const tc = useTranslations("common");
+  const triggerLabel = (trigger: string | null) => {
+    if (trigger && TRIGGER_KEYS.has(trigger)) return t(`brain_trigger_${trigger}` as const);
+    return trigger || t("brain_history_default_label");
+  };
 
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,14 +79,14 @@ export default function BrainHistoryPage() {
       <header className="bg-[hsl(var(--visual-surface)/0.95)] backdrop-blur border-b vi-border px-8 py-4 flex items-center justify-between">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={100} height={30} style={{ height: "auto" }} />
         <button onClick={() => router.push(`/dashboard/parent/learner/${learnerId}`)} className="text-sm vi-text-muted hover:text-[hsl(var(--visual-primary))] font-semibold">
-          ← Back to learner
+          {t("brain_history_back")}
         </button>
       </header>
 
       <main className="max-w-3xl mx-auto px-8 py-12 space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-heading font-bold vi-text">Brain History</h1>
-          <p className="vi-text-muted">Every change we&apos;ve recorded to your child&apos;s learning profile</p>
+          <h1 className="text-3xl font-heading font-bold vi-text">{t("brain_history_title")}</h1>
+          <p className="vi-text-muted">{t("brain_history_description")}</p>
         </div>
 
         {loading ? (
@@ -91,8 +98,8 @@ export default function BrainHistoryPage() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center">
               <Brain size={28} />
             </div>
-            <p className="font-semibold vi-text">No history yet</p>
-            <p className="text-sm vi-text-muted mt-1">Brain snapshots appear here whenever the profile changes.</p>
+            <p className="font-semibold vi-text">{t("brain_history_empty_title")}</p>
+            <p className="text-sm vi-text-muted mt-1">{t("brain_history_empty_desc")}</p>
           </div>
         ) : (
           <ol className="relative border-l-2 vi-border ml-3 space-y-4">
@@ -114,7 +121,7 @@ export default function BrainHistoryPage() {
                     <div className="flex items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-slate-800">
-                          v{snap.version} · {TRIGGER_LABEL[snap.trigger || ""] || snap.trigger || "Update"}
+                          v{snap.version} · {triggerLabel(snap.trigger)}
                         </p>
                         <p className="text-xs vi-text-muted flex items-center gap-1 mt-1">
                           <Clock size={12} /> {new Date(snap.created_at).toLocaleString()}
@@ -124,24 +131,24 @@ export default function BrainHistoryPage() {
                     </div>
                     {open && (
                       <div id={`snap-detail-${snap.id}`} className="mt-4 pt-4 border-t vi-border space-y-2 text-sm">
-                        {!detail && <p className="vi-text-muted text-xs">Loading detail…</p>}
+                        {!detail && <p className="vi-text-muted text-xs">{tc("loading_detail")}</p>}
                         {stateData && (
                           <>
                             {stateData.functioning_level_profile?.level && (
-                              <Row label="Functioning level" value={stateData.functioning_level_profile.level} />
+                              <Row label={t("brain_history_functioning_level")} value={stateData.functioning_level_profile.level} />
                             )}
                             {stateData.curriculum_alignment?.grade_band && (
-                              <Row label="Grade band" value={stateData.curriculum_alignment.grade_band} />
+                              <Row label={t("brain_history_grade_band")} value={stateData.curriculum_alignment.grade_band} />
                             )}
                             {stateData.mastery_levels && (
                               <Row
-                                label="Tracked skills"
-                                value={`${Object.keys(stateData.mastery_levels).length} skills`}
+                                label={t("brain_history_tracked_skills")}
+                                value={t("brain_history_skills_count", { count: Object.keys(stateData.mastery_levels).length })}
                               />
                             )}
                             {stateData.active_accommodations?.length > 0 && (
                               <Row
-                                label="Accommodations"
+                                label={t("brain_history_accommodations")}
                                 value={stateData.active_accommodations.slice(0, 4).join(", ")}
                               />
                             )}

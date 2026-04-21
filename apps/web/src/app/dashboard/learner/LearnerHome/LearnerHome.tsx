@@ -1,6 +1,7 @@
 "use client";
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/providers/auth-provider";
 import {
   FlVariantProvider,
@@ -35,20 +36,20 @@ interface EngagementProfile {
   currency: { coins: number; gems: number };
 }
 
-const TABS = [
-  { id: "today", label: "Today", icon: <Backpack className="w-5 h-5" aria-hidden /> },
-  { id: "adventures", label: "Adventures", icon: <MapIcon className="w-5 h-5" aria-hidden /> },
-  { id: "rewards", label: "Rewards", icon: <Gift className="w-5 h-5" aria-hidden /> },
-];
-
-const TABS_LOW = [
-  { id: "today", label: "Play", icon: <Play className="w-5 h-5" aria-hidden /> },
-  { id: "rewards", label: "Gifts", icon: <Gift className="w-5 h-5" aria-hidden /> },
-];
-
 export function LearnerHome() {
   const { user, accessToken, logout, loading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("learner");
+  const tc = useTranslations("common");
+  const TABS = [
+    { id: "today", label: t("tab_today"), icon: <Backpack className="w-5 h-5" aria-hidden /> },
+    { id: "adventures", label: t("tab_adventures"), icon: <MapIcon className="w-5 h-5" aria-hidden /> },
+    { id: "rewards", label: t("tab_rewards"), icon: <Gift className="w-5 h-5" aria-hidden /> },
+  ];
+  const TABS_LOW = [
+    { id: "today", label: t("tab_play"), icon: <Play className="w-5 h-5" aria-hidden /> },
+    { id: "rewards", label: t("tab_gifts"), icon: <Gift className="w-5 h-5" aria-hidden /> },
+  ];
   const [profile, setProfile] = useState<EngagementProfile | null>(null);
   const [functioningLevel, setFunctioningLevel] = useState<FunctioningLevel>("STANDARD");
   const [sensoryProfile, setSensoryProfile] = useState<SensoryProfile | undefined>();
@@ -162,7 +163,7 @@ export function LearnerHome() {
       if (res.ok) {
         const data = await res.json();
         setShowCelebration(true);
-        setLiveMessage("Mood check-in recorded!");
+        setLiveMessage(t("mood_recorded"));
         fetchProfile();
         if (data.suggestedExercises?.length > 0) {
           return data.suggestedExercises[0];
@@ -191,23 +192,22 @@ export function LearnerHome() {
           <div className="w-24 h-24 rounded-3xl bg-purple-500/20 text-purple-200 flex items-center justify-center mx-auto mb-6 animate-pulse" aria-hidden="true">
             <BrainIcon className="w-12 h-12" strokeWidth={2} />
           </div>
-          <h1 className="text-3xl font-heading font-bold text-white mb-3">Your Brain is Ready!</h1>
+          <h1 className="text-3xl font-heading font-bold text-white mb-3">{t("approval_title")}</h1>
           <p className="text-white/60 font-body leading-relaxed mb-6">
-            Your learning brain has been built! A grown-up needs to review it before you can start learning.
+            {t("approval_description")}
           </p>
           <div className="bg-white/10 backdrop-blur rounded-2xl p-6 mb-6">
             <div className="flex items-center justify-center gap-3 mb-3">
               <div className="w-3 h-3 rounded-full bg-amber-400 animate-pulse" />
-              <p className="text-amber-300 font-heading font-bold text-sm">Waiting for parent approval</p>
+              <p className="text-amber-300 font-heading font-bold text-sm">{t("approval_waiting")}</p>
             </div>
-            <p className="text-white/40 text-xs">Ask your parent to check their dashboard</p>
+            <p className="text-white/40 text-xs">{t("approval_instruction")}</p>
           </div>
           <button
             onClick={logout}
-            aria-label="Log out"
-            className="px-6 py-3 bg-white/10 backdrop-blur text-white/60 font-heading font-bold rounded-xl hover:bg-white/20 transition text-sm"
+            className="px-6 py-2 rounded-xl bg-white/10 text-white font-heading font-bold text-sm hover:bg-white/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
           >
-            Log out
+            {tc("logout")}
           </button>
         </main>
       </div>
@@ -298,12 +298,12 @@ export function LearnerHome() {
                 />
               </div>
 
-              <div role="tabpanel" aria-label={`${activeTab} tab content`}>
+              <div role="tabpanel" aria-label={t("tab_content_label", { tab: activeTab })}>
                 {activeTab === "today" && (
                   <TodayTab
                     missions={[
-                      { id: "m1", title: "Complete 1 session with Nova", tutorKey: "nova", progress: 0, target: 1, xpReward: 25 },
-                      { id: "m2", title: "Practice reading with Sage", tutorKey: "sage", progress: 0, target: 1, xpReward: 25 },
+                      { id: "m1", title: t("mission_nova_session"), tutorKey: "nova", progress: 0, target: 1, xpReward: 25 },
+                      { id: "m2", title: t("mission_sage_reading"), tutorKey: "sage", progress: 0, target: 1, xpReward: 25 },
                     ]}
                     onSelCheckin={handleSelCheckin}
                   />

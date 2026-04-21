@@ -18,14 +18,23 @@ in production.
   production; `sameSite=lax`.
 
 ### 1.2 Multi-Factor Authentication (MFA)
-- Email-OTP MFA is implemented end-to-end.
-- The roles in `MFA_FORCED_ROLES` (platform admins, district admins, etc.)
-  cannot disable MFA. The settings UI surfaces a "required for your role"
-  notice and the disable button is disabled.
-- Login emits an `mfaPending` token if the user has MFA enabled or is in
-  a forced-MFA role. The frontend redirects to `/verify-mfa`, which
-  exchanges the 6-digit code for a real access token + refresh cookie.
-- Resends are rate-limited to 3 per code, and codes expire in 10 minutes.
+- **TOTP** (RFC 6238) is the primary second factor. Secrets are stored
+  AES-GCM-encrypted in `users.totp_secret_encrypted`; the key comes
+  from `MFA_ENCRYPTION_KEY` (KMS-wrapped in production).
+- **WebAuthn / passkeys** are supported as a phishing-resistant
+  alternative — credentials live in `webauthn_credentials` keyed by
+  user. Either factor satisfies MFA on its own.
+- **Recovery codes** — 10 single-use codes are generated when MFA is
+  enrolled; each is hashed (sha256) before storage. Used codes are
+  marked `used_at` and never reissued.
+- **Email-OTP** remains as a fallback for users without TOTP/WebAuthn,
+  rate-limited to 3 resends per code with a 10-minute TTL.
+- Roles in `MFA_FORCED_ROLES` (platform admins, district admins, etc.)
+  cannot disable MFA; tenants can additionally flip
+  `featureOverrides.forceMfa` to require MFA for *all* tenant staff.
+- Login emits an `mfaPending` token if MFA is required, and the
+  frontend exchanges it on `/verify-mfa` for a real access token +
+  refresh cookie.
 
 ### 1.3 Service-to-service authentication
 - Internal microservice calls (brain-svc → learning-svc, tutor-svc →
@@ -49,6 +58,33 @@ in production.
 - Internal callers must present the service token; they are NOT trusted
   by IP address. The previous IP-allowlist bypass on
   `/api/learning/gradebook/update` has been removed.
+
+### 1.5 Step-Up Authentication
+- Sensitive operations (user delete, password reset, data export, evidence
+  bundle download, district-admin management) require a fresh proof of
+  presence even when the session is already authenticated.
+- The client calls `requireStepUp(scope)` (in `apps/web/src/lib/step-up.ts`),
+  which prompts for the second factor and exchanges the proof for a
+  short-lived JWT (`scope`-bound, 5-minute TTL, single-use sub-bound).
+- The token is sent on the next request as `x-step-up-token`. Server
+  middleware (`requireStepUp(scope)` in identity-svc; mirrored helpers
+  in admin-svc / district-svc) verifies the JWT, the scope, and that
+  `sub` matches the caller's `sub` before allowing the operation.
+- Defined scopes: `user:delete`, `user:reset-password`, `data:export`,
+  `district:admin-mgmt`, `evidence:download`. Each scope is a SOC 2
+  control reference — do not reuse one scope for an unrelated action.
+
+### 1.6 SAML SSO + SCIM provisioning
+- Per-tenant SAML 2.0 federation backed by `samlsso` table; signed
+  responses required, NameID = email.
+- SCIM 2.0 endpoints under `/scim/v2/*` accept per-tenant bearer tokens
+  managed via `/api/admin-svc/scim-tokens`. Tokens are sha256-hashed at
+  rest with an 8-char display prefix; rotation issues a new token and
+  revokes the prior.
+- All SCIM mutations (Users + Groups create/update/deprovision) write
+  to `admin_audit_log` with `actor_role = "SCIM"` and the originating
+  tenant's id, so deprovisioning shows up in evidence bundles
+  (CC6.3 — *least privilege & timely deprovisioning*).
 
 ## 2. Encryption
 

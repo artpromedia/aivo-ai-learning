@@ -69,7 +69,7 @@ export default function TenantDetailPage() {
   const fetchTenant = () => {
     if (!accessToken || !id) return;
     setLoading(true);
-    fetch(`/api/admin/tenants/${id}`, {
+    fetch(`/api/admin-svc/tenants/${id}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then((r) => {
@@ -102,7 +102,7 @@ export default function TenantDetailPage() {
         setSaving(false);
         return;
       }
-      const res = await fetch(`/api/admin/tenants/${id}`, {
+      const res = await fetch(`/api/admin-svc/tenants/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ name: editName, settings: parsedSettings }),
@@ -128,7 +128,7 @@ export default function TenantDetailPage() {
     try {
       const body: any = { status: newStatus };
       if (reason) body.suspensionReason = reason;
-      const res = await fetch(`/api/admin/tenants/${id}`, {
+      const res = await fetch(`/api/admin-svc/tenants/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify(body),

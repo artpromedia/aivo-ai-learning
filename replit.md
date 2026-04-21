@@ -370,3 +370,28 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `DATABASE_URL` — PostgreSQL connection string
 - `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` — RS256 key pair (in .replit userenv)
 - `NEWBUILD` — GitHub PAT for artpromedia/aivo-ai-learning repo
+
+### Sprint 8 — Delegated district admin management (Apr 2026)
+- `requireDistrictAdmin` lives in `services/identity-svc/src/hooks/require-district-admin.ts`; `registerDistrictTenantScope` installs a global `onRequest` hook that gates every `/api/district/*` route. Boot-time route-coverage check + `tests/district-route-coverage.test.ts` smoke run prove every district route is gated.
+- District-admin endpoints (`/api/district/admins/*` + invites) require step-up scope `district:admin-mgmt` and dual-log to `district_activity_log` + `admin_audit_log`. Last active DISTRICT_ADMIN cannot be deactivated.
+- `mfaRequiredFor(db, user)` ORs `featureOverrides.forceMfa` with role-based rules; consumed at all four login paths and step-up.
+- UI: `/dashboard/district/settings/admins` (table + invite/resend/revoke/reactivate/reset modals) + MFA adoption widget on `/dashboard/district/settings`.
+
+### Sprint 9 — District branding + seat self-service + activity export (Apr 2026)
+- `services/identity-svc/src/lib/branding-validation.ts` enforces logo PNG/SVG ≤ 200KB and ≥ 512×128 (PNG IHDR + SVG viewBox parsing) and computes WCAG 2.1 contrast for primaryColor.
+- New endpoints: `POST /api/district/settings/branding/logo` (base64 data URL, no S3 in this env), `PUT /api/district/settings` validates `branding.{primaryColor,supportEmail,displayName}`, `POST /api/district/seats/request` (writes `seat_requests`, notifies billing via comms-svc admin-alert), `GET /api/district/roster.csv`, `GET /api/district/activity/export?format=csv|json` gated by `requireStepUp("data:export")` and writes a `DATA_EXPORT` admin-audit row, `GET /api/branding/public/:tenantId` (unauth, lives outside `/api/district/*`).
+- UI: `/dashboard/district/settings/branding` (logo uploader + WCAG color picker + live preview) and seat-request modal + roster/activity downloads on `/dashboard/district/usage`. `apps/web/src/lib/use-tenant-branding.ts` consumes the public endpoint and writes `--tenant-primary` for parent/learner portals.
+
+### Sprint 10 — Consolidate admin APIs + persist config history (Apr 2026)
+- `services/admin-svc/src/routes/platform.ts` is now the BFF for the four admin reads (`stats`, `users`, `learners`, `tenants` — list + `:id`). Each handler proxies identity-svc over HTTP forwarding the caller's Bearer + query string; failures map to 502.
+- Legacy identity-svc reads still work but emit RFC-8594 `Deprecation: true` + `Sunset: <+90d>` + `Link: </api/admin-svc/...>; rel="successor-version"` headers via `services/identity-svc/src/lib/deprecation.ts`. Hooks run *before* `requireAdmin` so even unauthenticated probes see the deprecation signal.
+- `apps/web/src/app/dashboard/admin/{page,ai,billing,billing/revenue,compliance,learners,learners/[id],tenants,tenants/[id],users,users/[id]}.tsx` + the four internal portals now read from `/api/admin-svc/*`. Mutations stay on identity-svc by design.
+- `PUT /api/admin-svc/config` already inserts an append-only row in `platform_config`; new `GET /api/admin-svc/config/history` joins on `users` and returns the last 200 changes with author email + name + timestamp.
+
+### Sprint 11 — Pentest, SOC 2 evidence, docs (Apr 2026)
+- `.github/workflows/zap-baseline.yml`: weekly authenticated OWASP ZAP baseline against `admin.aivolearning.com` + `district.aivolearning.com`, bearer injected via `secrets.ZAP_*_BEARER`, HTML/MD/JSON report uploaded as artifact.
+- `services/admin-svc/src/lib/soc2-evidence.ts`: nightly cron + `generateEvidenceBundle(db)` builds a tar.gz containing `access-review.csv` (CC6.1/6.2), `audit-merkle.json` (CC7.2 — latest seq + chain hash), `config-history.json` (CC8.1 — last 30 days), `backup-verification.json` (CC7.5), and a `manifest.json` mapping artifacts → controls. Bundles land in `EVIDENCE_DIR` (default `data/evidence/`); each insert in `evidence_bundles` records `sha256` for tamper-evidence. The S3 WORM swap point is documented inline (`S3_SWAP_POINT`) and gated by `EVIDENCE_S3_BUCKET`.
+- `services/admin-svc/src/routes/evidence.ts`: `GET /api/admin-svc/compliance/evidence` (list, PLATFORM_ADMIN), `GET /api/admin-svc/compliance/evidence/:date` (download — step-up `data:export`, sets `X-Evidence-Sha256`), `POST /api/admin-svc/compliance/evidence/run` (manual trigger).
+- `apps/web/src/app/dashboard/admin/compliance/evidence/page.tsx`: lists bundles with size/summary, downloads via step-up modal, and re-hashes the file in-browser against `X-Evidence-Sha256` so auditors see end-to-end integrity.
+- Docs: `docs/security-architecture.md` §1.2 expanded for TOTP + WebAuthn + recovery codes; new §1.5 covers Step-Up scopes; new §1.6 covers SAML/SCIM. New runbooks `docs/runbooks/admin-break-glass.md` (two-person procedure with re-seal step) and `docs/runbooks/audit-restore.md` (chain-break diagnose + restore from nightly bundle anchor).
+- New table `evidence_bundles` (id, bundleDate UNIQUE, filename, sizeBytes, sha256, summary jsonb, generatedAt) added to `packages/db/src/schema/admin.ts` and idempotent `CREATE TABLE IF NOT EXISTS` appended to `scripts/post-merge.sh` (drizzle-kit push is interactive in this env).

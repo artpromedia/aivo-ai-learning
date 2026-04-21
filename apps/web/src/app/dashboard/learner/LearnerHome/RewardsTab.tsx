@@ -1,6 +1,7 @@
 "use client";
 import { ShoppingBag, Award, Trophy, Flame, Gem, Star, Medal } from "lucide-react";
 import { useFlVariant, LearnerCard } from "@aivo/learner-ui";
+import { useTranslations } from "next-intl";
 
 interface Badge {
   id: string;
@@ -26,12 +27,13 @@ function rarityIcon(rarity: string) {
 
 export function RewardsTab({ badges, streakCurrent, streakLongest, onNavigate }: RewardsTabProps) {
   const { isLow } = useFlVariant();
+  const t = useTranslations("learner");
 
   const chip = (key: "shop" | "badges" | "leaderboard") => {
     const map = {
-      shop: { color: "hsl(var(--visual-science))", tint: "hsl(var(--visual-science) / 0.12)", label: "Shop", path: "/dashboard/learner/shop", Icon: ShoppingBag },
-      badges: { color: "hsl(var(--visual-sel))", tint: "hsl(var(--visual-sel) / 0.16)", label: "Badges", path: "/dashboard/learner/badges", Icon: Award },
-      leaderboard: { color: "hsl(var(--visual-primary))", tint: "hsl(var(--visual-primary) / 0.12)", label: "Leaderboard", path: "/dashboard/learner/leaderboard", Icon: Trophy },
+      shop: { color: "hsl(var(--visual-science))", tint: "hsl(var(--visual-science) / 0.12)", label: t("shop"), path: "/dashboard/learner/shop", Icon: ShoppingBag },
+      badges: { color: "hsl(var(--visual-sel))", tint: "hsl(var(--visual-sel) / 0.16)", label: t("rewards_badges"), path: "/dashboard/learner/badges", Icon: Award },
+      leaderboard: { color: "hsl(var(--visual-primary))", tint: "hsl(var(--visual-primary) / 0.12)", label: t("leaderboard"), path: "/dashboard/learner/leaderboard", Icon: Trophy },
     } as const;
     const { color, tint, label, path, Icon } = map[key];
     return (
@@ -57,7 +59,7 @@ export function RewardsTab({ badges, streakCurrent, streakLongest, onNavigate }:
 
       {badges.length > 0 && (
         <LearnerCard>
-          <h3 className="font-extrabold text-slate-900 mb-3">Recent Badges</h3>
+          <h3 className="font-extrabold text-slate-900 mb-3">{t("recent_badges")}</h3>
           <div className={`grid gap-3 ${isLow ? "grid-cols-2" : "grid-cols-3 md:grid-cols-4"}`}>
             {badges.slice(0, isLow ? 4 : 8).map((b) => (
               <div key={b.id} className="bg-slate-50 rounded-2xl p-3 text-center border border-slate-100">
@@ -75,9 +77,9 @@ export function RewardsTab({ badges, streakCurrent, streakLongest, onNavigate }:
             <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[hsl(var(--visual-sel)/0.16)] text-[hsl(var(--visual-sel))]">
               <Flame className="w-5 h-5" strokeWidth={2.5} aria-hidden />
             </div>
-            <span className="font-extrabold text-slate-900">Streak: {streakCurrent} days</span>
+            <span className="font-extrabold text-slate-900">{t("streak_days_label", { count: streakCurrent })}</span>
           </div>
-          <span className="text-sm text-slate-500 font-semibold">Best: {streakLongest}</span>
+          <span className="text-sm text-slate-500 font-semibold">{t("streak_best_label", { count: streakLongest })}</span>
         </div>
       </LearnerCard>
     </div>

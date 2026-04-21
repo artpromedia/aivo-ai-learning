@@ -42,7 +42,7 @@ export default function AdminTenantsPage() {
 
   useEffect(() => {
     if (!accessToken) return;
-    fetch("/api/admin/tenants", { headers: { Authorization: `Bearer ${accessToken}` } })
+    fetch("/api/admin-svc/tenants", { headers: { Authorization: `Bearer ${accessToken}` } })
       .then((r) => r.ok ? r.json() : [])
       .then((data) => setTenants(Array.isArray(data) ? data : []))
       .catch(() => setTenants([]))
@@ -68,7 +68,7 @@ export default function AdminTenantsPage() {
         setDistrictName("");
         setAdminName("");
         setAdminEmail("");
-        fetch("/api/admin/tenants", { headers: { Authorization: `Bearer ${accessToken}` } })
+        fetch("/api/admin-svc/tenants", { headers: { Authorization: `Bearer ${accessToken}` } })
           .then((r) => r.ok ? r.json() : [])
           .then((d) => setTenants(Array.isArray(d) ? d : []))
           .catch(() => {});

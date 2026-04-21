@@ -6,20 +6,43 @@ import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
-import { initKeys } from "@aivo/security";
+import { initKeys, logAdminEnterpriseFlags, assertMfaKeyConfigured, registerAdminIpAllowlist } from "@aivo/security";
 import { registerAuthRoutes } from "./routes/auth.js";
+import { registerTestHelperRoutes } from "./routes/test-helpers.js";
 import { registerUserRoutes } from "./routes/users.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerConsentRoutes } from "./routes/consent.js";
 import { registerCurriculumRoutes } from "./routes/curriculum.js";
 import { registerAdminRoutes } from "./routes/admin.js";
+import { registerStepUpRoutes } from "./routes/step-up.js";
 import { registerDistrictRoutes } from "./routes/district.js";
+import { registerPublicBrandingRoutes } from "./routes/branding-public.js";
+import { registerDistrictAdminRoutes } from "./routes/district-admins.js";
+import { registerSsoRoutes } from "./routes/sso.js";
+import { registerScimRoutes } from "./routes/scim.js";
+import { registerDistrictTenantScope, REQUIRE_DISTRICT_ADMIN_FLAG } from "./hooks/require-district-admin.js";
 
 const logger = createLogger("identity-svc");
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
-async function start() {
+/**
+ * Build the configured Fastify app without binding to a port. Exposed
+ * so tests can mount the same route surface and run boot-time checks
+ * (route coverage, hook installation) against it.
+ */
+export async function buildApp() {
   await initKeys();
+  // Fail fast at boot — never let an MFA-encryption-key misconfiguration
+  // become a latent issue that only surfaces when a user tries to enroll
+  // their first TOTP secret. In production a missing key will throw here
+  // and stop the service from starting.
+  try {
+    assertMfaKeyConfigured();
+  } catch (e) {
+    logger.error(e, "MFA encryption key validation failed at boot");
+    throw e;
+  }
+  logAdminEnterpriseFlags(logger);
 
   const dbUrl = process.env.DATABASE_URL || "";
   if (
@@ -92,19 +115,61 @@ async function start() {
 
   app.decorate("db", db);
 
+  // Sprint 4: enforce ADMIN_IP_ALLOWLIST on /api/admin/** before any handler.
+  registerAdminIpAllowlist(app);
+
   await registerHealthRoutes(app);
   await registerAuthRoutes(app);
   await registerUserRoutes(app);
   await registerConsentRoutes(app);
   await registerCurriculumRoutes(app);
+  await registerStepUpRoutes(app);
   await registerAdminRoutes(app);
+  // Sprint 8: install the global tenant-scope hook BEFORE registering
+  // district routes. The hook intercepts every /api/district/* request
+  // and runs requireDistrictAdmin so no future district route can ship
+  // without tenant isolation. Per-route preHandlers remain idempotent
+  // via the shared REQUIRE_DISTRICT_ADMIN_FLAG.
+  registerDistrictTenantScope(app);
   await registerDistrictRoutes(app);
+  await registerPublicBrandingRoutes(app);
+  await registerDistrictAdminRoutes(app);
+  await registerSsoRoutes(app);
+  await registerScimRoutes(app);
+  registerTestHelperRoutes(app);
 
+  await app.ready();
+  // Boot-time fail-closed coverage: walk the registered route tree
+  // and verify every /api/district/* path is reachable through the
+  // tenant-scope hook. We can't introspect Fastify hooks directly, so
+  // the assertion here is "the prefix has at least one registered
+  // route AND the global hook was installed".
+  const districtRoutes = app.printRoutes({ commonPrefix: false })
+    .split("\n")
+    .filter((l) => l.includes("/api/district/"));
+  if (districtRoutes.length === 0) {
+    throw new Error("[boot-check] No /api/district/* routes registered — tenant-scope hook would silently no-op.");
+  }
+  void REQUIRE_DISTRICT_ADMIN_FLAG;
+  return app;
+}
+
+async function start() {
+  const app = await buildApp();
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Identity service listening on port ${PORT}`);
 }
 
-start().catch((err) => {
-  logger.error(err, "Failed to start identity-svc");
-  process.exit(1);
-});
+// Only auto-start when invoked as the entry module (not when imported
+// by tests via `buildApp`).
+const isMain = (() => {
+  try {
+    return process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+  } catch { return false; }
+})();
+if (isMain) {
+  start().catch((err) => {
+    logger.error(err, "Failed to start identity-svc");
+    process.exit(1);
+  });
+}
