@@ -399,15 +399,42 @@ jobs:
             adopt deployment     "$svc" "$svc"
             adopt configmap      "$svc" "$svc"
             echo "═══ Prod deploy: $svc ($VERSION) ═══"
-            helm upgrade --install "$svc" "${{ env.CHART_PATH }}" \
-              -f "${{ env.PROD_VALUES }}" \
-              --set serviceName="$svc" \
-              --set image.repository="${{ env.IMAGE_PREFIX }}" \
-              --set image.tag="$VERSION" \
-              --set service.port=$PORT \
-              --set service.targetPort=$PORT \
-              -n "$NS" --timeout 8m --wait \
-              || { echo "::warning::$svc deploy incomplete"; FAILED=$((FAILED+1)); }
+
+            helm_apply() {
+              helm upgrade --install "$svc" "${{ env.CHART_PATH }}" \
+                -f "${{ env.PROD_VALUES }}" \
+                --set serviceName="$svc" \
+                --set image.repository="${{ env.IMAGE_PREFIX }}" \
+                --set image.tag="$VERSION" \
+                --set service.port=$PORT \
+                --set service.targetPort=$PORT \
+                -n "$NS" --timeout 8m --wait 2>&1
+            }
+
+            set +e
+            OUT=$(helm_apply)
+            RC=$?
+            set -e
+            if [ $RC -ne 0 ]; then
+              echo "$OUT"
+              # Existing Deployment has state (immutable selector, stale
+              # duplicate port names, etc.) that strategic-merge can't fix.
+              # Delete the Deployment shell and re-apply — PVCs/Services
+              # remain intact because only the Deployment is recreated.
+              if echo "$OUT" | grep -Eq "field is immutable|Duplicate value|invalid: spec\.selector"; then
+                echo "::warning::$svc has incompatible existing Deployment — recreating"
+                kubectl -n "$NS" delete deployment "$svc" --ignore-not-found=true --wait=true >/dev/null 2>&1 || true
+                set +e
+                OUT=$(helm_apply)
+                RC=$?
+                set -e
+              fi
+              if [ $RC -ne 0 ]; then
+                echo "$OUT"
+                echo "::warning::$svc deploy incomplete"
+                FAILED=$((FAILED+1))
+              fi
+            fi
           done
           echo "Production deploy: $((${#SERVICES[@]}-FAILED))/${#SERVICES[@]} succeeded"
           if [ "$FAILED" -gt 3 ]; then
