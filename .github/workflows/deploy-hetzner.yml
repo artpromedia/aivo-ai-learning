@@ -390,10 +390,15 @@ jobs:
 
           FAILED=0
           for svc in "${SERVICES[@]}"; do
-            PORT=3000
-            for ps in "${PYTHON_SERVICES[@]}"; do
-              [ "$svc" = "$ps" ] && PORT=8000
-            done
+            # Port chosen to match the live container port of each service.
+            # Mismatches cause strategic-merge to *append* a second ports
+            # entry, which then collides on the port name "http" and the
+            # upgrade fails with: Duplicate value: "http".
+            case "$svc" in
+              brain-svc)       PORT=8000 ;;
+              assessment-svc)  PORT=3003 ;;
+              *)               PORT=3000 ;;
+            esac
             adopt serviceaccount "$svc" "$svc"
             adopt service        "$svc" "$svc"
             adopt deployment     "$svc" "$svc"
@@ -408,6 +413,8 @@ jobs:
                 --set image.tag="$VERSION" \
                 --set service.port=$PORT \
                 --set service.targetPort=$PORT \
+                --set env.PORT="$PORT" \
+                --set envFrom[0].secretRef.name=aivo-common-env \
                 -n "$NS" --timeout 8m --wait 2>&1
             }
 
