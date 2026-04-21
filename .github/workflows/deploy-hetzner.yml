@@ -296,6 +296,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
+    env:
+      PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      FALLBACK_DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -309,38 +312,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Backup snapshot tag (informational)
-        env:
-          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Resolve DB URL
         run: |
-          DATABASE_URL="${PROD_DATABASE_URL:-${DATABASE_URL:-}}"
-          if [ -z "${DATABASE_URL:-}" ]; then
-            echo "::warning::No production DB secret set (expected PROD_DATABASE_URL or DATABASE_URL) — skipping snapshot tag"
-            exit 0
+          set -euo pipefail
+          RESOLVED="${PROD_DATABASE_URL:-${FALLBACK_DATABASE_URL:-}}"
+          if [ -z "$RESOLVED" ]; then
+            echo "::error::Production DB secret missing. Add PROD_DATABASE_URL (or DATABASE_URL) to the production GitHub Environment."
+            exit 1
           fi
+          echo "DATABASE_URL=$RESOLVED" >> "$GITHUB_ENV"
           echo "Pre-migration tag: pre-${GITHUB_SHA::12}-$(date -u +%Y%m%dT%H%M%SZ)"
 
       - name: Push schema (drizzle-kit)
-        env:
-          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          DATABASE_URL="${PROD_DATABASE_URL:-${DATABASE_URL:-}}"
-          if [ -z "${DATABASE_URL:-}" ]; then
-            echo "::error::Production DB secret missing (set PROD_DATABASE_URL or DATABASE_URL)"; exit 1
-          fi
           pnpm db:push --force
 
       - name: Verify schema
-        env:
-          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          DATABASE_URL="${PROD_DATABASE_URL:-${DATABASE_URL:-}}"
-          if [ -z "${DATABASE_URL:-}" ]; then
-            echo "::error::Production DB secret missing (set PROD_DATABASE_URL or DATABASE_URL)"; exit 1
-          fi
           psql "$DATABASE_URL" -c "SELECT count(*) AS tables FROM pg_tables WHERE schemaname='public';"
 
   # ─────────────────────────────────────────────────────────────────────
