@@ -77,7 +77,7 @@ const LEARNING_LANGUAGES = [
 ];
 
 export default function ParentDashboard() {
-  const { user, accessToken, loading } = useAuth();
+  const { user, accessToken, loading, refreshToken } = useAuth();
   const router = useRouter();
   const t = useTranslations();
   const { locale: currentLocale } = useLocale();
@@ -181,11 +181,21 @@ export default function ParentDashboard() {
     setSubmitSuccess(null);
     setSubmitting(true);
     try {
-      const res = await fetch("/api/users/learners", {
+      const createLearner = (token: string) => fetch("/api/users/learners", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(newLearner),
       });
+
+      let res = await createLearner(accessToken);
+
+      // Access tokens are short-lived. Attempt one silent refresh + retry on 401.
+      if (res.status === 401) {
+        const freshToken = await refreshToken();
+        if (freshToken) {
+          res = await createLearner(freshToken);
+        }
+      }
 
       if (!res.ok) {
         let message = "Unable to add learner. Please try again.";
@@ -193,6 +203,11 @@ export default function ParentDashboard() {
           const err = await res.json();
           if (err?.error) message = String(err.error);
         } catch {}
+
+        if (res.status === 401) {
+          message = "Your session expired. Please sign in again and retry.";
+        }
+
         setSubmitError(message);
         return;
       }
