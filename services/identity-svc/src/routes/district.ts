@@ -438,10 +438,18 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
       if (!v.ok) return reply.status(400).send({ error: v.error });
       // Preserve any existing logo on the row when caller only sends
       // primaryColor/displayName/supportEmail; logo is owned by the
-      // dedicated `/branding/logo` endpoint above.
+      // dedicated `/branding/logo` endpoint above. We MUST strip
+      // logo-related fields here — otherwise a district admin could
+      // bypass the PNG/SVG/size validation in the logo upload route by
+      // PUTting an arbitrary `logoUrl` (e.g. an external tracker) which
+      // every parent/learner client in that tenant would then load.
       const [prior] = await db.select().from(districtSettings).where(eq(districtSettings.tenantId, tid)).limit(1);
       const priorBranding = (prior?.branding as any) || {};
-      updates.branding = { ...priorBranding, ...body.branding };
+      const incoming = { ...body.branding };
+      delete incoming.logoUrl;
+      delete incoming.logoMime;
+      delete incoming.logoBytes;
+      updates.branding = { ...priorBranding, ...incoming };
     }
     if (body.featureOverrides !== undefined) updates.featureOverrides = body.featureOverrides;
 

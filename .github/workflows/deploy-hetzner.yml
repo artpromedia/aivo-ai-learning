@@ -163,7 +163,11 @@ jobs:
         run: |
           set -euo pipefail
           NS="${{ env.STAGING_NAMESPACE }}"
-          VERSION="${{ steps.tag.outputs.version }}"
+          # Staging tracks the rolling :latest image tag (matching the
+          # legacy deploy-staging workflow). The resolved commit SHA is
+          # surfaced as the pipeline `version` output for traceability,
+          # but image building/pushing happens out-of-band.
+          IMAGE_TAG="latest"
           kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
 
           # Staging uses private GHCR images and shared runtime secrets.
@@ -220,7 +224,7 @@ jobs:
               -f "${{ env.STAGING_VALUES }}" \
               --set serviceName="$svc" \
               --set image.repository="${{ env.IMAGE_PREFIX }}" \
-              --set image.tag="$VERSION" \
+              --set image.tag="$IMAGE_TAG" \
               --set imagePullSecrets[0].name=ghcr-pull-secret \
               --set env.NODE_ENV=production \
               --set envFrom[0].secretRef.name=aivo-common-env \
@@ -243,7 +247,7 @@ jobs:
             adopt deployment "$svc" "$svc"
             adopt configmap "$svc" "$svc"
 
-            echo "═══ Staging deploy: $svc ($VERSION) ═══"
+            echo "═══ Staging deploy: $svc ($IMAGE_TAG) ═══"
             set +e
             OUT=$(helm_apply "$svc" "$PORT" 2>&1)
             RC=$?
@@ -359,7 +363,10 @@ jobs:
         run: |
           set -euo pipefail
           NS="${{ env.PROD_NAMESPACE }}"
-          VERSION="${{ needs.deploy-staging.outputs.version }}"
+          # Production prefers an explicit, immutable tag. Falls back to
+          # `latest` if none was supplied, matching staging behavior.
+          VERSION="${{ inputs.version }}"
+          [ -z "$VERSION" ] && VERSION="latest"
           kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
 
           SERVICES=(
@@ -369,12 +376,24 @@ jobs:
           )
           PYTHON_SERVICES=(brain-svc ai-svc)
 
+          adopt() {
+            local kind="$1" name="$2" svc="$3"
+            kubectl -n "$NS" get "$kind" "$name" >/dev/null 2>&1 || return 0
+            kubectl -n "$NS" label   "$kind" "$name" "app.kubernetes.io/managed-by=Helm" --overwrite >/dev/null
+            kubectl -n "$NS" annotate "$kind" "$name" "meta.helm.sh/release-name=$svc" --overwrite >/dev/null
+            kubectl -n "$NS" annotate "$kind" "$name" "meta.helm.sh/release-namespace=$NS" --overwrite >/dev/null
+          }
+
           FAILED=0
           for svc in "${SERVICES[@]}"; do
             PORT=3000
             for ps in "${PYTHON_SERVICES[@]}"; do
               [ "$svc" = "$ps" ] && PORT=8000
             done
+            adopt serviceaccount "$svc" "$svc"
+            adopt service        "$svc" "$svc"
+            adopt deployment     "$svc" "$svc"
+            adopt configmap      "$svc" "$svc"
             echo "═══ Prod deploy: $svc ($VERSION) ═══"
             helm upgrade --install "$svc" "${{ env.CHART_PATH }}" \
               -f "${{ env.PROD_VALUES }}" \

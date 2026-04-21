@@ -24,6 +24,26 @@ export interface PublicBranding {
 const DEFAULT: PublicBranding = { displayName: null, primaryColor: null, logoUrl: null, supportEmail: null };
 const CACHE_KEY = (id: string) => `aivo:branding:${id}`;
 
+/**
+ * Defense-in-depth: even though the backend's logo upload route validates
+ * PNG/SVG/size, we re-check on the client before assigning to <img src> so
+ * a misconfigured tenant or compromised admin cannot inject an arbitrary
+ * external URL (tracker, javascript:, etc.) into every learner/parent page.
+ * Only inline data URLs for png/svg or trusted relative paths are accepted.
+ */
+function isSafeLogoUrl(url: unknown): url is string {
+  if (typeof url !== "string" || url.length === 0) return false;
+  if (url.length > 300_000) return false; // matches 200KB upload cap w/ base64 overhead
+  if (url.startsWith("data:image/png;base64,")) return true;
+  if (url.startsWith("data:image/svg+xml;base64,")) return true;
+  if (url.startsWith("/images/") || url.startsWith("/branding/")) return true;
+  return false;
+}
+
+function sanitize(b: PublicBranding): PublicBranding {
+  return { ...b, logoUrl: isSafeLogoUrl(b.logoUrl) ? b.logoUrl : null };
+}
+
 export function useTenantBranding(tenantId: string | null | undefined) {
   const [branding, setBranding] = useState<PublicBranding>(DEFAULT);
   const [ready, setReady] = useState(false);
@@ -34,7 +54,7 @@ export function useTenantBranding(tenantId: string | null | undefined) {
     try {
       const cached = sessionStorage.getItem(CACHE_KEY(tenantId));
       if (cached) {
-        const parsed = JSON.parse(cached) as PublicBranding;
+        const parsed = sanitize(JSON.parse(cached) as PublicBranding);
         setBranding(parsed); applyBrandingCssVars(parsed); setReady(true);
       }
     } catch { /* ignore */ }
@@ -43,12 +63,12 @@ export function useTenantBranding(tenantId: string | null | undefined) {
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         if (!alive || !data?.branding) return;
-        const b: PublicBranding = {
+        const b: PublicBranding = sanitize({
           displayName: data.branding.displayName ?? null,
           primaryColor: data.branding.primaryColor ?? null,
           logoUrl: data.branding.logoUrl ?? null,
           supportEmail: data.branding.supportEmail ?? null,
-        };
+        });
         setBranding(b);
         applyBrandingCssVars(b);
         try { sessionStorage.setItem(CACHE_KEY(tenantId), JSON.stringify(b)); } catch { /* quota */ }

@@ -3,6 +3,8 @@ import Image from "next/image";
 import { Settings, Coins, Gem, LogOut } from "lucide-react";
 import { useFlVariant } from "@aivo/learner-ui";
 import { useTranslations } from "next-intl";
+import { useAuth } from "@/providers/auth-provider";
+import { useTenantBranding } from "@/lib/use-tenant-branding";
 
 interface TopBarProps {
   userName: string;
@@ -16,6 +18,11 @@ export function TopBar({ userName, coins, gems, onLogout, onSettings }: TopBarPr
   const { isLow, isPreSymbolic } = useFlVariant();
   const t = useTranslations("learner");
   const tc = useTranslations("common");
+  const { user } = useAuth();
+  // Sprint 9: tenant branding override (logo + accent color via CSS var).
+  const { branding } = useTenantBranding(user?.tenantId);
+  const brandLogo = branding.logoUrl || "/images/aivo-logo-purple.png";
+  const brandName = branding.displayName || "AIVO";
 
   return (
     <header
@@ -23,7 +30,7 @@ export function TopBar({ userName, coins, gems, onLogout, onSettings }: TopBarPr
       role="banner"
       aria-label={t("nav_label")}
     >
-      <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={90} height={27} priority />
+      <Image src={brandLogo} alt={brandName} width={140} height={27} unoptimized priority style={{ height: 27, width: "auto", maxWidth: 140 }} />
       <div className="flex items-center gap-3">
         {!isPreSymbolic && (
           <div className="flex items-center gap-2">
