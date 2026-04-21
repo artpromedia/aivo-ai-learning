@@ -360,13 +360,46 @@ jobs:
 
       - name: Push schema (drizzle-kit)
         run: |
-          # drizzle-kit push uses @clack/prompts which reads from a TTY
-          # (/dev/tty), so a plain pipe like `yes "" | drizzle-kit` is
-          # silently ignored and the prompt hangs. `script` allocates a
-          # real pseudo-TTY and we feed Enter keys into it via `yes ""`,
-          # which accepts the default highlighted option ("+ create enum")
-          # for every new-enum prompt.
-          script -qefc "pnpm db:push --force" /dev/null < <(yes "")
+          # drizzle-kit push uses @clack/prompts which opens /dev/tty
+          # directly, so plain stdin pipes are ignored. We drive it with
+          # a real PTY via Python's stdlib `pty` module, answering every
+          # "create vs rename enum" prompt with Enter (accepts the default
+          # highlighted option, which is always "+ create enum").
+          python3 - <<'PYEOF'
+          import os, pty, select, sys, time
+
+          def read(fd):
+              try:
+                  return os.read(fd, 4096)
+              except OSError:
+                  return b""
+
+          pid, master = pty.fork()
+          if pid == 0:
+              os.execvp("pnpm", ["pnpm", "db:push", "--force"])
+
+          last_write = 0.0
+          while True:
+              r, _, _ = select.select([master], [], [], 0.5)
+              if master in r:
+                  data = read(master)
+                  if not data:
+                      break
+                  sys.stdout.buffer.write(data)
+                  sys.stdout.buffer.flush()
+                  # When drizzle asks the enum question, send Enter.
+                  if b"enum created or renamed" in data:
+                      os.write(master, b"\r")
+                      last_write = time.time()
+              else:
+                  # Safety: if stuck >10s with no output, nudge Enter once.
+                  if time.time() - last_write > 10:
+                      os.write(master, b"\r")
+                      last_write = time.time()
+
+          _, status = os.waitpid(pid, 0)
+          sys.exit(os.waitstatus_to_exitcode(status))
+          PYEOF
 
       - name: Verify schema applied (in-cluster psql)
         run: |
