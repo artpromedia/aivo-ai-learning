@@ -323,10 +323,6 @@ jobs:
           echo "DATABASE_URL=$RESOLVED" >> "$GITHUB_ENV"
           echo "Pre-migration tag: pre-${GITHUB_SHA::12}-$(date -u +%Y%m%dT%H%M%SZ)"
 
-      - name: Build DB package
-        run: |
-          pnpm --filter @aivo/db build
-
       - name: Push schema (drizzle-kit)
         run: |
           pnpm db:push --force
