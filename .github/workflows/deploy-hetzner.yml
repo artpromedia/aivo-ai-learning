@@ -360,12 +360,13 @@ jobs:
 
       - name: Push schema (drizzle-kit)
         run: |
-          # drizzle-kit push --force still prompts interactively when it
-          # detects new enums (asking "create new" vs "rename from existing").
-          # The first option ("+ create enum") is the default highlight, so
-          # we feed unlimited Enter keypresses via `yes ""` to accept it for
-          # every prompt and prevent the job from hanging.
-          yes "" | pnpm db:push --force
+          # drizzle-kit push uses @clack/prompts which reads from a TTY
+          # (/dev/tty), so a plain pipe like `yes "" | drizzle-kit` is
+          # silently ignored and the prompt hangs. `script` allocates a
+          # real pseudo-TTY and we feed Enter keys into it via `yes ""`,
+          # which accepts the default highlighted option ("+ create enum")
+          # for every new-enum prompt.
+          script -qefc "pnpm db:push --force" /dev/null < <(yes "")
 
       - name: Verify schema applied (in-cluster psql)
         run: |
