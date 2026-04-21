@@ -293,7 +293,11 @@ jobs:
     name: Migrate Production DB
     needs: smoke-staging
     if: ${{ inputs.skip_prod != true }}
-    runs-on: ubuntu-latest
+    # Must run on the Hetzner self-hosted runner: production Postgres is on
+    # the private 10.0.0.0/24 network and is not routable from GitHub-hosted
+    # runners. Running here lets drizzle-kit push actually reach the DB so
+    # schema drift cannot silently accumulate.
+    runs-on: [self-hosted, hetzner, production]
     timeout-minutes: 15
     environment: production
     env:
@@ -316,12 +320,34 @@ jobs:
         run: |
           set -euo pipefail
           RESOLVED="${PROD_DATABASE_URL:-${FALLBACK_DATABASE_URL:-}}"
+          # Fallback: read from the live cluster secret if neither GH secret
+          # is configured. The self-hosted runner already has kubectl/kubeconfig.
+          if [ -z "$RESOLVED" ] && command -v kubectl >/dev/null 2>&1; then
+            RESOLVED="$(kubectl -n aivo get secret db-secrets -o jsonpath='{.data.database-url}' 2>/dev/null | base64 -d || true)"
+            [ -n "$RESOLVED" ] && echo "Resolved DATABASE_URL from cluster secret aivo/db-secrets"
+          fi
           if [ -z "$RESOLVED" ]; then
-            echo "::error::Production DB secret missing. Add PROD_DATABASE_URL (or DATABASE_URL) to the production GitHub Environment."
+            echo "::error::Production DB secret missing. Add PROD_DATABASE_URL (or DATABASE_URL) to the production GitHub Environment, or ensure kubectl on the runner can read aivo/db-secrets."
             exit 1
           fi
+          # Mask for logs.
+          echo "::add-mask::$RESOLVED"
           echo "DATABASE_URL=$RESOLVED" >> "$GITHUB_ENV"
           echo "Pre-migration tag: pre-${GITHUB_SHA::12}-$(date -u +%Y%m%dT%H%M%SZ)"
+
+      - name: Verify DB reachability
+        run: |
+          set -euo pipefail
+          # Extract host:port from DATABASE_URL=postgresql://user:pass@host:port/db...
+          HOSTPORT="$(printf '%s' "$DATABASE_URL" | sed -E 's#^[^@]+@([^/?]+).*#\1#')"
+          HOST="${HOSTPORT%%:*}"
+          PORT="${HOSTPORT##*:}"; [ "$PORT" = "$HOST" ] && PORT=5432
+          echo "Checking TCP ${HOST}:${PORT} from $(hostname)"
+          if ! timeout 5 bash -c "cat </dev/tcp/${HOST}/${PORT}" 2>/dev/null; then
+            echo "::error::Cannot reach ${HOST}:${PORT} from this runner. The migrate-prod-db job must run on a self-hosted runner inside the Hetzner private network (labels: self-hosted, hetzner, production)."
+            exit 1
+          fi
+          echo "OK: ${HOST}:${PORT} reachable"
 
       - name: Build DB dependencies
         run: |
@@ -332,11 +358,17 @@ jobs:
         run: |
           pnpm db:push --force
 
-      # Note: we intentionally do NOT run psql here. The production Postgres
-      # lives on a private Hetzner network (10.0.0.0/24) that is not routable
-      # from GitHub-hosted runners. drizzle-kit push above already verifies
-      # connectivity and schema apply. Post-deploy health checks validate
-      # schema usage via the production services.
+      - name: Verify schema applied (in-cluster psql)
+        run: |
+          set -euo pipefail
+          # Run psql inside the cluster instead of installing it on the host:
+          # the runner host has long-stuck dpkg/postinst processes that make
+          # apt unusable. kubectl always works here.
+          kubectl -n aivo run psqlverify-${GITHUB_RUN_ID} \
+            --rm --restart=Never --quiet --image=postgres:16-alpine \
+            --env=DBURL="$DATABASE_URL" \
+            --command -- psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
+              -c "select now() as migrated_at, current_database() as db, current_user as usr;"
 
   # ─────────────────────────────────────────────────────────────────────
   # Stage 5 — Deploy production.
