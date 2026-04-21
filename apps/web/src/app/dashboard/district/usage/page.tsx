@@ -171,6 +171,7 @@ function SeatToolsCard({ usage }: { usage: UsageData | null }) {
 
       {showSeat && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4" onClick={() => setShowSeat(false)}>
+          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
           <form onClick={(e) => e.stopPropagation()} onSubmit={submitSeat}
             className="vi-card w-full max-w-md p-6 space-y-4">
             <h3 className="text-lg font-heading font-semibold vi-text">Request more seats</h3>

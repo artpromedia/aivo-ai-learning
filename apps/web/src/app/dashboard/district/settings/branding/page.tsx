@@ -188,7 +188,6 @@ export default function DistrictBrandingPage() {
           <p className="text-xs vi-text-muted">PNG or SVG, ≤ 200KB, at least 512×128. Stored inline as a data URL (no external CDN in this environment).</p>
           {branding.logoUrl ? (
             <div className="rounded-xl border vi-border bg-slate-50 p-4 flex items-center justify-center min-h-32">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={branding.logoUrl} alt="District logo" className="max-h-24 max-w-full" />
             </div>
           ) : (
@@ -211,7 +210,6 @@ export default function DistrictBrandingPage() {
           <div className="flex items-center gap-3 px-5 py-3 text-white"
             style={{ backgroundColor: branding.primaryColor || "#7c3aed" }}>
             {branding.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img src={branding.logoUrl} alt="" className="h-8 max-w-32 object-contain" />
             ) : (
               <span className="font-heading font-bold text-base">AIVO</span>
