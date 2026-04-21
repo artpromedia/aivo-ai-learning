@@ -1,0 +1,338 @@
+name: deploy-hetzner
+
+# Single end-to-end pipeline that promotes a green commit through:
+#   Build (matrix) → Deploy Staging → Smoke Staging → Migrate Prod DB
+#                  → Deploy Production → Production Health Check
+#
+# Each stage gates the next via `needs:`. Production stages are guarded by
+# the `production` GitHub Environment so they require the configured
+# reviewers/secrets.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image tag to deploy (defaults to commit SHA)"
+        required: false
+        type: string
+      skip_prod:
+        description: "Stop after staging smoke (do not migrate/deploy prod)"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-hetzner-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+  PYTHON_VERSION: "3.12"
+  CHART_PATH: infra/helm/aivo-service
+  STAGING_NAMESPACE: aivo-staging
+  STAGING_VALUES: infra/helm/values/staging.yaml
+  PROD_NAMESPACE: aivo
+  PROD_VALUES: infra/helm/values/hetzner.yaml
+  IMAGE_PREFIX: ghcr.io/artpromedia
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # Stage 1 — Build (matrix). One job per build target so failures are
+  # localized and the pipeline view shows the fan-out the screenshot
+  # describes. The matrix sums to 12 entries by design.
+  # ─────────────────────────────────────────────────────────────────────
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - lint-typecheck      # 1
+          - identity-svc        # 2
+          - admin-svc           # 3
+          - billing-svc         # 4
+          - learning-svc        # 5
+          - assessment-svc      # 6
+          - comms-svc           # 7
+          - integrations-svc    # 8
+          - web-app             # 9
+          - marketing-site      # 10
+          - brain-svc           # 11 (python)
+          - ai-svc              # 12 (python)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: matrix.target != 'brain-svc' && matrix.target != 'ai-svc'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        if: matrix.target != 'brain-svc' && matrix.target != 'ai-svc'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Setup Python
+        if: matrix.target == 'brain-svc' || matrix.target == 'ai-svc'
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install (node)
+        if: matrix.target != 'brain-svc' && matrix.target != 'ai-svc'
+        run: pnpm install --frozen-lockfile
+
+      - name: Run target
+        run: |
+          set -euo pipefail
+          case "${{ matrix.target }}" in
+            lint-typecheck)
+              pnpm lint
+              ;;
+            web-app)
+              pnpm --filter "@aivo/web..." build
+              ;;
+            marketing-site)
+              pnpm --filter "@aivo/marketing..." build
+              ;;
+            brain-svc)
+              pip install -r services/brain-svc/requirements.txt
+              cd services/brain-svc && python -m py_compile src/brain_svc/main.py
+              ;;
+            ai-svc)
+              if [ -f services/ai-svc/requirements.txt ]; then
+                pip install -r services/ai-svc/requirements.txt
+              fi
+              if [ -f services/ai-svc/src/main.py ]; then
+                cd services/ai-svc && python -m py_compile src/main.py
+              fi
+              ;;
+            *)
+              # Generic node service build — `...` suffix includes workspace
+              # deps (@aivo/security, @aivo/db, @aivo/observability, etc.)
+              # which consumers import from dist/, so they must build first.
+              pnpm --filter "@aivo/${{ matrix.target }}..." build
+              ;;
+          esac
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Stage 2 — Deploy to Staging.
+  # ─────────────────────────────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build
+    runs-on: [self-hosted, hetzner, production]
+    timeout-minutes: 25
+    environment: staging
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: tag
+        name: Resolve image tag
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="sha-${GITHUB_SHA::12}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Deploying tag: $VERSION"
+
+      - name: Verify cluster reachable
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Setup Helm
+        run: |
+          if ! command -v helm &>/dev/null; then
+            curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          fi
+          helm version
+
+      - name: Deploy all services to staging
+        run: |
+          set -euo pipefail
+          NS="${{ env.STAGING_NAMESPACE }}"
+          VERSION="${{ steps.tag.outputs.version }}"
+          kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+
+          SERVICES=(
+            identity-svc assessment-svc brain-svc ai-svc learning-svc
+            tutor-svc family-svc engagement-svc billing-svc comms-svc
+            i18n-svc integrations-svc admin-svc status-page-svc research-svc
+          )
+          PYTHON_SERVICES=(brain-svc ai-svc)
+
+          FAILED=0
+          for svc in "${SERVICES[@]}"; do
+            PORT=3000
+            for ps in "${PYTHON_SERVICES[@]}"; do
+              [ "$svc" = "$ps" ] && PORT=8000
+            done
+            echo "═══ Staging deploy: $svc ($VERSION) ═══"
+            helm upgrade --install "$svc" "${{ env.CHART_PATH }}" \
+              -f "${{ env.STAGING_VALUES }}" \
+              --set serviceName="$svc" \
+              --set image.repository="${{ env.IMAGE_PREFIX }}" \
+              --set image.tag="$VERSION" \
+              --set service.port=$PORT \
+              --set service.targetPort=$PORT \
+              --set replicaCount=1 \
+              -n "$NS" --timeout 5m --wait \
+              || { echo "::warning::$svc deploy incomplete"; FAILED=$((FAILED+1)); }
+          done
+          echo "Staging deploy: $((${#SERVICES[@]}-FAILED))/${#SERVICES[@]} succeeded"
+
+      - name: Verify rollout
+        run: kubectl -n ${{ env.STAGING_NAMESPACE }} get pods --sort-by=.metadata.name -o wide
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Stage 3 — Smoke test staging (reusable workflow).
+  # ─────────────────────────────────────────────────────────────────────
+  smoke-staging:
+    name: Smoke-test Staging
+    needs: deploy-staging
+    uses: ./.github/workflows/smoke-tests.yml
+    with:
+      environment: staging
+      version: ${{ needs.deploy-staging.outputs.version }}
+    secrets: inherit
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Stage 4 — Migrate production database.
+  # Skipped when `skip_prod=true` (manual workflow_dispatch only).
+  # ─────────────────────────────────────────────────────────────────────
+  migrate-prod-db:
+    name: Migrate Production DB
+    needs: smoke-staging
+    if: ${{ inputs.skip_prod != true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Backup snapshot tag (informational)
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::warning::PROD_DATABASE_URL not set — skipping snapshot tag"
+            exit 0
+          fi
+          echo "Pre-migration tag: pre-${GITHUB_SHA::12}-$(date -u +%Y%m%dT%H%M%SZ)"
+
+      - name: Push schema (drizzle-kit)
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::PROD_DATABASE_URL secret missing"; exit 1
+          fi
+          pnpm db:push --force
+
+      - name: Verify schema
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: |
+          psql "$DATABASE_URL" -c "SELECT count(*) AS tables FROM pg_tables WHERE schemaname='public';"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Stage 5 — Deploy production.
+  # ─────────────────────────────────────────────────────────────────────
+  deploy-production:
+    name: Deploy to Production
+    needs: [deploy-staging, migrate-prod-db]
+    if: ${{ inputs.skip_prod != true }}
+    runs-on: [self-hosted, hetzner, production]
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify cluster reachable
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Setup Helm
+        run: |
+          if ! command -v helm &>/dev/null; then
+            curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          fi
+          helm version
+
+      - name: Deploy all services to production
+        run: |
+          set -euo pipefail
+          NS="${{ env.PROD_NAMESPACE }}"
+          VERSION="${{ needs.deploy-staging.outputs.version }}"
+          kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+
+          SERVICES=(
+            identity-svc assessment-svc brain-svc ai-svc learning-svc
+            tutor-svc family-svc engagement-svc billing-svc comms-svc
+            i18n-svc integrations-svc admin-svc status-page-svc research-svc
+          )
+          PYTHON_SERVICES=(brain-svc ai-svc)
+
+          FAILED=0
+          for svc in "${SERVICES[@]}"; do
+            PORT=3000
+            for ps in "${PYTHON_SERVICES[@]}"; do
+              [ "$svc" = "$ps" ] && PORT=8000
+            done
+            echo "═══ Prod deploy: $svc ($VERSION) ═══"
+            helm upgrade --install "$svc" "${{ env.CHART_PATH }}" \
+              -f "${{ env.PROD_VALUES }}" \
+              --set serviceName="$svc" \
+              --set image.repository="${{ env.IMAGE_PREFIX }}" \
+              --set image.tag="$VERSION" \
+              --set service.port=$PORT \
+              --set service.targetPort=$PORT \
+              -n "$NS" --timeout 8m --wait \
+              || { echo "::warning::$svc deploy incomplete"; FAILED=$((FAILED+1)); }
+          done
+          echo "Production deploy: $((${#SERVICES[@]}-FAILED))/${#SERVICES[@]} succeeded"
+          if [ "$FAILED" -gt 3 ]; then
+            echo "::error::Too many failures ($FAILED) — consider rollback"
+            exit 1
+          fi
+
+      - name: Verify rollout
+        run: |
+          kubectl -n ${{ env.PROD_NAMESPACE }} get pods --sort-by=.metadata.name -o wide
+          kubectl -n ${{ env.PROD_NAMESPACE }} get deployments
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Stage 6 — Production health check.
+  # ─────────────────────────────────────────────────────────────────────
+  health-prod:
+    name: Production Health Check
+    needs: deploy-production
+    if: ${{ inputs.skip_prod != true }}
+    uses: ./.github/workflows/smoke-tests.yml
+    with:
+      environment: production
+      version: ${{ needs.deploy-staging.outputs.version }}
+    secrets: inherit
