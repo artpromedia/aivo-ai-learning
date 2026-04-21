@@ -22,7 +22,8 @@ export type StepUpScope =
   | "role:change"
   | "brain:reset"
   | "data:export"
-  | "config:update";
+  | "config:update"
+  | "district:admin-mgmt";
 
 type Resolver = (token: string) => void;
 type Rejecter = (err: Error) => void;

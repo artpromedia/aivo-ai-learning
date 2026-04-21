@@ -249,6 +249,30 @@ async function startMfaForLogin(
 
 const MFA_FORCED_ROLES = ["PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
 
+/**
+ * Sprint 8: districts can opt every staff account in their tenant into
+ * forced MFA via `district_settings.featureOverrides.forceMfa = true`.
+ * Returns true if the user must complete MFA at login regardless of
+ * their personal `mfaEnabled` flag. Pure-function override on top of
+ * the role-based default — never *removes* a forced role.
+ */
+async function isTenantForcingMfa(db: any, tenantId: string | null | undefined): Promise<boolean> {
+  if (!tenantId) return false;
+  const { districtSettings } = await import("@aivo/db");
+  const { eq } = await import("drizzle-orm");
+  const [s] = await db.select({ overrides: districtSettings.featureOverrides })
+    .from(districtSettings).where(eq(districtSettings.tenantId, tenantId)).limit(1);
+  return !!(s?.overrides as any)?.forceMfa;
+}
+
+async function mfaRequiredFor(db: any, user: { role: string; mfaEnabled?: boolean | null; tenantId?: string | null }): Promise<boolean> {
+  if (user.mfaEnabled) return true;
+  if (MFA_FORCED_ROLES.includes(user.role)) return true;
+  // Tenant-wide force-MFA: applies to all non-anon users in the tenant
+  // including TEACHER/THERAPIST/CAREGIVER who would otherwise be opt-in.
+  return await isTenantForcingMfa(db, user.tenantId);
+}
+
 export async function registerAuthRoutes(app: FastifyInstance) {
   app.get("/api/auth/public-key", async (_req, reply) => {
     const { getPublicKeyPEM } = await import("@aivo/security");
@@ -384,7 +408,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       });
     }
 
-    const mfaRequired = user.mfaEnabled || MFA_FORCED_ROLES.includes(user.role);
+    const mfaRequired = await mfaRequiredFor(db, user);
     if (mfaRequired) {
       if (!user.mfaEnabled && MFA_FORCED_ROLES.includes(user.role)) {
         await db.update(users).set({ mfaEnabled: true }).where(eq(users.id, user.id));
@@ -489,7 +513,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.status(401).send({ error: genericError });
     }
 
-    if (user.mfaEnabled || MFA_FORCED_ROLES.includes(user.role)) {
+    if (await mfaRequiredFor(db, user)) {
       if (!user.mfaEnabled) {
         await db.update(users).set({ mfaEnabled: true, mfaMethod: "email" }).where(eq(users.id, user.id));
       }
@@ -580,7 +604,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.status(401).send({ error: genericError });
     }
 
-    if (user.mfaEnabled || MFA_FORCED_ROLES.includes(user.role)) {
+    if (await mfaRequiredFor(db, user)) {
       if (!user.mfaEnabled) {
         await db.update(users).set({ mfaEnabled: true, mfaMethod: "email" }).where(eq(users.id, user.id));
       }
@@ -696,7 +720,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       }
     }
 
-    const googleMfaRequired = user.mfaEnabled || MFA_FORCED_ROLES.includes(user.role);
+    const googleMfaRequired = await mfaRequiredFor(db, user);
     if (googleMfaRequired && user.email) {
       if (!user.mfaEnabled && MFA_FORCED_ROLES.includes(user.role)) {
         await db.update(users).set({ mfaEnabled: true }).where(eq(users.id, user.id));

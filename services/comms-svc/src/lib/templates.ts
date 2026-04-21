@@ -60,6 +60,8 @@ export function renderTemplate(templateId: string, data: TemplateData): { subjec
       return renderIEPUpdate(data);
     case "mfa_code":
       return renderMfaCode(data);
+    case "district_admin_invite":
+      return renderDistrictAdminInvite(data);
     default:
       return renderGeneric(data);
   }
@@ -221,6 +223,24 @@ function renderGeneric(data: TemplateData) {
   };
 }
 
+function renderDistrictAdminInvite(data: TemplateData) {
+  const name = (data.name as string) || "there";
+  const districtName = (data.districtName as string) || "your district";
+  const inviteUrl = (data.inviteUrl as string) || "#";
+  const html = baseLayout(`
+    <h1 class="title">You've been invited as a district administrator</h1>
+    <p class="body-text">Hi ${name},</p>
+    <p class="body-text">You've been invited to join <span class="highlight">${districtName}</span> on AIVO Learning as a district administrator. This role gives you the ability to manage schools, classrooms, staff, and learner rosters across the district.</p>
+    <p style="text-align:center"><a href="${inviteUrl}" class="btn">Accept Invitation</a></p>
+    <p class="body-text" style="font-size:13px;color:#6b7280">This invitation expires in 72 hours. After accepting, you'll be asked to set a password and enroll in multi-factor authentication. If you weren't expecting this, you can safely ignore this email.</p>
+  `);
+  return {
+    subject: `You're invited to administer ${districtName} on AIVO Learning`,
+    html,
+    text: `You've been invited as a district administrator for ${districtName} on AIVO Learning. Accept your invitation here: ${inviteUrl}\n\nThis link expires in 72 hours.`,
+  };
+}
+
 export const AVAILABLE_TEMPLATES = [
   { id: "welcome", name: "Welcome Email", channels: ["email"] },
   { id: "collaboration_invite", name: "Collaboration Invite", channels: ["email"] },
@@ -230,4 +250,5 @@ export const AVAILABLE_TEMPLATES = [
   { id: "session_reminder", name: "Session Reminder", channels: ["push", "email"] },
   { id: "iep_update", name: "IEP Goal Update", channels: ["email", "push"] },
   { id: "mfa_code", name: "MFA Verification Code", channels: ["email"] },
+  { id: "district_admin_invite", name: "District Admin Invite", channels: ["email"] },
 ];

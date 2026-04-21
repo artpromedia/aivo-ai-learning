@@ -2,7 +2,8 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import { IconWell, StatIconWell } from "@/components/discovery/_vi";
-import { Gauge, Users, GraduationCap, UserCog, School, Lightbulb, type LucideIcon } from "lucide-react";
+import { Gauge, Users, GraduationCap, UserCog, School, Lightbulb, Download, Plus, type LucideIcon } from "lucide-react";
+import { fetchWithStepUp } from "@/lib/step-up";
 
 interface UsageData {
   users: { used: number; limit: number };
@@ -80,19 +81,126 @@ export default function DistrictUsagePage() {
         </>
       )}
 
-      <div className="vi-surface-soft rounded-2xl border border-[hsl(var(--visual-primary)/0.3)] p-6">
-        <div className="flex items-start gap-3">
-          <StatIconWell color="primary" className="flex-shrink-0">
-            <Lightbulb size={22} strokeWidth={2.5} aria-hidden="true" />
-          </StatIconWell>
-          <div>
-            <h3 className="font-semibold text-violet-900">Need higher limits?</h3>
-            <p className="text-sm text-[hsl(var(--visual-primary))] mt-1">
-              Contact your platform administrator to upgrade your district&apos;s subscription plan for increased usage limits.
-            </p>
-          </div>
+      <SeatToolsCard usage={usage} />
+    </div>
+  );
+}
+
+// Sprint 9 — seat self-service + roster CSV + activity export.
+function SeatToolsCard({ usage }: { usage: UsageData | null }) {
+  const { accessToken } = useAuth();
+  const [showSeat, setShowSeat] = useState(false);
+  const [requestedSeats, setRequested] = useState("");
+  const [justification, setJustification] = useState("");
+  const [busy, setBusy] = useState<null | "seat" | "roster" | "export">(null);
+  const [msg, setMsg] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+
+  async function downloadCsv(url: string, filename: string, kind: "roster" | "export") {
+    if (!accessToken) return;
+    setBusy(kind); setMsg(null);
+    try {
+      const res = kind === "export"
+        ? await fetchWithStepUp(url, { accessToken })
+        : await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setMsg({ type: "error", text: body.error || `Download failed (${res.status})` });
+        return;
+      }
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      const objUrl = URL.createObjectURL(blob);
+      a.href = objUrl; a.download = filename; document.body.appendChild(a); a.click();
+      a.remove(); URL.revokeObjectURL(objUrl);
+    } finally { setBusy(null); }
+  }
+
+  async function submitSeat(e: React.FormEvent) {
+    e.preventDefault();
+    if (!accessToken) return;
+    const n = parseInt(requestedSeats, 10);
+    if (!Number.isInteger(n) || n < 1) { setMsg({ type: "error", text: "Enter a valid seat count" }); return; }
+    setBusy("seat"); setMsg(null);
+    try {
+      const res = await fetch("/api/district/seats/request", {
+        method: "POST",
+        headers: { "content-type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ requestedSeats: n, justification }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) { setMsg({ type: "error", text: body.error || "Request failed" }); return; }
+      setShowSeat(false); setRequested(""); setJustification("");
+      setMsg({ type: "ok", text: "Seat request submitted to billing." });
+    } finally { setBusy(null); }
+  }
+
+  return (
+    <div className="vi-surface-soft rounded-2xl border border-[hsl(var(--visual-primary)/0.3)] p-6 space-y-4">
+      <div className="flex items-start gap-3">
+        <StatIconWell color="primary" className="flex-shrink-0">
+          <Lightbulb size={22} strokeWidth={2.5} aria-hidden="true" />
+        </StatIconWell>
+        <div className="flex-1">
+          <h3 className="font-semibold text-violet-900">Manage your subscription</h3>
+          <p className="text-sm text-[hsl(var(--visual-primary))] mt-1">
+            Request more seats, export the current roster, or download your full district activity log.
+          </p>
         </div>
       </div>
+      {msg && (
+        <div className={`px-3 py-2 rounded-lg text-sm ${msg.type === "ok" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>
+          {msg.text}
+        </div>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => setShowSeat(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[hsl(var(--visual-primary))] text-white text-sm font-semibold">
+          <Plus size={16} /> Request more seats
+        </button>
+        <button onClick={() => downloadCsv("/api/district/roster.csv", "roster.csv", "roster")}
+          disabled={busy === "roster"}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border vi-border vi-text text-sm font-semibold disabled:opacity-50">
+          <Download size={16} /> {busy === "roster" ? "Downloading…" : "Roster CSV"}
+        </button>
+        <button onClick={() => downloadCsv("/api/district/activity/export?format=csv", "activity.csv", "export")}
+          disabled={busy === "export"}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border vi-border vi-text text-sm font-semibold disabled:opacity-50">
+          <Download size={16} /> {busy === "export" ? "Preparing…" : "Activity export (CSV)"}
+        </button>
+      </div>
+
+      {showSeat && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4" onClick={() => setShowSeat(false)}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={submitSeat}
+            className="vi-card w-full max-w-md p-6 space-y-4">
+            <h3 className="text-lg font-heading font-semibold vi-text">Request more seats</h3>
+            <p className="text-xs vi-text-muted">
+              Current allocation: {usage?.users.limit?.toLocaleString() || "—"} user seats.
+              Billing will reach out to confirm before changes are applied.
+            </p>
+            <label className="block">
+              <span className="text-xs font-semibold vi-text-muted uppercase tracking-wide">New total seats</span>
+              <input type="number" min={1} required value={requestedSeats}
+                onChange={(e) => setRequested(e.target.value)}
+                className="mt-1 w-full rounded-lg border vi-border px-3 py-2 vi-bg vi-text" />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold vi-text-muted uppercase tracking-wide">Justification (optional)</span>
+              <textarea value={justification} maxLength={2000}
+                onChange={(e) => setJustification(e.target.value)} rows={3}
+                className="mt-1 w-full rounded-lg border vi-border px-3 py-2 vi-bg vi-text" />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setShowSeat(false)}
+                className="px-4 py-2 rounded-xl border vi-border vi-text text-sm">Cancel</button>
+              <button type="submit" disabled={busy === "seat"}
+                className="px-4 py-2 rounded-xl bg-[hsl(var(--visual-primary))] text-white text-sm font-semibold disabled:opacity-50">
+                {busy === "seat" ? "Submitting…" : "Submit"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

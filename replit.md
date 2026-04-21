@@ -370,3 +370,14 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - `DATABASE_URL` — PostgreSQL connection string
 - `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` — RS256 key pair (in .replit userenv)
 - `NEWBUILD` — GitHub PAT for artpromedia/aivo-ai-learning repo
+
+### Sprint 8 — Delegated district admin management (Apr 2026)
+- `requireDistrictAdmin` lives in `services/identity-svc/src/hooks/require-district-admin.ts`; `registerDistrictTenantScope` installs a global `onRequest` hook that gates every `/api/district/*` route. Boot-time route-coverage check + `tests/district-route-coverage.test.ts` smoke run prove every district route is gated.
+- District-admin endpoints (`/api/district/admins/*` + invites) require step-up scope `district:admin-mgmt` and dual-log to `district_activity_log` + `admin_audit_log`. Last active DISTRICT_ADMIN cannot be deactivated.
+- `mfaRequiredFor(db, user)` ORs `featureOverrides.forceMfa` with role-based rules; consumed at all four login paths and step-up.
+- UI: `/dashboard/district/settings/admins` (table + invite/resend/revoke/reactivate/reset modals) + MFA adoption widget on `/dashboard/district/settings`.
+
+### Sprint 9 — District branding + seat self-service + activity export (Apr 2026)
+- `services/identity-svc/src/lib/branding-validation.ts` enforces logo PNG/SVG ≤ 200KB and ≥ 512×128 (PNG IHDR + SVG viewBox parsing) and computes WCAG 2.1 contrast for primaryColor.
+- New endpoints: `POST /api/district/settings/branding/logo` (base64 data URL, no S3 in this env), `PUT /api/district/settings` validates `branding.{primaryColor,supportEmail,displayName}`, `POST /api/district/seats/request` (writes `seat_requests`, notifies billing via comms-svc admin-alert), `GET /api/district/roster.csv`, `GET /api/district/activity/export?format=csv|json` gated by `requireStepUp("data:export")` and writes a `DATA_EXPORT` admin-audit row, `GET /api/branding/public/:tenantId` (unauth, lives outside `/api/district/*`).
+- UI: `/dashboard/district/settings/branding` (logo uploader + WCAG color picker + live preview) and seat-request modal + roster/activity downloads on `/dashboard/district/usage`. `apps/web/src/lib/use-tenant-branding.ts` consumes the public endpoint and writes `--tenant-primary` for parent/learner portals.

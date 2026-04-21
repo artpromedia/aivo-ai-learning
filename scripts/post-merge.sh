@@ -152,6 +152,39 @@ ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS rotated_from_id uuid;
 ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS grace_period_ends_at timestamp;
 CREATE INDEX IF NOT EXISTS idx_api_keys_prefix ON api_keys(key_prefix);
 CREATE INDEX IF NOT EXISTS idx_api_keys_tenant ON api_keys(tenant_id);
+
+-- Sprint 8: Delegated district admin invites.
+CREATE TABLE IF NOT EXISTS district_admin_invites (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  tenant_id uuid NOT NULL REFERENCES tenants(id),
+  email varchar(255) NOT NULL,
+  name varchar(255) NOT NULL,
+  invited_by uuid NOT NULL REFERENCES users(id),
+  token_hash varchar(128) NOT NULL,
+  expires_at timestamp NOT NULL,
+  accepted_at timestamp,
+  accepted_user_id uuid REFERENCES users(id),
+  revoked_at timestamp,
+  created_at timestamp DEFAULT now() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_district_admin_invites_tenant ON district_admin_invites(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_district_admin_invites_token ON district_admin_invites(token_hash);
+
+-- Sprint 9: seat self-service requests.
+CREATE TABLE IF NOT EXISTS seat_requests (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  tenant_id uuid NOT NULL REFERENCES tenants(id),
+  requested_by uuid NOT NULL REFERENCES users(id),
+  current_seats integer NOT NULL,
+  requested_seats integer NOT NULL,
+  justification text,
+  status varchar(32) DEFAULT 'pending' NOT NULL,
+  resolved_at timestamp,
+  resolved_by uuid REFERENCES users(id),
+  resolution_notes text,
+  created_at timestamp DEFAULT now() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_seat_requests_tenant ON seat_requests(tenant_id, created_at);
 SQL
 fi
 

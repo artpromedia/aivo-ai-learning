@@ -27,6 +27,7 @@ const SCOPE_LABEL: Record<StepUpScope, string> = {
   "brain:reset": "reset this learner's Brain Clone",
   "data:export": "export this data",
   "config:update": "update sensitive configuration",
+  "district:admin-mgmt": "manage district administrators",
 };
 
 export function StepUpModal() {

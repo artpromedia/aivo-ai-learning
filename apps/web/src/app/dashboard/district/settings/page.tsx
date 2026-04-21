@@ -2,7 +2,9 @@
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState, useCallback } from "react";
 import { IconWell, StatIconWell } from "@/components/discovery/_vi";
-import { Settings, Lock } from "lucide-react";
+import { Settings, Lock, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { fetchWithStepUp } from "@/lib/step-up";
 
 interface DistrictSettingsData {
   notificationPrefs: Record<string, boolean>;
@@ -141,6 +143,8 @@ export default function DistrictSettingsPage() {
         </div>
       </div>
 
+      <MfaAdoptionWidget />
+
       <div className="vi-surface-soft rounded-2xl border border-[hsl(var(--visual-primary)/0.3)] p-6">
         <div className="flex items-start gap-3">
           <StatIconWell color="primary" className="flex-shrink-0">
@@ -154,6 +158,96 @@ export default function DistrictSettingsPage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+interface MfaStats {
+  staff: { total: number; withMfa: number };
+  admins: { total: number; withMfa: number };
+  forceMfa: boolean;
+}
+
+function MfaAdoptionWidget() {
+  const { accessToken } = useAuth();
+  const [stats, setStats] = useState<MfaStats | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const r = await fetch("/api/district/admins/mfa-stats", { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (r.ok) setStats(await r.json());
+    } catch { /* fail-soft */ }
+  }, [accessToken]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const toggleForce = async () => {
+    if (!accessToken || !stats) return;
+    const next = !stats.forceMfa;
+    if (next && !confirm("Forcing MFA will require every district admin, teacher, therapist, and caregiver in your district to set up multi-factor authentication on their next login. Continue?")) return;
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetchWithStepUp("/api/district/admins/force-mfa", {
+        method: "PUT", accessToken,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: next }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data?.error || "Failed to toggle");
+      await load();
+    } catch (e: any) { setErr(e?.message || "Failed to toggle"); }
+    finally { setBusy(false); }
+  };
+
+  if (!stats) return null;
+  const staffPct = stats.staff.total ? Math.round((stats.staff.withMfa / stats.staff.total) * 100) : 0;
+  const adminPct = stats.admins.total ? Math.round((stats.admins.withMfa / stats.admins.total) * 100) : 0;
+
+  return (
+    <div className="vi-card p-6 space-y-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <StatIconWell color="primary" className="flex-shrink-0"><ShieldCheck size={22} strokeWidth={2.5} aria-hidden="true" /></StatIconWell>
+          <div>
+            <h2 className="text-lg font-heading font-semibold vi-text">Multi-factor authentication</h2>
+            <p className="text-sm vi-text-muted mt-0.5">Adoption across your district staff.</p>
+          </div>
+        </div>
+        <Link href="/dashboard/district/settings/admins" className="text-sm text-[hsl(var(--visual-primary))] font-medium hover:underline">
+          Manage administrators →
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="rounded-xl border vi-border p-4">
+          <div className="flex items-baseline justify-between"><span className="text-xs vi-text-muted uppercase tracking-wide">District Admins</span><span className="text-xs font-medium vi-text-muted">{stats.admins.withMfa} / {stats.admins.total}</span></div>
+          <div className="mt-2 h-2 rounded-full bg-slate-200 overflow-hidden"><div className="h-full bg-[hsl(var(--visual-primary))]" style={{ width: `${adminPct}%` }} /></div>
+          <div className="mt-2 text-2xl font-bold vi-text">{adminPct}%</div>
+        </div>
+        <div className="rounded-xl border vi-border p-4">
+          <div className="flex items-baseline justify-between"><span className="text-xs vi-text-muted uppercase tracking-wide">All staff</span><span className="text-xs font-medium vi-text-muted">{stats.staff.withMfa} / {stats.staff.total}</span></div>
+          <div className="mt-2 h-2 rounded-full bg-slate-200 overflow-hidden"><div className="h-full bg-emerald-500" style={{ width: `${staffPct}%` }} /></div>
+          <div className="mt-2 text-2xl font-bold vi-text">{staffPct}%</div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-2 border-t vi-border">
+        <div>
+          <p className="text-sm font-medium vi-text">Force MFA for all district staff</p>
+          <p className="text-xs vi-text-muted mt-0.5">When enabled, every staff login will require MFA enrollment regardless of personal preference.</p>
+        </div>
+        <button
+          type="button" disabled={busy} onClick={toggleForce}
+          aria-pressed={stats.forceMfa}
+          className={`w-11 h-6 rounded-full transition-colors relative disabled:opacity-50 ${stats.forceMfa ? "bg-[hsl(var(--visual-primary))]" : "bg-slate-300"}`}
+        >
+          <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-all ${stats.forceMfa ? "left-6" : "left-1"}`} />
+        </button>
+      </div>
+      {err && <p className="text-sm text-red-700">{err}</p>}
     </div>
   );
 }

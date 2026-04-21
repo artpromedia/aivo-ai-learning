@@ -107,6 +107,41 @@ export const iepRecords = pgTable("iep_records", {
   index("idx_iep_review").on(table.reviewDate),
 ]);
 
+// Sprint 8: invites for delegated district admin management.
+export const districtAdminInvites = pgTable("district_admin_invites", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  invitedBy: uuid("invited_by").references(() => users.id).notNull(),
+  tokenHash: varchar("token_hash", { length: 128 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  acceptedUserId: uuid("accepted_user_id").references(() => users.id),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_district_admin_invites_tenant").on(table.tenantId),
+  index("idx_district_admin_invites_token").on(table.tokenHash),
+]);
+
+// Sprint 9: seat self-service requests routed to billing.
+export const seatRequests = pgTable("seat_requests", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  requestedBy: uuid("requested_by").references(() => users.id).notNull(),
+  currentSeats: integer("current_seats").notNull(),
+  requestedSeats: integer("requested_seats").notNull(),
+  justification: text("justification"),
+  status: varchar("status", { length: 32 }).default("pending").notNull(),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: uuid("resolved_by").references(() => users.id),
+  resolutionNotes: text("resolution_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_seat_requests_tenant").on(table.tenantId, table.createdAt),
+]);
+
 export const interventions = pgTable("interventions", {
   id: uuid("id").defaultRandom().primaryKey(),
   learnerId: uuid("learner_id").references(() => learners.id).notNull(),

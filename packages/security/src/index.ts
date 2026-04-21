@@ -43,7 +43,8 @@ export type StepUpScope =
   | "role:change"
   | "brain:reset"
   | "data:export"
-  | "config:update";
+  | "config:update"
+  | "district:admin-mgmt";
 
 export * from "./audit-chain.js";
 export * from "./ip-allowlist.js";
@@ -58,6 +59,7 @@ export const STEP_UP_SCOPES: readonly StepUpScope[] = [
   "brain:reset",
   "data:export",
   "config:update",
+  "district:admin-mgmt",
 ] as const;
 
 /**
