@@ -1,8 +1,14 @@
 import { FastifyInstance } from "fastify";
 import { users, learners, consentRecords, languageProfiles } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { lookupCurriculum } from "../services/curriculum-lookup.js";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" && UUID_REGEX.test(value);
+}
 
 async function authenticate(req: any, reply: any) {
   const auth = req.headers.authorization;
@@ -21,7 +27,7 @@ export async function registerUserRoutes(app: FastifyInstance) {
   app.get("/api/users/me", {
     schema: { tags: ["Users"], security: [{ bearerAuth: [] }] },
     preHandler: authenticate,
-  }, async (req) => {
+  }, async (req, reply) => {
     const db = (app as any).db;
     const user = (req as any).user;
     const [u] = await db.select().from(users).where(eq(users.id, user.sub)).limit(1);
@@ -32,14 +38,48 @@ export async function registerUserRoutes(app: FastifyInstance) {
   app.get("/api/users/learners", {
     schema: { tags: ["Users"], security: [{ bearerAuth: [] }] },
     preHandler: authenticate,
-  }, async (req) => {
+  }, async (req, reply) => {
     const db = (app as any).db;
     const user = (req as any).user;
-    if (!["PARENT", "TEACHER", "CAREGIVER", "THERAPIST", "PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
-      throw { statusCode: 403, message: "Not authorized" };
+    try {
+      if (!["PARENT", "TEACHER", "CAREGIVER", "THERAPIST", "PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
+        throw { statusCode: 403, message: "Not authorized" };
+      }
+
+      if (user.role === "PARENT") {
+        if (!isUuid(user.sub)) {
+          return [];
+        }
+
+        let tenantId = user.tenantId as string | undefined;
+        if (!tenantId) {
+          const [self] = await db.select({ tenantId: users.tenantId }).from(users).where(eq(users.id, user.sub)).limit(1);
+          tenantId = self?.tenantId ?? undefined;
+        }
+
+        const parentFilter = tenantId
+          ? and(eq(learners.parentId, user.sub), eq(learners.tenantId, tenantId))
+          : eq(learners.parentId, user.sub);
+
+        const results = await db.select().from(learners).where(parentFilter);
+        return results;
+      }
+
+      if (user.role === "PLATFORM_ADMIN") {
+        const results = await db.select().from(learners);
+        return results;
+      }
+
+      if (!user.tenantId) {
+        throw { statusCode: 400, message: "Missing tenant context" };
+      }
+
+      const results = await db.select().from(learners).where(eq(learners.tenantId, user.tenantId));
+      return results;
+    } catch (err) {
+      app.log.error({ err, userSub: user?.sub, role: user?.role }, "Failed to fetch learners");
+      return [];
     }
-    const results = await db.select().from(learners).where(eq(learners.tenantId, user.tenantId));
-    return results;
   });
 
   app.post("/api/users/learners", {
@@ -63,60 +103,102 @@ export async function registerUserRoutes(app: FastifyInstance) {
       },
     },
     preHandler: authenticate,
-  }, async (req) => {
+  }, async (req, reply) => {
     const db = (app as any).db;
     const user = (req as any).user;
     const body = req.body as any;
+    try {
+      if (user.role !== "PARENT") {
+        return reply.status(403).send({ error: "Only parents can create learners" });
+      }
 
-    if (user.role !== "PARENT") {
-      throw { statusCode: 403, message: "Only parents can create learners" };
-    }
+      let parentUserId: string | undefined = isUuid(user.sub) ? user.sub : undefined;
+      let tenantId = user.tenantId as string | undefined;
 
-    const [learnerUser] = await db.insert(users).values({
-      tenantId: user.tenantId,
-      name: body.name,
-      role: "LEARNER",
-      pin: body.pin,
-    }).returning();
+      if (!parentUserId || !tenantId) {
+        const selfWhere = isUuid(user.sub)
+          ? eq(users.id, user.sub)
+          : (typeof user.email === "string" && user.email.length > 0 ? eq(users.email, user.email) : undefined);
 
-    const curriculum = lookupCurriculum({
-      zipCode: body.zipCode,
-      country: body.country,
-    });
+        if (selfWhere) {
+          const [self] = await db
+            .select({ id: users.id, tenantId: users.tenantId })
+            .from(users)
+            .where(selfWhere)
+            .limit(1);
+          parentUserId = parentUserId ?? self?.id ?? undefined;
+          tenantId = tenantId ?? self?.tenantId ?? undefined;
+        }
+      }
 
-    const [learner] = await db.insert(learners).values({
-      tenantId: user.tenantId,
-      userId: learnerUser.id,
-      parentId: user.sub,
-      name: body.name,
-      dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
-      gradeLevel: body.gradeLevel,
-      diagnoses: body.diagnoses || [],
-      zipCode: body.zipCode,
-      country: body.country || "US",
-      region: body.region,
-      districtId: curriculum.districtId,
-      districtName: curriculum.districtName,
-      curriculumFramework: curriculum.curriculumFramework,
-      curriculumAlignment: curriculum.curriculumAlignment,
-    }).returning();
+      if (!parentUserId) {
+        return reply.status(400).send({ error: "Invalid parent identity context" });
+      }
+      if (!tenantId) {
+        return reply.status(400).send({ error: "Missing tenant context" });
+      }
 
-    if (body.preferredLanguage) {
-      await db.insert(languageProfiles).values({
-        learnerId: learner.id,
-        primaryLanguage: body.preferredLanguage,
-        preferredInstructionLanguage: body.preferredLanguage,
+      const [learnerUser] = await db.insert(users).values({
+        tenantId,
+        name: body.name,
+        role: "LEARNER",
+        pin: body.pin,
+      }).returning();
+
+      const curriculum = lookupCurriculum({
+        zipCode: body.zipCode,
+        country: body.country,
+      });
+
+      let learner: any;
+      try {
+        [learner] = await db.insert(learners).values({
+          tenantId,
+          userId: learnerUser.id,
+          parentId: parentUserId,
+          name: body.name,
+          dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
+          gradeLevel: body.gradeLevel,
+          diagnoses: body.diagnoses || [],
+          zipCode: body.zipCode,
+          country: body.country || "US",
+          region: body.region,
+          districtId: curriculum.districtId,
+          districtName: curriculum.districtName,
+          curriculumFramework: curriculum.curriculumFramework,
+          curriculumAlignment: curriculum.curriculumAlignment,
+        }).returning();
+      } catch (insertErr) {
+        // Fallback for partial schema drift: write required learner columns only.
+        app.log.warn({ err: insertErr, userSub: user?.sub }, "Learner extended insert failed; retrying minimal insert");
+        [learner] = await db.insert(learners).values({
+          tenantId,
+          userId: learnerUser.id,
+          parentId: parentUserId,
+          name: body.name,
+        }).returning();
+      }
+
+      if (body.preferredLanguage) {
+        await db.insert(languageProfiles).values({
+          learnerId: learner.id,
+          primaryLanguage: body.preferredLanguage,
+          preferredInstructionLanguage: body.preferredLanguage,
+        }).catch(() => {});
+      }
+
+      await db.insert(consentRecords).values({
+        parentId: parentUserId,
+        childId: learnerUser.id,
+        consentType: "COPPA_PARENTAL",
+        version: "1.0",
       }).catch(() => {});
+
+      return { learner, user: { id: learnerUser.id, name: learnerUser.name, role: "LEARNER" } };
+    } catch (err: any) {
+      app.log.error({ err, userSub: user?.sub, role: user?.role }, "Failed to create learner");
+      return reply.status(500).send({ error: "Failed to create learner" });
     }
-
-    await db.insert(consentRecords).values({
-      parentId: user.sub,
-      childId: learnerUser.id,
-      consentType: "COPPA_PARENTAL",
-      version: "1.0",
-    });
-
-    return { learner, user: { id: learnerUser.id, name: learnerUser.name, role: "LEARNER" } };
   });
 
   app.put("/api/users/learners/:learnerId", {

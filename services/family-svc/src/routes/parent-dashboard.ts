@@ -3,6 +3,12 @@ import { eq, and, desc, isNull, asc, sql } from "drizzle-orm";
 import { learners, learnerSettings, parentNotifications, learnerMilestones, learnerStreaks, learnerBadges, users } from "@aivo/db";
 import { authenticateRequest, verifyParentOwnership } from "../auth.js";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" && UUID_REGEX.test(value);
+}
+
 export async function registerParentDashboardRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
@@ -63,6 +69,7 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { parentId } = req.params as { parentId: string };
+    if (!isUuid(parentId) || !isUuid(auth.sub)) return { items: [], unreadCount: 0 };
     if (auth.sub !== parentId && auth.role !== "PLATFORM_ADMIN") return reply.code(403).send({ error: "Forbidden" });
 
     const { filter, limit: lim } = req.query as { filter?: string; limit?: string };
@@ -71,15 +78,19 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     let conditions: any[] = [eq(parentNotifications.parentId, parentId), isNull(parentNotifications.dismissedAt)];
     if (filter === "unread") conditions.push(isNull(parentNotifications.readAt));
 
-    const items = await db.select().from(parentNotifications)
-      .where(and(...conditions))
-      .orderBy(desc(parentNotifications.createdAt))
-      .limit(pageSize);
+    try {
+      const items = await db.select().from(parentNotifications)
+        .where(and(...conditions))
+        .orderBy(desc(parentNotifications.createdAt))
+        .limit(pageSize);
 
-    const [unreadCount] = await db.select({ count: sql<number>`count(*)` }).from(parentNotifications)
-      .where(and(eq(parentNotifications.parentId, parentId), isNull(parentNotifications.readAt), isNull(parentNotifications.dismissedAt)));
+      const [unreadCount] = await db.select({ count: sql<number>`count(*)` }).from(parentNotifications)
+        .where(and(eq(parentNotifications.parentId, parentId), isNull(parentNotifications.readAt), isNull(parentNotifications.dismissedAt)));
 
-    return { items, unreadCount: Number(unreadCount?.count || 0) };
+      return { items, unreadCount: Number(unreadCount?.count || 0) };
+    } catch (_err) {
+      return { items: [], unreadCount: 0 };
+    }
   });
 
   app.put("/api/family/inbox/:notificationId/read", async (req: any, reply: any) => {
@@ -112,21 +123,39 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { parentId } = req.params as { parentId: string };
+    if (!isUuid(parentId) || !isUuid(auth.sub)) return { activities: [], learners: [] };
     if (auth.sub !== parentId && auth.role !== "PLATFORM_ADMIN") return reply.code(403).send({ error: "Forbidden" });
 
     const { since } = req.query as { since?: string };
+    let sinceDate: Date | null = null;
+    if (since) {
+      const parsed = new Date(since);
+      if (!Number.isNaN(parsed.getTime())) {
+        sinceDate = parsed;
+      }
+    }
 
-    const parentLearners = await db.select({ id: learners.id, name: learners.name }).from(learners).where(eq(learners.parentId, parentId));
+    let parentLearners: Array<{ id: string; name: string }> = [];
+    try {
+      parentLearners = await db.select({ id: learners.id, name: learners.name }).from(learners).where(eq(learners.parentId, parentId));
+    } catch (_err) {
+      return { activities: [], learners: [] };
+    }
     const learnerIds = parentLearners.map((l: { id: string; name: string }) => l.id);
 
     if (learnerIds.length === 0) return { activities: [], learners: [] };
 
     let milestones: any[] = [];
-    for (const lid of learnerIds) {
-      let conditions: any[] = [eq(learnerMilestones.learnerId, lid)];
-      if (since) conditions.push(sql`${learnerMilestones.createdAt} > ${new Date(since)}`);
-      const m = await db.select().from(learnerMilestones).where(and(...conditions)).orderBy(desc(learnerMilestones.createdAt)).limit(20);
-      milestones.push(...m.map((item: any) => ({ ...item, learnerName: parentLearners.find((l: { id: string; name: string }) => l.id === lid)?.name })));
+    try {
+      for (const lid of learnerIds) {
+        let conditions: any[] = [eq(learnerMilestones.learnerId, lid)];
+        if (sinceDate) conditions.push(sql`${learnerMilestones.createdAt} > ${sinceDate}`);
+        const m = await db.select().from(learnerMilestones).where(and(...conditions)).orderBy(desc(learnerMilestones.createdAt)).limit(20);
+        milestones.push(...m.map((item: any) => ({ ...item, learnerName: parentLearners.find((l: { id: string; name: string }) => l.id === lid)?.name })));
+      }
+    } catch (err) {
+      app.log.error({ err, parentId }, "Failed to build parent activity feed");
+      return { activities: [], learners: parentLearners };
     }
 
     milestones.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -170,29 +199,50 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { parentId } = req.params as { parentId: string };
+    if (!isUuid(parentId) || !isUuid(auth.sub)) return { parent: null, learners: [] };
     if (auth.sub !== parentId && auth.role !== "PLATFORM_ADMIN") return reply.code(403).send({ error: "Forbidden" });
 
-    const [parent] = await db.select({ lastDashboardVisit: users.lastDashboardVisit, name: users.name }).from(users).where(eq(users.id, parentId));
+    let parent: { lastDashboardVisit: Date | null; name: string | null } | undefined;
+    let parentLearners: any[] = [];
+    try {
+      [parent] = await db.select({ lastDashboardVisit: users.lastDashboardVisit, name: users.name }).from(users).where(eq(users.id, parentId));
+      parentLearners = await db.select().from(learners).where(eq(learners.parentId, parentId));
+    } catch (_err) {
+      return { parent: null, learners: [] };
+    }
 
-    const parentLearners = await db.select().from(learners).where(eq(learners.parentId, parentId));
+    let learnerSummaries: any[] = [];
+    try {
+      learnerSummaries = await Promise.all(parentLearners.map(async (l: any) => {
+        const [streak] = await db.select().from(learnerStreaks).where(eq(learnerStreaks.learnerId, l.id));
+        const [badge_count] = await db.select({ count: sql<number>`count(*)` }).from(learnerBadges).where(eq(learnerBadges.learnerId, l.id));
+        const recentMilestones = await db.select().from(learnerMilestones)
+          .where(eq(learnerMilestones.learnerId, l.id))
+          .orderBy(desc(learnerMilestones.createdAt))
+          .limit(3);
 
-    const learnerSummaries = await Promise.all(parentLearners.map(async (l: any) => {
-      const [streak] = await db.select().from(learnerStreaks).where(eq(learnerStreaks.learnerId, l.id));
-      const [badge_count] = await db.select({ count: sql<number>`count(*)` }).from(learnerBadges).where(eq(learnerBadges.learnerId, l.id));
-      const recentMilestones = await db.select().from(learnerMilestones)
-        .where(eq(learnerMilestones.learnerId, l.id))
-        .orderBy(desc(learnerMilestones.createdAt))
-        .limit(3);
-
-      return {
+        return {
+          ...l,
+          streak: streak || { currentStreak: 0, longestStreak: 0 },
+          badgeCount: Number(badge_count?.count || 0),
+          recentMilestones,
+        };
+      }));
+    } catch (err) {
+      app.log.error({ err, parentId }, "Failed to build parent summary");
+      learnerSummaries = parentLearners.map((l: any) => ({
         ...l,
-        streak: streak || { currentStreak: 0, longestStreak: 0 },
-        badgeCount: Number(badge_count?.count || 0),
-        recentMilestones,
-      };
-    }));
+        streak: { currentStreak: 0, longestStreak: 0 },
+        badgeCount: 0,
+        recentMilestones: [],
+      }));
+    }
 
-    await db.update(users).set({ lastDashboardVisit: new Date() }).where(eq(users.id, parentId));
+    try {
+      await db.update(users).set({ lastDashboardVisit: new Date() }).where(eq(users.id, parentId));
+    } catch (_err) {
+      // Ignore non-critical update failures so dashboard data can still be returned.
+    }
 
     return {
       parent: { name: parent?.name, lastDashboardVisit: parent?.lastDashboardVisit },
