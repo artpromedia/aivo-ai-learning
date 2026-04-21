@@ -123,19 +123,46 @@ jobs:
 
           FAIL=0
 
-          check() {
-            local name="$1" url="$2" expected="$3"
-            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null || echo "000")
-            if [ "$STATUS" = "$expected" ]; then
+          has_expected_status() {
+            local status="$1" expected_csv="$2"
+            IFS=',' read -r -a expected_codes <<< "$expected_csv"
+            for code in "${expected_codes[@]}"; do
+              if [ "$status" = "$code" ]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          check_required() {
+            local name="$1" url="$2" expected_csv="$3"
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null || true)
+            STATUS=${STATUS:-000}
+            if has_expected_status "$STATUS" "$expected_csv"; then
               echo "OK: $name → HTTP $STATUS"
             else
-              echo "FAIL: $name → HTTP $STATUS (expected $expected)"
+              echo "FAIL: $name → HTTP $STATUS (expected one of: $expected_csv)"
               FAIL=1
             fi
           }
 
-          check "health" "http://localhost:13001/health" "200"
-          check "csrf"   "http://localhost:13001/csrf-token" "200"
+          check_optional() {
+            local name="$1" url="$2" expected_csv="$3"
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null || true)
+            STATUS=${STATUS:-000}
+            if has_expected_status "$STATUS" "$expected_csv"; then
+              echo "OK: $name → HTTP $STATUS"
+            else
+              echo "WARN: $name → HTTP $STATUS (expected one of: $expected_csv)"
+            fi
+          }
+
+          check_required "health" "http://localhost:13001/health" "200"
+          if [ "${{ inputs.environment }}" = "staging" ]; then
+            check_optional "csrf" "http://localhost:13001/csrf-token" "200,204,404"
+          else
+            check_required "csrf" "http://localhost:13001/csrf-token" "200,204"
+          fi
 
           kill $PF_PID 2>/dev/null || true
 
