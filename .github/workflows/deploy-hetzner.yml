@@ -360,7 +360,12 @@ jobs:
 
       - name: Push schema (drizzle-kit)
         run: |
-          pnpm db:push --force
+          # drizzle-kit push --force still prompts interactively when it
+          # detects new enums (asking "create new" vs "rename from existing").
+          # The first option ("+ create enum") is the default highlight, so
+          # we feed unlimited Enter keypresses via `yes ""` to accept it for
+          # every prompt and prevent the job from hanging.
+          yes "" | pnpm db:push --force
 
       - name: Verify schema applied (in-cluster psql)
         run: |
