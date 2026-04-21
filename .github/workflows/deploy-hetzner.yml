@@ -98,10 +98,10 @@ jobs:
               pnpm lint
               ;;
             web-app)
-              pnpm --filter @aivo/web build
+              pnpm --filter "@aivo/web..." build
               ;;
             marketing-site)
-              pnpm --filter @aivo/marketing build
+              pnpm --filter "@aivo/marketing..." build
               ;;
             brain-svc)
               pip install -r services/brain-svc/requirements.txt
@@ -116,8 +116,10 @@ jobs:
               fi
               ;;
             *)
-              # Generic node service build
-              pnpm --filter "@aivo/${{ matrix.target }}" build
+              # Generic node service build — `...` suffix includes workspace
+              # deps (@aivo/security, @aivo/db, @aivo/observability, etc.)
+              # which consumers import from dist/, so they must build first.
+              pnpm --filter "@aivo/${{ matrix.target }}..." build
               ;;
           esac
 
