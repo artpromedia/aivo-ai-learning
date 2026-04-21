@@ -187,10 +187,12 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
           <div className="flex flex-col h-full bg-[hsl(var(--visual-surface)/0.95)] backdrop-blur border-r-2 vi-border shadow-sm">
             <div className="flex items-center h-20 px-4">
               <Link href="/dashboard/parent" aria-label={`${brandName} home`} className="flex items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={brandLogo}
                   alt={brandName}
+                  width={180}
+                  height={44}
+                  unoptimized
                   className="object-contain"
                   style={{ height: 44, width: "auto", maxWidth: sidebarExpanded ? 180 : 60, transition: "max-width 200ms ease" }}
                 />
@@ -273,8 +275,7 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
           <div className="flex items-center justify-between px-4 lg:px-6 h-16">
             <div className="flex items-center gap-3">
               <Link href="/dashboard/parent" className="lg:hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={brandLogo} alt={brandName} style={{ height: 24, width: "auto", maxWidth: 120 }} />
+                <Image src={brandLogo} alt={brandName} width={120} height={24} unoptimized style={{ height: 24, width: "auto", maxWidth: 120 }} />
               </Link>
               <span className="hidden lg:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] text-sm font-bold">
                 <GreetingIcon size={14} strokeWidth={2.5} aria-hidden="true" />

@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { Settings, Coins, Gem, LogOut } from "lucide-react";
 import { useFlVariant } from "@aivo/learner-ui";
 import { useTranslations } from "next-intl";
@@ -29,8 +30,7 @@ export function TopBar({ userName, coins, gems, onLogout, onSettings }: TopBarPr
       role="banner"
       aria-label={t("nav_label")}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={brandLogo} alt={brandName} style={{ height: 27, width: "auto", maxWidth: 140 }} />
+      <Image src={brandLogo} alt={brandName} width={140} height={27} unoptimized priority style={{ height: 27, width: "auto", maxWidth: 140 }} />
       <div className="flex items-center gap-3">
         {!isPreSymbolic && (
           <div className="flex items-center gap-2">
