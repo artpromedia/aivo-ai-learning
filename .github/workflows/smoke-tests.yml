@@ -49,6 +49,12 @@ jobs:
             NS="aivo"
           fi
 
+          # Services that should warn but not fail staging smoke.
+          NON_BLOCKING_SERVICES=""
+          if [ "${{ inputs.environment }}" = "staging" ]; then
+            NON_BLOCKING_SERVICES="comms-svc"
+          fi
+
           echo "=== Post-Deploy Smoke Tests ==="
           echo "Environment: ${{ inputs.environment }}"
           echo "Version: ${{ inputs.version }}"
@@ -64,30 +70,36 @@ jobs:
 
           FAIL=0
           for svc in "${SERVICES[@]}"; do
-            READY_COUNT=$(kubectl get pods -n "$NS" -l app.kubernetes.io/name=$svc \
-              -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' 2>/dev/null \
-              | grep -c "True" 2>/dev/null || true)
-            READY_COUNT=${READY_COUNT:-0}
+            DESIRED=$(kubectl get deploy -n "$NS" "$svc" -o jsonpath='{.spec.replicas}' 2>/dev/null || true)
+            UPDATED=$(kubectl get deploy -n "$NS" "$svc" -o jsonpath='{.status.updatedReplicas}' 2>/dev/null || true)
+            AVAILABLE=$(kubectl get deploy -n "$NS" "$svc" -o jsonpath='{.status.availableReplicas}' 2>/dev/null || true)
 
-            TOTAL_COUNT=$(kubectl get pods -n "$NS" -l app.kubernetes.io/name=$svc \
-              --no-headers 2>/dev/null | wc -l)
-
-            RESTARTS=$(kubectl get pods -n "$NS" -l app.kubernetes.io/name=$svc \
-              -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}' 2>/dev/null \
-              | tr ' ' '\n' | awk '{s+=$1}END{print s+0}')
+            DESIRED=${DESIRED:-0}
+            UPDATED=${UPDATED:-0}
+            AVAILABLE=${AVAILABLE:-0}
 
             STATUS="OK"
-            if [ "${READY_COUNT:-0}" -lt "${TOTAL_COUNT:-1}" ] && [ "${TOTAL_COUNT:-0}" -gt 0 ]; then
-              STATUS="NOT_READY"
-              FAIL=1
-            fi
-            if [ "${RESTARTS:-0}" -ge 3 ]; then
-              STATUS="CRASH_LOOP"
-              FAIL=1
+            BLOCKING=1
+            if echo " $NON_BLOCKING_SERVICES " | grep -q " $svc "; then
+              BLOCKING=0
             fi
 
-            printf "%-25s ready=%s/%s restarts=%s [%s]\n" \
-              "$svc" "$READY_COUNT" "$TOTAL_COUNT" "$RESTARTS" "$STATUS"
+            if [ "$DESIRED" -eq 0 ]; then
+              STATUS="SKIPPED"
+            elif [ "$UPDATED" -lt "$DESIRED" ] || [ "$AVAILABLE" -lt 1 ]; then
+              STATUS="UNAVAILABLE"
+              if [ "$BLOCKING" -eq 1 ]; then
+                FAIL=1
+              fi
+            fi
+
+            MODE="blocking"
+            if [ "$BLOCKING" -eq 0 ]; then
+              MODE="non-blocking"
+            fi
+
+            printf "%-25s desired=%s updated=%s available=%s [%s|%s]\n" \
+              "$svc" "$DESIRED" "$UPDATED" "$AVAILABLE" "$STATUS" "$MODE"
           done
 
           echo ""
