@@ -276,11 +276,11 @@
     "relationshipPlaceholder": "p. ej. Co-padre, Abuelo/a"
   },
   "parentSession": {
-    "title": "Sesión Co-View",
+    "title": "Sesión de Visualización Compartida",
     "subtitle": "Observa el aprendizaje de {{name}} juntos"
   },
   "parentColearn": {
-    "title": "Co-Aprender",
+    "title": "Aprender Juntos",
     "subtitle": "Aprende junto a {{name}}"
   },
   "learner": {
