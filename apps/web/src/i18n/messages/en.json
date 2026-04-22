@@ -1836,6 +1836,10 @@
     "error_load": "Couldn't load evaluations.",
     "error_save": "Couldn't save. Please try again.",
     "error_suggest": "AI suggestion is unavailable right now.",
-    "error_no_access": "You don't have access to this learner's evaluations."
+    "error_no_access": "You don't have access to this learner's evaluations.",
+    "status_eligibility_determined": "Eligibility determined",
+    "decision_needs_more_data": "Needs more data",
+    "found_needs_more_data": "Team needs more data before deciding",
+    "start_iep_draft": "Start IEP draft from this evaluation"
   }
 }

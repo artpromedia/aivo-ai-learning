@@ -72,12 +72,30 @@ async function canWrite(db: any, claims: AuthClaims, learnerId: string): Promise
   const learner = await getLearner(db, learnerId);
   if (!learner) return false;
   if (claims.role === "PLATFORM_ADMIN") return true;
-  if (claims.role === "DISTRICT_ADMIN") {
+  if (claims.role === "DISTRICT_ADMIN" || claims.role === "THERAPIST") {
     return claims.tenantId === learner.tenantId;
   }
   if (claims.role === "TEACHER" && await isTeacherOf(db, claims.sub, learnerId)) return true;
   return false;
 }
+
+// Strip internal fields from an evaluation row before returning to a parent.
+// Parents only see submitted/decided records and only the team-shared summary.
+function parentSummary(row: any) {
+  return {
+    id: row.id,
+    learnerId: row.learnerId,
+    status: row.status,
+    eligibilityDecision: row.decisionEligible || null,
+    decisionCategories: row.decisionCategories || [],
+    decisionRationale: row.decisionRationale || null,
+    submittedAt: row.submittedAt,
+    decidedAt: row.decidedAt,
+    createdAt: row.createdAt,
+  };
+}
+
+const PARENT_VISIBLE_STATUSES = ["submitted", "eligibility_determined"] as const;
 
 export async function registerIepEvaluationRoutes(app: FastifyInstance) {
   const db = (app as any).db;
@@ -130,9 +148,16 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
     if (!await canRead(db, claims, learnerId)) {
       return reply.code(403).send({ error: "Access denied" });
     }
-    return db.select().from(iepEvaluations)
+    const rows = await db.select().from(iepEvaluations)
       .where(eq(iepEvaluations.learnerId, learnerId))
       .orderBy(desc(iepEvaluations.createdAt));
+    // Parents only see submitted/decided records, and only summary fields.
+    if (claims.role === "PARENT") {
+      return rows
+        .filter((r: any) => (PARENT_VISIBLE_STATUSES as readonly string[]).includes(r.status))
+        .map(parentSummary);
+    }
+    return rows;
   });
 
   // Get single evaluation
@@ -145,6 +170,12 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
     if (!row) return reply.code(404).send({ error: "Evaluation not found" });
     if (!await canRead(db, claims, row.learnerId)) {
       return reply.code(403).send({ error: "Access denied" });
+    }
+    if (claims.role === "PARENT") {
+      if (!(PARENT_VISIBLE_STATUSES as readonly string[]).includes(row.status)) {
+        return reply.code(404).send({ error: "Evaluation not found" });
+      }
+      return parentSummary(row);
     }
     return row;
   });
@@ -160,7 +191,7 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
     if (!await canWrite(db, claims, existing.learnerId)) {
       return reply.code(403).send({ error: "Access denied" });
     }
-    if (existing.status !== "draft" && existing.status !== "submitted") {
+    if (existing.status === "eligibility_determined") {
       return reply.code(409).send({ error: "Decision already recorded; cannot edit" });
     }
     const body = req.body as any;
@@ -238,15 +269,17 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
     return row;
   });
 
-  // Record team eligibility decision
+  // Record team eligibility decision (eligible | not_eligible | needs_more_data).
+  // The status moves to "eligibility_determined" regardless of which value the
+  // team chose; the specific outcome lives in `decisionEligible`.
   app.post("/api/iep/evaluations/:id/decision", {
     schema: {
       tags: ["IEP-Evaluations"],
       security: [{ bearerAuth: [] }],
       body: {
         type: "object",
-        required: ["eligible"],
         properties: {
+          decision: { type: "string", enum: ["eligible", "not_eligible", "needs_more_data"] },
           eligible: { type: "boolean" },
           categories: { type: "array", items: { type: "string" } },
           rationale: { type: "string" },
@@ -266,12 +299,21 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
     if (existing.status !== "submitted") {
       return reply.code(409).send({ error: "Evaluation must be submitted before recording a decision" });
     }
-    const body = req.body as { eligible: boolean; categories?: string[]; rationale?: string };
-    const newStatus = body.eligible ? "eligible" : "not_eligible";
+    const body = req.body as {
+      decision?: "eligible" | "not_eligible" | "needs_more_data";
+      eligible?: boolean;
+      categories?: string[];
+      rationale?: string;
+    };
+    const decision: "eligible" | "not_eligible" | "needs_more_data" =
+      body.decision ?? (body.eligible === true ? "eligible" : body.eligible === false ? "not_eligible" : null as any);
+    if (!decision) {
+      return reply.code(400).send({ error: "decision is required" });
+    }
     // Status-guarded update prevents races with concurrent PATCH/decision requests.
     const updated = await db.update(iepEvaluations).set({
-      status: newStatus,
-      decisionEligible: newStatus,
+      status: "eligibility_determined",
+      decisionEligible: decision,
       decisionCategories: body.categories || [],
       decisionRationale: body.rationale || null,
       decidedAt: new Date(),

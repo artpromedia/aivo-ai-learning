@@ -77,8 +77,8 @@ export default function IepDashboardPage() {
   const [activeTab, setActiveTab] = useState<"goals" | "documents" | "motor" | "evaluations" | "report">("goals");
   const [evaluations, setEvaluations] = useState<Array<{
     id: string; status: string; createdAt: string; submittedAt: string | null;
-    decisionEligible: string | null; decisionCategories: string[] | null; decisionRationale: string | null;
-    referralReason: string | null;
+    eligibilityDecision: string | null; decisionCategories: string[] | null; decisionRationale: string | null;
+    decidedAt: string | null;
   }>>([]);
   const [motorProgress, setMotorProgress] = useState<null | {
     totalMotorGoals: number;
@@ -326,52 +326,57 @@ export default function IepDashboardPage() {
               <p className="vi-text-muted text-sm mt-2">{te("none_yet_parent_help")}</p>
             </div>
           ) : (
-            evaluations.map((e) => (
-              <div key={e.id} className="vi-card p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs vi-text-muted font-bold uppercase tracking-wide">
-                      {te("started_on", { date: new Date(e.createdAt).toLocaleDateString() })}
-                    </p>
-                    {e.referralReason && (
-                      <p className="text-sm vi-text mt-1 font-semibold">{e.referralReason}</p>
-                    )}
-                  </div>
-                  <span className={`px-2.5 py-0.5 text-xs rounded-full font-bold ${
-                    e.status === "eligible" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" :
-                    e.status === "not_eligible" ? "bg-[hsl(var(--visual-math)/0.14)] text-[hsl(var(--visual-math))]" :
-                    e.status === "submitted" ? "bg-[hsl(var(--visual-reading)/0.14)] text-[hsl(var(--visual-reading))]" :
-                    "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]"
-                  }`}>
-                    {te(`status_${e.status}`)}
-                  </span>
-                </div>
-                {(e.status === "eligible" || e.status === "not_eligible") && (
-                  <div className="border-t vi-border pt-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      {e.status === "eligible"
-                        ? <CheckCircle2 className="w-4 h-4 text-[hsl(var(--visual-science))]" aria-hidden="true" />
-                        : <XCircle className="w-4 h-4 text-[hsl(var(--visual-math))]" aria-hidden="true" />}
-                      <p className="text-sm font-bold vi-text">
-                        {e.status === "eligible" ? te("found_eligible") : te("found_not_eligible")}
+            evaluations.map((e) => {
+              const decided = e.status === "eligibility_determined";
+              const dec = e.eligibilityDecision;
+              return (
+                <div key={e.id} className="vi-card p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs vi-text-muted font-bold uppercase tracking-wide">
+                        {te("started_on", { date: new Date(e.createdAt).toLocaleDateString() })}
                       </p>
                     </div>
-                    {e.decisionCategories && e.decisionCategories.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {e.decisionCategories.map((c) => (
-                          <span key={c} className="px-2 py-0.5 rounded-full text-xs font-bold bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]">
-                            {te.has(`category_${c}`) ? te(`category_${c}`) : c}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {e.decisionRationale && (
-                      <p className="text-sm vi-text-muted italic">{e.decisionRationale}</p>
-                    )}
+                    <span className={`px-2.5 py-0.5 text-xs rounded-full font-bold ${
+                      decided ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]"
+                              : "bg-[hsl(var(--visual-reading)/0.14)] text-[hsl(var(--visual-reading))]"
+                    }`}>
+                      {te(`status_${e.status}`)}
+                    </span>
                   </div>
-                )}
-              </div>
-            ))
+                  {decided && (
+                    <div className="border-t vi-border pt-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        {dec === "eligible"
+                          ? <CheckCircle2 className="w-4 h-4 text-[hsl(var(--visual-science))]" aria-hidden="true" />
+                          : dec === "not_eligible"
+                            ? <XCircle className="w-4 h-4 text-[hsl(var(--visual-math))]" aria-hidden="true" />
+                            : null}
+                        <p className="text-sm font-bold vi-text">
+                          {dec === "eligible"
+                            ? te("found_eligible")
+                            : dec === "not_eligible"
+                              ? te("found_not_eligible")
+                              : te("found_needs_more_data")}
+                        </p>
+                      </div>
+                      {e.decisionCategories && e.decisionCategories.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {e.decisionCategories.map((c) => (
+                            <span key={c} className="px-2 py-0.5 rounded-full text-xs font-bold bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]">
+                              {te.has(`category_${c}`) ? te(`category_${c}`) : c}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {e.decisionRationale && (
+                        <p className="text-sm vi-text-muted italic">{e.decisionRationale}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       )}

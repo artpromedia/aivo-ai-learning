@@ -12,6 +12,16 @@ interface IepSummary {
   evaluationsInProgress?: number;
 }
 
+interface InProgressEval {
+  id: string;
+  status: "draft" | "submitted";
+  createdAt: string;
+  submittedAt: string | null;
+  learnerId: string;
+  learnerName: string;
+  gradeLevel?: string | null;
+}
+
 interface IepLearner {
   iepId: string;
   status: string;
@@ -30,6 +40,7 @@ export default function DistrictIepPage() {
   const { accessToken } = useAuth();
   const [summary, setSummary] = useState<IepSummary | null>(null);
   const [iepLearners, setIepLearners] = useState<IepLearner[]>([]);
+  const [evalsInProgress, setEvalsInProgress] = useState<InProgressEval[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,10 +49,12 @@ export default function DistrictIepPage() {
     Promise.all([
       fetch("/api/district/iep/summary", { headers }).then((r) => r.ok ? r.json() : null),
       fetch("/api/district/iep/learners", { headers }).then((r) => r.ok ? r.json() : { iepLearners: [] }),
+      fetch("/api/district/iep/evaluations-in-progress", { headers }).then((r) => r.ok ? r.json() : { evaluations: [] }),
     ])
-      .then(([s, l]) => {
+      .then(([s, l, e]) => {
         setSummary(s);
         setIepLearners(l.iepLearners || []);
+        setEvalsInProgress(e.evaluations || []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -116,6 +129,38 @@ export default function DistrictIepPage() {
                 </div>
                 <p className="text-3xl font-bold vi-text">{summary.evaluationsInProgress ?? 0}</p>
               </div>
+            </div>
+          )}
+
+          {evalsInProgress.length > 0 && (
+            <div className="vi-card overflow-hidden">
+              <div className="p-5 border-b vi-border flex items-center gap-2">
+                <Search size={18} className="text-[hsl(var(--visual-reading))]" aria-hidden="true" />
+                <h2 className="text-lg font-heading font-semibold vi-text">Evaluations in progress</h2>
+                <span className="ml-auto text-xs vi-text-muted">{evalsInProgress.length} most recent</span>
+              </div>
+              <ul className="divide-y vi-border">
+                {evalsInProgress.map((ev) => (
+                  <li key={ev.id} className="p-4 flex items-center justify-between hover:vi-surface-soft">
+                    <div>
+                      <Link href={`/dashboard/district/learners/${ev.learnerId}`} className="font-bold vi-text hover:text-[hsl(var(--visual-primary))]">
+                        {ev.learnerName}
+                      </Link>
+                      <div className="text-xs vi-text-muted mt-0.5">
+                        {ev.gradeLevel ? `${ev.gradeLevel} · ` : ""}Started {new Date(ev.createdAt).toLocaleDateString()}
+                        {ev.submittedAt ? ` · Submitted ${new Date(ev.submittedAt).toLocaleDateString()}` : ""}
+                      </div>
+                    </div>
+                    <span className={`px-2.5 py-0.5 text-xs rounded-full font-bold ${
+                      ev.status === "submitted"
+                        ? "bg-[hsl(var(--visual-reading)/0.14)] text-[hsl(var(--visual-reading))]"
+                        : "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]"
+                    }`}>
+                      {ev.status === "submitted" ? "Awaiting decision" : "Draft"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 

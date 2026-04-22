@@ -643,6 +643,27 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     };
   });
 
+  app.get("/api/district/iep/evaluations-in-progress", { preHandler: requireDistrictAdmin }, async (req: any) => {
+    const tid = req.tenantId;
+    const rows = await db.select({
+      id: iepEvaluations.id,
+      status: iepEvaluations.status,
+      createdAt: iepEvaluations.createdAt,
+      submittedAt: iepEvaluations.submittedAt,
+      learnerId: learners.id,
+      learnerName: learners.name,
+      gradeLevel: learners.gradeLevel,
+    }).from(iepEvaluations)
+      .innerJoin(learners, eq(iepEvaluations.learnerId, learners.id))
+      .where(and(
+        eq(learners.tenantId, tid),
+        or(eq(iepEvaluations.status, "draft"), eq(iepEvaluations.status, "submitted")),
+      ))
+      .orderBy(desc(iepEvaluations.updatedAt))
+      .limit(10);
+    return { evaluations: rows };
+  });
+
   app.get("/api/district/iep/learners", { preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const rows = await db.select({

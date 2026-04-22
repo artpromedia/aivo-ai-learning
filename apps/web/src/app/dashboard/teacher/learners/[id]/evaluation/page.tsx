@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ClipboardList, Sparkles, Plus, Trash2, ArrowLeft, CheckCircle2, XCircle, Loader2 } from "lucide-react";
@@ -40,7 +41,7 @@ type Area = { area: string; method?: string; findings?: string; score?: string }
 interface Evaluation {
   id: string;
   learnerId: string;
-  status: "draft" | "submitted" | "eligible" | "not_eligible";
+  status: "draft" | "submitted" | "eligibility_determined";
   referralReason: string | null;
   assessmentAreas: Area[] | null;
   observations: string | null;
@@ -64,8 +65,7 @@ interface Evaluation {
 const STATUS_STYLE: Record<string, string> = {
   draft: "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]",
   submitted: "bg-[hsl(var(--visual-reading)/0.14)] text-[hsl(var(--visual-reading))]",
-  eligible: "bg-[hsl(var(--visual-science)/0.16)] text-[hsl(var(--visual-science))]",
-  not_eligible: "bg-[hsl(var(--visual-math)/0.14)] text-[hsl(var(--visual-math))]",
+  eligibility_determined: "bg-[hsl(var(--visual-science)/0.16)] text-[hsl(var(--visual-science))]",
 };
 
 export default function TeacherEvaluationPage() {
@@ -206,7 +206,7 @@ export default function TeacherEvaluationPage() {
     } finally { setSaving(false); }
   };
 
-  const recordDecision = async (eligible: boolean) => {
+  const recordDecision = async (decision: "eligible" | "not_eligible" | "needs_more_data") => {
     if (!active) return;
     setBusyDecision(true);
     setError(null);
@@ -214,7 +214,7 @@ export default function TeacherEvaluationPage() {
       const r = await fetch(`/api/iep/evaluations/${active.id}/decision`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ eligible, categories: decisionCats, rationale: decisionRationale }),
+        body: JSON.stringify({ decision, categories: decisionCats, rationale: decisionRationale }),
       });
       if (!r.ok) setError(t("error_save"));
       else await refresh();
@@ -432,11 +432,15 @@ export default function TeacherEvaluationPage() {
                     onChange={(e) => setDecisionRationale(e.target.value)}
                     className="w-full p-3 rounded-xl border-2 vi-border bg-white text-sm" />
                   <div className="flex gap-2">
-                    <button disabled={busyDecision} onClick={() => recordDecision(true)} style={{ minHeight: 44 }}
+                    <button disabled={busyDecision} onClick={() => recordDecision("eligible")} style={{ minHeight: 44 }}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--visual-science))] text-white font-bold text-sm disabled:opacity-50">
                       <CheckCircle2 size={16} strokeWidth={2.5} aria-hidden="true" /> {t("decision_eligible")}
                     </button>
-                    <button disabled={busyDecision} onClick={() => recordDecision(false)} style={{ minHeight: 44 }}
+                    <button disabled={busyDecision} onClick={() => recordDecision("needs_more_data")} style={{ minHeight: 44 }}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--visual-sel))] text-white font-bold text-sm disabled:opacity-50">
+                      {t("decision_needs_more_data")}
+                    </button>
+                    <button disabled={busyDecision} onClick={() => recordDecision("not_eligible")} style={{ minHeight: 44 }}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--visual-math))] text-white font-bold text-sm disabled:opacity-50">
                       <XCircle size={16} strokeWidth={2.5} aria-hidden="true" /> {t("decision_not_eligible")}
                     </button>
@@ -444,14 +448,20 @@ export default function TeacherEvaluationPage() {
                 </div>
               )}
 
-              {(active.status === "eligible" || active.status === "not_eligible") && (
-                <div className="vi-card p-5 space-y-2">
+              {active.status === "eligibility_determined" && (
+                <div className="vi-card p-5 space-y-3">
                   <div className="flex items-center gap-2">
-                    {active.status === "eligible"
+                    {active.decisionEligible === "eligible"
                       ? <CheckCircle2 className="text-[hsl(var(--visual-science))]" aria-hidden="true" />
-                      : <XCircle className="text-[hsl(var(--visual-math))]" aria-hidden="true" />}
+                      : active.decisionEligible === "not_eligible"
+                        ? <XCircle className="text-[hsl(var(--visual-math))]" aria-hidden="true" />
+                        : null}
                     <h3 className="font-heading font-bold vi-text">
-                      {active.status === "eligible" ? t("found_eligible") : t("found_not_eligible")}
+                      {active.decisionEligible === "eligible"
+                        ? t("found_eligible")
+                        : active.decisionEligible === "not_eligible"
+                          ? t("found_not_eligible")
+                          : t("found_needs_more_data")}
                     </h3>
                   </div>
                   {active.decisionCategories?.length ? (
@@ -465,6 +475,14 @@ export default function TeacherEvaluationPage() {
                   ) : null}
                   {active.decisionRationale && <p className="text-sm vi-text-muted italic">{active.decisionRationale}</p>}
                   {active.decidedAt && <p className="text-xs vi-text-muted">{t("decided_at", { date: new Date(active.decidedAt).toLocaleString() })}</p>}
+                  {active.decisionEligible === "eligible" && (
+                    <Link
+                      href={`/dashboard/teacher/learners/${learnerId}/iep?fromEvaluation=${active.id}`}
+                      style={{ minHeight: 44 }}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--visual-reading))] text-white font-bold text-sm">
+                      {t("start_iep_draft")}
+                    </Link>
+                  )}
                 </div>
               )}
             </>
