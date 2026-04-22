@@ -37,6 +37,84 @@
   color: hsl(var(--visual-text-muted));
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+ * Age-tier theme overrides.
+ *
+ * The `data-tier` attribute is set on <html> by `<TierThemeProvider>`
+ * (packages/learner-ui/src/adapters/TierThemeProvider.tsx) according to
+ * the active learner's grade level. By scoping the `--visual-*` HSL
+ * variables here, every existing `.vi-bg`, `.vi-card`, `.vi-text`,
+ * etc. across the assessment and stage flows re-skins automatically.
+ *
+ * Brand identity is constant (violet --visual-primary stays the same);
+ * only the surrounding canvas / surface / text mood shifts per age band.
+ * ───────────────────────────────────────────────────────────────────── */
+
+/* K–5 · Soft Meadow — cream daylight, chunky friendly radii */
+[data-tier="EARLY"] {
+  --visual-bg: 40 80% 97%;
+  --visual-surface: 45 80% 98%;
+  --visual-surface-soft: 40 78% 93%;
+  --visual-border: 38 60% 88%;
+  --visual-text: 220 21% 20%;
+  --visual-text-muted: 265 12% 36%;
+}
+[data-tier="EARLY"] .vi-card {
+  border-radius: 28px;
+  border-width: 3px;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.08);
+}
+
+/* 6–8 · Study Treehouse — twilight violet-night with parchment ink */
+[data-tier="MIDDLE"] {
+  --visual-bg: 258 43% 14%;
+  --visual-surface: 254 42% 21%;
+  --visual-surface-soft: 259 30% 25%;
+  --visual-border: 259 30% 30%;
+  --visual-text: 38 60% 90%;
+  --visual-text-muted: 33 35% 59%;
+}
+[data-tier="MIDDLE"] .vi-card {
+  border-radius: 18px;
+  border-width: 1.5px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+/* MIDDLE: legacy `.text-slate-*` Tailwind utilities (used throughout the
+ * assessment + stage flows) become unreadable on the dark twilight surface.
+ * We re-tint them to parchment, but ONLY when they are not living inside an
+ * explicit light island (`.bg-white`) — assessment cards nest `.bg-white`
+ * sub-cards whose dark slate text must stay dark. The `:not(.bg-white *)`
+ * fragment excludes any descendant of a `.bg-white` element, and the
+ * `:not(.bg-white)` excludes the element itself. */
+[data-tier="MIDDLE"] .vi-card
+  :is(.text-slate-900, .text-slate-800, .text-slate-700, .text-slate-600, .text-slate-500, .text-slate-400, .text-slate-300):not(.bg-white):not(.bg-white *) {
+  color: hsl(38 60% 90%);
+}
+/* Faded variants get a softer parchment so hierarchy is preserved. */
+[data-tier="MIDDLE"] .vi-card
+  :is(.text-slate-500, .text-slate-400):not(.bg-white):not(.bg-white *) {
+  color: hsl(33 35% 65%);
+}
+[data-tier="MIDDLE"] .vi-card
+  :is(.text-slate-600):not(.bg-white):not(.bg-white *) {
+  color: hsl(33 40% 72%);
+}
+
+/* 9–12 · Focus Studio — warm paper-cream, editorial calm */
+[data-tier="HIGH"] {
+  --visual-bg: 40 30% 93%;
+  --visual-surface: 40 50% 96%;
+  --visual-surface-soft: 40 30% 88%;
+  --visual-border: 264 60% 91%;
+  --visual-text: 220 21% 20%;
+  --visual-text-muted: 265 12% 36%;
+}
+[data-tier="HIGH"] .vi-card {
+  border-radius: 12px;
+  border-width: 1px;
+  box-shadow: 0 4px 14px rgba(41, 47, 61, 0.06);
+}
+
 @theme {
   --color-primary: #7C3AED;
   --color-primary-light: #A78BFA;
