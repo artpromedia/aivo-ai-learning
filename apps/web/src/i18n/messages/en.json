@@ -1760,6 +1760,7 @@
     "n_goals": "{count} goals",
     "trend_improving": "improving",
     "trend_stable": "stable",
-    "trend_declining": "declining"
+    "trend_declining": "declining",
+    "regulation_break": "Movement break"
   }
 }

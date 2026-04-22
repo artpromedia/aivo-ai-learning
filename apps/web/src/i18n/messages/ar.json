@@ -1759,6 +1759,7 @@
     "n_goals": "{count} أهداف",
     "trend_improving": "تحسّن",
     "trend_stable": "ثابت",
-    "trend_declining": "تراجع"
+    "trend_declining": "تراجع",
+    "regulation_break": "استراحة حركة"
   }
 }

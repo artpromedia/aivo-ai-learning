@@ -1759,6 +1759,7 @@
     "n_goals": "{count}개 목표",
     "trend_improving": "향상 중",
     "trend_stable": "안정",
-    "trend_declining": "하락"
+    "trend_declining": "하락",
+    "regulation_break": "움직임 쉼"
   }
 }

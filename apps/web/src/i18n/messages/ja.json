@@ -1759,6 +1759,7 @@
     "n_goals": "{count} 件の目標",
     "trend_improving": "向上中",
     "trend_stable": "安定",
-    "trend_declining": "低下"
+    "trend_declining": "低下",
+    "regulation_break": "うごきの休けい"
   }
 }

@@ -1759,6 +1759,7 @@
     "n_goals": "{count} 个目标",
     "trend_improving": "进步中",
     "trend_stable": "稳定",
-    "trend_declining": "下降"
+    "trend_declining": "下降",
+    "regulation_break": "动起来休息一下"
   }
 }

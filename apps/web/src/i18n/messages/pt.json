@@ -1759,6 +1759,7 @@
     "n_goals": "{count} metas",
     "trend_improving": "melhorando",
     "trend_stable": "estável",
-    "trend_declining": "em queda"
+    "trend_declining": "em queda",
+    "regulation_break": "Pausa de movimento"
   }
 }

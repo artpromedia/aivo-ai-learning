@@ -304,7 +304,10 @@ export async function registerIepRoutes(app: FastifyInstance) {
 
     const { learnerId } = request.params as LearnerId;
     const isParent = await verifyParentOwnership(db, claims.sub, learnerId);
-    if (!isParent && claims.role !== "PLATFORM_ADMIN") {
+    // Learners can read their own DAPE profile (needed by the Vigor lesson
+    // start screen to decide whether to show the DAPE track entry point).
+    const isSelfLearner = claims.role === "LEARNER" && claims.sub === learnerId;
+    if (!isParent && claims.role !== "PLATFORM_ADMIN" && !isSelfLearner) {
       return reply.code(403).send({ error: "Access denied" });
     }
 

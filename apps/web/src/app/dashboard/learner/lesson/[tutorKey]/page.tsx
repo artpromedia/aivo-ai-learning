@@ -194,7 +194,7 @@ export default function LessonPage() {
   }>(null);
   const [dapeLoading, setDapeLoading] = useState(false);
 
-  const { adaptations } = useSensoryAdapter(
+  const { adaptations, getRegulationBreak } = useSensoryAdapter(
     user?.id || null,
     accessToken,
     functioningLevel
@@ -389,7 +389,14 @@ export default function LessonPage() {
   const handlePause = useCallback(() => {
     stopTTS();
     setShowPause(true);
-  }, [stopTTS]);
+    // If this learner has DAPE goals, fetch a regulation-break activity
+    // matched to their sensory profile so the pause modal can offer a
+    // movement break instead of a passive timeout.
+    if (dapeProfile?.hasActiveTrack) {
+      const { category } = getRegulationBreak();
+      loadDapeActivity(category);
+    }
+  }, [stopTTS, dapeProfile, getRegulationBreak, loadDapeActivity]);
 
   const handleCelebrationComplete = useCallback(() => {
     setShowCelebration(false);
@@ -547,6 +554,17 @@ export default function LessonPage() {
               <h2 className="text-2xl font-extrabold text-slate-900 mb-1">{tLearner("taking_break")}</h2>
               <p className="text-slate-600">{tLearner("take_breath")}</p>
             </div>
+
+            {dapeProfile?.hasActiveTrack && dapeActivity && (
+              <div className="rounded-xl bg-slate-50 p-3 text-left space-y-1.5">
+                <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">{tDape("regulation_break")}</p>
+                <p className="font-extrabold text-slate-900 text-sm">{dapeActivity.activity.name}</p>
+                <p className="text-xl tracking-widest" aria-hidden>{dapeActivity.activity.pictureSequence.join(" ")}</p>
+                <ol className="list-decimal list-inside text-xs text-slate-700 space-y-0.5">
+                  {dapeActivity.activity.steps.slice(0, 3).map((s, i) => <li key={i}>{s}</li>)}
+                </ol>
+              </div>
+            )}
 
             <div className="flex gap-3">
               <button

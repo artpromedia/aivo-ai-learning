@@ -1759,6 +1759,7 @@
     "n_goals": "{count} लक्ष्य",
     "trend_improving": "सुधर रहा",
     "trend_stable": "स्थिर",
-    "trend_declining": "घट रहा"
+    "trend_declining": "घट रहा",
+    "regulation_break": "मूवमेंट ब्रेक"
   }
 }
