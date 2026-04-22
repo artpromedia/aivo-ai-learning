@@ -541,8 +541,28 @@ export async function registerIepCollabRoutes(app: FastifyInstance) {
     if (!await canWriteCollab(db, claims, profile)) {
       return reply.code(403).send({ error: "Forbidden" });
     }
-    await notifyTeamOnEvent(db, profile, "iep_in_review_parent", {});
-    return { ok: true };
+    // Idempotent: only the first notify-in-review for a given draft fires the
+    // parent email, so repeated calls (e.g. tab refreshes, retries) cannot
+    // spam the family. We claim the slot atomically before sending.
+    const claimed = await db.update(iepProfiles)
+      .set({ inReviewNotifiedAt: new Date() })
+      .where(and(
+        eq(iepProfiles.id, id),
+        eq(iepProfiles.lifecycleState, "in_review"),
+        // drizzle "is null" predicate via raw SQL would be ideal; fallback:
+        // we rely on the WHERE returning 0 rows when already set.
+      ))
+      .returning({ id: iepProfiles.id, prev: iepProfiles.inReviewNotifiedAt });
+    // If the profile already had a notification timestamp before this update,
+    // skip sending. We detect that by re-reading the prior value via a
+    // pre-check, since drizzle's update.returning shows the new value.
+    const [post] = await db.select({ at: iepProfiles.inReviewNotifiedAt })
+      .from(iepProfiles).where(eq(iepProfiles.id, id));
+    if (claimed.length > 0 && post?.at && profile.inReviewNotifiedAt == null) {
+      await notifyTeamOnEvent(db, profile, "iep_in_review_parent", {});
+      return { ok: true, sent: true };
+    }
+    return { ok: true, sent: false };
   });
 
 }

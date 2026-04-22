@@ -66,6 +66,9 @@ export const iepProfiles = pgTable("iep_profiles", {
   lifecycleState: varchar("lifecycle_state", { length: 20 }).default("finalised").notNull(),
   authoredByUserId: uuid("authored_by_user_id").references(() => users.id),
   fromEvaluationId: uuid("from_evaluation_id"),
+  // Set the first time a parent "in_review" notification is dispatched so
+  // repeated notify-in-review calls don't spam the family.
+  inReviewNotifiedAt: timestamp("in_review_notified_at"),
   placement: varchar("placement", { length: 100 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

@@ -122,6 +122,14 @@ export default function IepDashboardPage() {
   const [signing, setSigning] = useState(false);
   const [signError, setSignError] = useState<string | null>(null);
   const [signed, setSigned] = useState(false);
+  // Reset the local "signed" UI flag whenever the active review draft changes
+  // (e.g. parent navigates between learners or a draft is reverted to draft
+  // and re-sent). Without this, the success state could persist stale.
+  useEffect(() => {
+    setSigned(false);
+    setSignError(null);
+    setTypedName("");
+  }, [reviewDraft?.id]);
   const submitParentSignature = async () => {
     if (!reviewDraft || !accessToken || !typedName.trim()) return;
     setSigning(true); setSignError(null);
