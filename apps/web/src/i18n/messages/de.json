@@ -1727,6 +1727,15 @@
       "sel": "Sozial-Emotional",
       "art": "Kunst",
       "other": "Sonstiges"
-    }
+    },
+    "parse_preview": "Analysieren & prüfen",
+    "parsing": "Datei wird gelesen…",
+    "review_heading": "Überprüfe, was die KI extrahiert hat",
+    "review_help": "Korrigiere alles Falsche und speichere dann. Die Tutoren verwenden genau das, was du hier bestätigst.",
+    "confirm_save": "Speichern & Tutoren ausrichten",
+    "summary": "Zusammenfassung",
+    "skills": "Fähigkeiten",
+    "comma_separated": "Komma-getrennt",
+    "stage_banner_label": "Fokus dieser Woche"
   }
 }

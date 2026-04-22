@@ -1727,6 +1727,15 @@
       "sel": "社会情動",
       "art": "芸術",
       "other": "その他"
-    }
+    },
+    "parse_preview": "解析して確認",
+    "parsing": "アップロードを読み取り中…",
+    "review_heading": "AI が抽出した内容を確認",
+    "review_help": "誤りがあれば修正してから保存してください。チューターはここで確認した内容をそのまま使用します。",
+    "confirm_save": "保存してチューターに反映",
+    "summary": "概要",
+    "skills": "スキル",
+    "comma_separated": "カンマ区切り",
+    "stage_banner_label": "今週のフォーカス"
   }
 }

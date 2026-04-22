@@ -1727,6 +1727,15 @@
       "sel": "Socio-émotionnel",
       "art": "Arts",
       "other": "Autre"
-    }
+    },
+    "parse_preview": "Analyser et vérifier",
+    "parsing": "Lecture du document…",
+    "review_heading": "Vérifiez ce que l'IA a extrait",
+    "review_help": "Corrigez ce qui ne va pas, puis enregistrez. Les tuteurs utiliseront exactement ce que vous confirmez ici.",
+    "confirm_save": "Enregistrer et aligner les tuteurs",
+    "summary": "Résumé",
+    "skills": "Compétences",
+    "comma_separated": "Séparés par des virgules",
+    "stage_banner_label": "Focus de la semaine"
   }
 }

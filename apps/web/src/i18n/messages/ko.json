@@ -1727,6 +1727,15 @@
       "sel": "사회정서",
       "art": "예술",
       "other": "기타"
-    }
+    },
+    "parse_preview": "분석 및 검토",
+    "parsing": "업로드 읽는 중…",
+    "review_heading": "AI가 추출한 내용 검토",
+    "review_help": "잘못된 부분을 수정한 후 저장하세요. 튜터는 여기서 확인한 내용을 그대로 사용합니다.",
+    "confirm_save": "저장하고 튜터 조정",
+    "summary": "요약",
+    "skills": "기술",
+    "comma_separated": "쉼표로 구분",
+    "stage_banner_label": "이번 주 학습 초점"
   }
 }

@@ -4,7 +4,12 @@ import { curriculumUploads, learners, learnerTeachers } from "@aivo/db";
 import { verifyJWT, JWTPayload } from "@aivo/security";
 
 const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
-const INTERNAL_AI_TOKEN = process.env.INTERNAL_AI_TOKEN || "tutor-svc-internal";
+if (process.env.NODE_ENV === "production" && !process.env.INTERNAL_AI_TOKEN) {
+  throw new Error(
+    "INTERNAL_AI_TOKEN must be set in production (shared secret between tutor-svc and ai-svc).",
+  );
+}
+const INTERNAL_AI_TOKEN = process.env.INTERNAL_AI_TOKEN || "dev-tutor-svc-internal";
 
 const VALID_SUBJECTS = new Set([
   "math",
@@ -160,18 +165,25 @@ export async function getActiveCurriculumFocus(
       )!,
     );
   }
-  const [row] = await db
+  const rows = await db
     .select()
     .from(curriculumUploads)
     .where(and(...conditions))
     .orderBy(desc(curriculumUploads.createdAt))
-    .limit(1);
-  if (!row) return null;
+    .limit(20);
 
   const now = Date.now();
-  if (row.weekEnd && new Date(row.weekEnd as any).getTime() + 24 * 3600 * 1000 < now) {
-    return null;
-  }
+  // Pick the most recent ACTIVE row whose week window contains "now" (null
+  // edges are treated as "always started" / "never expires"). This way an
+  // uploaded future-dated plan does not displace the current focus.
+  const current = rows.find((r: any) => {
+    const startMs = r.weekStart ? new Date(r.weekStart).getTime() : -Infinity;
+    const endMs = r.weekEnd ? new Date(r.weekEnd).getTime() + 24 * 3600 * 1000 : Infinity;
+    return startMs <= now && now <= endMs;
+  });
+  const row = current || rows.find((r: any) => !r.weekStart && !r.weekEnd);
+  if (!row) return null;
+
   const focus = (row.parsedFocus as Record<string, unknown>) || {};
   return {
     ...focus,
@@ -184,6 +196,46 @@ export async function getActiveCurriculumFocus(
 }
 
 export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
+  // POST /api/tutors/curriculum/parse-preview
+  // Parses raw text or an image with the AI and returns the structured focus
+  // WITHOUT persisting anything. The client then lets the user edit the
+  // result and POSTs the cleaned-up focus to /upload to actually save it.
+  app.post("/api/tutors/curriculum/parse-preview", async (request, reply) => {
+    const authUser = await extractAuth(request);
+    if (!authUser) return reply.code(401).send({ error: "Authentication required" });
+
+    const body = (request.body || {}) as any;
+    const text: string | undefined =
+      typeof body.text === "string" ? body.text.slice(0, MAX_TEXT_LEN) : undefined;
+    const imageBase64: string | undefined =
+      typeof body.imageBase64 === "string" ? body.imageBase64 : undefined;
+    if (!text && !imageBase64) {
+      return reply.code(400).send({ error: "Provide either text or imageBase64" });
+    }
+    if (imageBase64 && imageBase64.length > MAX_BASE64_LEN) {
+      return reply.code(413).send({ error: "Uploaded file is too large (max 5 MB)" });
+    }
+    try {
+      const { parsed, rawText } = await parseWithAI({
+        text,
+        imageBase64,
+        mimeType: body.mimeType,
+        hintedSubject: body.subject ? normalizeSubject(body.subject) : undefined,
+        hintedWeekStart: body.weekStart,
+        hintedWeekEnd: body.weekEnd,
+      });
+      return {
+        parsed: {
+          ...parsed,
+          subject: normalizeSubject(parsed.subject || body.subject),
+        },
+        rawText,
+      };
+    } catch (err: any) {
+      return reply.code(502).send({ error: "Failed to parse curriculum content", detail: err.message });
+    }
+  });
+
   // POST /api/tutors/curriculum/upload
   // Body: { learnerId? | applyToLearnerIds?, subject, title?, text?, imageBase64?,
   //         mimeType?, fileName?, weekStart?, weekEnd?, notes? }
@@ -230,19 +282,39 @@ export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
 
     let parsed: ParsedFocus;
     let rawText: string;
-    try {
-      const result = await parseWithAI({
-        text,
-        imageBase64,
-        mimeType: body.mimeType,
-        hintedSubject: subject !== "other" ? subject : undefined,
-        hintedWeekStart: body.weekStart,
-        hintedWeekEnd: body.weekEnd,
-      });
-      parsed = result.parsed;
-      rawText = result.rawText;
-    } catch (err: any) {
-      return reply.code(502).send({ error: "Failed to parse curriculum content", detail: err.message });
+    // Path A: client did parse-preview, edited the result, and POSTed it back.
+    // Trust the structured fields but normalize and clamp them.
+    if (body.parsedFocus && typeof body.parsedFocus === "object") {
+      const pf = body.parsedFocus as any;
+      parsed = {
+        title: typeof pf.title === "string" ? pf.title.slice(0, 200) : undefined,
+        subject: normalizeSubject(pf.subject || subject),
+        weekStart: typeof pf.weekStart === "string" ? pf.weekStart : undefined,
+        weekEnd: typeof pf.weekEnd === "string" ? pf.weekEnd : undefined,
+        topics: Array.isArray(pf.topics) ? pf.topics.slice(0, 50).map(String) : [],
+        keywords: Array.isArray(pf.keywords) ? pf.keywords.slice(0, 100).map(String) : [],
+        standards: Array.isArray(pf.standards) ? pf.standards.slice(0, 50).map(String) : [],
+        skills: Array.isArray(pf.skills) ? pf.skills.slice(0, 50).map(String) : [],
+        summary: typeof pf.summary === "string" ? pf.summary.slice(0, 2000) : "",
+        confidence: typeof pf.confidence === "number" ? pf.confidence : 1,
+      };
+      rawText = (text || "").slice(0, MAX_TEXT_LEN);
+    } else {
+      // Path B: server-side parse (legacy / shortcut path).
+      try {
+        const result = await parseWithAI({
+          text,
+          imageBase64,
+          mimeType: body.mimeType,
+          hintedSubject: subject !== "other" ? subject : undefined,
+          hintedWeekStart: body.weekStart,
+          hintedWeekEnd: body.weekEnd,
+        });
+        parsed = result.parsed;
+        rawText = result.rawText;
+      } catch (err: any) {
+        return reply.code(502).send({ error: "Failed to parse curriculum content", detail: err.message });
+      }
     }
 
     const finalSubject = normalizeSubject(parsed.subject || subject);
@@ -288,18 +360,51 @@ export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
 
     // Atomically archive prior ACTIVE rows for each (learner, subject) and
     // insert the new ACTIVE rows so concurrent uploads can't leave duplicates.
+    //
+    // Smart archival: if the new upload is FUTURE-dated (weekStart > today),
+    // do NOT archive a still-current plan — both can coexist as ACTIVE and
+    // getActiveCurriculumFocus picks the one whose window contains "now".
+    const todayMs = Date.now();
+    const newIsFuture = !!(weekStartDate && weekStartDate.getTime() > todayMs);
     const created = await db.transaction(async (tx: any) => {
       for (const ins of inserts) {
-        await tx
-          .update(curriculumUploads)
-          .set({ status: "ARCHIVED", updatedAt: new Date() })
-          .where(
-            and(
-              eq(curriculumUploads.learnerId, ins.learnerId),
-              eq(curriculumUploads.subject, ins.subject),
-              eq(curriculumUploads.status, "ACTIVE"),
-            ),
-          );
+        if (newIsFuture) {
+          // Only archive prior ACTIVE rows that have already expired or end
+          // before the new plan starts; leave a current plan in place.
+          const newStartMs = (ins.weekStart as Date).getTime();
+          const existing = await tx
+            .select()
+            .from(curriculumUploads)
+            .where(
+              and(
+                eq(curriculumUploads.learnerId, ins.learnerId),
+                eq(curriculumUploads.subject, ins.subject),
+                eq(curriculumUploads.status, "ACTIVE"),
+              ),
+            );
+          for (const row of existing as any[]) {
+            const endMs = row.weekEnd
+              ? new Date(row.weekEnd).getTime() + 24 * 3600 * 1000
+              : Infinity;
+            if (endMs <= newStartMs) {
+              await tx
+                .update(curriculumUploads)
+                .set({ status: "ARCHIVED", updatedAt: new Date() })
+                .where(eq(curriculumUploads.id, row.id));
+            }
+          }
+        } else {
+          await tx
+            .update(curriculumUploads)
+            .set({ status: "ARCHIVED", updatedAt: new Date() })
+            .where(
+              and(
+                eq(curriculumUploads.learnerId, ins.learnerId),
+                eq(curriculumUploads.subject, ins.subject),
+                eq(curriculumUploads.status, "ACTIVE"),
+              ),
+            );
+        }
       }
       return tx.insert(curriculumUploads).values(inserts).returning();
     });

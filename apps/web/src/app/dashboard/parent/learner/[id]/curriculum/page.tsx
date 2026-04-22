@@ -63,9 +63,25 @@ export default function ParentLearnerCurriculumPage() {
   const [weekEnd, setWeekEnd] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [parsing, setParsing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Editable preview after parse-preview, before final save.
+  type ParsedFocus = {
+    title?: string;
+    subject?: Subject;
+    weekStart?: string | null;
+    weekEnd?: string | null;
+    topics: string[];
+    keywords: string[];
+    standards: string[];
+    skills: string[];
+    summary: string;
+    confidence?: number;
+  };
+  const [preview, setPreview] = useState<ParsedFocus | null>(null);
 
   const loadUploads = useCallback(async () => {
     if (!accessToken || !learnerId) return;
@@ -94,10 +110,11 @@ export default function ParentLearnerCurriculumPage() {
     setWeekStart("");
     setWeekEnd("");
     setNotes("");
+    setPreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleParse = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -111,22 +128,65 @@ export default function ParentLearnerCurriculumPage() {
       return;
     }
 
-    setSubmitting(true);
+    setParsing(true);
     try {
       const body: Record<string, unknown> = {
-        learnerId,
         subject,
-        title: title.trim() || undefined,
         text: text.trim() || undefined,
         weekStart: weekStart || undefined,
         weekEnd: weekEnd || undefined,
-        notes: notes.trim() || undefined,
       };
       if (file) {
         body.imageBase64 = await fileToBase64(file);
         body.mimeType = file.type || "application/octet-stream";
-        body.fileName = file.name;
       }
+      const res = await fetch(`/api/tutors/curriculum/parse-preview`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).error || t("err_upload_failed"));
+      }
+      const data = await res.json();
+      const p = (data?.parsed || {}) as Partial<ParsedFocus>;
+      setPreview({
+        title: p.title || title.trim() || undefined,
+        subject: (p.subject as Subject) || subject,
+        weekStart: p.weekStart || weekStart || null,
+        weekEnd: p.weekEnd || weekEnd || null,
+        topics: Array.isArray(p.topics) ? p.topics : [],
+        keywords: Array.isArray(p.keywords) ? p.keywords : [],
+        standards: Array.isArray(p.standards) ? p.standards : [],
+        skills: Array.isArray(p.skills) ? p.skills : [],
+        summary: typeof p.summary === "string" ? p.summary : "",
+        confidence: p.confidence,
+      });
+    } catch (err: any) {
+      setErrorMsg(err.message || t("err_upload_failed"));
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const handleConfirmSave = async () => {
+    if (!preview) return;
+    setErrorMsg(null);
+    setSubmitting(true);
+    try {
+      const body: Record<string, unknown> = {
+        learnerId,
+        subject: preview.subject || subject,
+        title: preview.title || title.trim() || undefined,
+        notes: notes.trim() || undefined,
+        weekStart: preview.weekStart || undefined,
+        weekEnd: preview.weekEnd || undefined,
+        parsedFocus: preview,
+      };
       const res = await fetch(`/api/tutors/curriculum/upload`, {
         method: "POST",
         headers: {
@@ -174,7 +234,7 @@ export default function ParentLearnerCurriculumPage() {
         <p className="text-sm vi-text-muted">{t("description")}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="vi-card p-6 space-y-4">
+      <form onSubmit={handleParse} className="vi-card p-6 space-y-4">
         <h2 className="font-heading font-semibold vi-text">{t("upload_heading")}</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -269,16 +329,115 @@ export default function ParentLearnerCurriculumPage() {
         {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
         {successMsg && <p className="text-sm text-green-600">{successMsg}</p>}
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
           <button
             type="submit"
-            disabled={submitting}
+            disabled={parsing || submitting}
             className="rounded-lg bg-[hsl(var(--visual-primary))] px-5 py-2 text-white font-semibold disabled:opacity-50"
           >
-            {submitting ? t("submitting") : t("submit")}
+            {parsing ? t("parsing") : t("parse_preview")}
           </button>
         </div>
       </form>
+
+      {preview && (
+        <div className="vi-card p-6 space-y-4 border-2 border-[hsl(var(--visual-primary))]">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="font-heading font-semibold vi-text">{t("review_heading")}</h2>
+              <p className="text-xs vi-text-muted mt-1">{t("review_help")}</p>
+            </div>
+            <button
+              onClick={() => setPreview(null)}
+              className="text-xs vi-text-muted hover:text-red-600"
+            >
+              {tc("cancel")}
+            </button>
+          </div>
+
+          <label className="block">
+            <span className="text-sm font-medium vi-text">{t("title_label")}</span>
+            <input
+              type="text"
+              value={preview.title || ""}
+              onChange={(e) => setPreview({ ...preview, title: e.target.value })}
+              maxLength={200}
+              className="mt-1 block w-full rounded-lg border vi-border bg-transparent px-3 py-2 vi-text"
+            />
+          </label>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="text-sm font-medium vi-text">{t("week_start_label")}</span>
+              <input
+                type="date"
+                value={(preview.weekStart || "").slice(0, 10)}
+                onChange={(e) => setPreview({ ...preview, weekStart: e.target.value || null })}
+                className="mt-1 block w-full rounded-lg border vi-border bg-transparent px-3 py-2 vi-text"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium vi-text">{t("week_end_label")}</span>
+              <input
+                type="date"
+                value={(preview.weekEnd || "").slice(0, 10)}
+                onChange={(e) => setPreview({ ...preview, weekEnd: e.target.value || null })}
+                className="mt-1 block w-full rounded-lg border vi-border bg-transparent px-3 py-2 vi-text"
+              />
+            </label>
+          </div>
+
+          <label className="block">
+            <span className="text-sm font-medium vi-text">{t("summary")}</span>
+            <textarea
+              value={preview.summary}
+              onChange={(e) => setPreview({ ...preview, summary: e.target.value })}
+              rows={3}
+              maxLength={2000}
+              className="mt-1 block w-full rounded-lg border vi-border bg-transparent px-3 py-2 vi-text"
+            />
+          </label>
+
+          {(["topics", "keywords", "standards", "skills"] as const).map((field) => (
+            <label key={field} className="block">
+              <span className="text-sm font-medium vi-text">{t(field)}</span>
+              <input
+                type="text"
+                value={preview[field].join(", ")}
+                onChange={(e) =>
+                  setPreview({
+                    ...preview,
+                    [field]: e.target.value
+                      .split(",")
+                      .map((s) => s.trim())
+                      .filter(Boolean),
+                  })
+                }
+                placeholder={t("comma_separated")}
+                className="mt-1 block w-full rounded-lg border vi-border bg-transparent px-3 py-2 vi-text text-sm"
+              />
+            </label>
+          ))}
+
+          {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
+
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setPreview(null)}
+              className="rounded-lg border vi-border px-4 py-2 vi-text"
+            >
+              {tc("cancel")}
+            </button>
+            <button
+              onClick={handleConfirmSave}
+              disabled={submitting}
+              className="rounded-lg bg-[hsl(var(--visual-primary))] px-5 py-2 text-white font-semibold disabled:opacity-50"
+            >
+              {submitting ? t("submitting") : t("confirm_save")}
+            </button>
+          </div>
+        </div>
+      )}
 
       <section className="space-y-3">
         <h2 className="font-heading font-semibold vi-text">{t("active_heading")}</h2>

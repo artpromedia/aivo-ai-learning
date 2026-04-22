@@ -178,6 +178,14 @@ export default function LessonPage() {
   const [showPause, setShowPause] = useState(false);
   const [started, setStarted] = useState(false);
   const [sessionApiId, setSessionApiId] = useState<string | null>(null);
+  const [curriculumFocus, setCurriculumFocus] = useState<{
+    title?: string;
+    summary?: string;
+    topics?: string[];
+    weekStart?: string | null;
+    weekEnd?: string | null;
+  } | null>(null);
+  const tCurriculum = useTranslations("curriculum");
 
   const { adaptations } = useSensoryAdapter(
     user?.id || null,
@@ -212,6 +220,15 @@ export default function LessonPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.name) setLearnerName(data.name);
+      })
+      .catch(() => {});
+
+    fetch(`/api/tutors/curriculum/learner/${user.id}/active`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.focus) setCurriculumFocus(data.focus);
       })
       .catch(() => {});
   }, [accessToken, user]);
@@ -389,6 +406,25 @@ export default function LessonPage() {
 
   return (
     <>
+      {curriculumFocus && started && (
+        <div
+          className="fixed top-3 left-1/2 -translate-x-1/2 z-40 max-w-lg w-[92%] sm:w-auto pointer-events-none"
+          role="status"
+          aria-live="polite"
+        >
+          <div
+            className="rounded-full px-4 py-2 shadow-lg backdrop-blur-md text-sm flex items-center gap-2 pointer-events-auto"
+            style={{ backgroundColor: `${tutor.color}E6`, color: "white" }}
+          >
+            <span className="text-xs uppercase tracking-wide opacity-80 font-semibold">
+              {tCurriculum("stage_banner_label")}
+            </span>
+            <span className="font-semibold truncate max-w-[18rem]">
+              {curriculumFocus.title || (curriculumFocus.topics || [])[0] || curriculumFocus.summary?.slice(0, 60)}
+            </span>
+          </div>
+        </div>
+      )}
       <StageLayout
         tutorKey={tutorKey}
         phase={state.phase}

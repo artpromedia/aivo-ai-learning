@@ -1727,6 +1727,15 @@
       "sel": "Socioemocional",
       "art": "Arte",
       "other": "Outro"
-    }
+    },
+    "parse_preview": "Analisar e revisar",
+    "parsing": "Lendo o arquivo…",
+    "review_heading": "Reveja o que a IA extraiu",
+    "review_help": "Edite o que estiver errado e salve. Os tutores usarão exatamente o que você confirmar aqui.",
+    "confirm_save": "Salvar e alinhar tutores",
+    "summary": "Resumo",
+    "skills": "Habilidades",
+    "comma_separated": "Separados por vírgulas",
+    "stage_banner_label": "Foco desta semana"
   }
 }

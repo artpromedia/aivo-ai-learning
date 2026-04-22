@@ -1727,6 +1727,15 @@
       "sel": "社会情感",
       "art": "艺术",
       "other": "其他"
-    }
+    },
+    "parse_preview": "解析并审阅",
+    "parsing": "正在读取上传内容…",
+    "review_heading": "请审阅 AI 提取的内容",
+    "review_help": "更正任何错误后保存，导师将完全使用您在此确认的内容。",
+    "confirm_save": "保存并同步导师",
+    "summary": "摘要",
+    "skills": "技能",
+    "comma_separated": "用逗号分隔",
+    "stage_banner_label": "本周重点"
   }
 }

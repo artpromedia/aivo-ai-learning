@@ -15,7 +15,15 @@ import os
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 
-_INTERNAL_TOKEN = os.environ.get("INTERNAL_AI_TOKEN", "tutor-svc-internal")
+_INTERNAL_TOKEN = os.environ.get("INTERNAL_AI_TOKEN") or (
+    "dev-tutor-svc-internal"
+    if os.environ.get("NODE_ENV", "development") != "production"
+    else None
+)
+if _INTERNAL_TOKEN is None:
+    raise RuntimeError(
+        "INTERNAL_AI_TOKEN must be set in production (shared with tutor-svc)."
+    )
 
 from ..services.llm_gateway import generate_completion, VISION_MODEL_PRIORITY
 from ..vision.ocr_processor import process_ocr
