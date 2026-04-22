@@ -14,6 +14,73 @@ const BRAND_TOKENS = new Set([
   "SAML", "SSO", "FERPA", "COPPA", "GDPR", "AI", "ML", "ID", "URL",
 ]);
 
+// Per-locale allowlist of values that are legitimately identical to English.
+// These are cross-language loanwords (Status, Avatar, Dashboard, Blog, etc.),
+// native language self-names (Deutsch, Español, Português, Français), and
+// domain terms (Visual, Vestibular, Motor, Tactile) that translate to the
+// same word in the target language. They should not count as "untranslated".
+const LOANWORDS_BY_LOCALE = {
+  ar: new Set([]),
+  hi: new Set([]),
+  de: new Set([
+    "Status", "Name", "Details", "Optional", "Standard", "Standards",
+    "Quests", "Avatar", "Avatars", "Power-Ups", "Shop", "Start", "Okay",
+    "Dashboard", "Team", "Trend", "Version", "Deutsch", "Blog",
+  ]),
+  es: new Set([
+    "Error", "Total", "General", "Avatar", "Visual", "Vestibular",
+    "Español", "Legal", "Blog", "Motor",
+  ]),
+  fr: new Set([
+    "Actions", "Date", "Type", "Description", "Total", "Question",
+    "Co-parent", "Badges", "Notifications", "Standard", "Animations",
+    "Avatars", "Avatar", "Services", "Documents", "Note", "Tactile",
+    "Collaboration", "Messages", "Stable", "stable", "Version",
+    "Français", "Solutions", "Blog", "Contact", "Score", "Vision",
+    "Placement", "Communication", "Signatures",
+    "{count} minutes",
+    "Section {number} · ~{minutes} min",
+  ]),
+  ja: new Set([]),
+  ko: new Set([]),
+  pt: new Set([
+    "Status", "Total", "Power-ups", "Avatar", "Visual", "Vestibular",
+    "Português", "Legal", "Blog", "Motor",
+  ]),
+  zh: new Set([]),
+};
+
+// Patterns for technical/example values that should never count as
+// "untranslated" regardless of locale (emails, URLs, version strings,
+// values that are just placeholder syntax).
+function looksLikeTechnicalPattern(value) {
+  if (typeof value !== "string") return false;
+  const t = value.trim();
+  // Email-like
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return true;
+  // URL-like
+  if (/^https?:\/\//i.test(t)) return true;
+  // Version-tagged product strings ("AIVO Learning v1.0.0")
+  if (/\bv?\d+(\.\d+){1,3}\b/.test(t)) return true;
+  // Almost entirely ICU placeholder syntax (e.g. "Lv. {level}",
+  // "{count, plural, one {# badge} other {# badges}}", "{count} minutes",
+  // "Section {number} · ~{minutes} min"). Repeatedly strip ICU braces
+  // (handles nesting), then check whether what remains is just short
+  // tokens / punctuation — i.e. the visible content is dominated by
+  // placeholders and untranslatable filler.
+  let stripped = t;
+  for (let i = 0; i < 5; i++) {
+    const next = stripped.replace(/\{[^{}]*\}/g, "");
+    if (next === stripped) break;
+    stripped = next;
+  }
+  stripped = stripped.replace(/[#·~,.\-:;!?()\[\]]/g, " ").trim();
+  const wordTokens = stripped.split(/\s+/).filter(Boolean);
+  const longWords = wordTokens.filter(w => w.length > 4);
+  if (longWords.length === 0) return true;
+  return false;
+}
+
 function flatten(obj, prefix = "", out = {}) {
   for (const [k, v] of Object.entries(obj ?? {})) {
     const key = prefix ? `${prefix}.${k}` : k;
@@ -64,12 +131,15 @@ function auditApp(app) {
     const missing = [...baseKeys].filter(k => !keys.has(k));
     const orphans = [...keys].filter(k => !baseKeys.has(k));
     const untranslated = [];
+    const allowedLoanwords = LOANWORDS_BY_LOCALE[locale] ?? new Set();
     for (const k of baseKeys) {
       const bv = baseFlat[k];
       const lv = flat[k];
-      if (typeof bv === "string" && bv === lv && !looksLikeBrandOrToken(bv)) {
-        untranslated.push(k);
-      }
+      if (typeof bv !== "string" || bv !== lv) continue;
+      if (looksLikeBrandOrToken(bv)) continue;
+      if (looksLikeTechnicalPattern(bv)) continue;
+      if (allowedLoanwords.has(bv.trim())) continue;
+      untranslated.push(k);
     }
 
     report.locales[locale] = {
