@@ -897,6 +897,9 @@ function UpdatesSection({ draftId, goals, headers, isCaseManager, isFinalised }:
   const [posting, setPosting] = useState(false);
   const [reportPeriod, setReportPeriod] = useState("");
   const [reportNarrative, setReportNarrative] = useState("");
+  const [editingReportId, setEditingReportId] = useState<string | null>(null);
+  const [editingReportText, setEditingReportText] = useState("");
+  const [savingReport, setSavingReport] = useState(false);
   const [creatingReport, setCreatingReport] = useState(false);
   const [seedingReport, setSeedingReport] = useState(false);
   const [amendSummary, setAmendSummary] = useState("");
@@ -1086,15 +1089,54 @@ function UpdatesSection({ draftId, goals, headers, isCaseManager, isFinalised }:
                       : "vi-surface-soft"
                   }`}>{tu(`status_${r.status}`)}</span>
                 </div>
-                {r.narrative && (
+                {editingReportId === r.id ? (
+                  <textarea value={editingReportText}
+                    onChange={(e) => setEditingReportText(e.target.value)}
+                    className="vi-input rounded-lg px-3 py-2 text-sm w-full min-h-[120px] mt-2" />
+                ) : r.narrative && (
                   <p className="text-sm vi-text mt-1 whitespace-pre-wrap line-clamp-4">{r.narrative}</p>
                 )}
                 {r.status === "draft" && (
-                  <div className="flex justify-end mt-2">
-                    <button onClick={() => sendReport(r.id)} style={{ minHeight: 36 }}
-                      className="px-3 py-1.5 rounded-full bg-[hsl(var(--visual-primary))] text-white text-xs font-bold">
-                      {tu("send_to_parent")}
-                    </button>
+                  <div className="flex justify-end gap-2 mt-2">
+                    {editingReportId === r.id ? (
+                      <>
+                        <button onClick={() => { setEditingReportId(null); setEditingReportText(""); }}
+                          style={{ minHeight: 36 }}
+                          className="px-3 py-1.5 rounded-full vi-surface-soft text-xs font-bold">
+                          {tu("cancel") || "Cancel"}
+                        </button>
+                        <button disabled={savingReport}
+                          onClick={async () => {
+                            if (!headers) return;
+                            setSavingReport(true);
+                            try {
+                              const resp = await fetch(`/api/iep/drafts/${draftId}/reports/${r.id}`, {
+                                method: "PATCH",
+                                headers: { ...headers, "Content-Type": "application/json" },
+                                body: JSON.stringify({ narrative: editingReportText }),
+                              });
+                              if (resp.ok) { setEditingReportId(null); setEditingReportText(""); await refreshAll(); }
+                            } catch { /* noop */ }
+                            setSavingReport(false);
+                          }}
+                          style={{ minHeight: 36 }}
+                          className="px-3 py-1.5 rounded-full bg-[hsl(var(--visual-primary))] text-white text-xs font-bold disabled:opacity-50">
+                          {savingReport ? tu("saving") || "Saving…" : tu("save") || "Save"}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => { setEditingReportId(r.id); setEditingReportText(r.narrative || ""); }}
+                          style={{ minHeight: 36 }}
+                          className="px-3 py-1.5 rounded-full vi-surface-soft text-xs font-bold">
+                          {tu("edit") || "Edit"}
+                        </button>
+                        <button onClick={() => sendReport(r.id)} style={{ minHeight: 36 }}
+                          className="px-3 py-1.5 rounded-full bg-[hsl(var(--visual-primary))] text-white text-xs font-bold">
+                          {tu("send_to_parent")}
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

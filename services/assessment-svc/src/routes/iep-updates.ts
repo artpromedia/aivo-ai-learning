@@ -281,6 +281,18 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
     if (!await isTeamMember(db, id, claims.sub) && claims.role !== "PLATFORM_ADMIN") {
       return reply.code(403).send({ error: "Only team members can post progress notes" });
     }
+    let safeAttachment: string | null = null;
+    if (typeof attachmentUrl === "string" && attachmentUrl.length > 0) {
+      try {
+        const u = new URL(attachmentUrl);
+        if (u.protocol !== "http:" && u.protocol !== "https:") {
+          return reply.code(400).send({ error: "attachmentUrl must use http or https" });
+        }
+        safeAttachment = u.toString();
+      } catch {
+        return reply.code(400).send({ error: "attachmentUrl must be a valid URL" });
+      }
+    }
     const vis: NoteVisibility = (NOTE_VISIBILITIES as readonly string[]).includes(visibility)
       ? visibility as NoteVisibility : "parent";
     const [row] = await db.insert(iepProgressNotes).values({
@@ -290,7 +302,7 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
       authorId: claims.sub,
       body,
       visibility: vis,
-      attachmentUrl: attachmentUrl || null,
+      attachmentUrl: safeAttachment,
     }).returning();
     if (vis === "parent") {
       await notifyParentIfOptedIn(db, profile.learnerId, "progress_notes",
