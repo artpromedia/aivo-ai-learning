@@ -4,7 +4,8 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { TUTORS, type TutorKey } from "@aivo/brand";
+import { TUTORS, type TutorKey, getTutorsForTier } from "@aivo/brand";
+import { gradeToTier } from "@aivo/learner-ui";
 import BrainVisualization from "@/components/BrainVisualization";
 import { useTranslations } from "next-intl";
 import {
@@ -194,7 +195,11 @@ export default function LearnerHubPage() {
           </Link>
         </div>
         <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
-          {Object.entries(TUTORS).slice(0, 7).map(([key, tutor]) => (
+          {/* Fail closed: when gradeLevel is unknown, fall back to the
+              EARLY tier (the strictest, K-5 catalogue) rather than showing
+              the unrestricted full catalogue. Matches TierThemeProvider's
+              "safest, brightest baseline" behaviour. */}
+          {(getTutorsForTier(learner?.gradeLevel ? gradeToTier(learner.gradeLevel) : "EARLY") as [TutorKey, typeof TUTORS[TutorKey]][]).slice(0, 7).map(([key, tutor]) => (
             <button key={key} onClick={() => router.push(`/dashboard/parent/store?tutor=${key}`)}
               className="flex flex-col items-center gap-1.5 group">
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 group-hover:scale-110 transition-transform shadow" style={{ borderColor: tutor.color }}>

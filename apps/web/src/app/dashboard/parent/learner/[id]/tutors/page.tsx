@@ -4,7 +4,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { TUTORS, type TutorKey } from "@aivo/brand";
+import { TUTORS, type TutorKey, getTutorsForTier } from "@aivo/brand";
+import { gradeToTier } from "@aivo/learner-ui";
 import { useTranslations } from "next-intl";
 
 export default function ParentLearnerTutorsPage() {
@@ -16,22 +17,38 @@ export default function ParentLearnerTutorsPage() {
 
   const [activeTutors, setActiveTutors] = useState<string[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [learnerGrade, setLearnerGrade] = useState<string | null>(null);
+  const [learnerLookupFailed, setLearnerLookupFailed] = useState(false);
 
   useEffect(() => {
     if (!accessToken || !learnerId || !user) return;
-    fetch(`/api/tutors/active/${user.id}`, { headers: { Authorization: `Bearer ${accessToken}` } })
-      .then(r => r.ok ? r.json() : [])
-      .then(data => {
-        const subs = Array.isArray(data) ? data : [];
+    Promise.all([
+      fetch(`/api/tutors/active/${user.id}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+        .then(r => r.ok ? r.json() : []),
+      fetch(`/api/users/learners`, { headers: { Authorization: `Bearer ${accessToken}` } })
+        .then(r => r.ok ? r.json() : []),
+    ])
+      .then(([subsData, learnersData]) => {
+        const subs = Array.isArray(subsData) ? subsData : [];
         setActiveTutors(subs.map((s: any) => s.tutorSku || ""));
+        const learners = Array.isArray(learnersData) ? learnersData : [];
+        const me = learners.find((l: any) => l.id === learnerId);
+        if (me?.gradeLevel) {
+          setLearnerGrade(me.gradeLevel);
+        } else {
+          setLearnerLookupFailed(true);
+        }
       })
-      .catch(() => {})
+      .catch(() => setLearnerLookupFailed(true))
       .finally(() => setLoadingData(false));
   }, [accessToken, learnerId, user]);
 
   if (loading || !user) return null;
 
-  const tutorEntries = Object.entries(TUTORS) as [TutorKey, typeof TUTORS[TutorKey]][];
+  // Filter to tutors that fit this learner's age tier (e.g. K-5 hides
+  // Chrono / Lingua / Forge / Compass).
+  const tier = learnerGrade != null ? gradeToTier(learnerGrade) : null;
+  const tutorEntries = getTutorsForTier(tier) as [TutorKey, typeof TUTORS[TutorKey]][];
   const isActive = (key: string) => activeTutors.some(sku => sku.toLowerCase().includes(key.toLowerCase()));
 
   return (
@@ -43,6 +60,10 @@ export default function ParentLearnerTutorsPage() {
 
       {loadingData ? (
         <div className="vi-card p-12 text-center animate-pulse vi-text-muted">{t("loading_tutors")}</div>
+      ) : learnerLookupFailed ? (
+        // Fail closed: if we can't determine this learner's grade, do NOT
+        // show the catalogue (it would expose tier-restricted tutors).
+        <div className="vi-card p-12 text-center vi-text-muted">{t("loading_tutors")}</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {tutorEntries.map(([key, tutor]) => {

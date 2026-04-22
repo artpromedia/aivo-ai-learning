@@ -22,7 +22,7 @@ interface LearnerRecord {
  * that want conditional logic (e.g. mascot vs. no-mascot hero).
  */
 export default function LearnerLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
   const [gradeLevel, setGradeLevel] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,9 +33,9 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
     // to EARLY in TierThemeProvider — the safest, brightest baseline.
     setGradeLevel(null);
 
-    if (!user?.id) return;
+    if (!user?.id || !accessToken) return;
 
-    fetch("/api/users/learners", { credentials: "include" })
+    fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: LearnerRecord[] | null) => {
         if (cancelled) return;
@@ -57,7 +57,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, accessToken]);
 
   return (
     <TierThemeProvider gradeLevel={gradeLevel}>

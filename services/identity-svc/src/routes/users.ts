@@ -42,8 +42,19 @@ export async function registerUserRoutes(app: FastifyInstance) {
     const db = (app as any).db;
     const user = (req as any).user;
     try {
-      if (!["PARENT", "TEACHER", "CAREGIVER", "THERAPIST", "PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
+      if (!["LEARNER", "PARENT", "TEACHER", "CAREGIVER", "THERAPIST", "PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
         throw { statusCode: 403, message: "Not authorized" };
+      }
+
+      // A LEARNER may only see their own learner record. This drives
+      // the tier-theme provider in the learner dashboard layout — without
+      // it, gradeLevel stays null and every learner falls back to EARLY.
+      if (user.role === "LEARNER") {
+        if (!isUuid(user.sub)) {
+          return [];
+        }
+        const results = await db.select().from(learners).where(eq(learners.userId, user.sub));
+        return results;
       }
 
       if (user.role === "PARENT") {

@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
-import { TUTORS } from "@aivo/brand";
-import { SkipLink } from "@aivo/learner-ui";
+import { getTutorsForTier } from "@aivo/brand";
+import { SkipLink, useTierThemeOptional } from "@aivo/learner-ui";
 import { useTranslations } from "next-intl";
 
 interface PreSymbolicViewProps {
@@ -13,7 +13,8 @@ interface PreSymbolicViewProps {
 }
 
 export function PreSymbolicView({ userName, totalXp, xpPercent, onLogout, onSelectTutor }: PreSymbolicViewProps) {
-  const allTutors = Object.entries(TUTORS).slice(0, 4);
+  const tierCtx = useTierThemeOptional();
+  const allTutors = getTutorsForTier(tierCtx?.theme.id ?? null).slice(0, 4);
   const t = useTranslations("learner");
   const tc = useTranslations("common");
 

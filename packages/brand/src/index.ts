@@ -51,22 +51,68 @@ export const BRAND = {
   },
 } as const;
 
+/**
+ * Age tier identifier — mirrors the canonical definition in
+ * `@aivo/learner-ui` (`packages/learner-ui/src/tokens/age-tiers.ts`).
+ * Re-declared here so the brand package stays dependency-free.
+ *   EARLY  = PK – 5  ("Soft Meadow")
+ *   MIDDLE = 6 – 8   ("Study Treehouse")
+ *   HIGH   = 9 – 12  ("Focus Studio")
+ */
+export type AgeTier = "EARLY" | "MIDDLE" | "HIGH";
+
+const ALL_TIERS = ["EARLY", "MIDDLE", "HIGH"] as const;
+const SECONDARY_TIERS = ["MIDDLE", "HIGH"] as const;
+
+/**
+ * Canonical tutor catalogue.
+ *
+ * Each tutor declares the age tiers in which it is a curricular fit:
+ *   • Nova / Sage / Spark / Pixel / Echo / Harmony /
+ *     Atlas / Cadence / Vigor / Muse  → all tiers
+ *   • Chrono (formal Social Studies)   → MIDDLE + HIGH only
+ *   • Lingua (World Languages)         → MIDDLE + HIGH only
+ *   • Forge (STEM & Engineering)       → MIDDLE + HIGH only
+ *   • Compass (Life Skills / Exec Fn.) → MIDDLE + HIGH only
+ *
+ * Use `getTutorsForTier()` (below) to filter the catalogue for a learner's
+ * age tier. The full catalogue is still exported as-is for admin / billing
+ * surfaces that intentionally list every tutor regardless of grade.
+ */
 export const TUTORS = {
-  nova: { name: "Nova", domain: "Mathematics", icon: "🔢", color: "#7C3AED", tier: "core", avatar: "/images/tutors/nova.png" },
-  sage: { name: "Sage", domain: "English Language Arts", icon: "📚", color: "#10B981", tier: "core", avatar: "/images/tutors/sage.png" },
-  spark: { name: "Spark", domain: "Science", icon: "🔬", color: "#F59E0B", tier: "core", avatar: "/images/tutors/spark.png" },
-  chrono: { name: "Chrono", domain: "History & Social Studies", icon: "🏛️", color: "#6366F1", tier: "core", avatar: "/images/tutors/chrono.png" },
-  pixel: { name: "Pixel", domain: "Coding & Computational Thinking", icon: "💻", color: "#06B6D4", tier: "core", avatar: "/images/tutors/pixel.png" },
-  echo: { name: "Echo", domain: "Speech & Language Therapy", icon: "🗣️", color: "#EC4899", tier: "core", avatar: "/images/tutors/echo.png" },
-  harmony: { name: "Harmony", domain: "Social-Emotional Learning", icon: "💜", color: "#8B5CF6", tier: "core", avatar: "/images/tutors/harmony.png" },
-  atlas: { name: "Atlas", domain: "Geography & World Cultures", icon: "🌍", color: "#14B8A6", tier: "expansion", avatar: "/images/tutors/atlas.png" },
-  cadence: { name: "Cadence", domain: "Music & Rhythm", icon: "🎵", color: "#D946EF", tier: "expansion", avatar: "/images/tutors/cadence.png" },
-  vigor: { name: "Vigor", domain: "Physical Education & Health", icon: "🏃", color: "#22C55E", tier: "expansion", avatar: "/images/tutors/vigor.png" },
-  lingua: { name: "Lingua", domain: "World Languages", icon: "🌐", color: "#0EA5E9", tier: "expansion", avatar: "/images/tutors/lingua.png" },
-  forge: { name: "Forge", domain: "STEM & Engineering", icon: "⚙️", color: "#EF4444", tier: "expansion", avatar: "/images/tutors/forge.png" },
-  compass: { name: "Compass", domain: "Life Skills & Executive Function", icon: "🧭", color: "#F97316", tier: "expansion", avatar: "/images/tutors/compass.png" },
-  muse: { name: "Muse", domain: "Creative Arts & Expression", icon: "🎨", color: "#A855F7", tier: "expansion", avatar: "/images/tutors/muse.png" },
+  nova:    { name: "Nova",    domain: "Mathematics",                      icon: "🔢", color: "#7C3AED", tier: "core",      tiers: ALL_TIERS,       avatar: "/images/tutors/nova.png" },
+  sage:    { name: "Sage",    domain: "English Language Arts",            icon: "📚", color: "#10B981", tier: "core",      tiers: ALL_TIERS,       avatar: "/images/tutors/sage.png" },
+  spark:   { name: "Spark",   domain: "Science",                          icon: "🔬", color: "#F59E0B", tier: "core",      tiers: ALL_TIERS,       avatar: "/images/tutors/spark.png" },
+  chrono:  { name: "Chrono",  domain: "History & Social Studies",         icon: "🏛️", color: "#6366F1", tier: "core",      tiers: SECONDARY_TIERS, avatar: "/images/tutors/chrono.png" },
+  pixel:   { name: "Pixel",   domain: "Coding & Computational Thinking",  icon: "💻", color: "#06B6D4", tier: "core",      tiers: ALL_TIERS,       avatar: "/images/tutors/pixel.png" },
+  echo:    { name: "Echo",    domain: "Speech & Language Therapy",        icon: "🗣️", color: "#EC4899", tier: "core",      tiers: ALL_TIERS,       avatar: "/images/tutors/echo.png" },
+  harmony: { name: "Harmony", domain: "Social-Emotional Learning",        icon: "💜", color: "#8B5CF6", tier: "core",      tiers: ALL_TIERS,       avatar: "/images/tutors/harmony.png" },
+  atlas:   { name: "Atlas",   domain: "Geography & World Cultures",       icon: "🌍", color: "#14B8A6", tier: "expansion", tiers: ALL_TIERS,       avatar: "/images/tutors/atlas.png" },
+  cadence: { name: "Cadence", domain: "Music & Rhythm",                   icon: "🎵", color: "#D946EF", tier: "expansion", tiers: ALL_TIERS,       avatar: "/images/tutors/cadence.png" },
+  vigor:   { name: "Vigor",   domain: "Physical Education & Health",      icon: "🏃", color: "#22C55E", tier: "expansion", tiers: ALL_TIERS,       avatar: "/images/tutors/vigor.png" },
+  lingua:  { name: "Lingua",  domain: "World Languages",                  icon: "🌐", color: "#0EA5E9", tier: "expansion", tiers: SECONDARY_TIERS, avatar: "/images/tutors/lingua.png" },
+  forge:   { name: "Forge",   domain: "STEM & Engineering",               icon: "⚙️", color: "#EF4444", tier: "expansion", tiers: SECONDARY_TIERS, avatar: "/images/tutors/forge.png" },
+  compass: { name: "Compass", domain: "Life Skills & Executive Function", icon: "🧭", color: "#F97316", tier: "expansion", tiers: SECONDARY_TIERS, avatar: "/images/tutors/compass.png" },
+  muse:    { name: "Muse",    domain: "Creative Arts & Expression",       icon: "🎨", color: "#A855F7", tier: "expansion", tiers: ALL_TIERS,       avatar: "/images/tutors/muse.png" },
 } as const;
+
+/**
+ * Filter the catalogue down to tutors that fit the given age tier.
+ * Returns `[key, tutor]` entries in the catalogue's natural order.
+ *
+ * If `tier` is `null` / `undefined` (e.g. learner grade not yet loaded),
+ * the full catalogue is returned — never hide tutors just because we
+ * haven't finished loading a profile.
+ */
+export function getTutorsForTier(
+  tier: AgeTier | null | undefined,
+): Array<[keyof typeof TUTORS, typeof TUTORS[keyof typeof TUTORS]]> {
+  const entries = Object.entries(TUTORS) as Array<
+    [keyof typeof TUTORS, typeof TUTORS[keyof typeof TUTORS]]
+  >;
+  if (!tier) return entries;
+  return entries.filter(([, t]) => (t.tiers as readonly AgeTier[]).includes(tier));
+}
 
 export const FUNCTIONING_LEVELS = {
   STANDARD: {

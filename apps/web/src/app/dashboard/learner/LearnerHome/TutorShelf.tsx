@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
-import { TUTORS } from "@aivo/brand";
-import { useFlVariant } from "@aivo/learner-ui";
+import { getTutorsForTier } from "@aivo/brand";
+import { useFlVariant, useTierThemeOptional } from "@aivo/learner-ui";
 import { useTranslations } from "next-intl";
 
 interface TutorShelfProps {
@@ -11,8 +11,11 @@ interface TutorShelfProps {
 
 export function TutorShelf({ onSelectTutor, recentTutorKey }: TutorShelfProps) {
   const { profile, isLow, isPreSymbolic } = useFlVariant();
+  const tierCtx = useTierThemeOptional();
   const t = useTranslations("learner");
-  const allTutors = Object.entries(TUTORS);
+  // Filter tutors by the learner's age tier — Chrono / Lingua / Forge /
+  // Compass are hidden for K-5 because they aren't curricular fits there.
+  const allTutors = getTutorsForTier(tierCtx?.theme.id ?? null);
 
   if (isPreSymbolic) return null;
 

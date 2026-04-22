@@ -1,7 +1,7 @@
 "use client";
 import { Map, Calculator, BookOpen, Beaker, Hourglass, Code2, ChevronRight, Swords, Camera } from "lucide-react";
-import { TUTORS } from "@aivo/brand";
-import { useFlVariant, LearnerCard } from "@aivo/learner-ui";
+import { TUTORS, getTutorsForTier } from "@aivo/brand";
+import { useFlVariant, LearnerCard, useTierThemeOptional } from "@aivo/learner-ui";
 import { useTranslations } from "next-intl";
 
 interface AdventuresTabProps {
@@ -18,7 +18,15 @@ const QUEST_WORLDS = [
 
 export function AdventuresTab({ onNavigate }: AdventuresTabProps) {
   const { isLow } = useFlVariant();
+  const tierCtx = useTierThemeOptional();
   const t = useTranslations("learner");
+
+  // Hide quest worlds whose tutor isn't curricular for this learner's tier
+  // (e.g. Chrono / world_time is removed for K-5 EARLY learners).
+  const allowedTutorKeys = new Set(
+    getTutorsForTier(tierCtx?.theme.id ?? null).map(([k]) => k),
+  );
+  const visibleQuests = QUEST_WORLDS.filter((w) => allowedTutorKeys.has(w.tutor));
 
   return (
     <div className="space-y-6">
@@ -30,7 +38,7 @@ export function AdventuresTab({ onNavigate }: AdventuresTabProps) {
           <h3 className="font-extrabold text-slate-900">{isLow ? t("adventures_title_simple") : t("quest_worlds_title")}</h3>
         </div>
         <div className="space-y-2">
-          {QUEST_WORLDS.slice(0, isLow ? 3 : 5).map((world) => {
+          {visibleQuests.slice(0, isLow ? 3 : 5).map((world) => {
             const tutor = TUTORS[world.tutor as keyof typeof TUTORS];
             const color = tutor?.color || "#7C3AED";
             const Icon = world.Icon;

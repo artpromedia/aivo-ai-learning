@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { TUTORS, type TutorKey } from "@aivo/brand";
+import { type TutorKey, getTutorsForTier, TUTORS } from "@aivo/brand";
+import { useTierThemeOptional } from "@aivo/learner-ui";
 import { useTranslations } from "next-intl";
 
 export default function LearnerTutorsPage() {
@@ -16,6 +17,7 @@ export default function LearnerTutorsPage() {
   const [activeTutors, setActiveTutors] = useState<string[]>([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
   const [filter, setFilter] = useState<"all" | "active" | "locked">("all");
+  const tierCtx = useTierThemeOptional();
 
   useEffect(() => { if (!loading && !user) router.push("/login"); }, [user, loading, router]);
 
@@ -35,7 +37,9 @@ export default function LearnerTutorsPage() {
 
   if (loading || !user) return null;
 
-  const tutorEntries = Object.entries(TUTORS) as [TutorKey, typeof TUTORS[TutorKey]][];
+  // Filter to tutors that fit this learner's age tier (e.g. K-5 hides
+  // Chrono / Lingua / Forge / Compass).
+  const tutorEntries = getTutorsForTier(tierCtx?.theme.id ?? null) as [TutorKey, typeof TUTORS[TutorKey]][];
   const isActive = (key: string) => activeTutors.some(sku => sku.toLowerCase().includes(key.toLowerCase()));
 
   const filtered = tutorEntries.filter(([key]) => {
