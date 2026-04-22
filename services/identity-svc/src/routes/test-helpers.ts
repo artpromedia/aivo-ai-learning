@@ -11,7 +11,14 @@
  * defense-in-depth (so flipping the flag at runtime instantly disables them).
  */
 import { FastifyInstance } from "fastify";
-import { users, mfaCodes, tenants } from "@aivo/db";
+import {
+  users,
+  mfaCodes,
+  tenants,
+  learners,
+  iepProfiles,
+  iepProgressNotes,
+} from "@aivo/db";
 import { eq, and, sql } from "drizzle-orm";
 import argon2 from "argon2";
 
@@ -101,5 +108,157 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
     }
 
     return { id: user.id, email: user.email, role: user.role, tenantId: tenant.id };
+  });
+
+  // Idempotent seeding for the parent IEP "Updates" timeline e2e fixture.
+  // Builds two tenants:
+  //   - Tenant A (B2C_FAMILY): a PARENT with a LEARNER child + a finalised
+  //     IEP profile + two progress notes (one parent-visible, one internal).
+  //   - Tenant B (B2B_SCHOOL): a TEACHER with no relationship to the
+  //     learner above. Used to assert cross-tenant access is blocked.
+  // Re-running the endpoint resets passwords + replaces the seeded notes
+  // so the spec sees a deterministic timeline on every run.
+  app.post<{
+    Body: {
+      parentEmail: string;
+      parentPassword: string;
+      teacherEmail: string;
+      teacherPassword: string;
+      learnerName?: string;
+      parentNoteBody?: string;
+      internalNoteBody?: string;
+    };
+  }>("/api/__test__/seed-iep-timeline-fixture", async (req, reply) => {
+    if (!testModeEnabled()) return reply.status(404).send({ error: "Not found" });
+    const db = (app as any).db;
+    const {
+      parentEmail,
+      parentPassword,
+      teacherEmail,
+      teacherPassword,
+      learnerName = "E2E Updates Learner",
+      parentNoteBody = "PARENT_VISIBLE_NOTE_BODY: timeline e2e parent-visible",
+      internalNoteBody = "INTERNAL_ONLY_NOTE_BODY: timeline e2e internal-only",
+    } = req.body;
+    if (!parentEmail || !parentPassword || !teacherEmail || !teacherPassword) {
+      return reply.status(400).send({
+        error: "parentEmail, parentPassword, teacherEmail, teacherPassword required",
+      });
+    }
+    if (parentEmail.toLowerCase() === teacherEmail.toLowerCase()) {
+      return reply.status(400).send({ error: "parent and teacher emails must differ" });
+    }
+
+    // Two distinct tenants — names keyed off the email so concurrent runs
+    // with different fixtures don't collide.
+    const parentTenantName = `E2E Family Tenant <${parentEmail.toLowerCase()}>`;
+    const teacherTenantName = `E2E School Tenant <${teacherEmail.toLowerCase()}>`;
+
+    let [parentTenant] = await db.select().from(tenants).where(eq(tenants.name, parentTenantName)).limit(1);
+    if (!parentTenant) {
+      [parentTenant] = await db.insert(tenants)
+        .values({ name: parentTenantName, type: "B2C_FAMILY" as any })
+        .returning();
+    }
+    let [teacherTenant] = await db.select().from(tenants).where(eq(tenants.name, teacherTenantName)).limit(1);
+    if (!teacherTenant) {
+      [teacherTenant] = await db.insert(tenants)
+        .values({ name: teacherTenantName, type: "B2B_SCHOOL" as any })
+        .returning();
+    }
+
+    async function upsertUser(email: string, password: string, role: string, name: string, tenantId: string) {
+      const lc = email.toLowerCase();
+      const passwordHash = await argon2.hash(password);
+      let [u] = await db.select().from(users).where(eq(users.email, lc)).limit(1);
+      if (u) {
+        await db.update(users).set({
+          passwordHash, role: role as any, tenantId,
+          mfaEnabled: false, deactivatedAt: null,
+        }).where(eq(users.id, u.id));
+        [u] = await db.select().from(users).where(eq(users.id, u.id)).limit(1);
+      } else {
+        [u] = await db.insert(users).values({
+          email: lc, name, passwordHash, role: role as any, tenantId, mfaEnabled: false,
+        }).returning();
+      }
+      return u;
+    }
+
+    const parentUser = await upsertUser(parentEmail, parentPassword, "PARENT", "E2E Parent", parentTenant.id);
+    const teacherUser = await upsertUser(teacherEmail, teacherPassword, "TEACHER", "E2E Teacher", teacherTenant.id);
+
+    // Learner needs an underlying user row (LEARNER role). Look up by a
+    // synthetic name+parent pair so we don't need a separate email.
+    const learnerUserName = `${learnerName} <${parentUser.id}>`;
+    let [learnerUser] = await db.select().from(users)
+      .where(and(eq(users.name, learnerUserName), eq(users.role, "LEARNER" as any))).limit(1);
+    if (!learnerUser) {
+      [learnerUser] = await db.insert(users).values({
+        name: learnerUserName, role: "LEARNER" as any, tenantId: parentTenant.id,
+      }).returning();
+    } else if (learnerUser.tenantId !== parentTenant.id) {
+      await db.update(users).set({ tenantId: parentTenant.id }).where(eq(users.id, learnerUser.id));
+    }
+
+    let [learner] = await db.select().from(learners)
+      .where(and(eq(learners.userId, learnerUser.id), eq(learners.parentId, parentUser.id))).limit(1);
+    if (!learner) {
+      [learner] = await db.insert(learners).values({
+        tenantId: parentTenant.id,
+        userId: learnerUser.id,
+        parentId: parentUser.id,
+        name: learnerName,
+        gradeLevel: "3",
+      }).returning();
+    } else if (learner.tenantId !== parentTenant.id) {
+      await db.update(learners).set({ tenantId: parentTenant.id })
+        .where(eq(learners.id, learner.id));
+    }
+
+    let [profile] = await db.select().from(iepProfiles)
+      .where(eq(iepProfiles.learnerId, learner.id))
+      .orderBy(sql`updated_at DESC`)
+      .limit(1);
+    if (!profile) {
+      [profile] = await db.insert(iepProfiles).values({
+        learnerId: learner.id,
+        source: "authored",
+        lifecycleState: "finalised",
+        gradeLevel: "3",
+      }).returning();
+    } else if (profile.lifecycleState !== "finalised") {
+      [profile] = await db.update(iepProfiles)
+        .set({ lifecycleState: "finalised", updatedAt: new Date() })
+        .where(eq(iepProfiles.id, profile.id))
+        .returning();
+    }
+
+    // Reset notes for this profile so each run starts clean — otherwise
+    // re-runs would accumulate duplicates that confuse the assertions.
+    await db.delete(iepProgressNotes).where(eq(iepProgressNotes.iepProfileId, profile.id));
+    const [parentNote] = await db.insert(iepProgressNotes).values({
+      iepProfileId: profile.id,
+      learnerId: learner.id,
+      authorId: parentUser.id,
+      body: parentNoteBody,
+      visibility: "parent",
+    }).returning();
+    const [internalNote] = await db.insert(iepProgressNotes).values({
+      iepProfileId: profile.id,
+      learnerId: learner.id,
+      authorId: parentUser.id,
+      body: internalNoteBody,
+      visibility: "internal",
+    }).returning();
+
+    return {
+      parent: { id: parentUser.id, email: parentUser.email, tenantId: parentTenant.id },
+      teacher: { id: teacherUser.id, email: teacherUser.email, tenantId: teacherTenant.id },
+      learner: { id: learner.id, name: learner.name, tenantId: parentTenant.id },
+      iepProfileId: profile.id,
+      notes: { parentNoteId: parentNote.id, internalNoteId: internalNote.id },
+      bodies: { parent: parentNoteBody, internal: internalNoteBody },
+    };
   });
 }
