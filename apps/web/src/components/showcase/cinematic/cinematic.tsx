@@ -7,26 +7,29 @@ import { useState, useEffect } from "react";
    Backgrounds are cream/sky/peach, never near-black.
    Text is warm dark plum (#3D3050), never pure black.
    ============================================================ */
+/* AIVO brand alignment — primary #7C3AED violet, accent #FFB700 gold,
+   text #292F3D, fonts Fredoka (display) + Nunito (body). */
 const C = {
-  cream: "#FFF6E8",
-  creamSoft: "#FFF0DC",
-  sky: "#CFEAF5",
-  skyDeep: "#A6D5E8",
-  mint: "#C9EAD4",
-  mintDeep: "#9DD6B5",
+  cream: "#FFFAEF",
+  creamSoft: "#FBF1DE",
+  sky: "#EDE3FE",
+  skyDeep: "#7BC2E5",
+  mint: "#EDE3FE",
+  mintDeep: "#C4B0F0",
   peach: "#F8C4A0",
   peachDeep: "#EFA47A",
-  coral: "#F2876B",
-  butter: "#FFE3A0",
+  coral: "#7C3AED",
+  butter: "#FFB700",
   lavender: "#E5DBF5",
-  text: "#3D3050",
-  textSoft: "#6E5F82",
-  textWhisper: "#9C8FB0",
-  cardBg: "#FFFBF1",
-  shadowSoft: "rgba(125, 99, 159, 0.18)",
+  text: "#292F3D",
+  textSoft: "#5C5067",
+  textWhisper: "#9189A1",
+  cardBg: "#FFFCF4",
+  shadowSoft: "rgba(124, 58, 237, 0.18)",
 };
 
-const FONT = "'Lexend', 'Atkinson Hyperlegible', 'Nunito', system-ui, sans-serif";
+const FONT = "'Nunito', 'Lexend', system-ui, sans-serif";
+const FONT_DISPLAY = "'Fredoka', 'Nunito', system-ui, sans-serif";
 
 /* ============================================================
    CHARACTER — Sora, a round friendly creature.
@@ -234,7 +237,7 @@ export function SceneFrame({
   return (
     <div style={{ position: "relative", minHeight: "100vh", overflow: "hidden", color: C.text, fontFamily: FONT }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Lexend:wght@400;500;600&display=swap');
         @keyframes soft-pulse { 0%,100% { transform: scale(1); opacity: 0.95; } 50% { transform: scale(1.03); opacity: 1; } }
         @keyframes float-soft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         @keyframes drift { 0% { transform: translate(0,0) rotate(0deg); } 50% { transform: translate(10px,-8px) rotate(8deg); } 100% { transform: translate(0,0) rotate(0deg); } }
@@ -390,7 +393,7 @@ export function SceneArrive() {
           </div>
           <h1
             style={{
-              fontFamily: FONT,
+              fontFamily: FONT_DISPLAY,
               fontWeight: 600,
               fontSize: 36,
               letterSpacing: "-0.005em",
@@ -784,7 +787,7 @@ export function SceneCelebrate() {
         </div>
         <h2
           style={{
-            fontFamily: FONT,
+            fontFamily: FONT_DISPLAY,
             fontWeight: 600,
             fontSize: 28,
             margin: "0 0 16px 0",

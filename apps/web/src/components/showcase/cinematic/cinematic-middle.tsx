@@ -9,25 +9,28 @@ import { useState, useEffect } from "react";
    without losing calm. Sentence-case Lexend, no italics.
    ============================================================ */
 
+/* AIVO brand alignment — keep wood tones (real material), but
+   swap mascot accent (rust → brand violet #7C3AED) and lantern
+   light (ochre → brand accent gold #FFB700). Brand fonts. */
 const C = {
   wood: "#8B6F47",
   woodDeep: "#5D4830",
   woodLight: "#B89A72",
   moss: "#5D7A5C",
   mossDeep: "#3F5840",
-  ochre: "#D4A574",
-  rust: "#C7785C",
+  ochre: "#FFB700",
+  rust: "#7C3AED",
   parchment: "#F5EBD8",
   parchmentSoft: "#FAF1DD",
-  inkNavy: "#2A3447",
-  ink: "#1F2937",
-  inkSoft: "#5B6577",
+  inkNavy: "#1F1535",
+  ink: "#292F3D",
+  inkSoft: "#5B5067",
   starGlow: "#FFE6A8",
   cream: "#FFF8E8",
 };
 
-const FONT_HEAD = "'Crimson Pro', 'Iowan Old Style', Georgia, serif";
-const FONT_BODY = "'Lexend', 'Atkinson Hyperlegible', system-ui, sans-serif";
+const FONT_HEAD = "'Fredoka', 'Nunito', system-ui, sans-serif";
+const FONT_BODY = "'Nunito', 'Lexend', system-ui, sans-serif";
 
 /* Kai — a chibi-style explorer in a hooded cloak. Soft, friendly. */
 function Kai({ size = 200, expression = "calm" }: { size?: number; expression?: "calm" | "smile" | "wave" }) {
@@ -91,7 +94,7 @@ function FrameMiddle({ step, label, children }: { step: string; label: string; c
   return (
     <div style={{ position: "relative", minHeight: "100vh", overflow: "hidden", color: C.parchment, fontFamily: FONT_BODY }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Lexend:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap');
         @keyframes glow { 0%,100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
         @keyframes float-soft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         @keyframes twinkle { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
@@ -310,7 +313,7 @@ export function SceneEngageMiddle() {
     <FrameMiddle step="Scene 02" label="mapping a constellation">
       {/* deep night sky */}
       <div style={{ position: "absolute", inset: 0,
-        background: `radial-gradient(ellipse at 70% 30%, #3F4D6E 0%, ${C.inkNavy} 50%, #14182A 100%)` }} />
+        background: `radial-gradient(ellipse at 70% 30%, #3F2D6E 0%, ${C.inkNavy} 50%, #14102A 100%)` }} />
 
       {/* faint stars background */}
       <svg viewBox="0 0 1280 720" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>

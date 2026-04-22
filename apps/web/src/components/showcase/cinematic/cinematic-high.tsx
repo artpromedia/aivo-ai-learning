@@ -9,24 +9,27 @@ import { useState, useEffect } from "react";
    Generous whitespace, large editorial type, mood-driven gradients.
    ============================================================ */
 
+/* AIVO brand alignment — editorial dark mode using brand violet
+   (#7C3AED primary, #5B21B6 deep) instead of teal, with brand gold
+   (#FFB700) as accent for highlights. Brand text + fonts. */
 const C = {
   paper: "#F4EFE6",
   paperWarm: "#EDE6D6",
-  ink: "#1B1F26",
-  inkSoft: "#5C5F66",
-  inkWhisper: "#94969C",
-  teal: "#1F3D40",
-  tealDeep: "#0F2226",
-  tealAccent: "#2E6E70",
-  sienna: "#B85C3C",
-  siennaSoft: "#D77E5E",
+  ink: "#292F3D",
+  inkSoft: "#5C5067",
+  inkWhisper: "#9189A1",
+  teal: "#5B21B6",
+  tealDeep: "#1F0E40",
+  tealAccent: "#7C3AED",
+  sienna: "#7C3AED",
+  siennaSoft: "#FFB700",
   cream: "#FAF6EE",
-  border: "#E0D9C8",
-  glassDark: "rgba(15, 34, 38, 0.7)",
+  border: "#E5DBF5",
+  glassDark: "rgba(31, 14, 64, 0.7)",
 };
 
-const FONT_HEAD = "'Fraunces', 'Tiempos', Georgia, serif";
-const FONT_BODY = "'Inter', 'Söhne', system-ui, -apple-system, sans-serif";
+const FONT_HEAD = "'Fredoka', 'Nunito', system-ui, sans-serif";
+const FONT_BODY = "'Nunito', 'Inter', system-ui, -apple-system, sans-serif";
 
 function FrameHigh({ step, label, theme = "light", children }: { step: string; label: string; theme?: "light" | "dark"; children: React.ReactNode }) {
   const bg = theme === "light" ? C.paper : C.tealDeep;
@@ -34,7 +37,7 @@ function FrameHigh({ step, label, theme = "light", children }: { step: string; l
   return (
     <div style={{ position: "relative", minHeight: "100vh", overflow: "hidden", color: fg, fontFamily: FONT_BODY, background: bg }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap');
         @keyframes orb-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(20px, -15px) scale(1.05); } }
         @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.4); opacity: 0; } }
         @keyframes wave { 0% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } 100% { transform: scaleY(0.3); } }
@@ -105,8 +108,8 @@ export function SceneArriveHigh() {
   return (
     <FrameHigh step="Scene 01" label="arriving">
       {/* ambient orbs */}
-      <GradientOrb x="-10%" y="-5%" size={520} colors={["#F2C2A8", "#E89C7A"]} />
-      <GradientOrb x="65%" y="55%" size={460} colors={["#A8D6D2", "#5FA7A4"]} />
+      <GradientOrb x="-10%" y="-5%" size={520} colors={["#FFE08A", "#FFB700"]} />
+      <GradientOrb x="65%" y="55%" size={460} colors={["#C4B0F0", "#7C3AED"]} />
 
       <div style={{
         position: "relative", zIndex: 10,
@@ -134,7 +137,7 @@ export function SceneArriveHigh() {
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 12,
           padding: "10px 16px", borderRadius: 999,
-          background: "rgba(31, 61, 64, 0.06)",
+          background: "rgba(124, 58, 237, 0.08)",
           color: C.teal, fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600,
           marginBottom: 56,
         }}>
@@ -233,8 +236,8 @@ export function SceneEngageHigh() {
   return (
     <FrameHigh step="Scene 02" label="inside a focus session" theme="dark">
       {/* ambient breathing background */}
-      <GradientOrb x="-15%" y="20%" size={500} colors={["#2E6E70", "#1B4244"]} />
-      <GradientOrb x="60%" y="-5%" size={420} colors={["#B85C3C44", "#1F3D4044"]} />
+      <GradientOrb x="-15%" y="20%" size={500} colors={["#5B21B6", "#1F0E40"]} />
+      <GradientOrb x="60%" y="-5%" size={420} colors={["#FFB70044", "#7C3AED44"]} />
 
       {/* central layout */}
       <div style={{ position: "relative", zIndex: 10, padding: "100px 64px 56px", maxWidth: 1180, margin: "0 auto" }}>
@@ -343,8 +346,8 @@ export function SceneEngageHigh() {
             {reasoningOpen && (
               <div style={{
                 marginTop: 18, padding: "20px 24px", borderRadius: 14,
-                background: "rgba(184, 92, 60, 0.12)",
-                border: `1px solid rgba(184, 92, 60, 0.3)`,
+                background: "rgba(255, 183, 0, 0.12)",
+                border: `1px solid rgba(255, 183, 0, 0.35)`,
                 color: C.cream, fontSize: 15, lineHeight: 1.6,
               }}>
                 <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: C.siennaSoft, marginBottom: 8 }}>From Atlas</div>
@@ -378,8 +381,8 @@ export function SceneCloseHigh() {
   const [mood, setMood] = useState<number | null>(2);
   return (
     <FrameHigh step="Scene 03" label="closing the session">
-      <GradientOrb x="-10%" y="50%" size={520} colors={["#F2C2A8", "#E89C7A"]} />
-      <GradientOrb x="70%" y="-10%" size={460} colors={["#A8D6D2", "#5FA7A4"]} />
+      <GradientOrb x="-10%" y="50%" size={520} colors={["#FFE08A", "#FFB700"]} />
+      <GradientOrb x="70%" y="-10%" size={460} colors={["#C4B0F0", "#7C3AED"]} />
 
       <div style={{ position: "relative", zIndex: 10, padding: "120px 64px 64px", maxWidth: 1000, margin: "0 auto" }}>
 
