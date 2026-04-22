@@ -43,7 +43,7 @@ export default function DistrictAnalyticsPage() {
       .finally(() => setLoading(false));
   }, [accessToken]);
 
-  const maxCount = Math.max(1, ...cohorts.map((c) => c.count));
+  const maxCount = Math.max(1, ...(cohorts ?? []).map((c) => Number(c?.count) || 0));
   const rc = stats?.roleCounts ?? [];
 
   return (

@@ -71,9 +71,10 @@ export default function MarketingDashboard() {
       <div className="vi-card p-6">
         <h2 className="font-heading font-bold text-lg vi-text mb-4">Acquisition Channels</h2>
         <div className="space-y-3">
-          {channels.map((ch) => {
-            const maxVisitors = Math.max(...channels.map((c) => c.visitors));
-            const pct = (ch.visitors / maxVisitors) * 100;
+          {(() => {
+            const maxVisitors = Math.max(1, ...(channels ?? []).map((c) => Number(c?.visitors) || 0));
+            return (channels ?? []).map((ch) => {
+              const pct = ((Number(ch?.visitors) || 0) / maxVisitors) * 100;
             return (
               <div key={ch.name} className="flex items-center gap-4">
                 <span className="text-sm font-semibold vi-text w-44">{ch.name}</span>
@@ -85,7 +86,8 @@ export default function MarketingDashboard() {
                 <span className="text-xs vi-text-muted w-12 text-right">{ch.conversion}%</span>
               </div>
             );
-          })}
+            });
+          })()}
         </div>
       </div>
 

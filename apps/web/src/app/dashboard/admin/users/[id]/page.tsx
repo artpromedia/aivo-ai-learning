@@ -431,7 +431,7 @@ export default function AdminUserDetailPage() {
         </div>
       </div>
 
-      {userData.learners && userData.learners.length > 0 && (
+      {userData?.learners && userData.learners.length > 0 && (
         <div className="vi-card overflow-hidden">
           <div className="p-5 border-b vi-border">
             <h2 className="text-sm font-semibold vi-text-muted uppercase tracking-wider">Learners ({userData.learners.length})</h2>
@@ -447,7 +447,7 @@ export default function AdminUserDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {userData.learners.map((learner) => (
+              {(userData.learners ?? []).map((learner) => (
                 <tr key={learner.id} className="border-b vi-border hover:vi-bg/50 transition">
                   <td className="px-5 py-3 font-medium vi-text">{learner.name}</td>
                   <td className="px-5 py-3 vi-text-muted">{learner.functioningLevel || "—"}</td>

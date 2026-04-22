@@ -139,7 +139,7 @@ export default function LearnerDetailPage() {
               <p className="vi-text-muted">No IEP records found for this learner.</p>
             </div>
           ) : (
-            data.ieps.map((iep: any) => (
+            (data.ieps ?? []).map((iep: any) => (
               <div key={iep.id} className="vi-card p-6 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-semibold vi-text">IEP Record</h3>
@@ -181,7 +181,7 @@ export default function LearnerDetailPage() {
               <p className="vi-text-muted">No interventions found for this learner.</p>
             </div>
           ) : (
-            data.interventions.map((iv: any) => (
+            (data.interventions ?? []).map((iv: any) => (
               <div key={iv.id} className="vi-card p-6 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

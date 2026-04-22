@@ -512,11 +512,11 @@ function UploadCard({
 
       {focus.summary && <p className="text-sm vi-text">{focus.summary}</p>}
 
-      {focus.topics && focus.topics.length > 0 && (
+      {focus?.topics && focus.topics.length > 0 && (
         <div>
           <p className="text-xs font-semibold vi-text-muted mb-1">{t("topics")}</p>
           <div className="flex flex-wrap gap-1.5">
-            {focus.topics.map((tp, i) => (
+            {(focus.topics ?? []).map((tp, i) => (
               <span key={i} className="text-xs bg-[hsl(var(--visual-surface))] vi-text rounded-full px-2 py-1">
                 {tp}
               </span>

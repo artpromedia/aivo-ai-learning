@@ -74,7 +74,7 @@ export default function DistrictDashboardPage() {
   }
 
   const flCounts = stats?.functioningLevelCounts ?? [];
-  const maxFL = Math.max(1, ...flCounts.map((c) => Number(c.count)));
+  const maxFL = Math.max(1, ...flCounts.map((c) => Number(c?.count) || 0));
 
   return (
     <div className="p-8 space-y-6">

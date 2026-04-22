@@ -85,9 +85,10 @@ export default function BillingRevenuePage() {
       <div className="vi-card p-6">
         <h2 className="font-heading font-bold text-lg vi-text mb-4">MRR Trend</h2>
         <div className="flex items-end gap-2 h-48">
-          {revenueData.map((d) => {
-            const maxMRR = Math.max(...revenueData.map((r) => r.mrr));
-            const height = (d.mrr / maxMRR) * 100;
+          {(() => {
+            const maxMRR = Math.max(1, ...(revenueData ?? []).map((r) => Number(r?.mrr) || 0));
+            return (revenueData ?? []).map((d) => {
+              const height = ((Number(d?.mrr) || 0) / maxMRR) * 100;
             return (
               <div key={d.month} className="flex-1 flex flex-col items-center gap-1">
                 <span className="text-[10px] vi-text-muted font-semibold">${(d.mrr / 1000).toFixed(1)}k</span>
@@ -98,7 +99,8 @@ export default function BillingRevenuePage() {
                 <span className="text-[10px] vi-text-muted">{d.month}</span>
               </div>
             );
-          })}
+            });
+          })()}
         </div>
       </div>
 

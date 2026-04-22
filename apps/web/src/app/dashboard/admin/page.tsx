@@ -161,9 +161,11 @@ export default function AdminOverview() {
           </div>
           {stats?.roleCounts && stats.roleCounts.length > 0 ? (
             <div className="space-y-3">
-              {stats.roleCounts.map((rc) => {
-                const max = Math.max(...stats.roleCounts.map((r) => r.count));
-                const pct = max > 0 ? (rc.count / max) * 100 : 0;
+              {(() => {
+                const roleCounts = stats?.roleCounts ?? [];
+                const max = Math.max(1, ...roleCounts.map((r) => Number(r?.count) || 0));
+                return roleCounts.map((rc) => {
+                  const pct = ((Number(rc?.count) || 0) / max) * 100;
                 return (
                   <div key={rc.role} className="flex items-center gap-4">
                     <span className={`px-3 py-1 text-xs rounded-full font-semibold w-36 text-center ${ROLE_COLORS[rc.role] || "vi-surface-soft vi-text-muted"}`}>
@@ -175,7 +177,8 @@ export default function AdminOverview() {
                     <span className="text-sm font-bold vi-text w-10 text-right">{rc.count}</span>
                   </div>
                 );
-              })}
+                });
+              })()}
             </div>
           ) : (
             <p className="text-sm vi-text-muted">Loading role data...</p>

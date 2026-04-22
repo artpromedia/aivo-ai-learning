@@ -71,9 +71,10 @@ export default function SalesDashboard() {
       <div className="vi-card p-6">
         <h2 className="font-heading font-bold text-lg vi-text mb-4">{t("overview")}</h2>
         <div className="space-y-3">
-          {pipeline.map((stage) => {
-            const maxCount = Math.max(...pipeline.map((s) => s.count));
-            const pct = (stage.count / maxCount) * 100;
+          {(() => {
+            const maxCount = Math.max(1, ...(pipeline ?? []).map((s) => Number(s?.count) || 0));
+            return (pipeline ?? []).map((stage) => {
+              const pct = ((Number(stage?.count) || 0) / maxCount) * 100;
             return (
               <div key={stage.stage} className="flex items-center gap-4">
                 <span className="text-sm font-semibold vi-text w-36">{stage.stage}</span>
@@ -84,7 +85,8 @@ export default function SalesDashboard() {
                 <span className="text-xs vi-text-muted w-20 text-right">{stage.value}</span>
               </div>
             );
-          })}
+            });
+          })()}
         </div>
       </div>
 
