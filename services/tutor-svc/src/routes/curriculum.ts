@@ -148,6 +148,15 @@ async function parseWithAI(args: {
 const MAX_TEXT_LEN = 32000;
 const MAX_BASE64_LEN = 7_000_000; // ~5 MB raw
 
+const ALLOWED_MIME_PREFIXES = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/heic", "image/heif"];
+const ALLOWED_MIME_EXACT = new Set(["application/pdf", "text/plain"]);
+function isAllowedMimeType(mt: unknown): boolean {
+  if (typeof mt !== "string" || mt.length === 0) return false;
+  const lower = mt.toLowerCase().split(";")[0].trim();
+  if (ALLOWED_MIME_EXACT.has(lower)) return true;
+  return ALLOWED_MIME_PREFIXES.some((p) => lower === p);
+}
+
 export async function getActiveCurriculumFocus(
   db: any,
   learnerId: string,
@@ -215,6 +224,11 @@ export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
     if (imageBase64 && imageBase64.length > MAX_BASE64_LEN) {
       return reply.code(413).send({ error: "Uploaded file is too large (max 5 MB)" });
     }
+    if (imageBase64 && !isAllowedMimeType(body.mimeType)) {
+      return reply.code(415).send({
+        error: "Unsupported file type. Please upload an image (PNG/JPG/WebP), PDF, or plain text.",
+      });
+    }
     try {
       const { parsed, rawText } = await parseWithAI({
         text,
@@ -248,12 +262,21 @@ export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
     const text: string | undefined = typeof body.text === "string" ? body.text.slice(0, MAX_TEXT_LEN) : undefined;
     const imageBase64: string | undefined =
       typeof body.imageBase64 === "string" ? body.imageBase64 : undefined;
+    const hasParsed = body.parsedFocus && typeof body.parsedFocus === "object";
 
-    if (!text && !imageBase64) {
-      return reply.code(400).send({ error: "Provide either text or imageBase64" });
+    // When the client sent a reviewed parsedFocus from /parse-preview, raw
+    // text/image are optional (already consumed during preview). Otherwise
+    // the server has to parse, so we need raw input.
+    if (!hasParsed && !text && !imageBase64) {
+      return reply.code(400).send({ error: "Provide either text or imageBase64 (or parsedFocus from preview)" });
     }
     if (imageBase64 && imageBase64.length > MAX_BASE64_LEN) {
       return reply.code(413).send({ error: "Uploaded file is too large (max 5 MB)" });
+    }
+    if (imageBase64 && !isAllowedMimeType(body.mimeType)) {
+      return reply.code(415).send({
+        error: "Unsupported file type. Please upload an image (PNG/JPG/WebP), PDF, or plain text.",
+      });
     }
 
     const isTeacher = authUser.role === "TEACHER";

@@ -42,9 +42,24 @@ export default function TeacherCurriculumUploader({
   const [weekStart, setWeekStart] = useState("");
   const [weekEnd, setWeekEnd] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  type ParsedFocus = {
+    title?: string;
+    subject?: Subject;
+    weekStart?: string | null;
+    weekEnd?: string | null;
+    topics: string[];
+    keywords: string[];
+    standards: string[];
+    skills: string[];
+    summary: string;
+    confidence?: number;
+  };
+  const [preview, setPreview] = useState<ParsedFocus | null>(null);
 
   const toggleLearner = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -52,7 +67,7 @@ export default function TeacherCurriculumUploader({
   const selectAll = () => setSelectedIds(learners.map((l) => l.id));
   const clearAll = () => setSelectedIds([]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleParse = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
@@ -68,12 +83,10 @@ export default function TeacherCurriculumUploader({
       setError(t("err_file_too_large"));
       return;
     }
-    setSubmitting(true);
+    setParsing(true);
     try {
       const body: Record<string, unknown> = {
-        applyToLearnerIds: selectedIds,
         subject,
-        title: title.trim() || undefined,
         text: text.trim() || undefined,
         weekStart: weekStart || undefined,
         weekEnd: weekEnd || undefined,
@@ -81,8 +94,53 @@ export default function TeacherCurriculumUploader({
       if (file) {
         body.imageBase64 = await fileToBase64(file);
         body.mimeType = file.type || "application/octet-stream";
-        body.fileName = file.name;
       }
+      const res = await fetch("/api/tutors/curriculum/parse-preview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).error || t("err_upload_failed"));
+      }
+      const data = await res.json();
+      const p = (data?.parsed || {}) as Partial<ParsedFocus>;
+      setPreview({
+        title: p.title || title.trim() || undefined,
+        subject: (p.subject as Subject) || subject,
+        weekStart: p.weekStart || weekStart || null,
+        weekEnd: p.weekEnd || weekEnd || null,
+        topics: Array.isArray(p.topics) ? p.topics : [],
+        keywords: Array.isArray(p.keywords) ? p.keywords : [],
+        standards: Array.isArray(p.standards) ? p.standards : [],
+        skills: Array.isArray(p.skills) ? p.skills : [],
+        summary: typeof p.summary === "string" ? p.summary : "",
+        confidence: p.confidence,
+      });
+    } catch (err: any) {
+      setError(err.message || t("err_upload_failed"));
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const handleConfirmSave = async () => {
+    if (!preview) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const body: Record<string, unknown> = {
+        applyToLearnerIds: selectedIds,
+        subject: preview.subject || subject,
+        title: preview.title || title.trim() || undefined,
+        weekStart: preview.weekStart || undefined,
+        weekEnd: preview.weekEnd || undefined,
+        parsedFocus: preview,
+      };
       const res = await fetch("/api/tutors/curriculum/upload", {
         method: "POST",
         headers: {
@@ -102,6 +160,7 @@ export default function TeacherCurriculumUploader({
       setFile(null);
       setWeekStart("");
       setWeekEnd("");
+      setPreview(null);
       if (fileRef.current) fileRef.current.value = "";
     } catch (err: any) {
       setError(err.message || t("err_upload_failed"));
@@ -125,7 +184,7 @@ export default function TeacherCurriculumUploader({
       </button>
 
       {open && (
-        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4 border-t vi-border pt-4">
+        <form onSubmit={handleParse} className="px-6 pb-6 space-y-4 border-t vi-border pt-4">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold vi-text">{t("apply_to_learners")}</span>
@@ -239,12 +298,77 @@ export default function TeacherCurriculumUploader({
           <div className="flex justify-end">
             <button
               type="submit"
-              disabled={submitting}
+              disabled={parsing || submitting}
               className="rounded-lg bg-[hsl(var(--visual-primary))] px-5 py-2 text-white font-semibold disabled:opacity-50"
             >
-              {submitting ? t("submitting") : t("submit")}
+              {parsing ? t("parsing") : t("parse_preview")}
             </button>
           </div>
+
+          {preview && (
+            <div className="rounded-lg border-2 border-[hsl(var(--visual-primary))] p-4 space-y-3 bg-[hsl(var(--visual-surface))]">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold vi-text">{t("review_heading")}</h3>
+                  <p className="text-xs vi-text-muted">{t("review_help")}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreview(null)}
+                  className="text-xs vi-text-muted hover:text-red-600"
+                >
+                  ✕
+                </button>
+              </div>
+              <label className="block">
+                <span className="text-xs font-medium vi-text">{t("title_label")}</span>
+                <input
+                  type="text"
+                  value={preview.title || ""}
+                  onChange={(e) => setPreview({ ...preview, title: e.target.value })}
+                  maxLength={200}
+                  className="mt-1 block w-full rounded border vi-border bg-transparent px-2 py-1 vi-text text-sm"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium vi-text">{t("summary")}</span>
+                <textarea
+                  value={preview.summary}
+                  onChange={(e) => setPreview({ ...preview, summary: e.target.value })}
+                  rows={2}
+                  maxLength={2000}
+                  className="mt-1 block w-full rounded border vi-border bg-transparent px-2 py-1 vi-text text-sm"
+                />
+              </label>
+              {(["topics", "keywords", "standards", "skills"] as const).map((field) => (
+                <label key={field} className="block">
+                  <span className="text-xs font-medium vi-text">{t(field)}</span>
+                  <input
+                    type="text"
+                    value={preview[field].join(", ")}
+                    onChange={(e) =>
+                      setPreview({
+                        ...preview,
+                        [field]: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                      })
+                    }
+                    placeholder={t("comma_separated")}
+                    className="mt-1 block w-full rounded border vi-border bg-transparent px-2 py-1 vi-text text-sm"
+                  />
+                </label>
+              ))}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleConfirmSave}
+                  disabled={submitting}
+                  className="rounded-lg bg-[hsl(var(--visual-primary))] px-4 py-2 text-white font-semibold text-sm disabled:opacity-50"
+                >
+                  {submitting ? t("submitting") : t("confirm_save")}
+                </button>
+              </div>
+            </div>
+          )}
         </form>
       )}
     </div>
