@@ -7,7 +7,9 @@
     "lint": "turbo lint",
     "test": "turbo test",
     "db:push": "pnpm --filter @aivo/db db:push",
-    "db:seed": "pnpm --filter @aivo/db db:seed"
+    "db:seed": "pnpm --filter @aivo/db db:seed",
+    "i18n:audit": "node scripts/i18n-audit.mjs",
+    "i18n:audit:verbose": "node scripts/i18n-audit.mjs --verbose"
   },
   "devDependencies": {
     "eas-cli": "^18.6.0",

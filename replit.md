@@ -22,7 +22,7 @@ The project utilizes a monorepo managed with Turborepo and pnpm, encompassing va
 - **Authentication**: JWT RS256 with refresh tokens, PIN login, Google OAuth, and email-based MFA.
 - **Database**: PostgreSQL 16, utilizing JSONB for brain states and a Drizzle ORM managed schema.
 - **Styling**: AIVO brand system with specific color palettes and game-themed fonts (Fredoka, Nunito).
-- **Internationalization**: `next-intl` integration with 10 supported locales, including RTL support for Arabic.
+- **Internationalization**: `next-intl` integration with 10 supported locales, including RTL support for Arabic. Run `pnpm i18n:audit` (or `pnpm i18n:audit:verbose`) to check locale-file parity across web, marketing, and mobile — it fails on missing/orphan keys and warns on untranslated copy. Wired into CI via `.github/workflows/i18n-file-audit.yml`.
 
 ### Key Features
 - **Adaptive Tutors**: 14 AI tutors (7 core, 7 expansion) with adaptive system prompts based on functioning levels.
