@@ -274,7 +274,7 @@ export default function TeacherOverviewPage() {
                         {isOpen && accessToken && (
                           <div
                             id={`learner-details-${l.id}`}
-                            className="px-4 pb-4 border-t vi-border"
+                            className="px-4 pb-4 border-t vi-border space-y-3"
                           >
                             <BrainVisualization
                               learnerId={l.id}
@@ -282,6 +282,14 @@ export default function TeacherOverviewPage() {
                               accessToken={accessToken}
                               compact
                             />
+                            <a
+                              href={`/dashboard/teacher/learners/${l.id}/evaluation`}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] hover:bg-[hsl(var(--visual-reading)/0.18)] transition"
+                            >
+                              <FileText size={12} strokeWidth={2.5} aria-hidden="true" />
+                              Open IEP evaluation
+                              <ArrowRight size={12} strokeWidth={2.5} aria-hidden="true" />
+                            </a>
                           </div>
                         )}
                       </div>

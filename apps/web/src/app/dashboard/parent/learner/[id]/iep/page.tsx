@@ -3,7 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Target, FileText, BarChart3, TrendingUp, TrendingDown, Minus, Activity } from "lucide-react";
+import { Target, FileText, BarChart3, TrendingUp, TrendingDown, Minus, Activity, ClipboardList, CheckCircle2, XCircle } from "lucide-react";
 import { IconWell } from "@/components/discovery/_vi";
 
 interface GoalProgress {
@@ -74,13 +74,19 @@ export default function IepDashboardPage() {
   const [documents, setDocuments] = useState<IepDocument[]>([]);
   const [report, setReport] = useState<IepReport | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
-  const [activeTab, setActiveTab] = useState<"goals" | "documents" | "motor" | "report">("goals");
+  const [activeTab, setActiveTab] = useState<"goals" | "documents" | "motor" | "evaluations" | "report">("goals");
+  const [evaluations, setEvaluations] = useState<Array<{
+    id: string; status: string; createdAt: string; submittedAt: string | null;
+    decisionEligible: string | null; decisionCategories: string[] | null; decisionRationale: string | null;
+    referralReason: string | null;
+  }>>([]);
   const [motorProgress, setMotorProgress] = useState<null | {
     totalMotorGoals: number;
     averageMastery: number;
     categories: { id: string; label: string; goalCount: number; averageMastery: number; trend: "improving" | "stable" | "declining" }[];
   }>(null);
   const td = useTranslations("dape");
+  const te = useTranslations("evaluation");
 
   useEffect(() => {
     if (!accessToken || !learnerId) return;
@@ -95,6 +101,9 @@ export default function IepDashboardPage() {
     fetch(`/api/family/iep/${learnerId}/dape/progress`, { headers })
       .then(r => r.ok ? r.json() : null).then((d) => { if (d) setMotorProgress(d); })
       .catch((err) => console.error("Failed to fetch DAPE progress:", err));
+    fetch(`/api/iep/evaluations/learner/${learnerId}`, { headers })
+      .then(r => r.ok ? r.json() : []).then((d) => setEvaluations(Array.isArray(d) ? d : []))
+      .catch((err) => console.error("Failed to fetch evaluations:", err));
   }, [accessToken, learnerId]);
 
   const generateReport = async () => {
@@ -149,10 +158,10 @@ export default function IepDashboardPage() {
       </div>
 
       <div className="flex gap-2 border-b vi-border pb-1">
-        {(["goals", "documents", "motor", "report"] as const).map(tab => (
+        {(["goals", "documents", "motor", "evaluations", "report"] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === tab ? "bg-[hsl(var(--visual-surface))] border vi-border border-b-[hsl(var(--visual-surface))] text-[hsl(var(--visual-primary))] -mb-[1px]" : "vi-text-muted hover:vi-text"}`}>
-            {tab === "goals" ? t("goals") : tab === "documents" ? t("documents") : tab === "motor" ? td("motor_progress") : t("report")}
+            {tab === "goals" ? t("goals") : tab === "documents" ? t("documents") : tab === "motor" ? td("motor_progress") : tab === "evaluations" ? te("evaluations_tab") : t("report")}
           </button>
         ))}
       </div>
@@ -304,6 +313,65 @@ export default function IepDashboardPage() {
                 </div>
               ))}
             </>
+          )}
+        </div>
+      )}
+
+      {activeTab === "evaluations" && (
+        <div className="space-y-3">
+          {evaluations.length === 0 ? (
+            <div className="vi-card p-12 text-center">
+              <div className="flex justify-center mb-3"><IconWell color="reading"><ClipboardList className="w-7 h-7" /></IconWell></div>
+              <p className="vi-text-muted font-semibold">{te("none_yet_parent")}</p>
+              <p className="vi-text-muted text-sm mt-2">{te("none_yet_parent_help")}</p>
+            </div>
+          ) : (
+            evaluations.map((e) => (
+              <div key={e.id} className="vi-card p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs vi-text-muted font-bold uppercase tracking-wide">
+                      {te("started_on", { date: new Date(e.createdAt).toLocaleDateString() })}
+                    </p>
+                    {e.referralReason && (
+                      <p className="text-sm vi-text mt-1 font-semibold">{e.referralReason}</p>
+                    )}
+                  </div>
+                  <span className={`px-2.5 py-0.5 text-xs rounded-full font-bold ${
+                    e.status === "eligible" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" :
+                    e.status === "not_eligible" ? "bg-[hsl(var(--visual-math)/0.14)] text-[hsl(var(--visual-math))]" :
+                    e.status === "submitted" ? "bg-[hsl(var(--visual-reading)/0.14)] text-[hsl(var(--visual-reading))]" :
+                    "bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))]"
+                  }`}>
+                    {te(`status_${e.status}`)}
+                  </span>
+                </div>
+                {(e.status === "eligible" || e.status === "not_eligible") && (
+                  <div className="border-t vi-border pt-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      {e.status === "eligible"
+                        ? <CheckCircle2 className="w-4 h-4 text-[hsl(var(--visual-science))]" aria-hidden="true" />
+                        : <XCircle className="w-4 h-4 text-[hsl(var(--visual-math))]" aria-hidden="true" />}
+                      <p className="text-sm font-bold vi-text">
+                        {e.status === "eligible" ? te("found_eligible") : te("found_not_eligible")}
+                      </p>
+                    </div>
+                    {e.decisionCategories && e.decisionCategories.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {e.decisionCategories.map((c) => (
+                          <span key={c} className="px-2 py-0.5 rounded-full text-xs font-bold bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]">
+                            {te.has(`category_${c}`) ? te(`category_${c}`) : c}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {e.decisionRationale && (
+                      <p className="text-sm vi-text-muted italic">{e.decisionRationale}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))
           )}
         </div>
       )}

@@ -78,6 +78,27 @@ export const iepGoals = pgTable("iep_goals", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const iepEvaluations = pgTable("iep_evaluations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  learnerId: uuid("learner_id").references(() => learners.id).notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  initiatedByUserId: uuid("initiated_by_user_id").references(() => users.id).notNull(),
+  status: varchar("status", { length: 20 }).default("draft").notNull(),
+  referralReason: text("referral_reason"),
+  assessmentAreas: jsonb("assessment_areas").default([]),
+  observations: text("observations"),
+  parentInput: text("parent_input"),
+  aiSuggestion: jsonb("ai_suggestion"),
+  decisionEligible: varchar("decision_eligible", { length: 20 }),
+  decisionCategories: jsonb("decision_categories").default([]),
+  decisionRationale: text("decision_rationale"),
+  decidedAt: timestamp("decided_at"),
+  decidedByUserId: uuid("decided_by_user_id").references(() => users.id),
+  submittedAt: timestamp("submitted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const learnerFunctioningLevels = pgTable("learner_functioning_levels", {
   id: uuid("id").defaultRandom().primaryKey(),
   learnerId: uuid("learner_id").references(() => learners.id).notNull(),

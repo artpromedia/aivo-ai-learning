@@ -361,3 +361,117 @@ Return ONLY valid JSON, no markdown formatting."""
         summary=parsed.get("summary", "IEP document parsed successfully"),
         model=result["model"],
     )
+
+
+class EligibilitySuggestRequest(BaseModel):
+    referral_reason: str = ""
+    assessment_areas: list = []
+    observations: str = ""
+    parent_input: str = ""
+
+
+class EligibilitySuggestResponse(BaseModel):
+    eligible_likely: bool
+    suggested_categories: list
+    rationale: str
+    recommended_next_steps: list
+    confidence: int
+    model: str
+
+
+@router.post("/eligibility-suggest", response_model=EligibilitySuggestResponse)
+async def eligibility_suggest(request: EligibilitySuggestRequest):
+    """
+    Suggest IDEA disability categories based on a teacher-led evaluation.
+    Returns a JSON recommendation. The actual eligibility decision is always
+    made by the IEP team — this endpoint is decision-support only.
+    """
+    system_prompt = """You are a special education evaluator helping an IEP team
+synthesize evaluation data into a draft eligibility recommendation under IDEA.
+You DO NOT make the final decision; you produce a structured suggestion the team
+will review.
+
+Return ONLY valid JSON with this exact shape:
+{
+  "eligible_likely": true|false,
+  "suggested_categories": ["autism" | "specific_learning_disability" | "speech_language_impairment" | "other_health_impairment" | "emotional_disturbance" | "intellectual_disability" | "developmental_delay" | "hearing_impairment" | "visual_impairment" | "orthopedic_impairment" | "traumatic_brain_injury" | "multiple_disabilities" | "deaf_blindness" | "deafness"],
+  "rationale": "2-4 sentence rationale citing the strongest evidence from the evaluation areas and observations.",
+  "recommended_next_steps": ["short action item", "another action item"],
+  "confidence": 0-100
+}
+
+Be conservative. If evidence is thin, set eligible_likely=false and recommend
+additional assessments in next_steps. Do not invent findings that are not in
+the input. Use IDEA category labels exactly as listed above.
+"""
+
+    areas_str = json.dumps(request.assessment_areas, ensure_ascii=False)[:4000]
+    user_prompt = f"""Evaluation referral reason:
+{request.referral_reason or "(none provided)"}
+
+Assessment areas (JSON):
+{areas_str}
+
+Teacher observations:
+{(request.observations or "(none provided)")[:3000]}
+
+Parent input:
+{(request.parent_input or "(none provided)")[:2000]}
+"""
+
+    try:
+        result = await generate_completion(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=900,
+        )
+    except Exception as e:
+        logger.error(f"Eligibility suggest LLM error: {e}")
+        raise HTTPException(status_code=502, detail="AI service unavailable for eligibility suggestion")
+
+    raw = result["content"].strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+        if raw.endswith("```"):
+            raw = raw[:-3]
+
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.error(f"Failed to parse eligibility JSON: {raw[:200]}")
+        raise HTTPException(status_code=502, detail="AI returned invalid JSON for eligibility suggestion")
+
+    confidence = parsed.get("confidence", 0)
+    try:
+        confidence = max(0, min(100, int(confidence)))
+    except (TypeError, ValueError):
+        confidence = 0
+
+    raw_eligible = parsed.get("eligible_likely", False)
+    if isinstance(raw_eligible, bool):
+        eligible_likely = raw_eligible
+    elif isinstance(raw_eligible, str):
+        eligible_likely = raw_eligible.strip().lower() in ("true", "yes", "1")
+    elif isinstance(raw_eligible, (int, float)):
+        eligible_likely = bool(raw_eligible)
+    else:
+        eligible_likely = False
+
+    cats = parsed.get("suggested_categories") or []
+    if not isinstance(cats, list):
+        cats = []
+    cats = [str(c) for c in cats if isinstance(c, (str, int))]
+
+    next_steps = parsed.get("recommended_next_steps") or []
+    if not isinstance(next_steps, list):
+        next_steps = []
+    next_steps = [str(s) for s in next_steps if isinstance(s, (str, int))]
+
+    return EligibilitySuggestResponse(
+        eligible_likely=eligible_likely,
+        suggested_categories=cats,
+        rationale=str(parsed.get("rationale", "")),
+        recommended_next_steps=next_steps,
+        confidence=confidence,
+        model=result["model"],
+    )

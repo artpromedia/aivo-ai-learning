@@ -3,12 +3,13 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { IconWell, StatIconWell } from "@/components/discovery/_vi";
-import { ClipboardList, Clock, AlertTriangle } from "lucide-react";
+import { ClipboardList, Clock, AlertTriangle, Search } from "lucide-react";
 
 interface IepSummary {
   active: number;
   dueForReview: number;
   overdue: number;
+  evaluationsInProgress?: number;
 }
 
 interface IepLearner {
@@ -78,7 +79,7 @@ export default function DistrictIepPage() {
       ) : (
         <>
           {summary && (
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="vi-card p-5">
                 <div className="flex items-center gap-3 mb-2">
                   <StatIconWell color="primary">
@@ -105,6 +106,15 @@ export default function DistrictIepPage() {
                   <span className="text-xs text-[hsl(var(--visual-math))] font-medium uppercase">Overdue</span>
                 </div>
                 <p className="text-3xl font-bold text-[hsl(var(--visual-math))]">{summary.overdue}</p>
+              </div>
+              <div className="vi-card p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <StatIconWell color="reading">
+                    <Search size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </StatIconWell>
+                  <span className="text-xs vi-text-muted font-medium uppercase">Evaluations In Progress</span>
+                </div>
+                <p className="text-3xl font-bold vi-text">{summary.evaluationsInProgress ?? 0}</p>
               </div>
             </div>
           )}

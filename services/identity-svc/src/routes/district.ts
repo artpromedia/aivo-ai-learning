@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import {
   users, sessions, tenants, learners, sensoryProfiles,
   schools, classrooms, classroomEnrollments, staffAssignments,
-  districtSettings, districtActivityLog, iepRecords, interventions,
+  districtSettings, districtActivityLog, iepRecords, iepEvaluations, interventions,
   seatRequests, appendAudit, adminAuditLog,
 } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
@@ -628,7 +628,19 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
         sql`${iepRecords.reviewDate} < ${today}`,
       ));
 
-    return { active: activeCount.count, dueForReview: dueCount.count, overdue: overdueCount.count };
+    const [evalInProgressCount] = await db.select({ count: count() }).from(iepEvaluations)
+      .innerJoin(learners, eq(iepEvaluations.learnerId, learners.id))
+      .where(and(
+        eq(learners.tenantId, tid),
+        or(eq(iepEvaluations.status, "draft"), eq(iepEvaluations.status, "submitted")),
+      ));
+
+    return {
+      active: activeCount.count,
+      dueForReview: dueCount.count,
+      overdue: overdueCount.count,
+      evaluationsInProgress: evalInProgressCount?.count ?? 0,
+    };
   });
 
   app.get("/api/district/iep/learners", { preHandler: requireDistrictAdmin }, async (req: any) => {
