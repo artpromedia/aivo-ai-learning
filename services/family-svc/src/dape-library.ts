@@ -439,7 +439,7 @@ export const DAPE_LIBRARY: DapeActivity[] = [
 
 /** Map IEP-goal language → DAPE category. */
 const KEYWORD_MAP: Array<[RegExp, DapeCategory]> = [
-  [/\b(walk|run|jump|hop|gallop|skip|locomotor|gait)\b/i, "locomotor"],
+  [/\b(walk|run|jump|hop|gallop|skip|locomotor|gait|motor\s*planning)\b/i, "locomotor"],
   [/\b(catch|throw|kick|strike|object\s*control|ball)\b/i, "object_control"],
   [/\b(balance|stand|posture|stability)\b/i, "balance"],
   [/\b(midline|cross|bilateral|crossing\s*midline)\b/i, "midline_crossing"],
@@ -449,31 +449,54 @@ const KEYWORD_MAP: Array<[RegExp, DapeCategory]> = [
   [/\b(handwriting|letter\s*formation|pencil|writing\s*legib)\b/i, "handwriting_prep"],
 ];
 
+/** Map a stored sub_domain identifier (from the IEP parser) → DAPE category. */
+const SUB_DOMAIN_MAP: Record<string, DapeCategory> = {
+  locomotor: "locomotor",
+  object_control: "object_control",
+  balance: "balance",
+  midline_crossing: "midline_crossing",
+  heavy_work: "heavy_work",
+  vestibular: "vestibular",
+  fine_motor: "fine_motor",
+  handwriting_prep: "handwriting_prep",
+  motor_planning: "locomotor",
+  adapted_pe: "locomotor",
+};
+
 // DAPE keyword list. Intentionally strict: bare "motor" and "coordination"
 // are excluded because they appear in many non-PE goals (e.g.
-// "visual-motor integration for reading", "motor planning for social
-// transitions"). Only qualifiers that strongly indicate adapted PE / OT /
-// PT scope are kept.
-const MOTOR_HINT = /\b(gross\s*motor|fine\s*motor|adapted\s*pe|adapted\s*physical|\bdape\b|locomotor|object\s*control|midline\s*crossing|handwriting\s*(?:legib|formation)|pencil\s*grip|bilateral\s*coordination|gait\s*training|balance\s*(?:training|skills)|vestibular\s*regulation|proprioceptive\s*input|heavy\s*work)\b/i;
+// "visual-motor integration for reading"). Motor planning is included
+// because it is a core DAPE skill area.
+const MOTOR_HINT = /\b(gross\s*motor|fine\s*motor|adapted\s*pe|adapted\s*physical|\bdape\b|locomotor|object\s*control|midline\s*crossing|motor\s*planning|handwriting\s*(?:legib|formation)|pencil\s*grip|bilateral\s*coordination|gait\s*training|balance\s*(?:training|skills)|vestibular\s*regulation|proprioceptive\s*input|heavy\s*work)\b/i;
 
-/** Domains where we treat the goal as DAPE if its text otherwise looks motor. */
+/** Root domains where we treat the goal as DAPE. */
 const DAPE_DOMAINS = new Set(["motor", "gross_motor", "fine_motor", "dape", "adapted_pe", "physical"]);
-/** Domains where text-based DAPE matches are *not* trusted (the goal is clearly scoped elsewhere). */
+/** Root domains where text-based DAPE matches are *not* trusted (the goal is scoped elsewhere). */
 const NON_DAPE_DOMAINS = new Set(["math", "ela", "speech", "behavior", "social", "life_skills", "executive_function"]);
+
+/** Split a composite "domain:sub_domain" string (as persisted from the IEP parser). */
+export function splitDomain(domain?: string | null): { root: string; sub: string | null } {
+  const raw = (domain || "").toLowerCase();
+  const idx = raw.indexOf(":");
+  if (idx === -1) return { root: raw, sub: null };
+  return { root: raw.slice(0, idx), sub: raw.slice(idx + 1) };
+}
 
 /** True if a goal looks DAPE-relevant by domain or wording. */
 export function isDapeGoal(goal: { domain?: string | null; goalText?: string | null }): boolean {
-  const domain = (goal.domain || "").toLowerCase();
-  if (DAPE_DOMAINS.has(domain)) return true;
-  // If the domain is clearly something else, do not infer DAPE from text alone —
-  // "motor planning for social transitions" stays a behavior/social goal.
-  if (NON_DAPE_DOMAINS.has(domain)) return false;
+  const { root, sub } = splitDomain(goal.domain);
+  if (DAPE_DOMAINS.has(root)) return true;
+  if (sub && SUB_DOMAIN_MAP[sub]) return true;
+  if (NON_DAPE_DOMAINS.has(root)) return false;
   return MOTOR_HINT.test(goal.goalText || "");
 }
 
-/** Categorise a goal into one (or more) DAPE skill categories. */
-export function categoriseDapeGoal(goalText: string): DapeCategory[] {
+/** Categorise a goal into one (or more) DAPE skill categories. Uses the
+ * persisted sub_domain when available, then falls back to keyword scan. */
+export function categoriseDapeGoal(goalText: string, domain?: string | null): DapeCategory[] {
   const matches = new Set<DapeCategory>();
+  const { sub } = splitDomain(domain);
+  if (sub && SUB_DOMAIN_MAP[sub]) matches.add(SUB_DOMAIN_MAP[sub]);
   for (const [regex, cat] of KEYWORD_MAP) {
     if (regex.test(goalText)) matches.add(cat);
   }

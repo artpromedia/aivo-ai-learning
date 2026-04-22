@@ -316,7 +316,7 @@ export async function registerIepRoutes(app: FastifyInstance) {
 
     const byCategory: Record<string, { label: string; goalIds: string[]; goals: typeof motorGoals }> = {};
     for (const g of motorGoals) {
-      for (const cat of categoriseDapeGoal(g.goalText)) {
+      for (const cat of categoriseDapeGoal(g.goalText, g.domain)) {
         const key = cat as string;
         if (!byCategory[key]) byCategory[key] = { label: DAPE_CATEGORY_LABELS[cat], goalIds: [], goals: [] };
         byCategory[key].goalIds.push(g.id);
@@ -367,7 +367,7 @@ export async function registerIepRoutes(app: FastifyInstance) {
       const goals = await db.select().from(iepGoals).where(eq(iepGoals.learnerId, learnerId));
       const motor = goals.filter(isDapeGoal);
       if (motor.length > 0) {
-        const cats = categoriseDapeGoal(motor[0].goalText);
+        const cats = categoriseDapeGoal(motor[0].goalText, motor[0].domain);
         if (cats[0]) category = cats[0];
       }
     }
@@ -398,7 +398,7 @@ export async function registerIepRoutes(app: FastifyInstance) {
     const byCat: Record<string, { label: string; goals: number; masterySum: number; trendUp: number; trendDown: number }> = {};
 
     for (const g of motorGoals) {
-      const cats = categoriseDapeGoal(g.goalText);
+      const cats = categoriseDapeGoal(g.goalText, g.domain);
       const dom = (g.domain || "motor").toLowerCase();
       const mastery = masteryMap[dom] ?? masteryMap["motor"] ?? 0;
       const prev = g.currentProgress ?? 0;

@@ -134,6 +134,8 @@ export async function registerIepRoutes(app: FastifyInstance) {
       const goals = (parsedData.goals || []).map((g: any) => ({
         text: g.description || g.text || "",
         domain: g.domain || "other",
+        // DAPE sub-domain (locomotor, fine_motor, motor_planning, midline_crossing, etc.).
+        subDomain: g.sub_domain || g.subDomain || null,
         baseline: g.baseline || "",
         targetCriteria: g.measurable_criteria || g.target || "",
       }));
@@ -147,11 +149,18 @@ export async function registerIepRoutes(app: FastifyInstance) {
       }).returning();
 
       for (const goal of goals) {
+        // Persist DAPE sub_domain (locomotor, fine_motor, midline_crossing,
+        // motor_planning, etc.) as a composite domain string so downstream
+        // consumers can route the goal to the DAPE track without a
+        // schema migration: e.g. "motor:locomotor".
+        const composedDomain = goal.subDomain
+          ? `${goal.domain || "motor"}:${goal.subDomain}`
+          : goal.domain;
         await db.insert(iepGoals).values({
           learnerId: body.learnerId,
           iepProfileId: profile.id,
           goalText: goal.text,
-          domain: goal.domain,
+          domain: composedDomain,
           baseline: goal.baseline,
           targetCriteria: goal.targetCriteria,
         });
