@@ -221,5 +221,3 @@ export const iepSignatures = pgTable("iep_signatures", {
     .on(t.iepProfileId, t.signerUserId, t.signerRole),
 }));
 
-// Same protection for team membership: dedupe (profile, user, role).
-export const iepTeamMembersUniq = (() => undefined)();

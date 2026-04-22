@@ -10,13 +10,11 @@ import {
   iepRevisions,
   iepSignatures,
   learners,
-  learnerTeachers,
-  learnerTherapists,
   users,
   districtSettings,
 } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
-import { and, eq, desc, asc, inArray } from "drizzle-orm";
+import { and, eq, desc, asc } from "drizzle-orm";
 import crypto from "crypto";
 
 interface AuthClaims {
@@ -294,16 +292,24 @@ export async function registerIepCollabRoutes(app: FastifyInstance) {
       return reply.code(403).send({ error: "Forbidden" });
     }
     const handles = extractMentions(body);
-    // Resolve handles → users in same tenant (best-effort match by email local-part or name).
+    // Resolve @-handles strictly within this IEP's team. We never scan the
+    // wider tenant — that would leak comment snippets to unrelated users.
     const mentioned: { userId: string; email: string; name: string }[] = [];
     if (handles.length > 0) {
-      const rows = await db.select({ id: users.id, email: users.email, name: users.name })
-        .from(users).where(eq(users.tenantId, claims.tenantId));
+      const rows = await db.select({
+        id: users.id, email: users.email, name: users.name,
+      })
+        .from(iepTeamMembers)
+        .innerJoin(users, eq(users.id, iepTeamMembers.userId))
+        .where(eq(iepTeamMembers.iepProfileId, id));
+      const seen = new Set<string>();
       for (const r of rows) {
+        if (seen.has(r.id)) continue;
         const local = (r.email || "").split("@")[0].toLowerCase();
         const nameSlug = (r.name || "").toLowerCase().replace(/\s+/g, ".");
         if (handles.includes(local) || handles.includes(nameSlug)) {
-          mentioned.push(r);
+          seen.add(r.id);
+          mentioned.push({ userId: r.id, email: r.email, name: r.name });
         }
       }
     }
@@ -539,6 +545,4 @@ export async function registerIepCollabRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  // Pre-empt unused-import warnings while keeping helpers on hand for future use.
-  void learnerTeachers; void learnerTherapists; void inArray;
 }

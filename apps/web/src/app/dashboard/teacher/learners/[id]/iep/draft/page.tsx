@@ -433,7 +433,10 @@ export default function IepDraftEditorPage() {
     [comments, section],
   );
 
-  const editable = bundle?.profile.lifecycleState === "draft" || bundle?.profile.lifecycleState === "in_review";
+  // Structural editing is only allowed while the draft is `draft`. Once the
+  // case manager sends it for review, the bundle freezes — only comments and
+  // signatures are accepted on the backend, so we mirror that on the client.
+  const editable = bundle?.profile.lifecycleState === "draft";
 
   // Derived: which sections are missing required content (sidebar checklist).
   const missing = useMemo(() => {

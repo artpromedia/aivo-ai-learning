@@ -7,6 +7,7 @@ import {
   iepPresentLevels,
   iepEvaluations,
   iepTeamMembers,
+  iepRevisions,
   learners,
   learnerTeachers,
   learnerTherapists,
@@ -24,7 +25,13 @@ const isUuid = (v: unknown): v is string => typeof v === "string" && UUID_RE.tes
 
 const PLOP_AREAS = ["academic", "functional", "social", "motor", "communication"] as const;
 type LifecycleState = "draft" | "in_review" | "finalised" | "archived";
-const EDITABLE_LIFECYCLE: LifecycleState[] = ["draft", "in_review"];
+// Structural authoring is allowed only while the draft is `draft`. Once it
+// moves to `in_review`, signatures are being collected and the bundle must
+// freeze — only comments, revisions, and signatures may continue.
+const EDITABLE_LIFECYCLE: LifecycleState[] = ["draft"];
+// States from which a transition request is still legal (allows reverting
+// in_review → draft for further edits).
+const TRANSITIONABLE_LIFECYCLE: LifecycleState[] = ["draft", "in_review"];
 
 async function authenticate(req: any, reply: any): Promise<AuthClaims | null> {
   const auth = req.headers.authorization;
@@ -115,6 +122,47 @@ async function loadDraftBundle(db: any, profileId: string) {
     db.select().from(iepGoals).where(eq(iepGoals.iepProfileId, profileId)),
   ]);
   return { profile, presentLevels: plops, services, goals };
+}
+
+// Capture a section snapshot after a structural mutation. Best-effort —
+// revision-history failures must never break authoring writes. Snapshots
+// are coarse-grained (the post-mutation state of the section) so the
+// history view can show "who changed what and when" without needing diffs.
+async function snapshotSection(
+  db: any, profileId: string, section: string, snapshot: unknown, userId: string,
+) {
+  try {
+    await db.insert(iepRevisions).values({
+      iepProfileId: profileId, section, snapshot, authorId: userId,
+    });
+  } catch {
+    /* swallow — history is non-critical */
+  }
+}
+
+async function buildSectionSnapshot(db: any, profileId: string, section: string): Promise<unknown> {
+  if (section === "goals") {
+    return await db.select().from(iepGoals).where(eq(iepGoals.iepProfileId, profileId));
+  }
+  if (section === "services") {
+    return await db.select().from(iepServices).where(eq(iepServices.iepProfileId, profileId));
+  }
+  if (section === "plop") {
+    return await db.select().from(iepPresentLevels).where(eq(iepPresentLevels.iepProfileId, profileId));
+  }
+  if (section === "profile") {
+    const [p] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, profileId));
+    return p ? {
+      accommodations: p.accommodations,
+      assistiveTechnology: p.assistiveTechnology,
+      communicationSystem: p.communicationSystem,
+      gradeLevel: p.gradeLevel,
+      placement: p.placement,
+      reviewDate: p.reviewDate,
+      disabilityCategories: p.disabilityCategories,
+    } : null;
+  }
+  return null;
 }
 
 function isEditable(profile: any): boolean {
@@ -265,6 +313,8 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
       .where(and(eq(iepProfiles.id, id), inArray(iepProfiles.lifecycleState, EDITABLE_LIFECYCLE)))
       .returning();
     if (!updated) return reply.code(409).send({ error: "Draft is not editable" });
+    void snapshotSection(db, id, "profile",
+      await buildSectionSnapshot(db, id, "profile"), claims.sub);
     return updated;
   });
 
@@ -324,11 +374,15 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
       const [u] = await db.update(iepPresentLevels)
         .set({ narrative, updatedAt: new Date() })
         .where(eq(iepPresentLevels.id, existing[0].id)).returning();
+      void snapshotSection(db, id, "plop",
+        await buildSectionSnapshot(db, id, "plop"), claims.sub);
       return u;
     }
     const [u] = await db.insert(iepPresentLevels).values({
       iepProfileId: id, area, narrative,
     }).returning();
+    void snapshotSection(db, id, "plop",
+      await buildSectionSnapshot(db, id, "plop"), claims.sub);
     return reply.code(201).send(u);
   });
 
@@ -368,6 +422,8 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
       baseline: body.baseline || null,
       targetCriteria: body.targetCriteria || null,
     }).returning();
+    void snapshotSection(db, id, "goals",
+      await buildSectionSnapshot(db, id, "goals"), claims.sub);
     return reply.code(201).send(g);
   });
 
@@ -392,6 +448,8 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     const [u] = await db.update(iepGoals).set(patch)
       .where(and(eq(iepGoals.id, goalId), eq(iepGoals.iepProfileId, id))).returning();
     if (!u) return reply.code(404).send({ error: "Goal not found" });
+    void snapshotSection(db, id, "goals",
+      await buildSectionSnapshot(db, id, "goals"), claims.sub);
     return u;
   });
 
@@ -410,6 +468,8 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
     await db.delete(iepGoals)
       .where(and(eq(iepGoals.id, goalId), eq(iepGoals.iepProfileId, id)));
+    void snapshotSection(db, id, "goals",
+      await buildSectionSnapshot(db, id, "goals"), claims.sub);
     return reply.code(204).send();
   });
 
@@ -452,6 +512,8 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
       location: body.location || null,
       notes: body.notes || null,
     }).returning();
+    void snapshotSection(db, id, "services",
+      await buildSectionSnapshot(db, id, "services"), claims.sub);
     return reply.code(201).send(s);
   });
 
@@ -479,6 +541,8 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     const [u] = await db.update(iepServices).set(patch)
       .where(and(eq(iepServices.id, serviceId), eq(iepServices.iepProfileId, id))).returning();
     if (!u) return reply.code(404).send({ error: "Service not found" });
+    void snapshotSection(db, id, "services",
+      await buildSectionSnapshot(db, id, "services"), claims.sub);
     return u;
   });
 
@@ -497,6 +561,8 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
     await db.delete(iepServices)
       .where(and(eq(iepServices.id, serviceId), eq(iepServices.iepProfileId, id)));
+    void snapshotSection(db, id, "services",
+      await buildSectionSnapshot(db, id, "services"), claims.sub);
     return reply.code(204).send();
   });
 
@@ -523,9 +589,24 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     const { to } = req.body as { to: "draft" | "in_review" };
-    if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
+    if (!TRANSITIONABLE_LIFECYCLE.includes(profile.lifecycleState as LifecycleState)) {
+      return reply.code(409).send({ error: "Cannot transition this draft" });
+    }
+    // Only the case manager (or original author bootstrapped as case_manager,
+    // or platform admin) may shepherd lifecycle transitions.
+    const isAuthor = profile.authoredByUserId === claims.sub;
+    const cmRows = await db.select({ id: iepTeamMembers.id }).from(iepTeamMembers)
+      .where(and(
+        eq(iepTeamMembers.iepProfileId, id),
+        eq(iepTeamMembers.userId, claims.sub),
+        eq(iepTeamMembers.role, "case_manager"),
+      ));
+    const isCaseManager = cmRows.length > 0;
+    if (!isAuthor && !isCaseManager && claims.role !== "PLATFORM_ADMIN") {
+      return reply.code(403).send({ error: "Only the case manager can transition the draft" });
+    }
     const [u] = await db.update(iepProfiles).set({ lifecycleState: to, updatedAt: new Date() })
-      .where(and(eq(iepProfiles.id, id), inArray(iepProfiles.lifecycleState, EDITABLE_LIFECYCLE)))
+      .where(and(eq(iepProfiles.id, id), inArray(iepProfiles.lifecycleState, TRANSITIONABLE_LIFECYCLE)))
       .returning();
     if (!u) return reply.code(409).send({ error: "Draft is not editable" });
     // When sending out for review, ensure the learner's parent is on the team
