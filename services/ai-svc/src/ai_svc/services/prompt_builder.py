@@ -55,6 +55,37 @@ def build_tutor_system_prompt(
         if framework:
             layer2_parts.append(f"\n## Curriculum Alignment: {framework}")
 
+    curriculum_focus = brain_context.get("curriculum_focus") or {}
+    if curriculum_focus and isinstance(curriculum_focus, dict):
+        focus_lines = ["\n## This Week's Focus (from parent/teacher upload)"]
+        title = curriculum_focus.get("title")
+        if title:
+            focus_lines.append(f"- Title: {title}")
+        week_start = curriculum_focus.get("weekStart")
+        week_end = curriculum_focus.get("weekEnd")
+        if week_start or week_end:
+            focus_lines.append(f"- Date range: {week_start or '?'} to {week_end or '?'}")
+        topics = curriculum_focus.get("topics") or []
+        if topics:
+            focus_lines.append("- Topics to anchor on: " + "; ".join(topics[:8]))
+        keywords = curriculum_focus.get("keywords") or []
+        if keywords:
+            focus_lines.append("- Vocabulary the learner will see this week: " + ", ".join(keywords[:15]))
+        skills = curriculum_focus.get("skills") or []
+        if skills:
+            focus_lines.append("- Skills to practice: " + "; ".join(skills[:8]))
+        standards = curriculum_focus.get("standards") or []
+        if standards:
+            focus_lines.append("- Aligned standards: " + ", ".join(standards[:10]))
+        summary = curriculum_focus.get("summary")
+        if summary:
+            focus_lines.append(f"- Summary: {summary}")
+        focus_lines.append(
+            "Prefer examples, problems, and analogies that reinforce the topics above. "
+            "If the learner asks something off-topic, gently bridge back to this focus when natural."
+        )
+        layer2_parts.append("\n".join(focus_lines))
+
     layer2_parts.append(f"\n## Subject Strategy\n{persona.get('subject_strategy', '')}")
 
     scaffolding = _build_scaffolding_instructions(

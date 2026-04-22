@@ -4,6 +4,7 @@ from .routes.health import router as health_router
 from .routes.generate import router as generate_router
 from .routes.homework import router as homework_router
 from .routes.transcribe import router as transcribe_router
+from .routes.curriculum import router as curriculum_router
 
 app = FastAPI(
     title="AIVO AI Service",
@@ -23,3 +24,4 @@ app.include_router(health_router)
 app.include_router(generate_router)
 app.include_router(homework_router)
 app.include_router(transcribe_router)
+app.include_router(curriculum_router)

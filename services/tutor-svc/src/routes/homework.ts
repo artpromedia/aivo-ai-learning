@@ -2,6 +2,16 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { eq, and, desc } from "drizzle-orm";
 import { homeworkAssignments, homeworkSessions, tutorSubscriptions, learners } from "@aivo/db";
 import { verifyJWT, JWTPayload } from "@aivo/security";
+import { getActiveCurriculumFocus } from "./curriculum.js";
+
+const HOMEWORK_SUBJECT_TO_FOCUS: Record<string, string> = {
+  MATH: "math",
+  ELA: "ela",
+  SCIENCE: "science",
+  HISTORY: "history",
+  CODING: "coding",
+  OTHER: "other",
+};
 
 const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
 const BRAIN_SVC_URL = process.env.BRAIN_SVC_URL || "http://localhost:3002";
@@ -405,6 +415,15 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
 
     const brainContext = await fetchBrainContext(session.learnerId);
     const functioningLevel = getFunctioningLevel(brainContext);
+
+    const focusSubject = HOMEWORK_SUBJECT_TO_FOCUS[(assignment?.detectedSubject || "OTHER").toUpperCase()]
+      || (assignment?.subject || "other").toLowerCase();
+    try {
+      const focus = await getActiveCurriculumFocus(db, session.learnerId, focusSubject);
+      if (focus) (brainContext as any).curriculum_focus = focus;
+    } catch (err) {
+      console.error("Failed to load curriculum focus for homework (non-blocking):", err);
+    }
 
     try {
       const res = await fetch(`${AI_SVC_URL}/api/ai/homework/chat`, {

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import LearnerCardSkeleton from "@/components/states/LearnerCardSkeleton";
 import FetchErrorState from "@/components/states/FetchErrorState";
 import { ClipboardList } from "lucide-react";
+import TeacherCurriculumUploader from "@/components/teacher/TeacherCurriculumUploader";
 
 interface ConnectedLearner {
   id: string;
@@ -121,6 +122,8 @@ export default function TeacherLessonPlansPage() {
 
   return (
     <div className="p-8 space-y-6">
+      <TeacherCurriculumUploader learners={learners} accessToken={accessToken} />
+
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-3xl font-heading font-bold vi-text">Lesson Plans</h1>
         <button

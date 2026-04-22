@@ -8,6 +8,7 @@ import { registerHealthRoutes } from "./routes/health.js";
 import { registerStoreRoutes } from "./routes/store.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerHomeworkRoutes } from "./routes/homework.js";
+import { registerCurriculumRoutes } from "./routes/curriculum.js";
 import { registerAuthHook } from "./lib/tenant.js";
 
 const logger = createLogger("tutor-svc");
@@ -34,6 +35,7 @@ async function start() {
   registerStoreRoutes(app, db);
   registerChatRoutes(app, db);
   registerHomeworkRoutes(app, db);
+  registerCurriculumRoutes(app, db);
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Tutor service listening on port ${PORT}`);

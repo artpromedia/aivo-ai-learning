@@ -235,6 +235,9 @@ export default function LearnerHubPage() {
               <Link href={`/dashboard/parent/learner/${learnerId}/homework`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
                 Homework History
               </Link>
+              <Link href={`/dashboard/parent/learner/${learnerId}/curriculum`} className="block px-3 py-2.5 rounded-lg hover:bg-[hsl(var(--visual-primary)/0.08)] text-sm font-semibold vi-text hover:text-[hsl(var(--visual-primary))] transition" style={{ minHeight: 44 }}>
+                Weekly Curriculum
+              </Link>
             </div>
           </div>
 

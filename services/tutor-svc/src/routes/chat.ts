@@ -4,6 +4,24 @@ import { TUTORS } from "@aivo/brand";
 import { tutorSessions } from "@aivo/db";
 import { resolveTenantIdForLearner } from "../lib/tenant.js";
 import { computeTutorXp, computeTutorQuality, type TutorSignals } from "../services/scoring.js";
+import { getActiveCurriculumFocus } from "./curriculum.js";
+
+const TUTOR_SKU_TO_SUBJECT: Record<string, string> = {
+  ADDON_TUTOR_MATH: "math",
+  ADDON_TUTOR_ELA: "ela",
+  ADDON_TUTOR_SCIENCE: "science",
+  ADDON_TUTOR_HISTORY: "history",
+  ADDON_TUTOR_CODING: "coding",
+  ADDON_TUTOR_SPEECH: "speech",
+  ADDON_TUTOR_SEL: "sel",
+  ADDON_TUTOR_SOCIAL_STUDIES: "history",
+  ADDON_TUTOR_ARTS: "art",
+  ADDON_TUTOR_PE_HEALTH: "other",
+  ADDON_TUTOR_LANGUAGES: "ela",
+  ADDON_TUTOR_STEM_DESIGN: "science",
+  ADDON_TUTOR_LIFE_SKILLS: "sel",
+  ADDON_TUTOR_CREATIVE_WRITING: "ela",
+};
 
 const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
 const BRAIN_SVC_URL = process.env.BRAIN_SVC_URL || "http://localhost:3002";
@@ -66,6 +84,16 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
     const brainContext = await fetchBrainContext(learnerId);
     const functioningLevel = (brainContext as any).functioning_level_profile?.level || "STANDARD";
 
+    const subject = TUTOR_SKU_TO_SUBJECT[tutorSku];
+    if (subject) {
+      try {
+        const focus = await getActiveCurriculumFocus(db, learnerId, subject);
+        if (focus) (brainContext as any).curriculum_focus = focus;
+      } catch (err) {
+        console.error("Failed to load curriculum focus (non-blocking):", err);
+      }
+    }
+
     const tenantId = await resolveTenantIdForLearner(request, db, learnerId);
     if (!tenantId) {
       return reply.code(400).send({ error: "Unable to resolve tenantId for learner" });
@@ -98,6 +126,17 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
 
     const chatMessages = existingMessages.map((m: any) => ({ role: m.role, content: m.content }));
 
+    const liveBrainContext: Record<string, unknown> = { ...((session.brainContext as any) || {}) };
+    const liveSubject = TUTOR_SKU_TO_SUBJECT[session.tutorSku as string];
+    if (liveSubject) {
+      try {
+        const focus = await getActiveCurriculumFocus(db, session.learnerId, liveSubject);
+        if (focus) liveBrainContext.curriculum_focus = focus;
+      } catch (err) {
+        console.error("Failed to refresh curriculum focus (non-blocking):", err);
+      }
+    }
+
     try {
       const res = await fetch(`${AI_SVC_URL}/api/ai/tutor/chat`, {
         method: "POST",
@@ -106,7 +145,7 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
           tutor_sku: session.tutorSku,
           learner_id: session.learnerId,
           functioning_level: session.functioningLevel || "STANDARD",
-          brain_context: session.brainContext || {},
+          brain_context: liveBrainContext,
           messages: chatMessages,
         }),
       });
