@@ -89,7 +89,7 @@ export const TUTORS = {
   harmony: { name: "Harmony", domain: "Social-Emotional Learning",        icon: "💜", color: "#8B5CF6", tier: "core",      tiers: ALL_TIERS,       avatar: "/images/tutors/harmony.png" },
   atlas:   { name: "Atlas",   domain: "Geography & World Cultures",       icon: "🌍", color: "#14B8A6", tier: "expansion", tiers: ALL_TIERS,       avatar: "/images/tutors/atlas.png" },
   cadence: { name: "Cadence", domain: "Music & Rhythm",                   icon: "🎵", color: "#D946EF", tier: "expansion", tiers: ALL_TIERS,       avatar: "/images/tutors/cadence.png" },
-  vigor:   { name: "Vigor",   domain: "Physical Education & Health",      icon: "🏃", color: "#22C55E", tier: "expansion", tiers: ALL_TIERS,       avatar: "/images/tutors/vigor.png" },
+  vigor:   { name: "Vigor",   domain: "Physical Education & Health",      icon: "🏃", color: "#22C55E", tier: "expansion", tiers: ALL_TIERS,       avatar: "/images/tutors/vigor.png", tracks: ["fitness", "health", "dape"] as const, subDomains: { dape: "Adapted Physical Education (DAPE)" } },
   lingua:  { name: "Lingua",  domain: "World Languages",                  icon: "🌐", color: "#0EA5E9", tier: "expansion", tiers: SECONDARY_TIERS, avatar: "/images/tutors/lingua.png" },
   forge:   { name: "Forge",   domain: "STEM & Engineering",               icon: "⚙️", color: "#EF4444", tier: "expansion", tiers: SECONDARY_TIERS, avatar: "/images/tutors/forge.png" },
   compass: { name: "Compass", domain: "Life Skills & Executive Function", icon: "🧭", color: "#F97316", tier: "expansion", tiers: SECONDARY_TIERS, avatar: "/images/tutors/compass.png" },

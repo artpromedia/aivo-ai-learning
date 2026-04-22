@@ -10,6 +10,15 @@ import {
   tutorSessions,
 } from "@aivo/db";
 import { authenticateRequest, verifyParentOwnership } from "../auth.js";
+import {
+  DAPE_LIBRARY,
+  DAPE_CATEGORY_LABELS,
+  isDapeGoal,
+  categoriseDapeGoal,
+  pickActivity,
+  type DapeCategory,
+  type DapeFunctioningTier,
+} from "../dape-library.js";
 
 interface LearnerId {
   learnerId: string;
@@ -282,5 +291,142 @@ export async function registerIepRoutes(app: FastifyInstance) {
     };
 
     return report;
+  });
+
+  // ── DAPE (Adapted Physical Education) ────────────────────────────────────
+  // Returns the learner's active DAPE profile: motor goals from the IEP
+  // grouped by skill category, plus the catalogue of categories Vigor's
+  // DAPE track exposes. No DAPE goals → empty `categories` so the UI can
+  // hide the track gracefully.
+  app.get("/api/family/iep/:learnerId/dape/profile", async (request, reply) => {
+    const claims = await authenticateRequest(request, reply);
+    if (!claims) return;
+
+    const { learnerId } = request.params as LearnerId;
+    const isParent = await verifyParentOwnership(db, claims.sub, learnerId);
+    if (!isParent && claims.role !== "PLATFORM_ADMIN") {
+      return reply.code(403).send({ error: "Access denied" });
+    }
+
+    const goals = await db.select().from(iepGoals).where(eq(iepGoals.learnerId, learnerId));
+    const motorGoals = goals.filter(isDapeGoal);
+
+    const byCategory: Record<string, { label: string; goalIds: string[]; goals: typeof motorGoals }> = {};
+    for (const g of motorGoals) {
+      for (const cat of categoriseDapeGoal(g.goalText)) {
+        const key = cat as string;
+        if (!byCategory[key]) byCategory[key] = { label: DAPE_CATEGORY_LABELS[cat], goalIds: [], goals: [] };
+        byCategory[key].goalIds.push(g.id);
+        byCategory[key].goals.push(g);
+      }
+    }
+
+    return {
+      learnerId,
+      hasActiveTrack: motorGoals.length > 0,
+      totalMotorGoals: motorGoals.length,
+      categories: Object.entries(byCategory).map(([id, v]) => ({
+        id,
+        label: v.label,
+        goalCount: v.goalIds.length,
+        sampleGoals: v.goals.slice(0, 3).map((g) => ({ id: g.id, text: g.goalText })),
+      })),
+      catalogue: Object.entries(DAPE_CATEGORY_LABELS).map(([id, label]) => ({ id, label })),
+    };
+  });
+
+  // Generate a single DAPE activity for the learner. Picks from the curated
+  // library, filtered by category (optional) and adapted to functioning level.
+  app.get("/api/family/iep/:learnerId/dape/activity", async (request, reply) => {
+    const claims = await authenticateRequest(request, reply);
+    if (!claims) return;
+
+    const { learnerId } = request.params as LearnerId;
+    const isParent = await verifyParentOwnership(db, claims.sub, learnerId);
+    // LEARNER role: only allow access to *their own* DAPE activity. Without
+    // this, any learner could enumerate other learners' UUIDs and pull their
+    // motor goal data.
+    const isSelfLearner = claims.role === "LEARNER" && claims.sub === learnerId;
+    if (!isParent && claims.role !== "PLATFORM_ADMIN" && !isSelfLearner) {
+      return reply.code(403).send({ error: "Access denied" });
+    }
+
+    const q = request.query as { category?: string };
+    const learnerRows = await db.select().from(learners).where(eq(learners.id, learnerId));
+    if (learnerRows.length === 0) return reply.code(404).send({ error: "Learner not found" });
+    const level = (learnerRows[0].functioningLevel || "STANDARD") as DapeFunctioningTier;
+
+    // Pick category: explicit query > first DAPE-relevant goal > "locomotor".
+    let category: DapeCategory = "locomotor";
+    if (q.category && DAPE_CATEGORY_LABELS[q.category as DapeCategory]) {
+      category = q.category as DapeCategory;
+    } else {
+      const goals = await db.select().from(iepGoals).where(eq(iepGoals.learnerId, learnerId));
+      const motor = goals.filter(isDapeGoal);
+      if (motor.length > 0) {
+        const cats = categoriseDapeGoal(motor[0].goalText);
+        if (cats[0]) category = cats[0];
+      }
+    }
+
+    const activity = pickActivity(category, level);
+    if (!activity) return reply.code(404).send({ error: "No activity available" });
+    return { learnerId, level, category, activity };
+  });
+
+  // Motor Progress aggregate for the parent/therapist report. Per-category
+  // tally of goal counts, average mastery, and trend (improving/stable/
+  // declining) using the same brain-mastery extraction as /progress.
+  app.get("/api/family/iep/:learnerId/dape/progress", async (request, reply) => {
+    const claims = await authenticateRequest(request, reply);
+    if (!claims) return;
+
+    const { learnerId } = request.params as LearnerId;
+    const isParent = await verifyParentOwnership(db, claims.sub, learnerId);
+    if (!isParent && claims.role !== "PLATFORM_ADMIN") {
+      return reply.code(403).send({ error: "Access denied" });
+    }
+
+    const goals = await db.select().from(iepGoals).where(eq(iepGoals.learnerId, learnerId));
+    const motorGoals = goals.filter(isDapeGoal);
+    const brainRows = await db.select().from(brainStates).where(eq(brainStates.learnerId, learnerId));
+    const masteryMap = extractBrainMastery(brainRows[0] as { masteryLevels: unknown } | undefined);
+
+    const byCat: Record<string, { label: string; goals: number; masterySum: number; trendUp: number; trendDown: number }> = {};
+
+    for (const g of motorGoals) {
+      const cats = categoriseDapeGoal(g.goalText);
+      const dom = (g.domain || "motor").toLowerCase();
+      const mastery = masteryMap[dom] ?? masteryMap["motor"] ?? 0;
+      const prev = g.currentProgress ?? 0;
+      const trendUp = mastery > prev ? 1 : 0;
+      const trendDown = mastery < prev && prev > 0 ? 1 : 0;
+      for (const cat of cats) {
+        const key = cat as string;
+        if (!byCat[key]) byCat[key] = { label: DAPE_CATEGORY_LABELS[cat], goals: 0, masterySum: 0, trendUp: 0, trendDown: 0 };
+        byCat[key].goals++;
+        byCat[key].masterySum += mastery;
+        byCat[key].trendUp += trendUp;
+        byCat[key].trendDown += trendDown;
+      }
+    }
+
+    const categories = Object.entries(byCat).map(([id, v]) => {
+      const avg = v.goals > 0 ? Math.round(v.masterySum / v.goals) : 0;
+      let trend: "improving" | "stable" | "declining" = "stable";
+      if (v.trendUp > v.trendDown) trend = "improving";
+      else if (v.trendDown > v.trendUp) trend = "declining";
+      return { id, label: v.label, goalCount: v.goals, averageMastery: avg, trend };
+    });
+
+    return {
+      learnerId,
+      totalMotorGoals: motorGoals.length,
+      averageMastery: categories.length > 0
+        ? Math.round(categories.reduce((s, c) => s + c.averageMastery, 0) / categories.length)
+        : 0,
+      categories,
+      brainStateVersion: brainRows[0]?.version || 0,
+    };
   });
 }

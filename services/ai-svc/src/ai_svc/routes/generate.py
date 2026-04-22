@@ -301,6 +301,7 @@ Return a JSON object with these exact fields:
   "goals": [
     {
       "domain": "math|ela|speech|behavior|motor|social|life_skills|executive_function",
+      "sub_domain": "optional — for motor goals one of: locomotor|object_control|balance|midline_crossing|heavy_work|vestibular|fine_motor|handwriting_prep|adapted_pe (DAPE). Detect DAPE-related goals from phrases like 'Adapted PE', 'DAPE', 'Gross Motor', 'Fine Motor', 'Motor Planning', 'Locomotor', 'Object Control', 'Midline Crossing', 'Handwriting Legibility'.",
       "description": "Goal description",
       "baseline": "Current performance level",
       "target": "Expected performance level",

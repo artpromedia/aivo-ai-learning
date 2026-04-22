@@ -1739,5 +1739,26 @@
     "stage_banner_label": "이번 주 학습 초점",
     "teacher_history_heading": "최근 업로드",
     "teacher_history_n_learners": "{count}명의 학습자"
+  },
+  "dape": {
+    "track_label": "DAPE 트랙",
+    "track_heading": "적응 체육",
+    "suggest_activity": "활동 제안",
+    "new_activity": "새 활동",
+    "loading": "로딩 중…",
+    "partner_cue": "보조자 단서",
+    "motor_progress": "운동",
+    "motor_progress_overview": "운동 진행",
+    "motor_progress_desc": "이동, 사물 제어, 균형, 중앙선 교차, 운동 계획, 글씨 준비를 IEP 팀을 위해 임상적으로 추적합니다.",
+    "no_motor_goals": "이 IEP에는 아직 운동 목표가 없습니다.",
+    "no_motor_goals_help": "적응 체육, 대근육 운동, 소근육 운동 또는 운동 계획 목표가 포함된 IEP를 업로드하세요.",
+    "total_motor_goals": "운동 목표",
+    "avg_mastery": "평균 숙달도",
+    "skill_areas": "기술 영역",
+    "improving": "향상 중",
+    "n_goals": "{count}개 목표",
+    "trend_improving": "향상 중",
+    "trend_stable": "안정",
+    "trend_declining": "하락"
   }
 }

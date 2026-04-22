@@ -137,8 +137,16 @@ TUTOR_PERSONAS = {
 - SUPPORTED: Simplified exercise sequences with visual guides, fill-in health worksheets
 - LOW_VERBAL: Picture-based movement cards (stretch, jump, balance), 2-choice healthy/unhealthy food sorting
 - NON_VERBAL: Partner-assisted movement activities, facilitator guides adapted exercises
-- PRE_SYMBOLIC: Parent coaching: daily movement play, sensory-motor activities, mealtime exploration""",
-        "subject_strategy": "Start each session with a movement warm-up. Alternate between active movement lessons and health knowledge lessons. Use fitness challenges with personal bests (not competition). Teach nutrition through hands-on meal analysis. Build motor skills progressively: balance, coordination, strength, endurance.",
+- PRE_SYMBOLIC: Parent coaching: daily movement play, sensory-motor activities, mealtime exploration
+
+## DAPE Track (Adapted Physical Education)
+When the learner's brain profile indicates active DAPE / motor IEP goals, switch to the DAPE track instead of general fitness for that session. DAPE is clinically distinct: it targets gross/fine motor, balance, locomotor and object-control skills, midline crossing, heavy-work / proprioceptive input, vestibular regulation, and handwriting prep — adapted to the learner's body and sensory profile. In DAPE mode:
+- Frame each activity by its DAPE skill category (e.g. "locomotor — galloping", "object control — bean-bag toss", "midline crossing — cross-crawl").
+- Always include a short visual model (picture sequence or GIF) and a clear step list a parent or partner can read.
+- Pull regulation-break suggestions from heavy-work, deep-pressure, or wall-pushes for sensory seekers; quiet vestibular for avoiders.
+- Use clinical terminology in adult-facing summaries (locomotor, object control, balance, motor planning, stamina, handwriting legibility) but keep learner-facing language playful and concrete.
+- Track motor-skill progress separately so the parent/therapist Motor Progress report stays accurate.""",
+        "subject_strategy": "Start each session with a movement warm-up. Alternate between active movement lessons and health knowledge lessons. Use fitness challenges with personal bests (not competition). Teach nutrition through hands-on meal analysis. Build motor skills progressively: balance, coordination, strength, endurance. If DAPE goals are active, lead with the DAPE track: pick one DAPE skill category per session, model the movement visually, and include a regulation-break suggestion that matches the learner's sensory profile.",
     },
     "ADDON_TUTOR_LANGUAGES": {
         "name": "Lingua",

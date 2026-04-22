@@ -186,6 +186,13 @@ export default function LessonPage() {
     weekEnd?: string | null;
   } | null>(null);
   const tCurriculum = useTranslations("curriculum");
+  const tDape = useTranslations("dape");
+  const [dapeProfile, setDapeProfile] = useState<{ hasActiveTrack: boolean; categories: { id: string; label: string; goalCount: number }[] } | null>(null);
+  const [dapeActivity, setDapeActivity] = useState<null | {
+    category: string;
+    activity: { name: string; pictureSequence: string[]; steps: string[]; equipment: string[]; partnerCue: string; durationMin: number };
+  }>(null);
+  const [dapeLoading, setDapeLoading] = useState(false);
 
   const { adaptations } = useSensoryAdapter(
     user?.id || null,
@@ -249,7 +256,29 @@ export default function LessonPage() {
         if (data?.focus) setCurriculumFocus(data.focus);
       })
       .catch(() => {});
-  }, [accessToken, user]);
+
+    // For Vigor, check whether this learner has DAPE goals; if so, fetch a
+    // suggested activity so we can offer the DAPE track on the start screen.
+    if (tutorKey === "vigor") {
+      fetch(`/api/family/iep/${user.id}/dape/profile`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => { if (data) setDapeProfile(data); })
+        .catch(() => {});
+    }
+  }, [accessToken, user, tutorKey]);
+
+  const loadDapeActivity = useCallback(async (category?: string) => {
+    if (!user || !accessToken) return;
+    setDapeLoading(true);
+    try {
+      const url = `/api/family/iep/${user.id}/dape/activity${category ? `?category=${encodeURIComponent(category)}` : ""}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (res.ok) setDapeActivity(await res.json());
+    } catch { /* ignore */ }
+    setDapeLoading(false);
+  }, [user, accessToken]);
 
   const handleNarration = useCallback(async (beat: Beat | null) => {
     if (!beat?.narration) {
@@ -406,6 +435,54 @@ export default function LessonPage() {
               >
                 <Play className="w-5 h-5 fill-white" /> {tLearner("start_learning")}
               </button>
+
+              {tutorKey === "vigor" && dapeProfile?.hasActiveTrack && (
+                <div className="mt-6 text-left rounded-2xl border-2 p-4 bg-white" style={{ borderColor: `${tutor.color}40` }}>
+                  <div className="flex items-center justify-between mb-2 gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide" style={{ color: tutor.color }}>{tDape("track_label")}</p>
+                      <p className="font-extrabold text-slate-900">{tDape("track_heading")}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => loadDapeActivity()}
+                      disabled={dapeLoading}
+                      className="text-xs font-bold rounded-full px-3 py-1.5 disabled:opacity-50"
+                      style={{ backgroundColor: `${tutor.color}18`, color: tutor.color }}
+                    >
+                      {dapeActivity ? tDape("new_activity") : (dapeLoading ? tDape("loading") : tDape("suggest_activity"))}
+                    </button>
+                  </div>
+                  {dapeProfile.categories.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {dapeProfile.categories.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => loadDapeActivity(c.id)}
+                          className="text-xs font-bold rounded-full px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700"
+                        >
+                          {c.label} · {c.goalCount}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {dapeActivity && (
+                    <div className="rounded-xl bg-slate-50 p-3 space-y-2">
+                      <p className="font-extrabold text-slate-900 text-sm">{dapeActivity.activity.name}</p>
+                      <p className="text-2xl tracking-widest" aria-hidden>
+                        {dapeActivity.activity.pictureSequence.join(" ")}
+                      </p>
+                      <ol className="list-decimal list-inside text-xs text-slate-700 space-y-0.5">
+                        {dapeActivity.activity.steps.map((s, i) => <li key={i}>{s}</li>)}
+                      </ol>
+                      {dapeActivity.activity.partnerCue && (
+                        <p className="text-xs italic text-slate-500">{tDape("partner_cue")}: {dapeActivity.activity.partnerCue}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div>
                 <button

@@ -1739,5 +1739,26 @@
     "stage_banner_label": "تركيز هذا الأسبوع",
     "teacher_history_heading": "آخر التحميلات",
     "teacher_history_n_learners": "{count} متعلمين"
+  },
+  "dape": {
+    "track_label": "مسار DAPE",
+    "track_heading": "التربية البدنية المُكيَّفة",
+    "suggest_activity": "اقترح نشاطًا",
+    "new_activity": "نشاط جديد",
+    "loading": "جارٍ التحميل…",
+    "partner_cue": "إرشاد للمرافق",
+    "motor_progress": "حركي",
+    "motor_progress_overview": "التقدّم الحركي",
+    "motor_progress_desc": "الحركة، التحكّم بالأشياء، التوازن، عبور خط المنتصف، التخطيط الحركي، والتحضير للكتابة — متابعة سريرية لفريق الخطة التعليمية.",
+    "no_motor_goals": "لا توجد أهداف حركية في هذه الخطة بعد.",
+    "no_motor_goals_help": "ارفع خطة تربوية تتضمّن أهداف تربية بدنية مُكيَّفة أو مهارات حركية كبرى/دقيقة.",
+    "total_motor_goals": "الأهداف الحركية",
+    "avg_mastery": "متوسط الإتقان",
+    "skill_areas": "المهارات",
+    "improving": "تحسّن",
+    "n_goals": "{count} أهداف",
+    "trend_improving": "تحسّن",
+    "trend_stable": "ثابت",
+    "trend_declining": "تراجع"
   }
 }

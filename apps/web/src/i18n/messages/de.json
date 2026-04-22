@@ -1739,5 +1739,26 @@
     "stage_banner_label": "Fokus dieser Woche",
     "teacher_history_heading": "Letzte Uploads",
     "teacher_history_n_learners": "{count} Lernende"
+  },
+  "dape": {
+    "track_label": "DAPE-Pfad",
+    "track_heading": "Angepasster Sportunterricht",
+    "suggest_activity": "Aktivität vorschlagen",
+    "new_activity": "Neue Aktivität",
+    "loading": "Lädt…",
+    "partner_cue": "Hinweis für Begleitperson",
+    "motor_progress": "Motorik",
+    "motor_progress_overview": "Motorischer Fortschritt",
+    "motor_progress_desc": "Lokomotion, Objektkontrolle, Gleichgewicht, Mittellinie überqueren, Bewegungsplanung und Schreibvorbereitung — klinisch für das IEP-Team dokumentiert.",
+    "no_motor_goals": "Noch keine motorischen Ziele im IEP.",
+    "no_motor_goals_help": "Lade ein IEP mit Zielen zu Angepasstem Sport, Grobmotorik, Feinmotorik oder Bewegungsplanung hoch.",
+    "total_motor_goals": "Motorikziele",
+    "avg_mastery": "Ø Beherrschung",
+    "skill_areas": "Bereiche",
+    "improving": "Verbessert sich",
+    "n_goals": "{count} Ziele",
+    "trend_improving": "verbessert",
+    "trend_stable": "stabil",
+    "trend_declining": "rückläufig"
   }
 }

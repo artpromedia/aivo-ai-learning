@@ -1739,5 +1739,26 @@
     "stage_banner_label": "Foco desta semana",
     "teacher_history_heading": "Envios recentes",
     "teacher_history_n_learners": "{count} alunos"
+  },
+  "dape": {
+    "track_label": "Trilha DAPE",
+    "track_heading": "Educação Física Adaptada",
+    "suggest_activity": "Sugerir atividade",
+    "new_activity": "Nova atividade",
+    "loading": "Carregando…",
+    "partner_cue": "Dica para o acompanhante",
+    "motor_progress": "Motor",
+    "motor_progress_overview": "Progresso motor",
+    "motor_progress_desc": "Locomotor, controle de objetos, equilíbrio, cruzamento da linha média, planejamento motor e preparação para escrita — registrado clinicamente para a equipe do PEI.",
+    "no_motor_goals": "Ainda sem metas motoras neste PEI.",
+    "no_motor_goals_help": "Envie um PEI com metas de EF adaptada, motor grosso, motor fino ou planejamento motor.",
+    "total_motor_goals": "Metas motoras",
+    "avg_mastery": "Domínio méd.",
+    "skill_areas": "Áreas",
+    "improving": "Melhorando",
+    "n_goals": "{count} metas",
+    "trend_improving": "melhorando",
+    "trend_stable": "estável",
+    "trend_declining": "em queda"
   }
 }

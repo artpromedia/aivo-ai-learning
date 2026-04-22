@@ -1739,5 +1739,26 @@
     "stage_banner_label": "Focus de la semaine",
     "teacher_history_heading": "Importations récentes",
     "teacher_history_n_learners": "{count} élèves"
+  },
+  "dape": {
+    "track_label": "Parcours DAPE",
+    "track_heading": "Éducation physique adaptée",
+    "suggest_activity": "Suggérer une activité",
+    "new_activity": "Nouvelle activité",
+    "loading": "Chargement…",
+    "partner_cue": "Indice pour l'accompagnant",
+    "motor_progress": "Moteur",
+    "motor_progress_overview": "Progrès moteurs",
+    "motor_progress_desc": "Locomotion, contrôle d'objet, équilibre, croisement de la ligne médiane, planification motrice et préparation à l'écriture — suivi clinique pour l'équipe PEI.",
+    "no_motor_goals": "Aucun objectif moteur dans ce PEI.",
+    "no_motor_goals_help": "Téléversez un PEI incluant des objectifs d'EPS adaptée, motricité globale, motricité fine ou planification motrice.",
+    "total_motor_goals": "Objectifs moteurs",
+    "avg_mastery": "Maîtrise moy.",
+    "skill_areas": "Domaines",
+    "improving": "En progrès",
+    "n_goals": "{count} objectifs",
+    "trend_improving": "en progrès",
+    "trend_stable": "stable",
+    "trend_declining": "en baisse"
   }
 }

@@ -1739,5 +1739,26 @@
     "stage_banner_label": "इस सप्ताह का फोकस",
     "teacher_history_heading": "हाल के अपलोड",
     "teacher_history_n_learners": "{count} शिक्षार्थी"
+  },
+  "dape": {
+    "track_label": "DAPE ट्रैक",
+    "track_heading": "अनुकूलित शारीरिक शिक्षा",
+    "suggest_activity": "गतिविधि सुझाएँ",
+    "new_activity": "नई गतिविधि",
+    "loading": "लोड हो रहा है…",
+    "partner_cue": "सहायक के लिए संकेत",
+    "motor_progress": "मोटर",
+    "motor_progress_overview": "मोटर प्रगति",
+    "motor_progress_desc": "लोकोमोटर, ऑब्जेक्ट नियंत्रण, संतुलन, मिडलाइन क्रॉसिंग, मोटर प्लानिंग और राइटिंग की तैयारी — IEP टीम के लिए नैदानिक रूप से ट्रैक की गई.",
+    "no_motor_goals": "इस IEP में अभी कोई मोटर लक्ष्य नहीं है.",
+    "no_motor_goals_help": "अनुकूलित PE, ग्रॉस मोटर, फाइन मोटर या मोटर प्लानिंग लक्ष्यों वाला IEP अपलोड करें.",
+    "total_motor_goals": "मोटर लक्ष्य",
+    "avg_mastery": "औसत निपुणता",
+    "skill_areas": "कौशल क्षेत्र",
+    "improving": "सुधर रहा",
+    "n_goals": "{count} लक्ष्य",
+    "trend_improving": "सुधर रहा",
+    "trend_stable": "स्थिर",
+    "trend_declining": "घट रहा"
   }
 }

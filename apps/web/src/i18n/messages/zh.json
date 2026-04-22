@@ -1739,5 +1739,26 @@
     "stage_banner_label": "本周重点",
     "teacher_history_heading": "最近上传",
     "teacher_history_n_learners": "{count} 名学生"
+  },
+  "dape": {
+    "track_label": "DAPE 课程",
+    "track_heading": "适应性体育教育",
+    "suggest_activity": "建议活动",
+    "new_activity": "新活动",
+    "loading": "加载中…",
+    "partner_cue": "陪伴提示",
+    "motor_progress": "运动",
+    "motor_progress_overview": "运动进展",
+    "motor_progress_desc": "移动、物体控制、平衡、跨越中线、运动计划和书写准备——为 IEP 团队进行临床跟踪。",
+    "no_motor_goals": "本 IEP 暂无运动目标。",
+    "no_motor_goals_help": "上传含有适应性体育、粗大动作、精细动作或运动计划目标的 IEP。",
+    "total_motor_goals": "运动目标",
+    "avg_mastery": "平均掌握度",
+    "skill_areas": "技能领域",
+    "improving": "进步中",
+    "n_goals": "{count} 个目标",
+    "trend_improving": "进步中",
+    "trend_stable": "稳定",
+    "trend_declining": "下降"
   }
 }

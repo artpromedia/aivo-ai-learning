@@ -1740,5 +1740,26 @@
     },
     "teacher_history_heading": "Recent uploads",
     "teacher_history_n_learners": "{count} learners"
+  },
+  "dape": {
+    "track_label": "DAPE track",
+    "track_heading": "Adapted Physical Education",
+    "suggest_activity": "Suggest activity",
+    "new_activity": "New activity",
+    "loading": "Loading…",
+    "partner_cue": "Coaching cue",
+    "motor_progress": "Motor",
+    "motor_progress_overview": "Motor Progress",
+    "motor_progress_desc": "Locomotor, object control, balance, midline crossing, motor planning, and handwriting prep — tracked clinically for IEP team review.",
+    "no_motor_goals": "No motor goals on this IEP yet.",
+    "no_motor_goals_help": "Upload an IEP that includes Adapted PE, Gross Motor, Fine Motor, or Motor Planning goals to populate this view.",
+    "total_motor_goals": "Motor goals",
+    "avg_mastery": "Avg mastery",
+    "skill_areas": "Skill areas",
+    "improving": "Improving",
+    "n_goals": "{count} goals",
+    "trend_improving": "improving",
+    "trend_stable": "stable",
+    "trend_declining": "declining"
   }
 }

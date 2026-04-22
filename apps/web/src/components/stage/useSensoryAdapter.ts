@@ -109,5 +109,19 @@ export function useSensoryAdapter(
     "--stage-transition-duration": `${300 / adaptations.animationSpeed}ms`,
   } as React.CSSProperties), [adaptations]);
 
-  return { profile, adaptations, loaded, getCSSVars };
+  // DAPE regulation-break suggester. Maps the dominant sensory pattern to
+  // the type of movement break most likely to bring the learner back into
+  // a regulated state: seekers benefit from heavy work / proprioceptive
+  // input; avoiders from quiet vestibular. Returns the DAPE category to
+  // pull a break activity from. Consumers fetch
+  // `/api/family/iep/<id>/dape/activity?category=...` to render it.
+  const getRegulationBreak = useCallback((): { profile: "seeker" | "avoider" | "any"; category: "heavy_work" | "vestibular" | "balance" } => {
+    const seekerSignals = [profile.proprioceptive === "hypo", profile.vestibular === "hypo", profile.tactile === "hypo"].filter(Boolean).length;
+    const avoiderSignals = [profile.vestibular === "hyper", profile.proprioceptive === "hyper", profile.auditory === "hyper", profile.visual === "hyper"].filter(Boolean).length;
+    if (seekerSignals > avoiderSignals) return { profile: "seeker", category: "heavy_work" };
+    if (avoiderSignals > seekerSignals) return { profile: "avoider", category: "vestibular" };
+    return { profile: "any", category: "balance" };
+  }, [profile]);
+
+  return { profile, adaptations, loaded, getCSSVars, getRegulationBreak };
 }

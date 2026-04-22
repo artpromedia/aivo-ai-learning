@@ -3,7 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Target, FileText, BarChart3, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Target, FileText, BarChart3, TrendingUp, TrendingDown, Minus, Activity } from "lucide-react";
 import { IconWell } from "@/components/discovery/_vi";
 
 interface GoalProgress {
@@ -74,7 +74,13 @@ export default function IepDashboardPage() {
   const [documents, setDocuments] = useState<IepDocument[]>([]);
   const [report, setReport] = useState<IepReport | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
-  const [activeTab, setActiveTab] = useState<"goals" | "documents" | "report">("goals");
+  const [activeTab, setActiveTab] = useState<"goals" | "documents" | "motor" | "report">("goals");
+  const [motorProgress, setMotorProgress] = useState<null | {
+    totalMotorGoals: number;
+    averageMastery: number;
+    categories: { id: string; label: string; goalCount: number; averageMastery: number; trend: "improving" | "stable" | "declining" }[];
+  }>(null);
+  const td = useTranslations("dape");
 
   useEffect(() => {
     if (!accessToken || !learnerId) return;
@@ -86,6 +92,9 @@ export default function IepDashboardPage() {
     fetch(`/api/family/iep/${learnerId}/documents`, { headers })
       .then(r => r.json()).then(setDocuments)
       .catch((err) => console.error("Failed to fetch IEP documents:", err));
+    fetch(`/api/family/iep/${learnerId}/dape/progress`, { headers })
+      .then(r => r.ok ? r.json() : null).then((d) => { if (d) setMotorProgress(d); })
+      .catch((err) => console.error("Failed to fetch DAPE progress:", err));
   }, [accessToken, learnerId]);
 
   const generateReport = async () => {
@@ -140,10 +149,10 @@ export default function IepDashboardPage() {
       </div>
 
       <div className="flex gap-2 border-b vi-border pb-1">
-        {(["goals", "documents", "report"] as const).map(tab => (
+        {(["goals", "documents", "motor", "report"] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === tab ? "bg-[hsl(var(--visual-surface))] border vi-border border-b-[hsl(var(--visual-surface))] text-[hsl(var(--visual-primary))] -mb-[1px]" : "vi-text-muted hover:vi-text"}`}>
-            {tab === "goals" ? t("goals") : tab === "documents" ? t("documents") : t("report")}
+            {tab === "goals" ? t("goals") : tab === "documents" ? t("documents") : tab === "motor" ? td("motor_progress") : t("report")}
           </button>
         ))}
       </div>
@@ -236,6 +245,65 @@ export default function IepDashboardPage() {
                 }`}>{doc.status}</span>
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {activeTab === "motor" && (
+        <div className="space-y-4">
+          {!motorProgress || motorProgress.totalMotorGoals === 0 ? (
+            <div className="vi-card p-12 text-center">
+              <div className="flex justify-center mb-3"><IconWell color="science"><Activity className="w-7 h-7" /></IconWell></div>
+              <p className="vi-text-muted font-semibold">{td("no_motor_goals")}</p>
+              <p className="vi-text-muted text-sm mt-2">{td("no_motor_goals_help")}</p>
+            </div>
+          ) : (
+            <>
+              <div className="vi-card p-6">
+                <h2 className="text-lg font-heading font-bold vi-text mb-1">{td("motor_progress_overview")}</h2>
+                <p className="vi-text-muted text-sm mb-4">{td("motor_progress_desc")}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-xl bg-[hsl(var(--visual-primary)/0.12)] text-center">
+                    <div className="text-2xl font-bold text-[hsl(var(--visual-primary))]">{motorProgress.totalMotorGoals}</div>
+                    <div className="text-xs vi-text-muted font-semibold">{td("total_motor_goals")}</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[hsl(var(--visual-science)/0.12)] text-center">
+                    <div className="text-2xl font-bold text-[hsl(var(--visual-science))]">{motorProgress.averageMastery}%</div>
+                    <div className="text-xs vi-text-muted font-semibold">{td("avg_mastery")}</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[hsl(var(--visual-reading)/0.12)] text-center">
+                    <div className="text-2xl font-bold text-[hsl(var(--visual-reading))]">{motorProgress.categories.length}</div>
+                    <div className="text-xs vi-text-muted font-semibold">{td("skill_areas")}</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[hsl(var(--visual-sel)/0.16)] text-center">
+                    <div className="text-2xl font-bold text-[hsl(var(--visual-sel))]">{motorProgress.categories.filter(c => c.trend === "improving").length}</div>
+                    <div className="text-xs vi-text-muted font-semibold">{td("improving")}</div>
+                  </div>
+                </div>
+              </div>
+              {motorProgress.categories.map((c) => (
+                <div key={c.id} className="vi-card p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-bold text-slate-800">{c.label}</p>
+                      <p className="text-xs vi-text-muted">{td("n_goals", { count: c.goalCount })}</p>
+                    </div>
+                    <div className={`flex items-center gap-1 ${TREND_COLORS[c.trend]}`}>
+                      {TREND_ICONS[c.trend]}
+                      <span className="text-sm font-bold capitalize">{td(`trend_${c.trend}`)}</span>
+                    </div>
+                  </div>
+                  <div className="h-3 bg-[hsl(var(--visual-surface-soft))] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full"
+                      style={{
+                        width: `${c.averageMastery}%`,
+                        backgroundColor: c.trend === "declining" ? "hsl(var(--visual-math))" : c.averageMastery >= 70 ? "hsl(var(--visual-science))" : "hsl(var(--visual-primary))",
+                      }} />
+                  </div>
+                  <div className="text-right text-xs font-bold mt-1 vi-text-muted">{c.averageMastery}%</div>
+                </div>
+              ))}
+            </>
           )}
         </div>
       )}

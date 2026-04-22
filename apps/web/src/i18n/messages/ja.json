@@ -1739,5 +1739,26 @@
     "stage_banner_label": "今週のフォーカス",
     "teacher_history_heading": "最近のアップロード",
     "teacher_history_n_learners": "{count} 人の学習者"
+  },
+  "dape": {
+    "track_label": "DAPEトラック",
+    "track_heading": "アダプテッド体育",
+    "suggest_activity": "アクティビティを提案",
+    "new_activity": "新しいアクティビティ",
+    "loading": "読み込み中…",
+    "partner_cue": "サポート役へのヒント",
+    "motor_progress": "運動",
+    "motor_progress_overview": "運動の進捗",
+    "motor_progress_desc": "移動、物体操作、バランス、正中線交差、運動計画、書字準備をIEPチーム向けに臨床的に追跡。",
+    "no_motor_goals": "このIEPには運動目標がまだありません。",
+    "no_motor_goals_help": "アダプテッド体育、粗大運動、微細運動、運動計画の目標を含むIEPをアップロードしてください。",
+    "total_motor_goals": "運動目標",
+    "avg_mastery": "平均到達度",
+    "skill_areas": "スキル領域",
+    "improving": "向上中",
+    "n_goals": "{count} 件の目標",
+    "trend_improving": "向上中",
+    "trend_stable": "安定",
+    "trend_declining": "低下"
   }
 }

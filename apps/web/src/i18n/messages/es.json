@@ -1739,5 +1739,26 @@
     "stage_banner_label": "Foco de esta semana",
     "teacher_history_heading": "Cargas recientes",
     "teacher_history_n_learners": "{count} estudiantes"
+  },
+  "dape": {
+    "track_label": "Vía DAPE",
+    "track_heading": "Educación Física Adaptada",
+    "suggest_activity": "Sugerir actividad",
+    "new_activity": "Nueva actividad",
+    "loading": "Cargando…",
+    "partner_cue": "Pista del acompañante",
+    "motor_progress": "Motor",
+    "motor_progress_overview": "Progreso motor",
+    "motor_progress_desc": "Locomotor, control de objetos, equilibrio, cruce de la línea media, planificación motora y preparación para la escritura — seguimiento clínico para el equipo del IEP.",
+    "no_motor_goals": "Aún no hay objetivos motores en este IEP.",
+    "no_motor_goals_help": "Sube un IEP que incluya objetivos de PE adaptada, motor grueso, motor fino o planificación motora para ver esta vista.",
+    "total_motor_goals": "Metas motoras",
+    "avg_mastery": "Dominio prom.",
+    "skill_areas": "Áreas de habilidad",
+    "improving": "Mejorando",
+    "n_goals": "{count} metas",
+    "trend_improving": "mejorando",
+    "trend_stable": "estable",
+    "trend_declining": "decayendo"
   }
 }
