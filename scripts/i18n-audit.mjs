@@ -51,33 +51,25 @@ const LOANWORDS_BY_LOCALE = {
 };
 
 // Patterns for technical/example values that should never count as
-// "untranslated" regardless of locale (emails, URLs, version strings,
-// values that are just placeholder syntax).
+// "untranslated" regardless of locale: example email addresses, URLs,
+// version-tagged product strings, and strings that contain no alphabetic
+// content outside ICU placeholders (e.g. "{count, plural, ...}").
+// This is intentionally narrow — it must NOT exempt regular short UI
+// copy like "Up", "Met", "Yes" from translation checks.
 function looksLikeTechnicalPattern(value) {
   if (typeof value !== "string") return false;
   const t = value.trim();
-  // Email-like
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return true;
-  // URL-like
   if (/^https?:\/\//i.test(t)) return true;
-  // Version-tagged product strings ("AIVO Learning v1.0.0")
   if (/\bv?\d+(\.\d+){1,3}\b/.test(t)) return true;
-  // Almost entirely ICU placeholder syntax (e.g. "Lv. {level}",
-  // "{count, plural, one {# badge} other {# badges}}", "{count} minutes",
-  // "Section {number} · ~{minutes} min"). Repeatedly strip ICU braces
-  // (handles nesting), then check whether what remains is just short
-  // tokens / punctuation — i.e. the visible content is dominated by
-  // placeholders and untranslatable filler.
+  // Strip ICU placeholders (with nesting) and check for any letters left.
   let stripped = t;
   for (let i = 0; i < 5; i++) {
     const next = stripped.replace(/\{[^{}]*\}/g, "");
     if (next === stripped) break;
     stripped = next;
   }
-  stripped = stripped.replace(/[#·~,.\-:;!?()\[\]]/g, " ").trim();
-  const wordTokens = stripped.split(/\s+/).filter(Boolean);
-  const longWords = wordTokens.filter(w => w.length > 4);
-  if (longWords.length === 0) return true;
+  if (!/[A-Za-z\u00C0-\u024F]/.test(stripped)) return true;
   return false;
 }
 

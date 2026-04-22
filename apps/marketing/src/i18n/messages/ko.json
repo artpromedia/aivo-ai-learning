@@ -881,7 +881,7 @@
     "network_error_retry": "네트워크 오류 — 다시 시도해 주세요",
     "failed_invite": "초대를 보내지 못했습니다",
     "active_tab_label": "활성",
-    "met_label": "Met",
+    "met_label": "달성됨",
     "avg_progress": "평균 진행률",
     "generated_at": "{date}에 생성됨",
     "total_goals_label": "총 목표",

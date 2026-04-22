@@ -50,7 +50,7 @@
     "resending": "Reenviando...",
     "codeResent": "Se ha enviado un nuevo código.",
     "resendFailed": "No se pudo reenviar el código.",
-    "backToLogin": "Volver al inicio de sesión",
+    "backToLogin": "Volver al Inicio de Sesión",
     "sessionExpired": "Tu sesión ha expirado. Inicia sesión de nuevo.",
     "codeExpires": "El código expira en 10 minutos.",
     "googleSignInFailed": "Error con Google",
@@ -92,8 +92,7 @@
     "pleaseEnterEmail": "Ingresa tu correo electrónico",
     "somethingWentWrong": "Algo salió mal. Intenta de nuevo.",
     "checkYourEmail": "Revisa Tu Correo",
-    "resetEmailSent": "Si existe una cuenta para {{email}}, recibirás un enlace para restablecer tu contraseña.",
-    "backToLogin": "Volver al Inicio de Sesión"
+    "resetEmailSent": "Si existe una cuenta para {{email}}, recibirás un enlace para restablecer tu contraseña."
   },
   "parent": {
     "greeting": "Hola, {{name}}",

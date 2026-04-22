@@ -881,7 +881,7 @@
     "network_error_retry": "ネットワークエラー — もう一度お試しください",
     "failed_invite": "招待の送信に失敗しました",
     "active_tab_label": "アクティブ",
-    "met_label": "Met",
+    "met_label": "達成済み",
     "avg_progress": "平均進捗",
     "generated_at": "{date}に生成",
     "total_goals_label": "目標の合計",

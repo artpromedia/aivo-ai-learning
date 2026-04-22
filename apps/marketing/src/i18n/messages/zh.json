@@ -898,7 +898,7 @@
     "network_error_retry": "网络错误 — 请重试",
     "failed_invite": "发送邀请失败",
     "active_tab_label": "活跃",
-    "met_label": "Met",
+    "met_label": "已达成",
     "avg_progress": "平均进度",
     "generated_at": "生成于 {date}",
     "total_goals_label": "目标总数",
