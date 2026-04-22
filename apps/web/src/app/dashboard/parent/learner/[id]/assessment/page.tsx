@@ -1,45 +1,196 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import Image from "next/image";
 import {
-  ArrowLeft, ChevronLeft, ChevronRight, Check, HelpCircle, Heart,
-  Sparkles, Compass, CheckCircle2, Frown, Annoyed, Meh, Smile, Star,
-  type LucideIcon,
+  ArrowLeft, ChevronLeft, ChevronRight, Check, Heart, HelpCircle,
+  Sparkles, Compass, CheckCircle2, Save, Cloud, CloudOff, GripVertical,
+  ShieldCheck, ListChecks,
 } from "lucide-react";
 import { IconWell } from "@/components/discovery/_vi";
-import { PARENT_ASSESSMENT_CATEGORIES, TOTAL_QUESTIONS, type AssessmentQuestion } from "@/lib/assessment-questions";
+import {
+  PARENT_ASSESSMENT_SECTIONS,
+  REAL_SECTIONS,
+  LIKERT5_LABELS,
+  NOT_SURE_VALUE,
+  NOT_SURE_LABEL,
+  COMPAT_IDS,
+  bandFromDob,
+  isQuestionVisible,
+  type AgeBand,
+  type AssessmentQuestion,
+  type AssessmentSection,
+} from "@/lib/assessment-questions";
 
-const SCALE_ICONS: LucideIcon[] = [Frown, Annoyed, Meh, Smile, Star];
+/**
+ * Parent Assessment — page UI.
+ *
+ * Implements the framework from
+ * `attached_assets/Pasted--Aivo-Parent-Assessment-Design-Framework-...txt`:
+ *  • Section 0 (Welcome) and 7 (Wrap-up) render as their own screens.
+ *  • Sections 1–6 render as grouped question lists with a "why this section"
+ *    rationale at the top — much friendlier on mobile than one-q-per-screen.
+ *  • Every Likert ships a "Not sure / Haven't observed" escape hatch
+ *    (framework §4: "Forcing parents to guess degrades data more than missing
+ *    values do").
+ *  • Optional sections show a Skip button.
+ *  • Autosaves to localStorage on every change (debounced) so parents can
+ *    drop and resume across sittings (framework §6).
+ *  • Section chips at the top show progress by name, not just %.
+ *  • Submission shape stays compatible with the existing `level-router`
+ *    heuristic — see `mapCompat*` helpers and COMPAT_IDS in the question bank.
+ */
 
-function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
-  const m = hex.replace("#", "");
-  if (m.length !== 6) return null;
-  const r = parseInt(m.slice(0, 2), 16) / 255;
-  const g = parseInt(m.slice(2, 4), 16) / 255;
-  const b = parseInt(m.slice(4, 6), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
-  const l = (max + min) / 2;
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
-      case g: h = ((b - r) / d + 2); break;
-      case b: h = ((r - g) / d + 4); break;
+// ─────────────────────────────────────────────────────────────────────────────
+// Types & helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+type AnswerValue = string | string[] | number | boolean | null;
+interface Answers {
+  [questionId: string]: AnswerValue;
+  __other?: any;
+}
+
+const WELCOME = PARENT_ASSESSMENT_SECTIONS.find((s) => s.key === "welcome")!;
+const WRAP_UP = PARENT_ASSESSMENT_SECTIONS.find((s) => s.key === "wrap_up")!;
+
+/** Filter a section's question list down to those visible for the given age band.
+ *  Used everywhere we count or render — keeps progress numerator/denominator
+ *  in sync, and keeps age-targeted items hidden until DOB is collected. */
+function visibleQuestions(s: AssessmentSection, band: AgeBand | null): AssessmentQuestion[] {
+  return s.questions.filter((q) => isQuestionVisible(q, band));
+}
+
+function draftKey(learnerId: string) {
+  return `aivo:parent-assessment:draft:${learnerId}`;
+}
+
+function isAnswered(q: AssessmentQuestion, value: AnswerValue): boolean {
+  if (value === null || value === undefined || value === "") return false;
+  if (Array.isArray(value) && value.length === 0) return false;
+  return true;
+}
+
+function countAnswered(
+  section: AssessmentSection,
+  answers: Answers,
+  band: AgeBand | null,
+): number {
+  return visibleQuestions(section, band).reduce(
+    (n, q) => n + (isAnswered(q, answers[q.id] ?? null) ? 1 : 0),
+    0,
+  );
+}
+
+function countTotal(
+  section: AssessmentSection,
+  band: AgeBand | null,
+): number {
+  return visibleQuestions(section, band).length;
+}
+
+/** All currently visible required questions, in section/visible order.
+ *  Used for submit-time validation — only consent and DOB are truly required
+ *  per framework §7 Validation, but the model is generic. */
+function collectMissingRequired(
+  answers: Answers,
+  band: AgeBand | null,
+): { sectionIdx: number; questionId: string }[] {
+  const missing: { sectionIdx: number; questionId: string }[] = [];
+  for (let i = 0; i < REAL_SECTIONS.length; i++) {
+    for (const q of visibleQuestions(REAL_SECTIONS[i], band)) {
+      if (!q.required) continue;
+      if (!isAnswered(q, answers[q.id] ?? null)) {
+        missing.push({ sectionIdx: i, questionId: q.id });
+      }
     }
-    h /= 6;
   }
-  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+  return missing;
 }
-function tint(hex: string, alpha: number): string {
-  const hsl = hexToHsl(hex);
-  if (!hsl) return `${hex}1f`;
-  return `hsl(${hsl.h} ${hsl.s}% ${hsl.l}% / ${alpha})`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Compat mappers — translate new question IDs into the legacy submission shape
+// expected by services/assessment-svc/src/services/level-router.ts
+// ─────────────────────────────────────────────────────────────────────────────
+
+function mapCommunicationMode(answers: Answers): string {
+  const v = answers[COMPAT_IDS.communicationMode] as string | undefined;
+  if (!v) return "verbal";
+  if (v.includes("speaks clearly")) return "verbal";
+  if (v.includes("limited vocabulary")) return "limited_verbal";
+  if (v.includes("Sign language")) return "sign_language";
+  if (v.includes("Communication device") || v.includes("AAC")) return "aac_device";
+  if (v.includes("Picture symbols")) return "aac_device";
+  if (v.includes("Non-verbal")) return "non_verbal";
+  if (v.includes("Gestures")) return "non_verbal";
+  return "verbal";
 }
+
+function mapDeviceInteraction(answers: Answers): string {
+  const v = answers[COMPAT_IDS.deviceInteraction] as string | undefined;
+  if (!v) return "independent";
+  if (v.startsWith("Standard")) return "independent";
+  if (v.includes("larger touch")) return "guided";
+  if (v.includes("occasional guidance")) return "guided";
+  if (v.includes("Switch access")) return "switch_access";
+  if (v.includes("Eye gaze")) return "eye_gaze";
+  if (v.includes("Head tracking")) return "eye_gaze";
+  if (v.includes("Voice control")) return "guided";
+  if (v.startsWith("An adult")) return "partner_assisted";
+  return "independent";
+}
+
+function mapResponseMethod(answers: Answers): string {
+  const v = answers[COMPAT_IDS.responseMethod] as string | undefined;
+  if (!v) return "touch_select";
+  if (v.includes("Speaks")) return "voice";
+  if (v.includes("short words")) return "voice";
+  if (v.includes("Points") || v.includes("touches")) return "touch_select";
+  if (v.includes("communication device") || v.includes("pictures")) return "switch_scan";
+  if (v.includes("Looks") || v.includes("gazes")) return "partner_response";
+  if (v.includes("interprets") || v.includes("Doesn't consistently")) return "partner_response";
+  return "touch_select";
+}
+
+function mapAttentionSpan(answers: Answers): string {
+  const v = answers[COMPAT_IDS.attentionSpan] as string | undefined;
+  if (!v) return "typical";
+  if (v.startsWith("Under 5")) return "very_short";
+  if (v.startsWith("5–10")) return "short";
+  if (v.startsWith("10–20")) return "variable";
+  if (v.startsWith("20–30")) return "typical";
+  if (v.startsWith("30+")) return "typical";
+  return "variable";
+}
+
+function mapDiagnoses(answers: Answers): string[] {
+  const v = answers[COMPAT_IDS.diagnoses];
+  if (!Array.isArray(v) || v.length === 0) return [];
+  const out = new Set<string>();
+  for (const d of v) {
+    if (typeof d !== "string") continue;
+    if (d.startsWith("None") || d.startsWith("Prefer")) continue;
+    if (d.startsWith("ADHD")) out.add("adhd");
+    else if (d.startsWith("Autism")) out.add("asd");
+    else if (d.startsWith("Dyslexia")) out.add("dyslexia");
+    else if (d.startsWith("Dyscalculia")) out.add("dyscalculia");
+    else if (d.startsWith("Speech")) out.add("speech_language");
+    else if (d.startsWith("Hearing")) out.add("hearing");
+    else if (d.startsWith("Vision")) out.add("vision");
+    else if (d.startsWith("Anxiety")) out.add("anxiety");
+    else if (d.startsWith("Depression")) out.add("depression");
+    else if (d.startsWith("Currently")) out.add("under_evaluation");
+    else out.add("other");
+  }
+  return Array.from(out);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────────────
+
+type Screen = "welcome" | "section" | "wrap_up";
 
 export default function ParentAssessmentPage() {
   const { user, accessToken, loading } = useAuth();
@@ -49,27 +200,32 @@ export default function ParentAssessmentPage() {
   const tc = useTranslations("common");
   const learnerId = params.id as string;
 
-  const [currentCategoryIdx, setCurrentCategoryIdx] = useState(0);
-  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [screen, setScreen] = useState<Screen>("welcome");
+  const [currentSectionIdx, setCurrentSectionIdx] = useState(0); // index into REAL_SECTIONS
+  const [answers, setAnswers] = useState<Answers>({});
+  const [otherText, setOtherText] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<any>(null);
-  const [showCelebration, setShowCelebration] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [alreadyCompleted, setAlreadyCompleted] = useState(false);
   const [learnerName, setLearnerName] = useState("");
   const [learnerFunctioningLevel, setLearnerFunctioningLevel] = useState("");
   const [checkingStatus, setCheckingStatus] = useState(true);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Auth gating ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!loading && !user) router.push("/login");
     if (!loading && user && user.role !== "PARENT") router.push("/");
   }, [user, loading, router]);
 
+  // ── Load learner + completion status + any saved draft ──────────────────
   useEffect(() => {
     if (!accessToken || !user) return;
-    const loadStatus = async () => {
+    (async () => {
       try {
         const [learnersRes, statusRes] = await Promise.all([
           fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } }),
@@ -87,103 +243,164 @@ export default function ParentAssessmentPage() {
           const status = await statusRes.json();
           if (status?.completed) setAlreadyCompleted(true);
         }
-      } catch {}
+      } catch { /* swallow — status check is best-effort */ }
+
+      // Restore draft from localStorage (framework §6: resumable across sittings)
+      try {
+        const raw = typeof window !== "undefined" ? localStorage.getItem(draftKey(learnerId)) : null;
+        if (raw) {
+          const draft = JSON.parse(raw);
+          if (draft?.answers) setAnswers(draft.answers);
+          if (draft?.otherText) setOtherText(draft.otherText);
+          if (typeof draft?.currentSectionIdx === "number") setCurrentSectionIdx(draft.currentSectionIdx);
+          if (draft?.consentGiven) setScreen("section");
+          setDraftRestored(true);
+        }
+      } catch { /* ignore corrupt drafts */ }
+
       setCheckingStatus(false);
-    };
-    loadStatus();
+    })();
   }, [accessToken, user, learnerId]);
 
-  const category = PARENT_ASSESSMENT_CATEGORIES[currentCategoryIdx];
-  const question = category?.questions[currentQuestionIdx];
+  // ── Autosave (debounced, 600ms after last change) ───────────────────────
+  useEffect(() => {
+    if (checkingStatus || alreadyCompleted || submitted) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    setSaveStatus("saving");
+    saveTimer.current = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          draftKey(learnerId),
+          JSON.stringify({
+            answers,
+            otherText,
+            currentSectionIdx,
+            consentGiven: !!answers["consent-1"],
+            savedAt: Date.now(),
+          }),
+        );
+        setSaveStatus("saved");
+      } catch {
+        setSaveStatus("idle");
+      }
+    }, 600);
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
+  }, [answers, otherText, currentSectionIdx, learnerId, checkingStatus, alreadyCompleted, submitted]);
 
-  const answeredCount = Object.keys(answers).length;
-  const progress = (answeredCount / TOTAL_QUESTIONS) * 100;
-
-  const isCurrentAnswered = question ? answers[question.id] !== undefined : false;
-  const canAdvance = question ? (!question.required || isCurrentAnswered) : false;
-
-  const setAnswer = useCallback((questionId: string, value: any) => {
-    setAnswers(prev => ({ ...prev, [questionId]: value }));
+  // ── Answer setters ──────────────────────────────────────────────────────
+  const setAnswer = useCallback((id: string, value: AnswerValue) => {
+    setAnswers((prev) => ({ ...prev, [id]: value }));
   }, []);
-
-  const toggleMultiSelect = useCallback((questionId: string, option: string) => {
-    setAnswers(prev => {
-      const current = (prev[questionId] as string[]) || [];
-      const updated = current.includes(option) ? current.filter(o => o !== option) : [...current, option];
-      return { ...prev, [questionId]: updated };
+  const toggleMulti = useCallback((id: string, opt: string) => {
+    setAnswers((prev) => {
+      const cur = (prev[id] as string[]) || [];
+      return { ...prev, [id]: cur.includes(opt) ? cur.filter((o) => o !== opt) : [...cur, opt] };
     });
   }, []);
+  const setOther = useCallback((id: string, text: string) => {
+    setOtherText((prev) => ({ ...prev, [id]: text }));
+  }, []);
 
-  const goNext = () => {
-    if (currentQuestionIdx < category.questions.length - 1) {
-      setCurrentQuestionIdx(currentQuestionIdx + 1);
-    } else if (currentCategoryIdx < PARENT_ASSESSMENT_CATEGORIES.length - 1) {
-      setShowCelebration(true);
-      setTimeout(() => {
-        setShowCelebration(false);
-        setCurrentCategoryIdx(currentCategoryIdx + 1);
-        setCurrentQuestionIdx(0);
-      }, 1500);
+  const consentGiven = !!answers["consent-1"];
+  // Derive the child's age band from DOB so age-targeted items appear/hide.
+  // Falls back to null (= show everything) until DOB is provided.
+  const currentBand = useMemo(
+    () => bandFromDob(answers["ba-dob"] as string | undefined),
+    [answers["ba-dob"]],
+  );
+  const visibleTotal = useMemo(
+    () => REAL_SECTIONS.reduce((n, s) => n + countTotal(s, currentBand), 0),
+    [currentBand],
+  );
+  const totalAnswered = useMemo(
+    () => REAL_SECTIONS.reduce((n, s) => n + countAnswered(s, answers, currentBand), 0),
+    [answers, currentBand],
+  );
+  const overallPct = visibleTotal > 0 ? Math.round((totalAnswered / visibleTotal) * 100) : 0;
+
+  // ── Navigation ──────────────────────────────────────────────────────────
+  const beginAssessment = () => {
+    if (!consentGiven) return;
+    setScreen("section");
+    setCurrentSectionIdx(0);
+  };
+
+  const goToSection = (idx: number) => {
+    setCurrentSectionIdx(idx);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const goNextSection = () => {
+    if (currentSectionIdx < REAL_SECTIONS.length - 1) {
+      goToSection(currentSectionIdx + 1);
+    } else {
+      setScreen("wrap_up");
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  const goPrev = () => {
-    if (currentQuestionIdx > 0) setCurrentQuestionIdx(currentQuestionIdx - 1);
-    else if (currentCategoryIdx > 0) {
-      const prevCat = PARENT_ASSESSMENT_CATEGORIES[currentCategoryIdx - 1];
-      setCurrentCategoryIdx(currentCategoryIdx - 1);
-      setCurrentQuestionIdx(prevCat.questions.length - 1);
-    }
+  const goPrevSection = () => {
+    if (currentSectionIdx > 0) goToSection(currentSectionIdx - 1);
+    else setScreen("welcome");
   };
 
-  const isLastQuestion =
-    currentCategoryIdx === PARENT_ASSESSMENT_CATEGORIES.length - 1 &&
-    currentQuestionIdx === category?.questions.length - 1;
-
-  const getMissingRequired = () => {
-    const missing: string[] = [];
-    for (const cat of PARENT_ASSESSMENT_CATEGORIES) {
-      for (const q of cat.questions) {
-        if (!q.required) continue;
-        const val = answers[q.id];
-        if (val === undefined || val === null || val === "") missing.push(q.id);
-        if (Array.isArray(val) && val.length === 0) missing.push(q.id);
-      }
-    }
-    return missing;
-  };
-
+  // ── Submit ──────────────────────────────────────────────────────────────
   const submit = async () => {
-    const missing = getMissingRequired();
+    // Framework §7 Validation: only DOB and consent are hard-required, but
+    // we surface any required-flagged item the parent missed and route them
+    // back to the first one rather than silently submitting a partial form.
+    if (!consentGiven) {
+      setScreen("welcome");
+      setSubmitError("Please give consent on the welcome screen before submitting.");
+      return;
+    }
+    const missing = collectMissingRequired(answers, currentBand);
     if (missing.length > 0) {
-      const firstMissing = missing[0];
-      for (let ci = 0; ci < PARENT_ASSESSMENT_CATEGORIES.length; ci++) {
-        const qi = PARENT_ASSESSMENT_CATEGORIES[ci].questions.findIndex(q => q.id === firstMissing);
-        if (qi !== -1) { setCurrentCategoryIdx(ci); setCurrentQuestionIdx(qi); break; }
-      }
-      setSubmitError(t("missing_required", { count: missing.length }));
+      const first = missing[0];
+      setScreen("section");
+      setCurrentSectionIdx(first.sectionIdx);
+      setSubmitError(
+        `Please answer the required question${missing.length > 1 ? "s" : ""} before submitting (${missing.length} missing).`,
+      );
+      // Scroll the missing field into view on next paint.
+      setTimeout(() => {
+        const el = typeof document !== "undefined" ? document.getElementById(`q-${first.questionId}`) : null;
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
       return;
     }
     setSubmitting(true);
     setSubmitError(null);
     try {
+      // Merge any "Other" text fields back into the multi-select arrays under
+      // a consistent suffix, so backend gets the final list with custom values.
+      const enriched: Answers = { ...answers };
+      for (const [id, txt] of Object.entries(otherText)) {
+        if (txt && Array.isArray(enriched[id])) {
+          enriched[id] = [...(enriched[id] as string[]), `Other: ${txt}`];
+        } else if (txt) {
+          enriched[`${id}__other`] = txt;
+        }
+      }
+
       const res = await fetch("/api/assessments/parent", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({
           learnerId,
-          communicationMode: mapCommunicationMode(answers),
-          deviceInteraction: mapDeviceInteraction(answers),
-          responseMethod: mapResponseMethod(answers),
-          attentionSpan: mapAttentionSpan(answers),
-          diagnoses: mapDiagnoses(answers),
-          additionalResponses: answers,
+          communicationMode: mapCommunicationMode(enriched),
+          deviceInteraction: mapDeviceInteraction(enriched),
+          responseMethod: mapResponseMethod(enriched),
+          attentionSpan: mapAttentionSpan(enriched),
+          diagnoses: mapDiagnoses(enriched),
+          additionalResponses: enriched,
         }),
       });
       if (res.ok) {
         const data = await res.json();
         setResult(data);
         setSubmitted(true);
+        try { localStorage.removeItem(draftKey(learnerId)); } catch { /* ignore */ }
       } else {
         const err = await res.json().catch(() => null);
         setSubmitError(err?.message || t("submission_failed"));
@@ -194,501 +411,1118 @@ export default function ParentAssessmentPage() {
     setSubmitting(false);
   };
 
+  // ── Render guards ───────────────────────────────────────────────────────
   if (loading || !user || checkingStatus) return null;
 
-  if (alreadyCompleted && !submitted) {
+  if (alreadyCompleted && !submitted) return <AlreadyCompletedScreen
+    learnerName={learnerName}
+    learnerFunctioningLevel={learnerFunctioningLevel}
+    onStartBaseline={() => router.push(`/dashboard/learner/assessment?learnerId=${learnerId}`)}
+    onBackToProfile={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
+    onBackToDashboard={() => router.push("/dashboard/parent")}
+    t={t}
+  />;
+
+  if (submitted && result) return <SubmittedScreen
+    result={result}
+    onContinue={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
+    t={t}
+  />;
+
+  // ── Welcome screen (Section 0) ──────────────────────────────────────────
+  if (screen === "welcome") {
     return (
-      <div className="min-h-screen vi-bg flex items-center justify-center px-4 py-8">
-        <div className="max-w-lg w-full">
-          <section className="vi-card p-8 md:p-10 text-center border-2 border-[hsl(var(--visual-primary)/0.15)] bg-[hsl(var(--visual-surface))] relative overflow-hidden">
-            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[hsl(43_100%_50%/0.18)] blur-2xl" aria-hidden />
-            <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-[hsl(262_83%_58%/0.18)] blur-2xl" aria-hidden />
-            <div className="relative space-y-5">
-              <div className="mx-auto inline-flex">
-                <IconWell color="science" size="lg"><CheckCircle2 className="w-10 h-10" strokeWidth={2.5} /></IconWell>
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(142_71%_45%)] mb-2">All Done</p>
-                <h1 className="text-2xl font-extrabold vi-text">{t("already_complete_title")}</h1>
-                <p className="vi-text-muted mt-2">{t("already_complete_desc", { name: learnerName || t("this_learner") })}</p>
-              </div>
-
-              <div className="vi-card p-4 bg-[hsl(var(--visual-surface))] text-left">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(262_83%_58%)]">{t("functioning_level_label")}</p>
-                <p className="text-lg font-extrabold vi-text mt-1">
-                  {learnerFunctioningLevel.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
-                </p>
-              </div>
-
-              <div className="vi-card p-4 text-left" style={{ background: "hsl(43 100% 50% / 0.06)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
-                <div className="flex items-start gap-3">
-                  <IconWell color="sel" size="sm"><Compass className="w-5 h-5" strokeWidth={2.5} /></IconWell>
-                  <div className="flex-1">
-                    <p className="text-sm font-extrabold text-[hsl(43_100%_50%)]">{t("next_step_baseline")}</p>
-                    <p className="text-xs vi-text-muted mt-1">{t("baseline_child_desc", { name: learnerName || t("your_child") })}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 pt-2">
-                <button
-                  onClick={() => router.push(`/dashboard/learner/assessment?learnerId=${learnerId}`)}
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[hsl(43_100%_50%)] text-white font-extrabold shadow-xl shadow-[hsl(43_100%_50%/0.3)] hover:scale-105 active:scale-95 transition-transform"
-                  style={{ minHeight: "48px" }}
-                >
-                  <Compass className="w-4 h-4" /> {t("start_baseline")}
-                </button>
-                <button
-                  onClick={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold shadow-lg hover:scale-105 active:scale-95 transition-transform"
-                  style={{ minHeight: "48px" }}
-                >
-                  {t("back_to_profile")}
-                </button>
-                <button
-                  onClick={() => router.push("/dashboard/parent")}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[hsl(var(--visual-surface))] border-2 vi-border vi-text font-extrabold hover:border-[hsl(var(--visual-primary)/0.3)] transition-colors"
-                  style={{ minHeight: "48px" }}
-                >
-                  {t("back_to_dashboard")}
-                </button>
-              </div>
-            </div>
-          </section>
-        </div>
+      <div className="min-h-screen vi-bg">
+        <Header
+          learnerName={learnerName}
+          totalAnswered={totalAnswered}
+          totalVisible={visibleTotal}
+          overallPct={overallPct}
+          saveStatus={saveStatus}
+          onBack={() => router.push("/dashboard/parent")}
+          tc={tc}
+        />
+        <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+          <WelcomeScreen
+            learnerName={learnerName}
+            consentGiven={consentGiven}
+            draftRestored={draftRestored}
+            onConsentChange={(v) => setAnswer("consent-1", v)}
+            onBegin={beginAssessment}
+          />
+        </main>
       </div>
     );
   }
 
-  if (submitted && result) {
+  // ── Wrap-up screen (Section 7) ──────────────────────────────────────────
+  if (screen === "wrap_up") {
     return (
-      <div className="min-h-screen vi-bg flex items-center justify-center px-4 py-8">
-        <div className="max-w-lg w-full">
-          <section className="vi-card p-8 md:p-10 text-center border-2 border-[hsl(var(--visual-primary)/0.15)] bg-[hsl(var(--visual-surface))] relative overflow-hidden">
-            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[hsl(43_100%_50%/0.18)] blur-2xl" aria-hidden />
-            <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-[hsl(262_83%_58%/0.18)] blur-2xl" aria-hidden />
-            <div className="relative space-y-5">
-              <div className="mx-auto inline-flex">
-                <IconWell color="science" size="lg"><CheckCircle2 className="w-10 h-10" strokeWidth={2.5} /></IconWell>
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(142_71%_45%)] mb-2">Thank You</p>
-                <h1 className="text-2xl font-extrabold vi-text">{t("assessment_complete_title")}</h1>
-                <p className="vi-text-muted mt-2">{t("assessment_thank_you")}</p>
-              </div>
-
-              {result.functioningLevel && (
-                <div className="vi-card p-4 bg-[hsl(var(--visual-surface))] text-left">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(262_83%_58%)]">{t("recommended_level")}</p>
-                  <p className="text-lg font-extrabold vi-text mt-1">
-                    {(result.functioningLevel.level || "").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
-                  </p>
-                  <p className="text-xs vi-text-muted mt-1">
-                    {t("confidence")}: {(() => {
-                      const c = Number(result.functioningLevel.confidence) || 0;
-                      const pct = c <= 1 ? c * 100 : c;
-                      return `${Math.round(pct)}%`;
-                    })()}
-                  </p>
-                </div>
-              )}
-
-              <div className="vi-card p-4 text-left" style={{ background: "hsl(43 100% 50% / 0.06)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
-                <div className="flex items-start gap-3">
-                  <IconWell color="sel" size="sm"><Compass className="w-5 h-5" strokeWidth={2.5} /></IconWell>
-                  <div className="flex-1">
-                    <p className="text-sm font-extrabold text-[hsl(43_100%_50%)]">{t("next_step_baseline")}</p>
-                    <p className="text-xs vi-text-muted mt-1">{t("baseline_generic_desc")}</p>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold shadow-xl shadow-[hsl(262_83%_58%/0.3)] hover:scale-105 active:scale-95 transition-transform"
-                style={{ minHeight: "48px" }}
-              >
-                {t("continue_to_profile")} <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </section>
-        </div>
+      <div className="min-h-screen vi-bg">
+        <Header
+          learnerName={learnerName}
+          totalAnswered={totalAnswered}
+          totalVisible={visibleTotal}
+          overallPct={overallPct}
+          saveStatus={saveStatus}
+          onBack={() => router.push("/dashboard/parent")}
+          tc={tc}
+        />
+        <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+          <SectionProgressChips
+            currentIdx={REAL_SECTIONS.length}
+            answers={answers}
+            band={currentBand}
+            onJump={(i) => { setScreen("section"); goToSection(i); }}
+          />
+          <WrapUpScreen
+            section={WRAP_UP}
+            answers={answers}
+            learnerName={learnerName}
+            onAnswer={setAnswer}
+            onBack={() => { setScreen("section"); goToSection(REAL_SECTIONS.length - 1); }}
+            onSubmit={submit}
+            submitting={submitting}
+            submitError={submitError}
+            sectionsAnsweredSummary={REAL_SECTIONS.map((s) => ({
+              label: s.label,
+              answered: countAnswered(s, answers, currentBand),
+              total: countTotal(s, currentBand),
+            }))}
+          />
+        </main>
       </div>
     );
   }
 
+  // ── Section flow (Sections 1–6) ─────────────────────────────────────────
+  const section = REAL_SECTIONS[currentSectionIdx];
   return (
     <div className="min-h-screen vi-bg">
-      <header className="bg-[hsl(var(--visual-surface))] border-b vi-border sticky top-0 z-20">
-        <div className="max-w-3xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push(`/dashboard/parent`)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-bold vi-text-muted hover:vi-surface-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%)]"
-            >
-              <ArrowLeft className="w-4 h-4" /> {tc("back")}
-            </button>
-            <div className="hidden sm:flex items-center gap-2">
-              <IconWell color="primary" size="sm"><Sparkles className="w-5 h-5" strokeWidth={2.5} /></IconWell>
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider vi-text-muted opacity-70">Parent Assessment</p>
-                <p className="text-sm font-extrabold vi-text">
-                  {learnerName ? `Tell us about ${learnerName}` : "Tell us about your child"}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="text-xs font-bold vi-text-muted vi-surface-soft px-3 py-1.5 rounded-full whitespace-nowrap">
-            {answeredCount} / {TOTAL_QUESTIONS}
-          </div>
-        </div>
-        <div className="h-1.5 vi-surface-soft">
+      <Header
+        learnerName={learnerName}
+        totalAnswered={totalAnswered}
+          totalVisible={visibleTotal}
+        overallPct={overallPct}
+        saveStatus={saveStatus}
+        onBack={() => router.push("/dashboard/parent")}
+        tc={tc}
+      />
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+        <SectionProgressChips
+          currentIdx={currentSectionIdx}
+          answers={answers}
+          band={currentBand}
+          onJump={goToSection}
+        />
+
+        <SectionView
+          section={section}
+          answers={answers}
+          band={currentBand}
+          otherText={otherText}
+          onAnswer={setAnswer}
+          onToggleMulti={toggleMulti}
+          onOtherChange={setOther}
+        />
+
+        {submitError && (
           <div
-            className="h-full bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(340_82%_52%)] rounded-r-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </header>
-
-      {showCelebration && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[hsl(var(--visual-text)/0.30)] backdrop-blur-sm">
-          <div className="vi-card p-8 text-center max-w-sm mx-4 animate-in fade-in zoom-in border-2" style={{ borderColor: "hsl(142 71% 45% / 0.3)" }}>
-            <div className="mx-auto inline-flex mb-3">
-              <IconWell color="science" size="md"><Check className="w-7 h-7" strokeWidth={3} /></IconWell>
-            </div>
-            <h3 className="text-xl font-extrabold vi-text">{t("section_complete")}</h3>
-            <p className="text-sm vi-text-muted mt-1">{t("moving_next")}</p>
+            className="vi-card p-3 text-sm font-semibold text-center"
+            style={{ background: "hsl(0 72% 51% / 0.06)", borderColor: "hsl(0 72% 51% / 0.3)", color: "hsl(0 72% 51%)" }}
+          >
+            {submitError}
           </div>
-        </div>
-      )}
-
-      <main className="max-w-3xl mx-auto px-6 py-6 space-y-5">
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-          {PARENT_ASSESSMENT_CATEGORIES.map((cat, idx) => {
-            const catAnswered = cat.questions.filter(q => answers[q.id] !== undefined).length;
-            const catTotal = cat.questions.length;
-            const isComplete = catAnswered === catTotal;
-            const isCurrent = idx === currentCategoryIdx;
-            const baseStyle = isCurrent
-              ? { backgroundColor: tint(cat.color, 0.1), borderColor: cat.color, color: cat.color }
-              : isComplete
-              ? { backgroundColor: "hsl(142 71% 45% / 0.1)", borderColor: "hsl(142 71% 45% / 0.3)", color: "hsl(142 71% 45%)" }
-              : { backgroundColor: "white", borderColor: "rgb(226 232 240)", color: "rgb(100 116 139)" };
-            return (
-              <button
-                key={cat.key}
-                onClick={() => { setCurrentCategoryIdx(idx); setCurrentQuestionIdx(0); }}
-                aria-pressed={isCurrent}
-                aria-label={`${cat.label}: ${catAnswered} of ${catTotal} answered${isComplete ? ", complete" : ""}`}
-                className="flex items-center gap-2 flex-shrink-0 px-3 py-2 rounded-full border-2 text-xs font-bold transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={baseStyle}
-              >
-                <span className="text-base leading-none" aria-hidden>{cat.icon}</span>
-                <span>{cat.label}</span>
-                {isComplete ? (
-                  <Check className="w-3.5 h-3.5" strokeWidth={3} aria-hidden />
-                ) : (
-                  <span className={`text-[10px] font-extrabold tabular-nums ${isCurrent ? "" : "vi-text-muted opacity-70"}`}>{catAnswered}/{catTotal}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {question && (
-          <section className="vi-card p-7 space-y-6">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
-                style={{ backgroundColor: tint(category.color, 0.12), color: category.color }}
-                aria-hidden
-              >
-                {category.icon}
-              </div>
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: category.color }}>
-                  {category.label}
-                </p>
-                <p className="text-xs vi-text-muted opacity-70 font-semibold">
-                  {t("question_of", { current: currentQuestionIdx + 1, total: category.questions.length })}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <h2 className="text-xl md:text-2xl font-extrabold vi-text leading-snug">
-                {question.questionText}
-              </h2>
-              {question.helpText && (
-                <p className="mt-2 text-sm vi-text-muted italic flex items-start gap-1.5">
-                  <HelpCircle className="w-4 h-4 mt-0.5 flex-shrink-0 vi-text-muted opacity-70" />
-                  <span>{question.helpText}</span>
-                </p>
-              )}
-            </div>
-
-            <QuestionInput
-              question={question}
-              value={answers[question.id]}
-              categoryColor={category.color}
-              onSelect={(v) => setAnswer(question.id, v)}
-              onMultiToggle={(opt) => toggleMultiSelect(question.id, opt)}
-              onTextChange={(v) => setAnswer(question.id, v)}
-              onScaleChange={(v) => setAnswer(question.id, v)}
-            />
-
-            {submitError && (
-              <div className="p-3 rounded-2xl border-2 text-sm font-semibold text-center" style={{ background: "hsl(0 72% 51% / 0.06)", borderColor: "hsl(0 72% 51% / 0.3)", color: "hsl(0 72% 51%)" }}>
-                {submitError}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-4 border-t vi-border">
-              <button
-                onClick={goPrev}
-                disabled={currentCategoryIdx === 0 && currentQuestionIdx === 0}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-bold vi-text-muted hover:vi-surface-soft transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--visual-primary)/0.4)]"
-              >
-                <ChevronLeft className="w-4 h-4" /> {t("previous")}
-              </button>
-
-              {isLastQuestion ? (
-                <button
-                  onClick={submit}
-                  disabled={submitting}
-                  className="inline-flex items-center gap-1.5 px-7 py-2.5 rounded-full bg-[hsl(142_71%_45%)] text-white font-extrabold text-sm shadow-lg shadow-[hsl(142_71%_45%/0.3)] hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? t("submitting") : <>{t("submit_assessment")} <Check className="w-4 h-4" strokeWidth={3} /></>}
-                </button>
-              ) : (
-                <button
-                  onClick={goNext}
-                  disabled={!canAdvance}
-                  className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-white font-extrabold text-sm shadow-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: category.color, boxShadow: `0 8px 24px ${tint(category.color, 0.3)}` }}
-                >
-                  {tc("next")} <ChevronRight className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </section>
         )}
 
-        <div className="vi-card p-4 flex items-start gap-3" style={{ background: "hsl(43 100% 50% / 0.08)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
-          <IconWell color="sel" size="sm"><Sparkles className="w-5 h-5" strokeWidth={2.5} /></IconWell>
-          <p className="text-sm text-slate-800">
-            Your answers help your tutors meet {learnerName || "your child"} where they are.{" "}
-            <span className="font-extrabold">You can edit anything later.</span>
-          </p>
-        </div>
+        <SectionFooterNav
+          isFirst={currentSectionIdx === 0}
+          isLast={currentSectionIdx === REAL_SECTIONS.length - 1}
+          isOptional={!!section.optional}
+          onPrev={goPrevSection}
+          onNext={goNextSection}
+          onSkip={goNextSection}
+        />
       </main>
     </div>
   );
 }
 
-function QuestionInput({
-  question: q,
-  value,
-  categoryColor,
-  onSelect,
-  onMultiToggle,
-  onTextChange,
-  onScaleChange,
+// ─────────────────────────────────────────────────────────────────────────────
+// Header
+// ─────────────────────────────────────────────────────────────────────────────
+
+function Header({
+  learnerName, totalAnswered, totalVisible, overallPct, saveStatus, onBack, tc,
+}: {
+  learnerName: string;
+  totalAnswered: number;
+  totalVisible: number;
+  overallPct: number;
+  saveStatus: "idle" | "saving" | "saved";
+  onBack: () => void;
+  tc: ReturnType<typeof useTranslations>;
+}) {
+  return (
+    <header className="bg-[hsl(var(--visual-surface))] border-b vi-border sticky top-0 z-20">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-bold vi-text-muted hover:vi-surface-soft transition-colors"
+          style={{ minHeight: "40px" }}
+        >
+          <ArrowLeft className="w-4 h-4" /> {tc("back")}
+        </button>
+        <div className="hidden sm:flex items-center gap-2 min-w-0">
+          <IconWell color="primary" size="sm"><Sparkles className="w-4 h-4" strokeWidth={2.5} /></IconWell>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider vi-text-muted opacity-70 truncate">Parent assessment</p>
+            <p className="text-sm font-extrabold vi-text truncate">
+              {learnerName ? `Tell us about ${learnerName}` : "Tell us about your child"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <SaveIndicator status={saveStatus} />
+          <div className="text-xs font-bold vi-text-muted vi-surface-soft px-3 py-1.5 rounded-full whitespace-nowrap tabular-nums">
+            {totalAnswered}/{totalVisible}
+          </div>
+        </div>
+      </div>
+      <div className="h-1.5 vi-surface-soft">
+        <div
+          className="h-full bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(43_100%_50%)] rounded-r-full transition-all duration-300"
+          style={{ width: `${overallPct}%` }}
+        />
+      </div>
+    </header>
+  );
+}
+
+function SaveIndicator({ status }: { status: "idle" | "saving" | "saved" }) {
+  if (status === "idle") return null;
+  const isSaving = status === "saving";
+  return (
+    <span
+      className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold vi-text-muted whitespace-nowrap"
+      aria-live="polite"
+    >
+      {isSaving ? <Cloud className="w-3.5 h-3.5 animate-pulse" /> : <CloudOff className="w-3.5 h-3.5 opacity-60" />}
+      {isSaving ? "Saving…" : "Saved"}
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Welcome screen
+// ─────────────────────────────────────────────────────────────────────────────
+
+function WelcomeScreen({
+  learnerName, consentGiven, draftRestored, onConsentChange, onBegin,
+}: {
+  learnerName: string;
+  consentGiven: boolean;
+  draftRestored: boolean;
+  onConsentChange: (v: boolean) => void;
+  onBegin: () => void;
+}) {
+  return (
+    <section className="vi-card p-6 sm:p-8 relative overflow-hidden">
+      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[hsl(43_100%_50%/0.18)] blur-2xl" aria-hidden />
+      <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-[hsl(262_83%_58%/0.18)] blur-2xl" aria-hidden />
+      <div className="relative space-y-5">
+        <div className="flex items-start gap-3">
+          <IconWell color="primary" size="lg"><Heart className="w-7 h-7" strokeWidth={2.5} /></IconWell>
+          <div className="flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(262_83%_58%)] mb-1">Welcome</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold vi-text leading-tight">
+              {learnerName ? `Tell us about ${learnerName}` : "Tell us about your child"}
+            </h1>
+            <p className="vi-text-muted mt-2 text-sm sm:text-base leading-relaxed">
+              The next 12 minutes help your tutors meet your child exactly where they are.
+              Save anytime — come back when you can.
+            </p>
+          </div>
+        </div>
+
+        {draftRestored && (
+          <div className="vi-card p-3 flex items-center gap-2 text-sm" style={{ background: "hsl(142 71% 45% / 0.08)", borderColor: "hsl(142 71% 45% / 0.3)" }}>
+            <Save className="w-4 h-4 text-[hsl(142_71%_45%)] flex-shrink-0" />
+            <span className="vi-text">We restored your saved progress.</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <Stat icon="⏱" label="About 12 minutes" />
+          <Stat icon="📑" label="8 short sections" />
+          <Stat icon="💾" label="Autosaved as you go" />
+        </div>
+
+        <div className="vi-card p-4 vi-surface-soft text-left">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-[hsl(262_83%_58%)] mb-2">What we'll ask about</p>
+          <ul className="text-sm vi-text space-y-1.5">
+            <li>• What lights your child up — strengths, interests, what motivates them</li>
+            <li>• How they communicate, connect, and think</li>
+            <li>• How they learn best and the device they'll use</li>
+            <li>• What you'd most like us to help with</li>
+          </ul>
+        </div>
+
+        <label className="vi-card p-4 flex items-start gap-3 cursor-pointer transition-all" style={{ borderColor: consentGiven ? "hsl(262 83% 58% / 0.5)" : undefined }}>
+          <input
+            type="checkbox"
+            checked={consentGiven}
+            onChange={(e) => onConsentChange(e.target.checked)}
+            className="mt-0.5 w-5 h-5 accent-[hsl(262_83%_58%)] flex-shrink-0"
+          />
+          <span className="text-sm vi-text flex-1">
+            <ShieldCheck className="inline w-4 h-4 mr-1 text-[hsl(262_83%_58%)]" />
+            <span className="font-bold">I understand</span> my answers will be used to personalize learning for my child.
+            I can edit, export, or delete this anytime.
+          </span>
+        </label>
+
+        <button
+          onClick={onBegin}
+          disabled={!consentGiven}
+          className="w-full inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold shadow-xl shadow-[hsl(262_83%_58%/0.3)] hover:scale-[1.01] active:scale-95 transition-transform disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+          style={{ minHeight: "52px" }}
+        >
+          {draftRestored ? "Continue" : "Begin"} <ChevronRight className="w-5 h-5" />
+        </button>
+        <p className="text-xs vi-text-muted text-center opacity-70">
+          You can skip optional sections and edit anything later.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function Stat({ icon, label }: { icon: string; label: string }) {
+  return (
+    <div className="vi-card p-3 vi-surface-soft text-center">
+      <div className="text-xl mb-0.5">{icon}</div>
+      <div className="text-xs font-bold vi-text">{label}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section progress chips (top of every section/wrap-up screen)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SectionProgressChips({
+  currentIdx, answers, band, onJump,
+}: {
+  currentIdx: number;
+  answers: Answers;
+  band: AgeBand | null;
+  onJump: (i: number) => void;
+}) {
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+      {REAL_SECTIONS.map((s, idx) => {
+        const answered = countAnswered(s, answers, band);
+        const total = countTotal(s, band);
+        const isComplete = answered === total;
+        const isCurrent = idx === currentIdx;
+        return (
+          <button
+            key={s.key}
+            onClick={() => onJump(idx)}
+            aria-pressed={isCurrent}
+            aria-label={`Section ${s.number}: ${s.label}, ${answered} of ${total} answered`}
+            className={[
+              "flex items-center gap-1.5 flex-shrink-0 px-3 py-2 rounded-full border-2 text-xs font-bold transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%/0.4)]",
+              isCurrent
+                ? "bg-[hsl(262_83%_58%/0.12)] border-[hsl(262_83%_58%)] text-[hsl(262_83%_58%)]"
+                : isComplete
+                  ? "bg-[hsl(142_71%_45%/0.10)] border-[hsl(142_71%_45%/0.30)] text-[hsl(142_71%_45%)]"
+                  : "bg-[hsl(var(--visual-surface))] vi-border vi-text-muted",
+            ].join(" ")}
+          >
+            <span className="text-base leading-none" aria-hidden>{s.icon}</span>
+            <span className="whitespace-nowrap">{s.shortLabel}</span>
+            {isComplete ? (
+              <Check className="w-3.5 h-3.5" strokeWidth={3} aria-hidden />
+            ) : (
+              <span className="text-[10px] tabular-nums opacity-70">{answered}/{total}</span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SectionView — renders all questions of one section grouped on one screen
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SectionView({
+  section, answers, band, otherText, onAnswer, onToggleMulti, onOtherChange,
+}: {
+  section: AssessmentSection;
+  answers: Answers;
+  band: AgeBand | null;
+  otherText: Record<string, string>;
+  onAnswer: (id: string, value: AnswerValue) => void;
+  onToggleMulti: (id: string, opt: string) => void;
+  onOtherChange: (id: string, text: string) => void;
+}) {
+  const visible = visibleQuestions(section, band);
+  return (
+    <section className="vi-card p-6 sm:p-7 space-y-6">
+      <div className="flex items-start gap-3 pb-5 border-b vi-border">
+        <div
+          className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+          style={{ backgroundColor: "hsl(262 83% 58% / 0.12)" }}
+          aria-hidden
+        >
+          {section.icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[hsl(262_83%_58%)] mb-1">
+            Section {section.number} · ~{section.estimatedMinutes} min
+            {section.optional && <span className="ml-2 text-[hsl(43_100%_50%)]">· Optional</span>}
+          </p>
+          <h2 className="text-xl sm:text-2xl font-extrabold vi-text leading-tight">{section.label}</h2>
+          <p className="vi-text-muted text-sm mt-1.5 leading-relaxed">{section.rationale}</p>
+        </div>
+      </div>
+
+      <ol className="space-y-7 list-none">
+        {visible.map((q, idx) => (
+          <li key={q.id} id={`q-${q.id}`} className="scroll-mt-24">
+            <QuestionBlock
+              question={q}
+              questionNumber={idx + 1}
+              value={answers[q.id] ?? null}
+              otherValue={otherText[q.id] ?? ""}
+              onAnswer={(v) => onAnswer(q.id, v)}
+              onToggleMulti={(opt) => onToggleMulti(q.id, opt)}
+              onOtherChange={(t) => onOtherChange(q.id, t)}
+            />
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function QuestionBlock({
+  question: q, questionNumber, value, otherValue, onAnswer, onToggleMulti, onOtherChange,
 }: {
   question: AssessmentQuestion;
-  value: any;
-  categoryColor: string;
-  onSelect: (v: string) => void;
-  onMultiToggle: (opt: string) => void;
-  onTextChange: (v: string) => void;
-  onScaleChange: (v: number) => void;
+  questionNumber: number;
+  value: AnswerValue;
+  otherValue: string;
+  onAnswer: (v: AnswerValue) => void;
+  onToggleMulti: (opt: string) => void;
+  onOtherChange: (t: string) => void;
 }) {
-  const t = useTranslations("assessment");
-  const tintBg = tint(categoryColor, 0.1);
-
-  if (q.questionType === "multiple_choice" || q.questionType === "yes_no") {
-    return (
-      <div className="space-y-2" role="radiogroup">
-        {(q.options || []).map(opt => {
-          const selected = value === opt;
-          return (
-            <button
-              key={opt}
-              onClick={() => onSelect(opt)}
-              role="radio"
-              aria-checked={selected}
-              className="w-full flex items-center gap-3 text-left px-4 py-3.5 rounded-2xl border-2 text-sm font-semibold transition-all hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              style={{
-                borderColor: selected ? categoryColor : "rgb(226 232 240)",
-                backgroundColor: selected ? tintBg : "white",
-                color: selected ? categoryColor : "rgb(71 85 105)",
-              }}
-            >
-              <span
-                className="w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0"
-                style={selected
-                  ? { backgroundColor: categoryColor, borderColor: categoryColor, color: "white" }
-                  : { borderColor: "rgb(203 213 225)" }}
-              >
-                {selected && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
-              </span>
-              <span className="font-bold flex-1">{opt}</span>
-            </button>
-          );
-        })}
+  const labelId = `q-${q.id}-label`;
+  return (
+    <div>
+      <div className="flex items-baseline gap-2 mb-2">
+        <span className="text-xs font-extrabold tabular-nums vi-text-muted opacity-70 w-5 flex-shrink-0" aria-hidden>
+          {questionNumber}.
+        </span>
+        <h3 id={labelId} className="text-base sm:text-lg font-extrabold vi-text leading-snug flex-1">
+          {q.text}
+          {q.required && <span className="ml-1.5 text-[hsl(0_72%_51%)]" aria-label="required">*</span>}
+          {!q.required && <span className="ml-2 text-[10px] font-bold uppercase tracking-wider vi-text-muted opacity-60">Optional</span>}
+        </h3>
       </div>
-    );
-  }
-
-  if (q.questionType === "multi_select") {
-    const selected = (value as string[]) || [];
-    return (
-      <div className="space-y-2" role="group">
-        {(q.options || []).map(opt => {
-          const isSelected = selected.includes(opt);
-          return (
-            <button
-              key={opt}
-              onClick={() => onMultiToggle(opt)}
-              aria-pressed={isSelected}
-              className="w-full flex items-center gap-3 text-left px-4 py-3.5 rounded-2xl border-2 text-sm font-semibold transition-all hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              style={{
-                borderColor: isSelected ? categoryColor : "rgb(226 232 240)",
-                backgroundColor: isSelected ? tintBg : "white",
-                color: isSelected ? categoryColor : "rgb(71 85 105)",
-              }}
-            >
-              <span
-                className="w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0"
-                style={isSelected
-                  ? { backgroundColor: categoryColor, borderColor: categoryColor, color: "white" }
-                  : { borderColor: "rgb(203 213 225)" }}
-              >
-                {isSelected && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
-              </span>
-              <span className="font-bold flex-1">{opt}</span>
-            </button>
-          );
-        })}
+      {q.helpText && (
+        <p className="ml-7 mb-3 text-xs vi-text-muted italic flex items-start gap-1.5">
+          <HelpCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 opacity-70" />
+          <span>{q.helpText}</span>
+        </p>
+      )}
+      <div className="ml-0 sm:ml-7 mt-3">
+        <QuestionInput
+          q={q}
+          labelId={labelId}
+          value={value}
+          otherValue={otherValue}
+          onAnswer={onAnswer}
+          onToggleMulti={onToggleMulti}
+          onOtherChange={onOtherChange}
+        />
       </div>
-    );
-  }
+    </div>
+  );
+}
 
-  if (q.questionType === "rating_scale") {
-    return (
-      <div className="pt-2">
-        <div className="flex items-center gap-2 mb-3">
-          <Heart className="w-4 h-4 text-[hsl(43_100%_50%)] fill-[hsl(43_100%_50%)]" aria-hidden />
-          <p className="text-sm font-bold vi-text">How often does this feel true?</p>
-        </div>
-        <div className="flex items-center justify-between gap-1" role="radiogroup">
-          {Array.from({ length: (q.scaleMax ?? 5) - (q.scaleMin ?? 1) + 1 }).map((_, i) => {
-            const val = (q.scaleMin ?? 1) + i;
-            const selected = value === val;
-            const Icon = SCALE_ICONS[Math.min(i, SCALE_ICONS.length - 1)];
+// ─────────────────────────────────────────────────────────────────────────────
+// QuestionInput — switch on question type
+// ─────────────────────────────────────────────────────────────────────────────
+
+function QuestionInput({
+  q, labelId, value, otherValue, onAnswer, onToggleMulti, onOtherChange,
+}: {
+  q: AssessmentQuestion;
+  labelId: string;
+  value: AnswerValue;
+  otherValue: string;
+  onAnswer: (v: AnswerValue) => void;
+  onToggleMulti: (opt: string) => void;
+  onOtherChange: (t: string) => void;
+}) {
+  switch (q.type) {
+    case "consent_checkbox":
+      return null; // Handled inline on the Welcome screen.
+
+    case "date":
+      return (
+        <input
+          type="date"
+          value={(value as string) ?? ""}
+          onChange={(e) => onAnswer(e.target.value)}
+          max={new Date().toISOString().slice(0, 10)}
+          className="w-full sm:w-auto rounded-2xl border-2 vi-border px-4 py-3 text-base vi-text font-semibold focus:outline-none focus:border-[hsl(262_83%_58%)] transition-colors"
+          style={{ minHeight: "44px" }}
+        />
+      );
+
+    case "open_short":
+      return (
+        <input
+          type="text"
+          value={(value as string) ?? ""}
+          onChange={(e) => onAnswer(e.target.value)}
+          placeholder="Type here…"
+          className="w-full rounded-2xl border-2 vi-border px-4 py-3 text-base vi-text placeholder-[hsl(var(--visual-text-muted))] focus:outline-none focus:border-[hsl(262_83%_58%)] transition-colors"
+          style={{ minHeight: "44px" }}
+        />
+      );
+
+    case "open_long":
+      return (
+        <textarea
+          value={(value as string) ?? ""}
+          onChange={(e) => onAnswer(e.target.value)}
+          placeholder="Type here… (no wrong answers)"
+          rows={3}
+          className="w-full rounded-2xl border-2 vi-border p-4 text-sm vi-text placeholder-[hsl(var(--visual-text-muted))] focus:outline-none focus:border-[hsl(262_83%_58%)] resize-y transition-colors"
+        />
+      );
+
+    case "yes_no":
+      return (
+        <div className="flex gap-2 flex-wrap">
+          {["Yes", "No", "Prefer not to say"].map((opt) => {
+            const selected = value === opt;
             return (
               <button
-                key={val}
-                type="button"
-                onClick={() => onScaleChange(val)}
-                role="radio"
-                aria-checked={selected}
-                aria-label={`${val} of ${q.scaleMax ?? 5}`}
-                className="flex flex-col items-center gap-1 p-3 rounded-2xl transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={selected ? { backgroundColor: tintBg } : undefined}
+                key={opt}
+                onClick={() => onAnswer(opt)}
+                aria-pressed={selected}
+                className={[
+                  "px-5 py-2.5 rounded-full border-2 text-sm font-extrabold transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%/0.4)]",
+                  selected
+                    ? "bg-[hsl(262_83%_58%)] border-[hsl(262_83%_58%)] text-white"
+                    : "bg-[hsl(var(--visual-surface))] vi-border vi-text-muted hover:border-[hsl(262_83%_58%/0.4)]",
+                ].join(" ")}
+                style={{ minHeight: "44px" }}
               >
-                <span className={`transition-all flex items-center justify-center ${selected ? "scale-110" : "opacity-40"}`} aria-hidden style={{ color: selected ? categoryColor : "rgb(148 163 184)" }}>
-                  <Icon className="w-8 h-8" strokeWidth={2} />
-                </span>
-                <span className="text-[10px] font-extrabold tabular-nums" style={{ color: selected ? categoryColor : "rgb(148 163 184)" }}>{val}</span>
+                {opt}
               </button>
             );
           })}
         </div>
-        {(q.scaleLabels?.min || q.scaleLabels?.max) && (
-          <div className="flex justify-between mt-2 px-2">
-            <span className="text-xs vi-text-muted opacity-70 font-semibold">{q.scaleLabels?.min}</span>
-            <span className="text-xs vi-text-muted opacity-70 font-semibold">{q.scaleLabels?.max}</span>
+      );
+
+    case "single_select":
+      return (
+        <SingleSelect
+          options={q.options || []}
+          value={(value as string) ?? null}
+          onChange={onAnswer}
+          allowOther={!!q.allowOther}
+          otherValue={otherValue}
+          onOtherChange={onOtherChange}
+        />
+      );
+
+    case "multi_select":
+      return (
+        <MultiSelect
+          options={q.options || []}
+          values={(value as string[]) || []}
+          onToggle={onToggleMulti}
+          allowOther={!!q.allowOther}
+          otherValue={otherValue}
+          onOtherChange={onOtherChange}
+        />
+      );
+
+    case "likert5_with_unsure":
+      return (
+        <LikertFiveWithUnsure
+          labelledBy={labelId}
+          value={(value as string) ?? null}
+          onChange={onAnswer}
+        />
+      );
+
+    case "rank_top_three":
+      return (
+        <RankTopThree
+          labelledBy={labelId}
+          options={q.options || []}
+          value={(value as string[]) || []}
+          onChange={onAnswer}
+        />
+      );
+
+    default:
+      return null;
+  }
+}
+
+// ─── Single-select (radio-style) ────────────────────────────────────────────
+function SingleSelect({
+  options, value, onChange, allowOther, otherValue, onOtherChange,
+}: {
+  options: string[];
+  value: string | null;
+  onChange: (v: string) => void;
+  allowOther: boolean;
+  otherValue: string;
+  onOtherChange: (t: string) => void;
+}) {
+  return (
+    <div className="space-y-2" role="radiogroup">
+      {options.map((opt) => {
+        const selected = value === opt;
+        return (
+          <button
+            key={opt}
+            onClick={() => onChange(opt)}
+            role="radio"
+            aria-checked={selected}
+            className={[
+              "w-full flex items-center gap-3 text-left px-4 py-3 rounded-2xl border-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%/0.4)]",
+              selected
+                ? "bg-[hsl(262_83%_58%/0.10)] border-[hsl(262_83%_58%)] vi-text"
+                : "bg-[hsl(var(--visual-surface))] vi-border vi-text-muted hover:border-[hsl(262_83%_58%/0.4)] hover:vi-text",
+            ].join(" ")}
+            style={{ minHeight: "48px" }}
+          >
+            <span
+              className={[
+                "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                selected ? "bg-[hsl(262_83%_58%)] border-[hsl(262_83%_58%)]" : "vi-border",
+              ].join(" ")}
+            >
+              {selected && <span className="w-2 h-2 rounded-full bg-white" />}
+            </span>
+            <span className="font-bold flex-1">{opt}</span>
+          </button>
+        );
+      })}
+      {allowOther && value === "Other" && (
+        <input
+          type="text"
+          value={otherValue}
+          onChange={(e) => onOtherChange(e.target.value)}
+          placeholder="Tell us more…"
+          className="w-full rounded-2xl border-2 vi-border px-4 py-3 text-sm vi-text placeholder-[hsl(var(--visual-text-muted))] focus:outline-none focus:border-[hsl(262_83%_58%)]"
+          style={{ minHeight: "44px" }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Multi-select (checkbox-style) ──────────────────────────────────────────
+function MultiSelect({
+  options, values, onToggle, allowOther, otherValue, onOtherChange,
+}: {
+  options: string[];
+  values: string[];
+  onToggle: (opt: string) => void;
+  allowOther: boolean;
+  otherValue: string;
+  onOtherChange: (t: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2" role="group">
+        {options.map((opt) => {
+          const selected = values.includes(opt);
+          return (
+            <button
+              key={opt}
+              onClick={() => onToggle(opt)}
+              aria-pressed={selected}
+              className={[
+                "inline-flex items-center gap-2 px-4 py-2.5 rounded-full border-2 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%/0.4)]",
+                selected
+                  ? "bg-[hsl(262_83%_58%/0.10)] border-[hsl(262_83%_58%)] text-[hsl(262_83%_58%)]"
+                  : "bg-[hsl(var(--visual-surface))] vi-border vi-text-muted hover:border-[hsl(262_83%_58%/0.4)]",
+              ].join(" ")}
+              style={{ minHeight: "44px" }}
+            >
+              {selected && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+              <span>{opt}</span>
+            </button>
+          );
+        })}
+      </div>
+      {allowOther && (
+        <input
+          type="text"
+          value={otherValue}
+          onChange={(e) => onOtherChange(e.target.value)}
+          placeholder="Other (optional) — type here…"
+          className="w-full rounded-2xl border-2 vi-border px-4 py-3 text-sm vi-text placeholder-[hsl(var(--visual-text-muted))] focus:outline-none focus:border-[hsl(262_83%_58%)]"
+          style={{ minHeight: "44px" }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── 5-point frequency Likert with mandatory "Not sure" escape hatch ────────
+function LikertFiveWithUnsure({
+  labelledBy, value, onChange,
+}: {
+  labelledBy: string;
+  value: string | null;
+  onChange: (v: string) => void;
+}) {
+  const isUnsure = value === NOT_SURE_VALUE;
+  return (
+    <div role="radiogroup" aria-labelledby={labelledBy} className="space-y-2">
+      <div className="grid grid-cols-5 gap-1.5">
+        {LIKERT5_LABELS.map((label) => {
+          const selected = value === label;
+          return (
+            <button
+              key={label}
+              onClick={() => onChange(label)}
+              role="radio"
+              aria-checked={selected}
+              aria-label={label}
+              className={[
+                "px-2 py-3 rounded-2xl border-2 text-xs font-extrabold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%/0.4)]",
+                selected
+                  ? "bg-[hsl(262_83%_58%)] border-[hsl(262_83%_58%)] text-white scale-105"
+                  : "bg-[hsl(var(--visual-surface))] vi-border vi-text-muted hover:border-[hsl(262_83%_58%/0.4)]",
+              ].join(" ")}
+              style={{ minHeight: "52px" }}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(NOT_SURE_VALUE)}
+        role="radio"
+        aria-checked={isUnsure}
+        aria-label={NOT_SURE_LABEL}
+        className={[
+          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(43_100%_50%/0.4)]",
+          isUnsure
+            ? "bg-[hsl(43_100%_50%/0.15)] border-[hsl(43_100%_50%)] text-[hsl(43_100%_50%)]"
+            : "vi-border vi-text-muted opacity-70 hover:opacity-100",
+        ].join(" ")}
+      >
+        <HelpCircle className="w-3 h-3" /> {NOT_SURE_LABEL}
+      </button>
+    </div>
+  );
+}
+
+// ─── Rank top three (drag-and-drop with arrow controls as fallback) ─────────
+function RankTopThree({
+  labelledBy, options, value, onChange,
+}: {
+  labelledBy: string;
+  options: string[];
+  value: string[];
+  onChange: (v: string[]) => void;
+}) {
+  const picked = value.slice(0, 3);
+  const isPicked = (opt: string) => picked.includes(opt);
+
+  const togglePick = (opt: string) => {
+    if (isPicked(opt)) onChange(picked.filter((p) => p !== opt));
+    else if (picked.length < 3) onChange([...picked, opt]);
+  };
+
+  const move = (idx: number, dir: -1 | 1) => {
+    const next = [...picked];
+    const j = idx + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[idx], next[j]] = [next[j], next[idx]];
+    onChange(next);
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs vi-text-muted">
+        <ListChecks className="inline w-3.5 h-3.5 mr-1" />
+        Tap up to 3 in order of importance. Use the arrows to reorder.
+      </p>
+
+      {picked.length > 0 && (
+        <div className="vi-card p-3 vi-surface-soft space-y-2">
+          {picked.map((p, i) => (
+            <div key={p} className="flex items-center gap-2 vi-card p-2 bg-[hsl(var(--visual-surface))]">
+              <GripVertical className="w-4 h-4 vi-text-muted opacity-40" />
+              <span className="w-6 h-6 rounded-full bg-[hsl(262_83%_58%)] text-white text-xs font-extrabold flex items-center justify-center flex-shrink-0">
+                {i + 1}
+              </span>
+              <span className="flex-1 text-sm font-bold vi-text">{p}</span>
+              <button
+                onClick={() => move(i, -1)}
+                disabled={i === 0}
+                aria-label={`Move ${p} up`}
+                className="p-1 rounded-full vi-text-muted disabled:opacity-20 hover:vi-text"
+              >
+                <ChevronLeft className="w-4 h-4 -rotate-90" />
+              </button>
+              <button
+                onClick={() => move(i, 1)}
+                disabled={i === picked.length - 1}
+                aria-label={`Move ${p} down`}
+                className="p-1 rounded-full vi-text-muted disabled:opacity-20 hover:vi-text"
+              >
+                <ChevronRight className="w-4 h-4 rotate-90" />
+              </button>
+              <button
+                onClick={() => togglePick(p)}
+                aria-label={`Remove ${p}`}
+                className="px-2 py-1 rounded-full text-[10px] font-bold vi-text-muted hover:text-[hsl(0_72%_51%)]"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt) => {
+          const selected = isPicked(opt);
+          const disabled = !selected && picked.length >= 3;
+          return (
+            <button
+              key={opt}
+              onClick={() => togglePick(opt)}
+              disabled={disabled}
+              aria-pressed={selected}
+              className={[
+                "inline-flex items-center gap-2 px-4 py-2.5 rounded-full border-2 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%/0.4)]",
+                selected
+                  ? "bg-[hsl(262_83%_58%)] border-[hsl(262_83%_58%)] text-white"
+                  : disabled
+                    ? "vi-border vi-text-muted opacity-40 cursor-not-allowed"
+                    : "bg-[hsl(var(--visual-surface))] vi-border vi-text-muted hover:border-[hsl(262_83%_58%/0.4)]",
+              ].join(" ")}
+              style={{ minHeight: "40px" }}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section footer nav (prev / next / skip)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SectionFooterNav({
+  isFirst, isLast, isOptional, onPrev, onNext, onSkip,
+}: {
+  isFirst: boolean;
+  isLast: boolean;
+  isOptional: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+  onSkip: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 pt-2">
+      <button
+        onClick={onPrev}
+        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-bold vi-text-muted hover:vi-surface-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%/0.4)]"
+        style={{ minHeight: "44px" }}
+      >
+        <ChevronLeft className="w-4 h-4" /> {isFirst ? "Back to welcome" : "Previous"}
+      </button>
+      <div className="flex gap-2">
+        {isOptional && (
+          <button
+            onClick={onSkip}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-bold vi-text-muted hover:vi-surface-soft transition-colors"
+            style={{ minHeight: "44px" }}
+          >
+            Skip for now
+          </button>
+        )}
+        <button
+          onClick={onNext}
+          className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold text-sm shadow-lg shadow-[hsl(262_83%_58%/0.3)] hover:scale-105 active:scale-95 transition-transform"
+          style={{ minHeight: "44px" }}
+        >
+          {isLast ? "Almost done" : "Next"} <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WrapUpScreen (Section 7)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function WrapUpScreen({
+  section, answers, learnerName, onAnswer, onBack, onSubmit, submitting, submitError,
+  sectionsAnsweredSummary,
+}: {
+  section: AssessmentSection;
+  answers: Answers;
+  learnerName: string;
+  onAnswer: (id: string, value: AnswerValue) => void;
+  onBack: () => void;
+  onSubmit: () => void;
+  submitting: boolean;
+  submitError: string | null;
+  sectionsAnsweredSummary: { label: string; answered: number; total: number }[];
+}) {
+  const totalAnswered = sectionsAnsweredSummary.reduce((n, s) => n + s.answered, 0);
+  const totalQs = sectionsAnsweredSummary.reduce((n, s) => n + s.total, 0);
+  const pct = Math.round((totalAnswered / totalQs) * 100);
+
+  return (
+    <section className="vi-card p-6 sm:p-8 space-y-5 relative overflow-hidden">
+      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[hsl(43_100%_50%/0.18)] blur-2xl" aria-hidden />
+      <div className="relative space-y-5">
+        <div className="flex items-start gap-3">
+          <IconWell color="sel" size="lg"><Sparkles className="w-7 h-7" strokeWidth={2.5} /></IconWell>
+          <div className="flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(43_100%_50%)] mb-1">Almost there</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold vi-text leading-tight">{section.label}</h2>
+            <p className="vi-text-muted mt-2 text-sm leading-relaxed">{section.rationale}</p>
+          </div>
+        </div>
+
+        <div className="vi-card p-4 vi-surface-soft">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[hsl(262_83%_58%)] mb-2">
+            What you've shared so far
+          </p>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="text-3xl font-extrabold vi-text tabular-nums">{pct}%</div>
+            <div className="flex-1">
+              <div className="h-2 vi-surface-soft rounded-full overflow-hidden bg-[hsl(var(--visual-border))]">
+                <div className="h-full bg-[hsl(142_71%_45%)] transition-all" style={{ width: `${pct}%` }} />
+              </div>
+              <p className="text-[11px] vi-text-muted mt-1">
+                {totalAnswered} of {totalQs} answered — that's plenty for a strong baseline.
+              </p>
+            </div>
+          </div>
+          <ul className="grid grid-cols-2 gap-1.5">
+            {sectionsAnsweredSummary.map((s) => {
+              const complete = s.answered === s.total;
+              const partial = s.answered > 0 && !complete;
+              return (
+                <li
+                  key={s.label}
+                  className={[
+                    "flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-md",
+                    complete ? "text-[hsl(142_71%_45%)]" : partial ? "vi-text" : "vi-text-muted opacity-60",
+                  ].join(" ")}
+                >
+                  {complete ? <Check className="w-3 h-3" strokeWidth={3} /> : <span className="w-3 h-3" />}
+                  <span className="truncate">{s.label}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        {/* Final wrap-up questions */}
+        <div className="space-y-5">
+          {section.questions.map((q, idx) => (
+            <QuestionBlock
+              key={q.id}
+              question={q}
+              questionNumber={idx + 1}
+              value={answers[q.id] ?? null}
+              otherValue=""
+              onAnswer={(v) => onAnswer(q.id, v)}
+              onToggleMulti={() => { /* not used in wrap-up */ }}
+              onOtherChange={() => { /* not used in wrap-up */ }}
+            />
+          ))}
+        </div>
+
+        {submitError && (
+          <div
+            className="vi-card p-3 text-sm font-semibold text-center"
+            style={{ background: "hsl(0 72% 51% / 0.06)", borderColor: "hsl(0 72% 51% / 0.3)", color: "hsl(0 72% 51%)" }}
+          >
+            {submitError}
           </div>
         )}
+
+        <div className="vi-card p-3 flex items-start gap-2 text-xs vi-text" style={{ background: "hsl(43 100% 50% / 0.06)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
+          <ShieldCheck className="w-4 h-4 text-[hsl(43_100%_50%)] flex-shrink-0 mt-0.5" />
+          <span>
+            We'll turn this into a baseline profile for {learnerName || "your child"}.
+            You can edit, export, or delete anything later.
+          </span>
+        </div>
+
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-bold vi-text-muted hover:vi-surface-soft transition-colors"
+            style={{ minHeight: "44px" }}
+          >
+            <ChevronLeft className="w-4 h-4" /> Back
+          </button>
+          <button
+            onClick={onSubmit}
+            disabled={submitting}
+            className="inline-flex items-center justify-center gap-1.5 px-7 py-3 rounded-full bg-[hsl(142_71%_45%)] text-white font-extrabold text-sm shadow-lg shadow-[hsl(142_71%_45%/0.3)] hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ minHeight: "48px" }}
+          >
+            {submitting ? "Submitting…" : <>Submit assessment <Check className="w-4 h-4" strokeWidth={3} /></>}
+          </button>
+        </div>
       </div>
-    );
-  }
-
-  if (q.questionType === "open_ended") {
-    return (
-      <textarea
-        value={(value as string) ?? ""}
-        onChange={(e) => onTextChange(e.target.value)}
-        placeholder={t("type_answer")}
-        rows={4}
-        className="w-full rounded-2xl border-2 vi-border p-4 text-sm text-slate-800 placeholder-[hsl(var(--visual-text-muted))] focus:outline-none resize-none transition-all"
-        onFocus={(e) => { e.currentTarget.style.borderColor = categoryColor; }}
-        onBlur={(e) => { e.currentTarget.style.borderColor = "rgb(226 232 240)"; }}
-      />
-    );
-  }
-
-  return null;
+    </section>
+  );
 }
 
-function mapCommunicationMode(answers: Record<string, any>): string {
-  const cn1 = answers["cn-1"];
-  if (!cn1) return "verbal";
-  if (cn1.includes("speaks clearly")) return "verbal";
-  if (cn1.includes("limited vocabulary")) return "limited_verbal";
-  if (cn1.includes("Sign language")) return "sign_language";
-  if (cn1.includes("AAC") || cn1.includes("Communication device")) return "aac_device";
-  if (cn1.includes("Non-verbal")) return "non_verbal";
-  if (cn1.includes("Gestures")) return "non_verbal";
-  if (cn1.includes("Picture symbols")) return "aac_device";
-  return "verbal";
+// ─────────────────────────────────────────────────────────────────────────────
+// Already-completed and Submitted screens (preserved from previous design)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AlreadyCompletedScreen({
+  learnerName, learnerFunctioningLevel, onStartBaseline, onBackToProfile, onBackToDashboard, t,
+}: {
+  learnerName: string;
+  learnerFunctioningLevel: string;
+  onStartBaseline: () => void;
+  onBackToProfile: () => void;
+  onBackToDashboard: () => void;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  return (
+    <div className="min-h-screen vi-bg flex items-center justify-center px-4 py-8">
+      <div className="max-w-lg w-full">
+        <section className="vi-card p-8 md:p-10 text-center relative overflow-hidden">
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[hsl(43_100%_50%/0.18)] blur-2xl" aria-hidden />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-[hsl(262_83%_58%/0.18)] blur-2xl" aria-hidden />
+          <div className="relative space-y-5">
+            <div className="mx-auto inline-flex">
+              <IconWell color="science" size="lg"><CheckCircle2 className="w-10 h-10" strokeWidth={2.5} /></IconWell>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(142_71%_45%)] mb-2">All Done</p>
+              <h1 className="text-2xl font-extrabold vi-text">{t("already_complete_title")}</h1>
+              <p className="vi-text-muted mt-2">{t("already_complete_desc", { name: learnerName || t("this_learner") })}</p>
+            </div>
+            {learnerFunctioningLevel && (
+              <div className="vi-card p-4 text-left">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(262_83%_58%)]">{t("functioning_level_label")}</p>
+                <p className="text-lg font-extrabold vi-text mt-1">
+                  {learnerFunctioningLevel.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
+                </p>
+              </div>
+            )}
+            <div className="vi-card p-4 text-left" style={{ background: "hsl(43 100% 50% / 0.06)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
+              <div className="flex items-start gap-3">
+                <IconWell color="sel" size="sm"><Compass className="w-5 h-5" strokeWidth={2.5} /></IconWell>
+                <div className="flex-1">
+                  <p className="text-sm font-extrabold text-[hsl(43_100%_50%)]">{t("next_step_baseline")}</p>
+                  <p className="text-xs vi-text-muted mt-1">{t("baseline_child_desc", { name: learnerName || t("your_child") })}</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 pt-2">
+              <button onClick={onStartBaseline} className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[hsl(43_100%_50%)] text-white font-extrabold shadow-xl shadow-[hsl(43_100%_50%/0.3)] hover:scale-105 active:scale-95 transition-transform" style={{ minHeight: "48px" }}>
+                <Compass className="w-4 h-4" /> {t("start_baseline")}
+              </button>
+              <button onClick={onBackToProfile} className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold shadow-lg hover:scale-105 active:scale-95 transition-transform" style={{ minHeight: "48px" }}>
+                {t("back_to_profile")}
+              </button>
+              <button onClick={onBackToDashboard} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[hsl(var(--visual-surface))] border-2 vi-border vi-text font-extrabold hover:border-[hsl(var(--visual-primary)/0.3)] transition-colors" style={{ minHeight: "48px" }}>
+                {t("back_to_dashboard")}
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 }
 
-function mapDeviceInteraction(answers: Record<string, any>): string {
-  const im1 = answers["im-1"];
-  if (!im1) return "independent";
-  if (im1.includes("Standard")) return "independent";
-  if (im1.includes("larger touch")) return "guided";
-  if (im1.includes("occasional guidance")) return "guided";
-  if (im1.includes("switch access")) return "switch_access";
-  if (im1.includes("eye gaze") || im1.includes("eye tracking")) return "eye_gaze";
-  if (im1.includes("head tracking")) return "eye_gaze";
-  if (im1.includes("voice control")) return "guided";
-  if (im1.includes("Parent/aide")) return "partner_assisted";
-  return "independent";
-}
-
-function mapResponseMethod(answers: Record<string, any>): string {
-  const fl4 = answers["fl-4"];
-  if (!fl4) return "touch_select";
-  if (fl4.includes("Verbally")) return "voice";
-  if (fl4.includes("short words")) return "voice";
-  if (fl4.includes("Points") || fl4.includes("touches")) return "touch_select";
-  if (fl4.includes("communication device") || fl4.includes("pictures")) return "switch_scan";
-  if (fl4.includes("Looks") || fl4.includes("gazes")) return "partner_response";
-  if (fl4.includes("adult to interpret") || fl4.includes("Does not consistently")) return "partner_response";
-  return "touch_select";
-}
-
-function mapAttentionSpan(answers: Record<string, any>): string {
-  const ls3 = answers["ls-3"];
-  if (!ls3) return "typical";
-  if (ls3 >= 4) return "typical";
-  if (ls3 === 3) return "variable";
-  if (ls3 === 2) return "short";
-  return "very_short";
-}
-
-function mapDiagnoses(answers: Record<string, any>): string[] {
-  const ch2 = answers["ch-2"];
-  if (!ch2 || ch2 === "No, none that I'm aware of") return [];
-  const map: Record<string, string> = {
-    "Yes, ADHD/ADD": "adhd",
-    "Yes, dyslexia or reading difficulty": "dyslexia",
-    "Yes, dyscalculia or math difficulty": "dyscalculia",
-    "Yes, autism spectrum": "asd",
-    "Currently being evaluated": "under_evaluation",
-  };
-  return map[ch2] ? [map[ch2]] : ["other"];
+function SubmittedScreen({
+  result, onContinue, t,
+}: {
+  result: any;
+  onContinue: () => void;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  return (
+    <div className="min-h-screen vi-bg flex items-center justify-center px-4 py-8">
+      <div className="max-w-lg w-full">
+        <section className="vi-card p-8 md:p-10 text-center relative overflow-hidden">
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[hsl(43_100%_50%/0.18)] blur-2xl" aria-hidden />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-[hsl(262_83%_58%/0.18)] blur-2xl" aria-hidden />
+          <div className="relative space-y-5">
+            <div className="mx-auto inline-flex">
+              <IconWell color="science" size="lg"><CheckCircle2 className="w-10 h-10" strokeWidth={2.5} /></IconWell>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(142_71%_45%)] mb-2">Thank you</p>
+              <h1 className="text-2xl font-extrabold vi-text">{t("assessment_complete_title")}</h1>
+              <p className="vi-text-muted mt-2">{t("assessment_thank_you")}</p>
+            </div>
+            {result.functioningLevel && (
+              <div className="vi-card p-4 text-left">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(262_83%_58%)]">{t("recommended_level")}</p>
+                <p className="text-lg font-extrabold vi-text mt-1">
+                  {(result.functioningLevel.level || "").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                </p>
+                <p className="text-xs vi-text-muted mt-1">
+                  {t("confidence")}: {(() => {
+                    const c = Number(result.functioningLevel.confidence) || 0;
+                    const pct = c <= 1 ? c * 100 : c;
+                    return `${Math.round(pct)}%`;
+                  })()}
+                </p>
+              </div>
+            )}
+            <div className="vi-card p-4 text-left" style={{ background: "hsl(43 100% 50% / 0.06)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
+              <div className="flex items-start gap-3">
+                <IconWell color="sel" size="sm"><Compass className="w-5 h-5" strokeWidth={2.5} /></IconWell>
+                <div className="flex-1">
+                  <p className="text-sm font-extrabold text-[hsl(43_100%_50%)]">{t("next_step_baseline")}</p>
+                  <p className="text-xs vi-text-muted mt-1">{t("baseline_generic_desc")}</p>
+                </div>
+              </div>
+            </div>
+            <button onClick={onContinue} className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold shadow-xl shadow-[hsl(262_83%_58%/0.3)] hover:scale-105 active:scale-95 transition-transform" style={{ minHeight: "48px" }}>
+              {t("continue_to_profile")} <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 }

@@ -1,191 +1,762 @@
+/**
+ * Parent Assessment — question bank
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Models the 8-section framework documented in
+ * `attached_assets/Pasted--Aivo-Parent-Assessment-Design-Framework-...txt`.
+ *
+ * Design principles encoded here:
+ *  • Strengths-first: Section 2 (Strengths/Interests/Motivations) appears
+ *    before Section 3 (Diagnoses/Medical) and the 4-x sub-modules.
+ *  • Observable behaviour only — no clinical jargon. Frequency Likerts use
+ *    Never/Rarely/Sometimes/Often/Always plus a mandatory "Not sure" escape.
+ *  • Almost everything is soft-required ("I'd rather not say" implicitly via
+ *    the `required: false` default). Only DOB and consent are hard-required.
+ *  • The MVP cut from framework §9 is shipped here: Sections 0/1/2 in full,
+ *    3-lite, 4a/4b/4g, 5 + access mini-block, 6, 7. Sensory/Motor/Adaptive/
+ *    Behavior-Regulation sub-modules (4c-4f) are deferred to v2.
+ *
+ * The legacy heuristic in `services/assessment-svc/src/services/level-router.ts`
+ * still keys off five compat IDs (communicationMode, deviceInteraction,
+ * responseMethod, attentionSpan, diagnoses) — those question IDs are kept
+ * stable below and re-mapped to their new section homes (see COMPAT_IDS).
+ */
+
+export type QuestionType =
+  /** Never / Rarely / Sometimes / Often / Always + "Not sure / Haven't observed" */
+  | "likert5_with_unsure"
+  /** Single radio choice */
+  | "single_select"
+  /** Multi-checkbox; set `allowOther: true` to render an inline "Other" text input */
+  | "multi_select"
+  /** Single-line text */
+  | "open_short"
+  /** Multi-line text (textarea) */
+  | "open_long"
+  /** Drag-and-drop ranking of a fixed option list (parent picks top 3) */
+  | "rank_top_three"
+  /** Single hard-required consent checkbox */
+  | "consent_checkbox"
+  /** ISO date input (used for DOB) */
+  | "date"
+  /** Yes / No / Prefer not to say */
+  | "yes_no";
+
+/** Age bands per framework §7. Used for question gating. */
+export type AgeBand = "2-4" | "5-8" | "9-12" | "13+";
+
 export interface AssessmentQuestion {
   id: string;
-  category: string;
-  questionText: string;
-  questionType: "multiple_choice" | "rating_scale" | "open_ended" | "multi_select" | "yes_no";
+  sectionKey: string;
+  text: string;
+  type: QuestionType;
   options?: string[];
-  scaleMin?: number;
-  scaleMax?: number;
-  scaleLabels?: { min: string; max: string };
-  required: boolean;
+  /** When true, renders an inline "Other (please specify)" text field. */
+  allowOther?: boolean;
+  /** Soft-required by default; only DOB and consent are truly required. */
+  required?: boolean;
   helpText?: string;
+  /** Omit = applies to all bands. */
+  ageBands?: AgeBand[];
+  /** Likert items framed around a concern (high score = worse). Reverse-coded
+   *  by downstream scoring — the parent sees the same Never→Always scale. */
+  reverseScored?: boolean;
+  /** Self-harm / aggression items flagged for human-review queue. */
+  isSafetyFlag?: boolean;
+  /** Simple show-if branching. */
+  conditionalOn?: { questionId: string; values: string[] };
 }
 
-export interface AssessmentCategory {
+export interface AssessmentSection {
   key: string;
+  /** 0-7 per framework. */
+  number: number;
   label: string;
+  shortLabel: string;
   icon: string;
-  color: string;
-  bgColor: string;
+  /** One-line "why this section exists" shown above the questions —
+   *  framework §1 principle 7: "Explain the why". */
+  rationale: string;
+  estimatedMinutes: number;
+  /** When true, a "Skip this section" button appears. */
+  optional?: boolean;
+  /** Section 0 (welcome) and 7 (wrap-up) render their own custom screens
+   *  rather than a list of questions. */
+  isSpecial?: boolean;
   questions: AssessmentQuestion[];
 }
 
-export const CATEGORY_THEMES: Record<string, { icon: string; color: string; bgColor: string }> = {
-  learning_style: { icon: "📚", color: "#7C3AED", bgColor: "#F0E6FF" },
-  strengths: { icon: "🏆", color: "#F59E0B", bgColor: "#FEF3C7" },
-  challenges: { icon: "🧗", color: "#F472B6", bgColor: "#FCE7F3" },
-  behavior: { icon: "⚡", color: "#FB923C", bgColor: "#FFF7ED" },
-  preferences: { icon: "🎯", color: "#2DD4BF", bgColor: "#CCFBF1" },
-  social_emotional: { icon: "💛", color: "#EC4899", bgColor: "#FCE7F3" },
-  functioning_level: { icon: "📊", color: "#6366F1", bgColor: "#EEF2FF" },
-  sensory_accessibility: { icon: "🌈", color: "#14B8A6", bgColor: "#CCFBF1" },
-  communication_needs: { icon: "💬", color: "#8B5CF6", bgColor: "#F5F3FF" },
-  input_method: { icon: "🖥️", color: "#38BDF8", bgColor: "#E0F2FE" },
-  support_needs: { icon: "🤝", color: "#F43F5E", bgColor: "#FFE4E6" },
-};
+/** Likert anchor labels — same across every frequency item. */
+export const LIKERT5_LABELS = [
+  "Never",
+  "Rarely",
+  "Sometimes",
+  "Often",
+  "Always",
+] as const;
+/** The escape hatch — never include this in scoring composites. */
+export const NOT_SURE_VALUE = "not_sure";
+export const NOT_SURE_LABEL = "Not sure / Haven't observed";
 
-export const PARENT_ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
+/** Question IDs whose answers feed the legacy `level-router` heuristic.
+ *  Keep these stable — backend depends on them. */
+export const COMPAT_IDS = {
+  /** Single-select: child's primary communication mode */
+  communicationMode: "cn-1",
+  /** Single-select: how child interacts with screens */
+  deviceInteraction: "im-1",
+  /** Single-select: how child responds to questions */
+  responseMethod: "fl-4",
+  /** Single-select: attention span for non-preferred tasks (range buckets) */
+  attentionSpan: "ls-3",
+  /** Multi-select: diagnoses */
+  diagnoses: "ch-2",
+} as const;
+
+export const PARENT_ASSESSMENT_SECTIONS: AssessmentSection[] = [
+  // ───── Section 0 — Welcome & Consent ─────────────────────────────────
   {
-    key: "learning_style",
-    label: "Learning Style",
-    icon: "📚",
-    color: "#7C3AED",
-    bgColor: "#F0E6FF",
+    key: "welcome",
+    number: 0,
+    label: "Welcome",
+    shortLabel: "Start",
+    icon: "👋",
+    rationale:
+      "Hi — thanks for being here. The next 12 minutes help us meet your child where they are. Save anytime; come back when you can.",
+    estimatedMinutes: 1,
+    isSpecial: true,
     questions: [
-      { id: "ls-1", category: "learning_style", questionText: "How does your child learn best?", questionType: "multiple_choice", options: ["By seeing pictures, videos, and demonstrations", "By listening to explanations and discussions", "By doing hands-on activities and moving around", "By reading and writing things down", "A combination of several ways"], required: true, helpText: "Think about times when your child learned something new successfully." },
-      { id: "ls-2", category: "learning_style", questionText: "When your child encounters a challenging problem, they typically:", questionType: "multiple_choice", options: ["Work through it independently with persistence", "Seek help immediately from an adult", "Get frustrated and give up quickly", "Try a few times, then ask for guidance", "Avoid the task altogether"], required: true },
-      { id: "ls-3", category: "learning_style", questionText: "How long can your child focus on a learning task without becoming distracted?", questionType: "rating_scale", scaleMin: 1, scaleMax: 5, scaleLabels: { min: "Less than 5 minutes", max: "30+ minutes consistently" }, required: true },
-      { id: "ls-4", category: "learning_style", questionText: "What time of day is your child most alert and ready to learn?", questionType: "multiple_choice", options: ["Early morning (6-9 AM)", "Late morning (9-12 PM)", "Early afternoon (12-3 PM)", "Late afternoon (3-6 PM)", "Evening (6-9 PM)", "It varies day to day"], required: true, helpText: "This helps us recommend optimal learning times." },
-      { id: "ls-5", category: "learning_style", questionText: "Does your child prefer learning:", questionType: "multiple_choice", options: ["Alone and independently", "With one other person (parent, sibling, or peer)", "In a small group setting", "In a larger classroom environment", "Depends on the subject or activity"], required: true },
-      { id: "ls-6", category: "learning_style", questionText: "How does your child respond to mistakes or incorrect answers?", questionType: "multiple_choice", options: ["Learns from them and tries again with enthusiasm", "Gets mildly frustrated but continues", "Becomes very upset and needs encouragement", "Avoids similar tasks in the future", "Shows little emotional response"], required: true },
+      {
+        id: "consent-1",
+        sectionKey: "welcome",
+        text:
+          "I understand my answers will be used to personalize learning for my child. I can edit, export, or delete this anytime.",
+        type: "consent_checkbox",
+        required: true,
+      },
     ],
   },
+
+  // ───── Section 1 — Child Basics & Family Context ─────────────────────
+  {
+    key: "basics",
+    number: 1,
+    label: "About your child",
+    shortLabel: "Basics",
+    icon: "🌱",
+    rationale:
+      "Quick context so we can age-appropriate everything. Most fields are optional.",
+    estimatedMinutes: 2,
+    questions: [
+      {
+        id: "ba-nickname",
+        sectionKey: "basics",
+        text: "What does your child like to be called?",
+        type: "open_short",
+        helpText: "First name or nickname — whatever they prefer.",
+      },
+      {
+        id: "ba-dob",
+        sectionKey: "basics",
+        text: "Date of birth",
+        type: "date",
+        required: true,
+        helpText: "Used to choose age-appropriate questions and content.",
+      },
+      {
+        id: "ba-pronouns",
+        sectionKey: "basics",
+        text: "Pronouns (optional)",
+        type: "single_select",
+        options: ["she/her", "he/him", "they/them", "Prefer not to say", "Other"],
+        allowOther: true,
+      },
+      {
+        id: "ba-completer",
+        sectionKey: "basics",
+        text: "Who's filling this out?",
+        type: "single_select",
+        options: ["Parent", "Grandparent", "Foster parent", "Guardian", "Other caregiver"],
+        allowOther: true,
+      },
+      {
+        id: "ba-languages",
+        sectionKey: "basics",
+        text: "Languages spoken in your home",
+        type: "multi_select",
+        options: ["English", "Spanish", "Mandarin", "French", "Arabic", "Hindi", "Tagalog", "Vietnamese", "Korean"],
+        allowOther: true,
+      },
+      {
+        id: "ba-siblings",
+        sectionKey: "basics",
+        text: "Any siblings? (optional)",
+        type: "open_short",
+        helpText: "Names and ages, or just ages — whatever feels comfortable.",
+      },
+    ],
+  },
+
+  // ───── Section 2 — Strengths, Interests & Motivations (the fun bit) ──
   {
     key: "strengths",
-    label: "Strengths",
-    icon: "🏆",
-    color: "#F59E0B",
-    bgColor: "#FEF3C7",
+    number: 2,
+    label: "What lights them up",
+    shortLabel: "Strengths",
+    icon: "✨",
+    rationale:
+      "This is our favourite section. What you share here directly shapes the kind of stories, examples, and rewards your child sees.",
+    estimatedMinutes: 4,
     questions: [
-      { id: "str-1", category: "strengths", questionText: "Which subjects or activities does your child excel in?", questionType: "multi_select", options: ["Reading and comprehension", "Writing and storytelling", "Math and numbers", "Science and discovery", "Creative arts (drawing, music, etc.)", "Physical activities and sports", "Problem-solving and puzzles", "Social interactions and communication", "Memory and recall"], required: true, helpText: "Select all that apply." },
-      { id: "str-2", category: "strengths", questionText: "What specific skills or talents have you noticed in your child?", questionType: "open_ended", required: false, helpText: "Share any unique abilities, interests, or accomplishments." },
-      { id: "str-3", category: "strengths", questionText: "How creative is your child when solving problems or playing?", questionType: "rating_scale", scaleMin: 1, scaleMax: 5, scaleLabels: { min: "Prefers structured guidance", max: "Extremely imaginative and innovative" }, required: true },
-      { id: "str-4", category: "strengths", questionText: "How well does your child remember and recall information?", questionType: "rating_scale", scaleMin: 1, scaleMax: 5, scaleLabels: { min: "Struggles to remember", max: "Excellent memory and recall" }, required: true },
+      {
+        id: "st-loves",
+        sectionKey: "strengths",
+        text: "What are 3 things your child loves to do?",
+        type: "open_long",
+        helpText: "However small. Watching trains, feeding the cat, anything.",
+      },
+      {
+        id: "st-endless",
+        sectionKey: "strengths",
+        text: "What topics, characters, or activities can they talk about endlessly?",
+        type: "open_short",
+      },
+      {
+        id: "st-laugh",
+        sectionKey: "strengths",
+        text: "What makes your child laugh?",
+        type: "open_short",
+      },
+      {
+        id: "st-good-at",
+        sectionKey: "strengths",
+        text: "What are they naturally good at?",
+        type: "multi_select",
+        options: [
+          "Art & drawing", "Music", "Memory", "Puzzles", "Sports", "Numbers",
+          "Storytelling", "Building", "Caring for others", "Animals",
+          "Noticing details", "Comforting others", "Negotiating", "Inventing games",
+        ],
+        allowOther: true,
+      },
+      {
+        id: "st-praise",
+        sectionKey: "strengths",
+        text: "How does your child best receive praise?",
+        type: "single_select",
+        options: ["Words", "Hugs / physical", "Treats", "Alone time", "Shared activity", "Earned privilege"],
+      },
+      {
+        id: "st-motivates",
+        sectionKey: "strengths",
+        text: "What usually motivates them to try something hard?",
+        type: "multi_select",
+        options: [
+          "Earning something they want", "Beating their own time / score",
+          "Helping someone else", "Surprise / mystery", "Story or character",
+          "Being the expert", "Doing it with a parent", "Just figuring it out themselves",
+        ],
+        allowOther: true,
+      },
     ],
   },
+
+  // ───── Section 3 — Developmental & Medical (lite) ────────────────────
   {
-    key: "challenges",
-    label: "Challenges",
-    icon: "🧗",
-    color: "#F472B6",
-    bgColor: "#FCE7F3",
+    key: "history",
+    number: 3,
+    label: "Background",
+    shortLabel: "History",
+    icon: "🩺",
+    rationale:
+      "We only ask what we'll actually use. Skip anything you'd rather not share — your tutor experience won't suffer for it.",
+    estimatedMinutes: 3,
+    optional: true,
     questions: [
-      { id: "ch-1", category: "challenges", questionText: "Which subjects or areas does your child find most challenging?", questionType: "multi_select", options: ["Reading and comprehension", "Writing and composition", "Math calculations", "Math word problems", "Spelling", "Science concepts", "Focusing and attention", "Following multi-step instructions", "Organization and time management"], required: false, helpText: "Select all that apply. This helps us provide targeted support." },
-      { id: "ch-2", category: "challenges", questionText: "Does your child have any diagnosed learning differences or accommodations?", questionType: "multiple_choice", options: ["No, none that I'm aware of", "Yes, ADHD/ADD", "Yes, dyslexia or reading difficulty", "Yes, dyscalculia or math difficulty", "Yes, autism spectrum", "Yes, other (please specify in notes)", "Currently being evaluated"], required: false, helpText: "This information remains confidential and helps us personalize learning." },
-      { id: "ch-3", category: "challenges", questionText: "Additional information about challenges or accommodations:", questionType: "open_ended", required: false, helpText: "Share any IEP/504 accommodations, strategies that work, or specific needs." },
-      { id: "ch-4", category: "challenges", questionText: "How does your child handle homework or independent work?", questionType: "rating_scale", scaleMin: 1, scaleMax: 5, scaleLabels: { min: "Needs constant supervision", max: "Completely independent" }, required: true },
-      { id: "ch-5", category: "challenges", questionText: "What frustrates your child most about learning?", questionType: "open_ended", required: false, helpText: "Understanding frustrations helps us avoid triggers and build confidence." },
+      {
+        // NOTE: must remain id "ch-2" — feeds level-router compat (COMPAT_IDS.diagnoses).
+        id: "ch-2",
+        sectionKey: "history",
+        text: "Any diagnoses or learning differences? (optional)",
+        type: "multi_select",
+        options: [
+          "None / not applicable",
+          "ADHD / ADD",
+          "Autism spectrum",
+          "Dyslexia / reading difference",
+          "Dyscalculia / math difference",
+          "Speech / language",
+          "Hearing",
+          "Vision",
+          "Anxiety",
+          "Depression",
+          "Chronic medical",
+          "Currently being evaluated",
+          "Prefer not to say",
+        ],
+        allowOther: true,
+        helpText: "Confidential and only used to personalize.",
+      },
+      {
+        id: "hi-services",
+        sectionKey: "history",
+        text: "Any current therapies or services?",
+        type: "multi_select",
+        options: [
+          "None", "Occupational therapy", "Physical therapy", "Speech therapy",
+          "ABA", "Counseling / mental health", "Tutoring", "IEP / 504",
+        ],
+        allowOther: true,
+      },
+      {
+        id: "hi-meds",
+        sectionKey: "history",
+        text: "Any medications that affect attention, mood, or learning?",
+        type: "yes_no",
+        helpText: "Just yes/no — we won't ask names.",
+      },
+      {
+        id: "hi-sleep",
+        sectionKey: "history",
+        text: "Roughly how many hours does your child sleep per night?",
+        type: "single_select",
+        options: ["Under 6", "6–8", "8–10", "10–12", "Over 12", "Varies a lot"],
+      },
     ],
   },
+
+  // ───── Section 4a — Communication & Language ─────────────────────────
   {
-    key: "behavior",
-    label: "Behavior & Engagement",
-    icon: "⚡",
-    color: "#FB923C",
-    bgColor: "#FFF7ED",
+    key: "communication",
+    number: 4,
+    label: "How they communicate",
+    shortLabel: "Communication",
+    icon: "💬",
+    rationale:
+      "These help us match content to your child's language level — what they receive, what they express, and how they prefer to do it.",
+    estimatedMinutes: 3,
     questions: [
-      { id: "beh-1", category: "behavior", questionText: "How motivated is your child to learn new things?", questionType: "rating_scale", scaleMin: 1, scaleMax: 5, scaleLabels: { min: "Requires significant encouragement", max: "Self-motivated and curious" }, required: true },
-      { id: "beh-2", category: "behavior", questionText: "How does your child respond to praise and rewards?", questionType: "multiple_choice", options: ["Very responsive - highly motivated by praise", "Moderately responsive", "Neutral - doesn't seem to affect motivation", "Prefers tangible rewards over verbal praise", "Internal motivation is stronger than external"], required: true },
-      { id: "beh-3", category: "behavior", questionText: "Does your child exhibit any behavioral patterns during learning?", questionType: "multi_select", options: ["Gets restless and needs movement breaks", "Works better with background music or sound", "Prefers complete silence", "Needs frequent breaks", "Works best in short bursts", "Can sustain focus for extended periods", "None of the above"], required: false, helpText: "Select all that apply." },
-      { id: "beh-4", category: "behavior", questionText: "How does your child typically start their day or learning session?", questionType: "multiple_choice", options: ["Energetic and ready to go", "Needs time to warm up", "Resistant and requires encouragement", "Depends on the activity or their mood", "Variable and unpredictable"], required: true },
+      {
+        // Compat: COMPAT_IDS.communicationMode (cn-1)
+        id: "cn-1",
+        sectionKey: "communication",
+        text: "How does your child mainly communicate?",
+        type: "single_select",
+        options: [
+          "Verbal speech (speaks clearly)",
+          "Verbal speech (limited vocabulary or clarity)",
+          "Sign language",
+          "Picture symbols (PECS, Boardmaker, etc.)",
+          "Communication device / app (AAC)",
+          "Gestures and pointing",
+          "Combination of methods",
+          "Non-verbal / Pre-verbal",
+        ],
+      },
+      {
+        id: "co-simple-instructions",
+        sectionKey: "communication",
+        text: "Follows simple instructions (e.g. \"please put your shoes on\").",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "co-multi-step",
+        sectionKey: "communication",
+        text: "Follows multi-step instructions (e.g. \"brush your teeth then bring me your bag\").",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "co-tells-story",
+        sectionKey: "communication",
+        text: "Tells you about something that happened earlier in the day.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "co-back-and-forth",
+        sectionKey: "communication",
+        text: "Has back-and-forth conversations with at least 3 turns.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "co-asks-questions",
+        sectionKey: "communication",
+        text: "Asks questions to learn new things.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "co-jokes",
+        sectionKey: "communication",
+        text: "Understands jokes, sarcasm, or figures of speech.",
+        type: "likert5_with_unsure",
+        ageBands: ["9-12", "13+"],
+      },
+      {
+        id: "co-open",
+        sectionKey: "communication",
+        text: "Anything specific about how your child communicates we should know? (optional)",
+        type: "open_long",
+      },
     ],
   },
-  {
-    key: "preferences",
-    label: "Preferences",
-    icon: "🎯",
-    color: "#2DD4BF",
-    bgColor: "#CCFBF1",
-    questions: [
-      { id: "pref-1", category: "preferences", questionText: "What subjects or topics is your child most interested in?", questionType: "multi_select", options: ["Animals and nature", "Space and astronomy", "Technology and computers", "Sports and athletics", "Art and creativity", "Music and performance", "History and cultures", "Math puzzles and logic", "Science experiments", "Reading and stories"], required: false, helpText: "We can incorporate these interests into learning activities." },
-      { id: "pref-2", category: "preferences", questionText: "Does your child prefer structure or flexibility in learning?", questionType: "rating_scale", scaleMin: 1, scaleMax: 5, scaleLabels: { min: "Needs clear structure and routines", max: "Thrives with flexibility and choice" }, required: true },
-      { id: "pref-3", category: "preferences", questionText: "What type of activities engage your child the most?", questionType: "multiple_choice", options: ["Games and competitions", "Stories and narratives", "Building and creating", "Exploring and discovering", "Practicing and mastering skills", "Collaborating with others"], required: true },
-    ],
-  },
+
+  // ───── Section 4b — Social-Emotional ─────────────────────────────────
   {
     key: "social_emotional",
-    label: "Social-Emotional",
+    number: 4,
+    label: "Friendships & feelings",
+    shortLabel: "Social-Emotional",
     icon: "💛",
-    color: "#EC4899",
-    bgColor: "#FCE7F3",
+    rationale:
+      "How your child connects with others and rides emotional waves — both shape what kinds of stories and rewards land for them.",
+    estimatedMinutes: 3,
     questions: [
-      { id: "se-1", category: "social_emotional", questionText: "How confident is your child in their abilities as a learner?", questionType: "rating_scale", scaleMin: 1, scaleMax: 5, scaleLabels: { min: "Low confidence, often doubts themselves", max: "Very confident and self-assured" }, required: true },
-      { id: "se-2", category: "social_emotional", questionText: "How does your child handle frustration or setbacks?", questionType: "multiple_choice", options: ["Bounces back quickly and tries again", "Needs encouragement but persists", "Gets upset but calms down with support", "Becomes very discouraged", "Shuts down or avoids the situation"], required: true },
-      { id: "se-3", category: "social_emotional", questionText: "Does your child express their feelings and needs effectively?", questionType: "rating_scale", scaleMin: 1, scaleMax: 5, scaleLabels: { min: "Struggles to express feelings", max: "Communicates feelings clearly" }, required: true },
-      { id: "se-4", category: "social_emotional", questionText: "How does your child interact with peers in learning settings?", questionType: "multiple_choice", options: ["Enjoys collaboration and group work", "Participates with support", "Prefers individual work but can work with others", "Avoids peer interaction", "Has significant difficulty with social situations"], required: true },
+      {
+        id: "se-cooperative",
+        sectionKey: "social_emotional",
+        text: "Plays cooperatively with other children (takes turns, shares).",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "se-friendships",
+        sectionKey: "social_emotional",
+        text: "Has one or more close friendships.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "se-names-feelings",
+        sectionKey: "social_emotional",
+        text: "Can name what they're feeling.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "se-empathy",
+        sectionKey: "social_emotional",
+        text: "Shows empathy when someone else is upset.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "se-transitions",
+        sectionKey: "social_emotional",
+        text: "Handles transitions between activities.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "se-loses-game",
+        sectionKey: "social_emotional",
+        text: "Copes with losing a game or being told \"no\".",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "se-open",
+        sectionKey: "social_emotional",
+        text:
+          "What are your biggest social or emotional concerns right now, if any? (optional)",
+        type: "open_long",
+      },
     ],
   },
+
+  // ───── Section 4g — Cognitive / How they think ───────────────────────
   {
-    key: "functioning_level",
-    label: "Functioning Level",
-    icon: "📊",
-    color: "#6366F1",
-    bgColor: "#EEF2FF",
+    key: "cognitive",
+    number: 4,
+    label: "How they think",
+    shortLabel: "Cognitive",
+    icon: "🧩",
+    rationale:
+      "Less about grade-level performance, more about the texture of their thinking — curiosity, memory, persistence.",
+    estimatedMinutes: 3,
     questions: [
-      { id: "fl-1", category: "functioning_level", questionText: "Does your child have an Individualized Education Program (IEP) or 504 plan?", questionType: "multiple_choice", options: ["No IEP or 504 plan", "Yes, 504 plan only", "Yes, IEP for learning disabilities", "Yes, IEP for developmental delay", "Yes, IEP for intellectual disability", "Yes, IEP for multiple disabilities", "Currently being evaluated"], required: true, helpText: "This helps us customize the assessment experience appropriately." },
-      { id: "fl-2", category: "functioning_level", questionText: "Can your child follow simple 1-2 step verbal instructions independently?", questionType: "multiple_choice", options: ["Yes, consistently and independently", "Yes, with occasional reminders", "Sometimes, with frequent prompting needed", "Rarely, requires significant support", "No, requires physical guidance or demonstration"], required: true },
-      { id: "fl-3", category: "functioning_level", questionText: "Can your child recognize and identify basic pictures and symbols?", questionType: "multiple_choice", options: ["Yes, recognizes many pictures and symbols", "Yes, recognizes common objects and simple symbols", "Somewhat, recognizes a limited set of familiar images", "Rarely, struggles to connect pictures to meaning", "No, does not demonstrate picture/symbol recognition"], required: true },
-      { id: "fl-4", category: "functioning_level", questionText: "How does your child typically respond to questions or choices?", questionType: "multiple_choice", options: ["Verbally answers questions clearly", "Uses short words or phrases", "Points to or touches choices", "Uses communication device or pictures", "Looks at or gazes toward choices", "Requires adult to interpret responses", "Does not consistently respond to questions"], required: true },
-      { id: "fl-5", category: "functioning_level", questionText: "What is your child's current level of reading ability?", questionType: "multiple_choice", options: ["Reads at or above grade level", "Reads 1-2 grades below level", "Recognizes some sight words", "Recognizes letters but not words", "Does not read or recognize letters", "Non-applicable / Pre-reading age"], required: true, helpText: "This helps us determine if content should be read aloud." },
-      { id: "fl-6", category: "functioning_level", questionText: "Can your child independently use a tablet or touchscreen?", questionType: "multiple_choice", options: ["Yes, uses tablets/touchscreens independently", "Yes, with occasional guidance", "Yes, but needs large buttons/targets", "Somewhat, with physical hand-over-hand support", "No, requires an adult to navigate for them", "Uses assistive technology (switch, eye gaze)"], required: true },
-      { id: "fl-7", category: "functioning_level", questionText: "How would you describe your child's overall developmental level?", questionType: "multiple_choice", options: ["Age-appropriate development", "Mild delays (about 1-2 years behind peers)", "Moderate delays (about 3-4 years behind peers)", "Significant delays (more than 4 years behind peers)", "Profound delays (functioning at infant/toddler level)", "Unsure / Prefer not to answer"], required: true, helpText: "This information is confidential and helps us create the best experience." },
-      { id: "fl-8", category: "functioning_level", questionText: "Which daily living skills can your child perform independently? (Select all that apply)", questionType: "multi_select", options: ["Feeding themselves", "Dressing with minimal help", "Basic hygiene (handwashing, teeth brushing)", "Using the bathroom independently", "Following household routines", "None of the above independently"], required: false, helpText: "This helps us understand appropriate activity complexity." },
+      {
+        id: "cg-curious",
+        sectionKey: "cognitive",
+        text: "Curious — asks lots of questions.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "cg-remembers",
+        sectionKey: "cognitive",
+        text: "Remembers things from a long time ago.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "cg-patterns",
+        sectionKey: "cognitive",
+        text: "Notices patterns.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "cg-problem-solves",
+        sectionKey: "cognitive",
+        text: "Problem-solves when things don't go as planned.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "cg-sticks-with",
+        sectionKey: "cognitive",
+        text: "Sticks with tasks that are hard.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "cg-imagines",
+        sectionKey: "cognitive",
+        text: "Pretends, imagines, or tells stories.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "cg-cause-effect",
+        sectionKey: "cognitive",
+        text: "Understands cause and effect.",
+        type: "likert5_with_unsure",
+      },
+      {
+        id: "cg-surprised",
+        sectionKey: "cognitive",
+        text: "When has your child surprised you with how smart they are? (optional)",
+        type: "open_long",
+      },
     ],
   },
+
+  // ───── Section 5 — Learning Style, School & Device Access ────────────
   {
-    key: "sensory_accessibility",
-    label: "Sensory Accessibility",
-    icon: "🌈",
-    color: "#14B8A6",
-    bgColor: "#CCFBF1",
+    key: "learning",
+    number: 5,
+    label: "How they learn best",
+    shortLabel: "Learning",
+    icon: "🎒",
+    rationale:
+      "How and where your child learns now — and how they actually use a device — so we can shape the experience around them.",
+    estimatedMinutes: 3,
     questions: [
-      { id: "sa-1", category: "sensory_accessibility", questionText: "Does your child have any vision impairment?", questionType: "multiple_choice", options: ["No vision impairment", "Wears glasses/contacts (corrected to normal)", "Low vision (even with glasses)", "Legally blind", "Totally blind"], required: true, helpText: "This determines if we need to provide audio-first or screen reader content." },
-      { id: "sa-2", category: "sensory_accessibility", questionText: "If your child has vision impairment, what tools do they use? (Select all that apply)", questionType: "multi_select", options: ["Not applicable - no vision impairment", "Screen reader (NVDA, JAWS, VoiceOver, TalkBack)", "Screen magnification software", "Braille display", "Audio descriptions", "High contrast mode", "Large print materials", "Tactile graphics/models"], required: false, helpText: "We will configure the app to work with these tools." },
-      { id: "sa-3", category: "sensory_accessibility", questionText: "Does your child have any hearing impairment?", questionType: "multiple_choice", options: ["No hearing impairment", "Mild hearing loss (uses hearing aids)", "Moderate hearing loss", "Severe hearing loss", "Profoundly deaf", "Deaf since birth"], required: true, helpText: "This determines if we need to provide visual/sign language content." },
-      { id: "sa-4", category: "sensory_accessibility", questionText: "If your child has hearing impairment, what do they use? (Select all that apply)", questionType: "multi_select", options: ["Not applicable - no hearing impairment", "Hearing aids", "Cochlear implant", "American Sign Language (ASL)", "British Sign Language (BSL)", "Other sign language", "Lip reading", "Written/text communication", "Captions/subtitles"], required: false, helpText: "We will provide appropriate visual supports." },
-      { id: "sa-5", category: "sensory_accessibility", questionText: "Does your child have combined vision and hearing impairment (deafblind)?", questionType: "yes_no", options: ["Yes", "No"], required: true, helpText: "Deafblind learners need specialized tactile/haptic content." },
+      {
+        id: "lr-school",
+        sectionKey: "learning",
+        text: "Current school setting",
+        type: "single_select",
+        options: ["Public school", "Private school", "Homeschool", "Microschool", "Not in school", "Other"],
+        allowOther: true,
+      },
+      {
+        id: "lr-grade",
+        sectionKey: "learning",
+        text: "Grade level",
+        type: "single_select",
+        options: ["Pre-K", "K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "Post-12 / Other"],
+      },
+      {
+        id: "lr-iep",
+        sectionKey: "learning",
+        text: "Currently has an IEP, 504, or ILP?",
+        type: "single_select",
+        options: ["No", "Yes — IEP", "Yes — 504", "Yes — ILP", "Currently being evaluated", "Not sure"],
+      },
+      {
+        id: "lr-best-modes",
+        sectionKey: "learning",
+        text: "How does your child learn best?",
+        type: "multi_select",
+        options: [
+          "Watching", "Doing / hands-on", "Reading", "Listening", "Talking it through",
+          "Teaching someone else", "Moving while learning", "Working alone", "Working with others",
+        ],
+      },
+      {
+        // Compat: COMPAT_IDS.attentionSpan (ls-3) — bucketed minutes.
+        id: "ls-3",
+        sectionKey: "learning",
+        text: "Roughly how long can your child focus on something they don't love?",
+        type: "single_select",
+        options: [
+          "Under 5 minutes",
+          "5–10 minutes",
+          "10–20 minutes",
+          "20–30 minutes",
+          "30+ minutes",
+          "Varies a lot day-to-day",
+        ],
+      },
+      {
+        id: "lr-sharpest",
+        sectionKey: "learning",
+        text: "When are they sharpest?",
+        type: "single_select",
+        options: ["Early morning", "Late morning", "Early afternoon", "Late afternoon", "Evening", "Varies"],
+      },
+      {
+        id: "lr-breakdown",
+        sectionKey: "learning",
+        text: "Where does learning tend to break down for them? (optional)",
+        type: "open_long",
+      },
+      // ─── Device-access mini-block (feeds compat fields) ───
+      {
+        // Compat: COMPAT_IDS.deviceInteraction (im-1)
+        id: "im-1",
+        sectionKey: "learning",
+        text: "How does your child use a tablet, phone, or computer?",
+        type: "single_select",
+        options: [
+          "Standard touch / mouse — no adaptations",
+          "Needs larger touch targets / buttons",
+          "With occasional guidance from an adult",
+          "Switch access (single switch)",
+          "Switch access (two switches)",
+          "Eye gaze / eye tracking",
+          "Head tracking",
+          "Voice control",
+          "An adult operates the device based on their cues",
+        ],
+      },
+      {
+        // Compat: COMPAT_IDS.responseMethod (fl-4)
+        id: "fl-4",
+        sectionKey: "learning",
+        text: "How does your child usually answer questions or make choices?",
+        type: "single_select",
+        options: [
+          "Speaks the answer clearly",
+          "Uses short words or phrases",
+          "Points to or touches choices",
+          "Uses a communication device or pictures",
+          "Looks toward / gazes at choices",
+          "An adult interprets their response",
+          "Doesn't consistently respond yet",
+        ],
+      },
     ],
   },
+
+  // ───── Section 6 — Parent Priorities & Goals ─────────────────────────
   {
-    key: "communication_needs",
-    label: "Communication Needs",
-    icon: "💬",
-    color: "#8B5CF6",
-    bgColor: "#F5F3FF",
+    key: "priorities",
+    number: 6,
+    label: "What matters most",
+    shortLabel: "Priorities",
+    icon: "🧭",
+    rationale:
+      "After 20 minutes of reflecting on your child, this hits different. Tell us what you actually want from us — we'll prioritize accordingly.",
+    estimatedMinutes: 3,
     questions: [
-      { id: "cn-1", category: "communication_needs", questionText: "How does your child primarily communicate?", questionType: "multiple_choice", options: ["Verbal speech (speaks clearly)", "Verbal speech (limited vocabulary or clarity)", "Sign language", "Picture symbols (PECS, Boardmaker, etc.)", "Communication device/app (AAC)", "Gestures and pointing", "Combination of methods", "Non-verbal / Pre-verbal"], required: true, helpText: "This helps us provide appropriate response options." },
-      { id: "cn-2", category: "communication_needs", questionText: "Does your child use an AAC (Augmentative and Alternative Communication) device or app?", questionType: "multiple_choice", options: ["No, does not use AAC", "Yes - Proloquo2Go", "Yes - TouchChat", "Yes - LAMP Words for Life", "Yes - Snap + Core First", "Yes - GoTalk or similar low-tech device", "Yes - Picture Exchange Communication System (PECS)", "Yes - Other AAC system"], required: false, helpText: "We can integrate with some AAC systems for seamless communication." },
-      { id: "cn-3", category: "communication_needs", questionText: "What symbol set is your child most familiar with?", questionType: "multiple_choice", options: ["Not applicable - uses verbal/text communication", "PCS (Picture Communication Symbols / Boardmaker)", "SymbolStix", "Widgit Symbols", "LAMP symbols", "Photographs of real objects", "Custom/other symbols", "Not sure"], required: false, helpText: "Using familiar symbols helps your child respond more easily." },
+      {
+        id: "pr-one-thing",
+        sectionKey: "priorities",
+        text:
+          "If aivo could help with ONE thing in the next 3 months, what would it be?",
+        type: "open_long",
+      },
+      {
+        id: "pr-rank",
+        sectionKey: "priorities",
+        text: "Pick your top 3 priorities (drag to reorder)",
+        type: "rank_top_three",
+        options: [
+          "Academic skills", "Confidence", "Social skills", "Independence",
+          "Emotional regulation", "Communication", "Motor skills", "Focus / attention",
+          "Creativity", "Specific interest exploration", "Family harmony",
+        ],
+      },
+      {
+        id: "pr-success",
+        sectionKey: "priorities",
+        text: "What does success look like for your child a year from now? (optional)",
+        type: "open_long",
+      },
+      {
+        id: "pr-worry",
+        sectionKey: "priorities",
+        text: "What do you worry about? (optional)",
+        type: "open_long",
+      },
+      {
+        id: "pr-hopeful",
+        sectionKey: "priorities",
+        text: "What are you hopeful about? (optional)",
+        type: "open_long",
+      },
     ],
   },
+
+  // ───── Section 7 — Wrap-up & Next Steps ──────────────────────────────
   {
-    key: "input_method",
-    label: "Input Method",
-    icon: "🖥️",
-    color: "#38BDF8",
-    bgColor: "#E0F2FE",
+    key: "wrap_up",
+    number: 7,
+    label: "Last thoughts",
+    shortLabel: "Wrap-up",
+    icon: "🎁",
+    rationale:
+      "We'll turn your answers into a baseline profile you can review and edit anytime. One last open question — most parents put their best insight here.",
+    estimatedMinutes: 1,
+    isSpecial: true,
     questions: [
-      { id: "im-1", category: "input_method", questionText: "How does your child interact with screens/devices?", questionType: "multiple_choice", options: ["Standard touch/mouse - no adaptations needed", "Needs larger touch targets/buttons", "Uses switch access (single switch)", "Uses switch access (two switches)", "Uses eye gaze/eye tracking", "Uses head tracking", "Uses voice control", "Parent/aide operates device based on child's cues"], required: true, helpText: "We will configure the app for your child's access method." },
-      { id: "im-2", category: "input_method", questionText: "If your child uses switch or scanning access, what settings work best?", questionType: "multiple_choice", options: ["Not applicable - does not use switch access", "Automatic scanning (items highlight in sequence)", "Step scanning (switch advances to next item)", "Row-column scanning", "Group scanning", "Unsure - need help determining"], required: false, helpText: "We can customize scanning patterns and timing." },
-      { id: "im-3", category: "input_method", questionText: "Does your child need extra time to respond to questions?", questionType: "multiple_choice", options: ["No, responds at typical pace", "Yes, needs a few extra seconds", "Yes, needs significantly more time (10+ seconds)", "Yes, needs partner assistance to respond", "Yes, no time limits should be used"], required: true, helpText: "We will adjust timing and remove any time pressure." },
-    ],
-  },
-  {
-    key: "support_needs",
-    label: "Support Needs",
-    icon: "🤝",
-    color: "#F43F5E",
-    bgColor: "#FFE4E6",
-    questions: [
-      { id: "sn-1", category: "support_needs", questionText: "Will an adult need to be present during the assessment?", questionType: "multiple_choice", options: ["No, child can complete independently", "Yes, to provide encouragement but not help", "Yes, to read questions aloud", "Yes, to physically assist with responses", "Yes, to interpret/translate responses", "Yes, to fully facilitate (observational mode)"], required: true, helpText: "This helps us determine the best assessment format." },
-      { id: "sn-2", category: "support_needs", questionText: "How many questions can your child typically handle before needing a break?", questionType: "multiple_choice", options: ["20+ questions at a time", "10-20 questions at a time", "5-10 questions at a time", "3-5 questions at a time", "1-2 questions at a time", "Needs frequent breaks after each question"], required: true, helpText: "We will build in appropriate breaks." },
-      { id: "sn-3", category: "support_needs", questionText: "What type of breaks help your child re-focus? (Select all that apply)", questionType: "multi_select", options: ["Movement breaks (stretching, walking)", "Sensory breaks (calming music, visuals)", "Quiet rest (close eyes, dark room)", "Preferred activity break (watch video, play)", "Deep pressure/weighted blanket", "Snack break", "Social interaction break", "No specific break type needed"], required: false, helpText: "We can suggest appropriate break activities." },
-      { id: "sn-4", category: "support_needs", questionText: "Does your child have any specific triggers we should avoid in content?", questionType: "multi_select", options: ["Loud or sudden sounds", "Flashing lights or animations", "Certain colors (please specify)", "Crowded or busy visuals", "Cartoon characters or faces", "Specific topics (please specify in notes)", "Time pressure or countdowns", "None that I'm aware of"], required: false, helpText: "This helps us create a comfortable assessment environment." },
-      { id: "sn-5", category: "support_needs", questionText: "Any additional information about your child's accessibility or support needs?", questionType: "open_ended", required: false, helpText: "Share any specific accommodations, equipment, or strategies that help your child succeed." },
+      {
+        id: "wu-anything-missed",
+        sectionKey: "wrap_up",
+        text: "Anything we should know that we didn't ask about?",
+        type: "open_long",
+        helpText:
+          "This box consistently surfaces the most useful insights — even one sentence helps.",
+      },
+      {
+        id: "wu-coparent",
+        sectionKey: "wrap_up",
+        text: "Invite a co-parent or teacher to add their perspective?",
+        type: "single_select",
+        options: ["Yes — send me a link", "Maybe later", "No, just me"],
+      },
     ],
   },
 ];
 
-export const TOTAL_QUESTIONS = PARENT_ASSESSMENT_CATEGORIES.reduce(
-  (sum, cat) => sum + cat.questions.length, 0
+/** Real (non-special) sections — the ones whose questions count toward
+ *  progress. Section 0 (welcome consent) and Section 7 (wrap-up) render as
+ *  their own bespoke screens and are excluded from the denominator. */
+export const REAL_SECTIONS = PARENT_ASSESSMENT_SECTIONS.filter(
+  (s) => !s.isSpecial,
 );
+
+/** Total questions across all real (non-special) sections — used as the
+ *  denominator for the overall progress meter. Stays in sync with the
+ *  numerator computed in the page (which also iterates REAL_SECTIONS only). */
+export const TOTAL_QUESTIONS = REAL_SECTIONS.reduce(
+  (sum, s) => sum + s.questions.length,
+  0,
+);
+
+// ─── Age-band derivation ───────────────────────────────────────────────────
+/** Map a child's age in years to the framework's 4 age bands (§7).
+ *  Returns null when DOB is unknown — callers should fall back to "show all". */
+export function ageToBand(ageYears: number): AgeBand | null {
+  if (!Number.isFinite(ageYears) || ageYears < 0) return null;
+  if (ageYears < 5) return "2-4";
+  if (ageYears < 9) return "5-8";
+  if (ageYears < 13) return "9-12";
+  return "13+";
+}
+
+/** Compute current age band from an ISO date string (YYYY-MM-DD). */
+export function bandFromDob(dobIso: string | null | undefined): AgeBand | null {
+  if (!dobIso) return null;
+  const dob = new Date(dobIso);
+  if (Number.isNaN(dob.getTime())) return null;
+  const now = new Date();
+  let years = now.getFullYear() - dob.getFullYear();
+  const m = now.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) years -= 1;
+  return ageToBand(years);
+}
+
+/** True when a question should be visible for the given band. When the band
+ *  is unknown (parent hasn't entered DOB yet) we show all questions — the
+ *  framework's "don't hide things from someone who hasn't told us their age yet"
+ *  default. */
+export function isQuestionVisible(
+  q: AssessmentQuestion,
+  band: AgeBand | null,
+): boolean {
+  if (!q.ageBands || q.ageBands.length === 0) return true;
+  if (band === null) return true;
+  return q.ageBands.includes(band);
+}
+
+// ─── Backwards-compat alias (other code may still import the old name) ──
+export const PARENT_ASSESSMENT_CATEGORIES = PARENT_ASSESSMENT_SECTIONS;
