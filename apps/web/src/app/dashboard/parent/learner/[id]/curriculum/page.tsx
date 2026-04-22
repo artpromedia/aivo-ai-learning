@@ -525,17 +525,17 @@ function UploadCard({
         </div>
       )}
 
-      {focus.keywords && focus.keywords.length > 0 && (
+      {focus?.keywords && focus.keywords.length > 0 && (
         <div>
           <p className="text-xs font-semibold vi-text-muted mb-1">{t("keywords")}</p>
-          <p className="text-xs vi-text-muted">{focus.keywords.join(" · ")}</p>
+          <p className="text-xs vi-text-muted">{(focus.keywords ?? []).join(" · ")}</p>
         </div>
       )}
 
-      {focus.standards && focus.standards.length > 0 && (
+      {focus?.standards && focus.standards.length > 0 && (
         <div>
           <p className="text-xs font-semibold vi-text-muted mb-1">{t("standards")}</p>
-          <p className="text-xs vi-text-muted">{focus.standards.join(", ")}</p>
+          <p className="text-xs vi-text-muted">{(focus.standards ?? []).join(", ")}</p>
         </div>
       )}
 
