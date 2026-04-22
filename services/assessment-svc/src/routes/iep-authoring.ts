@@ -197,6 +197,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (!isUuid(id)) return reply.code(400).send({ error: "Invalid id" });
     const [profile] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, id));
     if (!profile) return reply.code(404).send({ error: "Not found" });
+    if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (!await canRead(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     const bundle = await loadDraftBundle(db, id);
     return bundle;
@@ -228,6 +229,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (!isUuid(id)) return reply.code(400).send({ error: "Invalid id" });
     const [profile] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, id));
     if (!profile) return reply.code(404).send({ error: "Not found" });
+    if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
     const body = req.body as any;
@@ -255,6 +257,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (!isUuid(id)) return reply.code(400).send({ error: "Invalid id" });
     const [profile] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, id));
     if (!profile) return reply.code(404).send({ error: "Not found" });
+    if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (profile.source !== "authored") return reply.code(409).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
@@ -288,6 +291,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     }
     const [profile] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, id));
     if (!profile) return reply.code(404).send({ error: "Not found" });
+    if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
     const { narrative } = req.body as { narrative: string };
@@ -330,6 +334,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (!isUuid(id)) return reply.code(400).send({ error: "Invalid id" });
     const [profile] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, id));
     if (!profile) return reply.code(404).send({ error: "Not found" });
+    if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
     const body = req.body as any;
@@ -354,6 +359,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (!isUuid(id) || !isUuid(goalId)) return reply.code(400).send({ error: "Invalid id" });
     const [profile] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, id));
     if (!profile) return reply.code(404).send({ error: "Not found" });
+    if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
     const body = req.body as any;
@@ -377,6 +383,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (!isUuid(id) || !isUuid(goalId)) return reply.code(400).send({ error: "Invalid id" });
     const [profile] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, id));
     if (!profile) return reply.code(404).send({ error: "Not found" });
+    if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
     await db.delete(iepGoals)
@@ -410,6 +417,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (!isUuid(id)) return reply.code(400).send({ error: "Invalid id" });
     const [profile] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, id));
     if (!profile) return reply.code(404).send({ error: "Not found" });
+    if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
     const body = req.body as any;
@@ -435,6 +443,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (!isUuid(id) || !isUuid(serviceId)) return reply.code(400).send({ error: "Invalid id" });
     const [profile] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, id));
     if (!profile) return reply.code(404).send({ error: "Not found" });
+    if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
     const body = req.body as any;
@@ -461,6 +470,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (!isUuid(id) || !isUuid(serviceId)) return reply.code(400).send({ error: "Invalid id" });
     const [profile] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, id));
     if (!profile) return reply.code(404).send({ error: "Not found" });
+    if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
     await db.delete(iepServices)
@@ -488,6 +498,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (!isUuid(id)) return reply.code(400).send({ error: "Invalid id" });
     const [profile] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, id));
     if (!profile) return reply.code(404).send({ error: "Not found" });
+    if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     const { to } = req.body as { to: "draft" | "in_review" };
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });

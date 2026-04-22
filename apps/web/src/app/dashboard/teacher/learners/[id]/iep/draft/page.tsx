@@ -54,10 +54,11 @@ export default function IepDraftEditorPage() {
   const [creating, setCreating] = useState(false);
   const headers = useMemo(() => accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined, [accessToken]);
   const lastSaved = useRef<number>(0);
-  // Auto-save buffer is keyed by draft id so switching drafts mid-debounce
-  // can never bleed edits from one profile into another.
+  // Auto-save buffer + timer are both keyed by draft id so switching drafts
+  // mid-debounce can never bleed edits from one profile into another, and a
+  // pending patch on draft A always fires even after switching to draft B.
   const pendingByDraft = useRef<Record<string, Record<string, any>>>({});
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerByDraft = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const fromEvalId = searchParams.get("fromEvaluation") || undefined;
 
   const refreshDrafts = useCallback(async () => {
@@ -94,31 +95,56 @@ export default function IepDraftEditorPage() {
     } finally { setCreating(false); }
   }, [headers, learnerId, fromEvalId]);
 
+  // Flush any pending patch for a specific draft id immediately (e.g. when
+  // switching drafts or unmounting). Returns the in-flight promise.
+  const flushDraft = useCallback(async (draftId: string) => {
+    if (!headers) return;
+    const t = timerByDraft.current[draftId];
+    if (t) { clearTimeout(t); delete timerByDraft.current[draftId]; }
+    const body = pendingByDraft.current[draftId];
+    if (!body || Object.keys(body).length === 0) return;
+    delete pendingByDraft.current[draftId];
+    setSaveState("saving");
+    try {
+      const r = await fetch(`/api/iep/drafts/${draftId}`, {
+        method: "PATCH", headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (r.ok) { setSaveState("saved"); lastSaved.current = Date.now(); }
+      else setSaveState("error");
+    } catch { setSaveState("error"); }
+  }, [headers]);
+
   // Schedule an auto-save (debounced 1s; fires at most every ~5s).
-  // Each draft has its own pending-patch bucket so cross-draft edits cannot mix.
+  // Each draft owns its own bucket AND its own timer.
   const scheduleSave = useCallback((patch: Record<string, any>) => {
     if (!activeId) return;
     const draftId = activeId;
     const bucket = pendingByDraft.current[draftId] || {};
     pendingByDraft.current[draftId] = { ...bucket, ...patch };
-    if (saveTimer.current) clearTimeout(saveTimer.current);
+    const existing = timerByDraft.current[draftId];
+    if (existing) clearTimeout(existing);
     const wait = Math.max(1000, 5000 - (Date.now() - lastSaved.current));
-    saveTimer.current = setTimeout(async () => {
-      if (!headers) return;
-      const body = pendingByDraft.current[draftId];
-      if (!body) return;
-      delete pendingByDraft.current[draftId];
-      setSaveState("saving");
-      try {
-        const r = await fetch(`/api/iep/drafts/${draftId}`, {
-          method: "PATCH", headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (r.ok) { setSaveState("saved"); lastSaved.current = Date.now(); }
-        else setSaveState("error");
-      } catch { setSaveState("error"); }
+    timerByDraft.current[draftId] = setTimeout(() => {
+      void flushDraft(draftId);
     }, wait);
-  }, [activeId, headers]);
+  }, [activeId, flushDraft]);
+
+  // When the active draft changes, flush whatever was buffered for the old one
+  // immediately so no edits are stranded behind a cancelled timer.
+  const prevActiveId = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevActiveId.current;
+    if (prev && prev !== activeId) void flushDraft(prev);
+    prevActiveId.current = activeId;
+  }, [activeId, flushDraft]);
+
+  // On unmount, flush every outstanding draft buffer.
+  useEffect(() => {
+    return () => {
+      for (const id of Object.keys(pendingByDraft.current)) void flushDraft(id);
+    };
+  }, [flushDraft]);
 
   const updateField = (field: keyof Profile, value: any) => {
     if (!bundle) return;
