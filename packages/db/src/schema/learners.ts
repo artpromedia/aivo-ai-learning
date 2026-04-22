@@ -60,6 +60,34 @@ export const iepProfiles = pgTable("iep_profiles", {
   assistiveTechnology: jsonb("assistive_technology").default([]),
   recommendedFunctioningLevel: functioningLevelEnum("recommended_functioning_level"),
   reviewDate: timestamp("review_date"),
+  // Authoring lifecycle. `uploaded` rows come from PDF parse; `authored` rows are
+  // drafted inside AIVO. Lifecycle moves draft → in_review → finalised → archived.
+  source: varchar("source", { length: 20 }).default("uploaded").notNull(),
+  lifecycleState: varchar("lifecycle_state", { length: 20 }).default("finalised").notNull(),
+  authoredByUserId: uuid("authored_by_user_id").references(() => users.id),
+  fromEvaluationId: uuid("from_evaluation_id"),
+  placement: varchar("placement", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const iepPresentLevels = pgTable("iep_present_levels", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
+  area: varchar("area", { length: 30 }).notNull(),
+  narrative: text("narrative"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const iepServices = pgTable("iep_services", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
+  serviceType: varchar("service_type", { length: 60 }).notNull(),
+  providerRole: varchar("provider_role", { length: 60 }),
+  minutesPerWeek: integer("minutes_per_week"),
+  frequency: varchar("frequency", { length: 60 }),
+  location: varchar("location", { length: 60 }),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

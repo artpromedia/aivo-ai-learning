@@ -80,6 +80,9 @@ export default function IepDashboardPage() {
     eligibilityDecision: string | null; decisionCategories: string[] | null; decisionRationale: string | null;
     decidedAt: string | null;
   }>>([]);
+  const [draftSummaries, setDraftSummaries] = useState<Array<{
+    id: string; lifecycleState: string; createdAt: string; updatedAt: string;
+  }>>([]);
   const [motorProgress, setMotorProgress] = useState<null | {
     totalMotorGoals: number;
     averageMastery: number;
@@ -104,7 +107,14 @@ export default function IepDashboardPage() {
     fetch(`/api/iep/evaluations/learner/${learnerId}`, { headers })
       .then(r => r.ok ? r.json() : []).then((d) => setEvaluations(Array.isArray(d) ? d : []))
       .catch((err) => console.error("Failed to fetch evaluations:", err));
+    fetch(`/api/iep/drafts/learner/${learnerId}`, { headers })
+      .then(r => r.ok ? r.json() : []).then((d) => setDraftSummaries(Array.isArray(d) ? d : []))
+      .catch((err) => console.error("Failed to fetch IEP drafts:", err));
   }, [accessToken, learnerId]);
+
+  const inFlightDrafts = draftSummaries.filter(
+    (d) => d.lifecycleState === "draft" || d.lifecycleState === "in_review",
+  );
 
   const generateReport = async () => {
     setGeneratingReport(true);
@@ -141,6 +151,12 @@ export default function IepDashboardPage() {
         <div>
           <h1 className="text-2xl font-heading font-bold vi-text">{t("iep_tracking")}</h1>
           <p className="vi-text-muted mt-1">{t("iep_tracking_desc")}</p>
+          {inFlightDrafts.length > 0 && (
+            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))] text-xs font-bold">
+              <ClipboardList size={14} aria-hidden="true" />
+              {t("iep_draft_in_progress")}
+            </div>
+          )}
         </div>
         <div className="flex gap-3">
           {progress && (

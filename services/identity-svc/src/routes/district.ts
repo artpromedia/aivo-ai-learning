@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import {
   users, sessions, tenants, learners, sensoryProfiles,
   schools, classrooms, classroomEnrollments, staffAssignments,
-  districtSettings, districtActivityLog, iepRecords, iepEvaluations, interventions,
+  districtSettings, districtActivityLog, iepRecords, iepEvaluations, iepProfiles, interventions,
   seatRequests, appendAudit, adminAuditLog,
 } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
@@ -635,11 +635,22 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
         or(eq(iepEvaluations.status, "draft"), eq(iepEvaluations.status, "submitted")),
       ));
 
+    // Authored IEP drafts (Phase B) — counts both `draft` and `in_review`
+    // lifecycle states because both are still being prepared by the team.
+    const [draftCount] = await db.select({ count: count() }).from(iepProfiles)
+      .innerJoin(learners, eq(iepProfiles.learnerId, learners.id))
+      .where(and(
+        eq(learners.tenantId, tid),
+        eq(iepProfiles.source, "authored"),
+        or(eq(iepProfiles.lifecycleState, "draft"), eq(iepProfiles.lifecycleState, "in_review")),
+      ));
+
     return {
       active: activeCount.count,
       dueForReview: dueCount.count,
       overdue: overdueCount.count,
       evaluationsInProgress: evalInProgressCount?.count ?? 0,
+      drafts: draftCount?.count ?? 0,
     };
   });
 

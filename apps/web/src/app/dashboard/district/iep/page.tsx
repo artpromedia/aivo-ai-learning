@@ -10,6 +10,7 @@ interface IepSummary {
   dueForReview: number;
   overdue: number;
   evaluationsInProgress?: number;
+  drafts?: number;
 }
 
 interface InProgressEval {
@@ -128,6 +129,15 @@ export default function DistrictIepPage() {
                   <span className="text-xs vi-text-muted font-medium uppercase">Evaluations In Progress</span>
                 </div>
                 <p className="text-3xl font-bold vi-text">{summary.evaluationsInProgress ?? 0}</p>
+              </div>
+              <div className="vi-card p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <StatIconWell color="primary">
+                    <ClipboardList size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </StatIconWell>
+                  <span className="text-xs vi-text-muted font-medium uppercase">Drafts in Authoring</span>
+                </div>
+                <p className="text-3xl font-bold vi-text">{summary.drafts ?? 0}</p>
               </div>
             </div>
           )}

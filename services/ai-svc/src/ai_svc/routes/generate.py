@@ -475,3 +475,98 @@ Parent input:
         confidence=confidence,
         model=result["model"],
     )
+
+
+class DraftGoalRequest(BaseModel):
+    concern: str
+    domain: str = "academic"
+    grade_level: Optional[str] = None
+    sub_domain: Optional[str] = None
+
+
+class DraftGoalResponse(BaseModel):
+    goal_text: str
+    domain: str
+    sub_domain: Optional[str]
+    baseline: str
+    target_criteria: str
+    measurable_criteria: str
+    model: str
+
+
+@router.post("/draft-goal", response_model=DraftGoalResponse)
+async def draft_iep_goal(req: DraftGoalRequest):
+    """Turn a short concern statement into a SMART annual IEP goal.
+
+    Used by the IEP authoring editor when a teacher clicks
+    "AI draft this goal". The AI never overwrites teacher edits — the UI
+    only fills empty fields with the response.
+    """
+    concern = (req.concern or "").strip()
+    if len(concern) < 5:
+        raise HTTPException(status_code=400, detail="Concern statement is too short")
+
+    domain = (req.domain or "academic").strip().lower()
+    grade = (req.grade_level or "unspecified").strip()
+    sub_domain = (req.sub_domain or "").strip() or None
+
+    system_prompt = """You write SMART annual IEP goals for special education teams.
+
+Return ONE goal as JSON with these exact fields:
+{
+  "goal_text": "Specific, measurable, achievable, relevant, time-bound (1 year) goal sentence.",
+  "domain": "math|ela|speech|behavior|motor|social|life_skills|executive_function|adaptive",
+  "sub_domain": "optional — for motor goals: locomotor|object_control|balance|midline_crossing|heavy_work|vestibular|fine_motor|handwriting_prep|adapted_pe",
+  "baseline": "1 sentence describing current performance level (concrete observation).",
+  "target_criteria": "1 sentence describing the success criterion (e.g. '4 of 5 trials across 3 sessions').",
+  "measurable_criteria": "How progress is measured (data collection method)."
+}
+
+Rules:
+- Goal must be observable & measurable — no vague verbs ("will understand"). Prefer "will demonstrate", "will produce", "will complete".
+- Always include a measurable criterion (% accuracy, # of trials, frequency, duration).
+- Stay age/grade-appropriate.
+- Return ONLY the JSON object, no markdown."""
+
+    user_prompt = (
+        f"Concern: {concern}\n"
+        f"Domain: {domain}\n"
+        f"Grade level: {grade}\n"
+        f"Sub-domain (optional): {sub_domain or 'none'}\n\n"
+        "Draft one SMART annual goal."
+    )
+
+    try:
+        result = await generate_completion(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=600,
+        )
+    except Exception as e:
+        logger.error(f"Goal drafter LLM error: {e}")
+        raise HTTPException(status_code=502, detail="AI service unavailable for goal drafting")
+
+    raw = result["content"].strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+        if raw.endswith("```"):
+            raw = raw[:-3]
+
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.error(f"Failed to parse goal JSON: {raw[:200]}")
+        raise HTTPException(status_code=502, detail="AI returned invalid JSON for goal drafting")
+
+    if not isinstance(parsed, dict):
+        raise HTTPException(status_code=502, detail="AI returned invalid shape for goal drafting")
+
+    return DraftGoalResponse(
+        goal_text=str(parsed.get("goal_text") or "").strip(),
+        domain=str(parsed.get("domain") or domain).strip(),
+        sub_domain=(str(parsed["sub_domain"]).strip() if parsed.get("sub_domain") else None),
+        baseline=str(parsed.get("baseline") or "").strip(),
+        target_criteria=str(parsed.get("target_criteria") or "").strip(),
+        measurable_criteria=str(parsed.get("measurable_criteria") or "").strip(),
+        model=result["model"],
+    )
