@@ -78,14 +78,18 @@ async function canReadSummary(db: any, claims: AuthClaims, learnerId: string): P
   return learner.parentId === claims.sub;
 }
 
+// Author-only writes: every content mutation must be backed by an explicit
+// teacher↔learner ACCEPTED link. THERAPIST is treated like TEACHER and must
+// also have an accepted assignment to this specific learner — tenant-wide
+// blanket writes for therapists are not allowed. DISTRICT_ADMIN and
+// PLATFORM_ADMIN retain oversight writes within their tenant scope.
 async function canWrite(db: any, claims: AuthClaims, learnerId: string): Promise<boolean> {
   const learner = await getLearner(db, learnerId);
   if (!learner) return false;
   if (claims.role === "PLATFORM_ADMIN") return true;
-  if (claims.role === "DISTRICT_ADMIN" || claims.role === "THERAPIST") {
-    return claims.tenantId === learner.tenantId;
-  }
-  if (claims.role === "TEACHER" && await isTeacherOf(db, claims.sub, learnerId)) return true;
+  if (claims.role === "DISTRICT_ADMIN") return claims.tenantId === learner.tenantId;
+  if ((claims.role === "TEACHER" || claims.role === "THERAPIST")
+      && await isTeacherOf(db, claims.sub, learnerId)) return true;
   return false;
 }
 
@@ -162,7 +166,10 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     const db = (app as any).db;
     const { learnerId } = req.params as any;
     if (!isUuid(learnerId)) return reply.code(400).send({ error: "Invalid learnerId" });
-    if (!await canRead(db, claims, learnerId)) return reply.code(403).send({ error: "Forbidden" });
+    // Use canReadSummary so the linked parent receives the minimal-metadata
+    // list needed to render the read-only "draft in progress" chip. Full
+    // bundle access (/api/iep/drafts/:id) remains gated by canRead.
+    if (!await canReadSummary(db, claims, learnerId)) return reply.code(403).send({ error: "Forbidden" });
     const rows = await db.select().from(iepProfiles)
       .where(and(eq(iepProfiles.learnerId, learnerId), eq(iepProfiles.source, "authored")))
       .orderBy(desc(iepProfiles.updatedAt));

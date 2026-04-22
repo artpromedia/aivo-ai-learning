@@ -168,15 +168,19 @@ export default function IepDraftEditorPage() {
     if (r.ok && bundle) setBundle({ ...bundle, goals: bundle.goals.filter((g) => g.id !== goalId) });
   };
 
-  // AI never overwrites teacher edits; only fills empty fields.
+  // AI turns a short concern into a SMART goal. It fills any empty field —
+  // including goalText — but never overwrites a non-empty teacher entry.
   const aiDraftGoal = async (goal: Goal) => {
-    if (!headers || !goal.goalText) return;
+    if (!headers) return;
     setDrafting(goal.id);
     try {
+      const concern = goal.goalText?.trim()
+        || goal.baseline?.trim()
+        || `Draft a SMART annual IEP goal for ${goal.domain || "this learner"}`;
       const r = await fetch("/api/ai/draft-goal", {
         method: "POST", headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({
-          concern: goal.goalText,
+          concern,
           domain: goal.domain || "academic",
           grade_level: bundle?.profile.gradeLevel || undefined,
         }),
@@ -185,10 +189,16 @@ export default function IepDraftEditorPage() {
       const ai = await r.json();
       // AI must NEVER overwrite teacher-entered values. Only fill blanks.
       const merged: Partial<Goal> = {};
+      if (!goal.goalText?.trim() && ai.goal_text) merged.goalText = ai.goal_text;
       if (!goal.domain && ai.domain) merged.domain = ai.domain;
       if (!goal.baseline && ai.baseline) merged.baseline = ai.baseline;
-      if (!goal.targetCriteria && ai.target_criteria) merged.targetCriteria = ai.target_criteria;
-      // goalText is the seed concern the teacher typed; preserve it as-is.
+      // SMART target / measurable criteria — combine if AI returns both.
+      if (!goal.targetCriteria) {
+        const target = [ai.target_criteria, ai.measurable_criteria]
+          .filter((s) => s && String(s).trim())
+          .join(" — ");
+        if (target) merged.targetCriteria = target;
+      }
       if (Object.keys(merged).length === 0) return;
       updateGoal(goal.id, merged);
       await persistGoal(goal.id, merged);
@@ -381,7 +391,7 @@ export default function IepDraftEditorPage() {
                           className="vi-input rounded-lg px-3 py-2 text-sm" />
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => aiDraftGoal(goal)} disabled={!editable || drafting === goal.id || !goal.goalText}
+                        <button onClick={() => aiDraftGoal(goal)} disabled={!editable || drafting === goal.id}
                           style={{ minHeight: 44 }}
                           className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] font-bold text-xs disabled:opacity-50">
                           <Sparkles size={14} aria-hidden="true" />
