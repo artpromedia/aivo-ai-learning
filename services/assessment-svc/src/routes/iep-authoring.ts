@@ -22,7 +22,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 const isUuid = (v: unknown): v is string => typeof v === "string" && UUID_RE.test(v);
 
 const PLOP_AREAS = ["academic", "functional", "social", "motor", "communication"] as const;
-type LifecycleState = "draft" | "in_review" | "finalized" | "shared" | "archived";
+type LifecycleState = "draft" | "in_review" | "finalised" | "archived";
 const EDITABLE_LIFECYCLE: LifecycleState[] = ["draft", "in_review"];
 
 async function authenticate(req: any, reply: any): Promise<AuthClaims | null> {
@@ -258,7 +258,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
   });
 
   // Delete a draft. Only allowed while still in draft/in_review lifecycle —
-  // finalised IEPs must be archived through a separate workflow, not deleted.
+  // Finalised IEPs must be archived through a separate workflow, not deleted.
   app.delete("/api/iep/drafts/:id", {
     schema: { tags: ["IEP Authoring"], security: [{ bearerAuth: [] }] },
   }, async (req, reply) => {
