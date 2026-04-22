@@ -1986,6 +1986,7 @@
     "amendment_summary_placeholder": "Short summary of the change",
     "amendment_changes_placeholder": "Proposed changes (JSON or free text)",
     "no_amendments": "No amendments yet.",
-    "propose_amendment": "Propose amendment"
+    "propose_amendment": "Propose amendment",
+    "filter_all": "All"
   }
 }

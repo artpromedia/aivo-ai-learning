@@ -691,6 +691,10 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
 
     return {
       active: activeCount.count,
+      // Phase D contract field — number of active IEPs whose annual
+      // review date falls within the next 30 days. `dueForReview` is
+      // kept for back-compat with the existing district IEP page.
+      reviewsDueIn30Days: dueCount.count,
       dueForReview: dueCount.count,
       overdue: overdueCount.count,
       evaluationsInProgress: evalInProgressCount?.count ?? 0,

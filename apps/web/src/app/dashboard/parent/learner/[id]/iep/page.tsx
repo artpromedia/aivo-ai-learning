@@ -84,6 +84,9 @@ export default function IepDashboardPage() {
   }
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
+  // Category filter chips on the Updates tab — let parents narrow the
+  // timeline to a single update type ("all" shows everything).
+  const [timelineFilter, setTimelineFilter] = useState<"all" | "note" | "report" | "amendment" | "reminder">("all");
   type Prefs = { progress_notes: { email: boolean; inApp: boolean }; reports: { email: boolean; inApp: boolean }; amendments: { email: boolean; inApp: boolean }; reminders: { email: boolean; inApp: boolean } };
   const [prefs, setPrefs] = useState<Prefs | null>(null);
   const [showPrefs, setShowPrefs] = useState(false);
@@ -363,16 +366,44 @@ export default function IepDashboardPage() {
 
       {activeTab === "updates" && (
         <div className="space-y-3">
-          {timelineLoading && timeline.length === 0 ? (
-            <div className="vi-card p-8 text-center vi-text-muted text-sm">{tu("loading")}</div>
-          ) : timeline.length === 0 ? (
-            <div className="vi-card p-12 text-center">
-              <div className="flex justify-center mb-3"><IconWell color="reading"><Bell className="w-7 h-7" /></IconWell></div>
-              <p className="vi-text-muted font-semibold">{tu("none_yet")}</p>
-              <p className="vi-text-muted text-sm mt-2">{tu("none_yet_help")}</p>
-            </div>
-          ) : (
-            timeline.map((item) => (
+          {/* Filter chips — let parents narrow the timeline by category. */}
+          <div className="flex flex-wrap gap-2">
+            {(["all", "note", "report", "amendment", "reminder"] as const).map((c) => {
+              const cnt = c === "all" ? timeline.length : timeline.filter((i) => i.type === c).length;
+              const isActive = timelineFilter === c;
+              return (
+                <button key={c} onClick={() => setTimelineFilter(c)}
+                  style={{ minHeight: 36 }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition ${
+                    isActive
+                      ? "bg-[hsl(var(--visual-primary))] text-white"
+                      : "vi-surface-soft vi-text-muted hover:vi-text"
+                  }`}>
+                  {c === "all" ? tu("filter_all") : tu(`type_${c}`)}
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                    isActive ? "bg-white/20" : "vi-surface"
+                  }`}>{cnt}</span>
+                </button>
+              );
+            })}
+          </div>
+          {(() => {
+            const filtered = timelineFilter === "all"
+              ? timeline
+              : timeline.filter((i) => i.type === timelineFilter);
+            if (timelineLoading && timeline.length === 0) {
+              return <div className="vi-card p-8 text-center vi-text-muted text-sm">{tu("loading")}</div>;
+            }
+            if (filtered.length === 0) {
+              return (
+                <div className="vi-card p-12 text-center">
+                  <div className="flex justify-center mb-3"><IconWell color="reading"><Bell className="w-7 h-7" /></IconWell></div>
+                  <p className="vi-text-muted font-semibold">{tu("none_yet")}</p>
+                  <p className="vi-text-muted text-sm mt-2">{tu("none_yet_help")}</p>
+                </div>
+              );
+            }
+            return filtered.map((item) => (
               <div key={`${item.type}-${item.id}`} className="vi-card p-4">
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5">
@@ -445,8 +476,8 @@ export default function IepDashboardPage() {
                   </div>
                 </div>
               </div>
-            ))
-          )}
+            ));
+          })()}
         </div>
       )}
 

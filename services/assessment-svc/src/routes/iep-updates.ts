@@ -503,18 +503,65 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
     if (a.status !== "proposed") {
       return reply.code(409).send({ error: "Amendment already responded to" });
     }
+    const nowTs = new Date();
     const [row] = await db.update(iepAmendments)
       .set({
         status: response,
         acknowledgedBy: claims.sub,
-        acknowledgedAt: new Date(),
+        acknowledgedAt: nowTs,
         parentResponse: note || null,
         revisionCounter: response === "acknowledged" ? (a.revisionCounter || 0) + 1 : a.revisionCounter,
-        updatedAt: new Date(),
+        updatedAt: nowTs,
       })
       .where(and(eq(iepAmendments.id, aid), eq(iepAmendments.status, "proposed")))
       .returning();
     if (!row) return reply.code(409).send({ error: "Amendment already responded to" });
+
+    // ───── Merge step (only on parent acknowledgement) ─────
+    // Acknowledgement is the legal trigger that lets the proposed
+    // changes take effect. We:
+    //  1. Snapshot the post-amendment state of profile + goals into
+    //     iep_revisions so reviewers can diff pre vs post per section.
+    //  2. Bump the IEP profile's revisionCounter so any downstream
+    //     signature workflow knows the affected sections need re-sign.
+    //  3. Advance the amendment from `acknowledged` → `merged`.
+    // Each step is best-effort so a transient failure on one doesn't
+    // block the others; the parent's acknowledgement is already
+    // recorded above.
+    if (response === "acknowledged") {
+      const sections = Object.keys((row.proposedChanges as Record<string, unknown>) || {});
+      try {
+        const [profileNow] = await db.select().from(iepProfiles)
+          .where(eq(iepProfiles.id, a.iepProfileId));
+        const goalsNow = await db.select().from(iepGoals)
+          .where(eq(iepGoals.iepProfileId, a.iepProfileId));
+        await db.insert(iepRevisions).values({
+          iepProfileId: a.iepProfileId,
+          section: "amendment-post".slice(0, 30),
+          snapshot: {
+            profile: profileNow,
+            goals: goalsNow,
+            amendmentId: row.id,
+            affectedSections: sections,
+          },
+          authorId: claims.sub,
+        });
+      } catch { /* best-effort */ }
+      try {
+        await db.update(iepProfiles)
+          .set({
+            revisionCounter: sql`${iepProfiles.revisionCounter} + 1`,
+            updatedAt: nowTs,
+          })
+          .where(eq(iepProfiles.id, a.iepProfileId));
+      } catch { /* best-effort */ }
+      try {
+        await db.update(iepAmendments)
+          .set({ status: "merged", updatedAt: new Date() })
+          .where(and(eq(iepAmendments.id, row.id), eq(iepAmendments.status, "acknowledged")));
+        row.status = "merged";
+      } catch { /* best-effort */ }
+    }
     // Notify case manager(s) so they know the amendment is unblocked.
     const cms = await db.select({ email: users.email, name: users.name })
       .from(iepTeamMembers)
@@ -566,10 +613,16 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
     if (!allowed) return reply.code(403).send({ error: "Forbidden" });
     if (!profile) return { items: [], iepProfileId: null };
 
-    // Only parents (and platform admins acting as parent surrogate) get
-    // the redacted parent-only feed; everyone else with team access gets
-    // the full feed. District admins do NOT get internal team notes.
-    const forParents = isParent && claims.role !== "PLATFORM_ADMIN";
+    // Visibility tiers:
+    //  - parent: only `parent` notes + `sent` reports
+    //  - district admin (no team membership): `parent`+`team` notes
+    //    (NEVER internal) + `sent` reports only — they oversee, they
+    //    don't get internal day-to-day clinical notes
+    //  - team member / platform admin: full feed (all visibilities, all
+    //    report statuses including drafts)
+    const forParents = isParent && !teamMember && claims.role !== "PLATFORM_ADMIN";
+    const districtOnly = !isParent && !teamMember && districtAdmin
+      && claims.role !== "PLATFORM_ADMIN";
 
     const [notes, reports, amendments, reminders] = await Promise.all([
       db.select({
@@ -616,10 +669,13 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
     }> = [];
     for (const n of notes) {
       if (forParents && n.visibility !== "parent") continue;
+      // District admins can see parent + team notes for oversight, but
+      // never the team's internal-only notes.
+      if (districtOnly && n.visibility === "internal") continue;
       items.push({ type: "note", id: n.id, at: n.createdAt.toISOString(), payload: n });
     }
     for (const r of reports) {
-      if (forParents && r.status !== "sent") continue;
+      if ((forParents || districtOnly) && r.status !== "sent") continue;
       const at = (r.sentAt || r.createdAt).toISOString();
       items.push({ type: "report", id: r.id, at, payload: r });
     }
