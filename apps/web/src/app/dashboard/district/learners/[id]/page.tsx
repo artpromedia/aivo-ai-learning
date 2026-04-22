@@ -123,7 +123,7 @@ export default function LearnerDetailPage() {
         <div className="space-y-4">
           <div className="flex justify-end">
             <Link
-              href={`/dashboard/teacher/learners/${l.id}/evaluation`}
+              href={`/dashboard/iep-evaluation/${l.id}`}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--visual-reading))] text-white font-bold text-sm"
               style={{ minHeight: 44 }}
             >

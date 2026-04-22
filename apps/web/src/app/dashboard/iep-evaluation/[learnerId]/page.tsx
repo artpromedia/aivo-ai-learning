@@ -72,7 +72,7 @@ export default function TeacherEvaluationPage() {
   const { user, accessToken, loading } = useAuth();
   const params = useParams();
   const router = useRouter();
-  const learnerId = params.id as string;
+  const learnerId = params.learnerId as string;
   const t = useTranslations("evaluation");
 
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
@@ -225,7 +225,7 @@ export default function TeacherEvaluationPage() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-6xl mx-auto">
-      <button onClick={() => router.push("/dashboard/teacher")}
+      <button onClick={() => router.back()}
         className="inline-flex items-center gap-2 text-sm font-bold vi-text-muted hover:vi-text">
         <ArrowLeft size={16} strokeWidth={2.5} aria-hidden="true" /> {t("back_to_classes")}
       </button>

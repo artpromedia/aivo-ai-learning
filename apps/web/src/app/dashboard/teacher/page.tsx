@@ -283,7 +283,7 @@ export default function TeacherOverviewPage() {
                               compact
                             />
                             <a
-                              href={`/dashboard/teacher/learners/${l.id}/evaluation`}
+                              href={`/dashboard/iep-evaluation/${l.id}`}
                               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))] hover:bg-[hsl(var(--visual-reading)/0.18)] transition"
                             >
                               <FileText size={12} strokeWidth={2.5} aria-hidden="true" />
