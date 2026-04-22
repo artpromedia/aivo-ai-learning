@@ -1,20 +1,55 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/constants/colors';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLearners } from '@/hooks/useLearners';
+import { useAuth } from '@/hooks/useAuth';
+import { TierThemeProvider, useTierTheme } from '@aivo/mobile-ui';
+
+/**
+ * Resolve the active learner's gradeLevel.
+ *  - If the logged-in user is a LEARNER, use their own record.
+ *  - Otherwise (PARENT viewing a child), fall back to the first learner.
+ *  - During load / when no learners exist, returns null and the
+ *    TierThemeProvider falls back to EARLY (the safest default).
+ */
+function useActiveLearnerGrade(): string | null {
+  const { user } = useAuth();
+  const { data: learners } = useLearners();
+  if (!learners || learners.length === 0) return null;
+  if (user?.role === 'LEARNER') {
+    const own = learners.find((l) => l.id === user.id);
+    return own?.gradeLevel ?? learners[0].gradeLevel ?? null;
+  }
+  return learners[0].gradeLevel ?? null;
+}
 
 export default function LearnerLayout() {
+  const gradeLevel = useActiveLearnerGrade();
+  return (
+    <TierThemeProvider gradeLevel={gradeLevel}>
+      <ThemedLearnerTabs />
+    </TierThemeProvider>
+  );
+}
+
+/**
+ * Inner component so it can call `useTierTheme()` from inside the
+ * provider. Tab-bar colours, background, label font, and icon tint all
+ * derive from the active tier theme.
+ */
+function ThemedLearnerTabs() {
   const { t } = useTranslation();
+  const { theme } = useTierTheme();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarActiveTintColor: theme.colors.tabBarActive,
+        tabBarInactiveTintColor: theme.colors.tabBarInactive,
         tabBarStyle: {
-          backgroundColor: colors.card,
-          borderTopColor: colors.border,
+          backgroundColor: theme.colors.tabBar,
+          borderTopColor: theme.colors.border,
           height: 84,
           paddingBottom: 20,
           paddingTop: 8,
@@ -22,6 +57,9 @@ export default function LearnerLayout() {
         tabBarLabelStyle: {
           fontFamily: 'Nunito-SemiBold',
           fontSize: 11,
+        },
+        sceneStyle: {
+          backgroundColor: theme.colors.bg,
         },
       }}
     >

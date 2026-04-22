@@ -40,6 +40,21 @@ export type { SensoryProviderProps } from "./adapters/SensoryProvider";
 export { FlVariantProvider, useFlVariant } from "./adapters/FlVariantProvider";
 export type { FlVariantProviderProps } from "./adapters/FlVariantProvider";
 
+export {
+  TIER_THEMES,
+  gradeToTier,
+  gradeToTheme,
+  tierThemeToCssVars,
+} from "./tokens/age-tiers";
+export type { AgeTier, TierTheme } from "./tokens/age-tiers";
+
+export {
+  TierThemeProvider,
+  useTierTheme,
+  useTierThemeOptional,
+} from "./adapters/TierThemeProvider";
+export type { TierThemeProviderProps } from "./adapters/TierThemeProvider";
+
 export { SkipLink } from "./a11y/SkipLink";
 export type { SkipLinkProps } from "./a11y/SkipLink";
 
