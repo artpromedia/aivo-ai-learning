@@ -5,11 +5,32 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   ArrowLeft, Save, Sparkles, Trash2, Plus, AlertCircle, CheckCircle2, Send,
+  Users, MessageCircle, PenTool, History, Check, X,
 } from "lucide-react";
 
 const PLOP_AREAS = ["academic", "functional", "social", "motor", "communication"] as const;
-const SECTIONS = ["plop", "goals", "accommodations", "services", "placement", "review"] as const;
+const SECTIONS = ["plop", "goals", "accommodations", "services", "placement", "review",
+  "team", "signatures", "history"] as const;
 type Section = typeof SECTIONS[number];
+
+interface TeamMember { id: string; userId: string; role: string; name: string | null; email: string | null }
+interface Comment {
+  id: string; section: string; goalId: string | null; body: string;
+  authorId: string; authorName: string | null;
+  createdAt: string; resolvedAt: string | null;
+}
+interface Signature {
+  id: string; signerUserId: string; signerRole: string;
+  typedName: string; signedAt: string; status: string;
+}
+interface SigStatus {
+  required: string[]; signatures: Signature[]; missingRoles: string[]; complete: boolean;
+}
+interface Revision {
+  id: string; section: string; snapshot: any;
+  authorId: string; authorName: string | null; createdAt: string;
+}
+const TEAM_ROLES = ["case_manager", "gen_ed_teacher", "sped_teacher", "therapist", "parent", "learner", "admin"] as const;
 
 interface Profile {
   id: string;
@@ -44,6 +65,7 @@ export default function IepDraftEditorPage() {
   const searchParams = useSearchParams();
   const learnerId = params.id as string;
   const t = useTranslations("iep_authoring");
+  const tc = useTranslations("iep_collab");
 
   const [drafts, setDrafts] = useState<Profile[]>([]);
   const [bundle, setBundle] = useState<Bundle | null>(null);
@@ -52,6 +74,14 @@ export default function IepDraftEditorPage() {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [drafting, setDrafting] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  // Collab state
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [sigStatus, setSigStatus] = useState<SigStatus | null>(null);
+  const [revisions, setRevisions] = useState<Revision[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [newMember, setNewMember] = useState<{ userId: string; role: typeof TEAM_ROLES[number] }>({ userId: "", role: "gen_ed_teacher" });
+  const [signName, setSignName] = useState("");
   const headers = useMemo(() => accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined, [accessToken]);
   const lastSaved = useRef<number>(0);
   // Auto-save buffers + timers are both keyed by draft id so switching drafts
@@ -87,8 +117,25 @@ export default function IepDraftEditorPage() {
     if (r.ok) setBundle(await r.json());
   }, [headers]);
 
+  // Pull team, comments, signatures, revisions for the active draft.
+  const refreshCollab = useCallback(async (id: string) => {
+    if (!headers) return;
+    const [tr, cr, sr, rr] = await Promise.all([
+      fetch(`/api/iep/drafts/${id}/team`, { headers }),
+      fetch(`/api/iep/drafts/${id}/comments`, { headers }),
+      fetch(`/api/iep/drafts/${id}/signatures`, { headers }),
+      fetch(`/api/iep/drafts/${id}/revisions`, { headers }),
+    ]);
+    if (tr.ok) setTeam(await tr.json());
+    if (cr.ok) setComments(await cr.json());
+    if (sr.ok) setSigStatus(await sr.json());
+    if (rr.ok) setRevisions(await rr.json());
+  }, [headers]);
+
   useEffect(() => { refreshDrafts(); }, [refreshDrafts]);
-  useEffect(() => { if (activeId) loadBundle(activeId); }, [activeId, loadBundle]);
+  useEffect(() => {
+    if (activeId) { loadBundle(activeId); refreshCollab(activeId); }
+  }, [activeId, loadBundle, refreshCollab]);
 
   const createDraft = useCallback(async () => {
     if (!headers) return;
@@ -329,8 +376,62 @@ export default function IepDraftEditorPage() {
     if (r.ok) {
       const u = await r.json();
       setBundle((b) => b ? { ...b, profile: { ...b.profile, ...u } } : b);
+      // Best-effort parent notification — never block on email failure.
+      if (to === "in_review") {
+        void fetch(`/api/iep/drafts/${activeId}/notify-in-review`, { method: "POST", headers });
+      }
+      refreshCollab(activeId);
     }
   };
+
+  // Collab actions ---------------------------------------------------------
+  const addTeamMember = async () => {
+    if (!activeId || !headers || !newMember.userId.trim()) return;
+    const r = await fetch(`/api/iep/drafts/${activeId}/team`, {
+      method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify(newMember),
+    });
+    if (r.ok) { setNewMember({ userId: "", role: newMember.role }); refreshCollab(activeId); }
+  };
+  const removeTeamMember = async (mid: string) => {
+    if (!activeId || !headers) return;
+    const r = await fetch(`/api/iep/drafts/${activeId}/team/${mid}`, { method: "DELETE", headers });
+    if (r.ok) refreshCollab(activeId);
+  };
+  const postComment = async () => {
+    if (!activeId || !headers || !newComment.trim()) return;
+    const r = await fetch(`/api/iep/drafts/${activeId}/comments`, {
+      method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ section, body: newComment }),
+    });
+    if (r.ok) { setNewComment(""); refreshCollab(activeId); }
+  };
+  const toggleResolved = async (cid: string, resolved: boolean) => {
+    if (!activeId || !headers) return;
+    const r = await fetch(`/api/iep/drafts/${activeId}/comments/${cid}`, {
+      method: "PATCH", headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ resolved }),
+    });
+    if (r.ok) refreshCollab(activeId);
+  };
+  const sign = async () => {
+    if (!activeId || !headers || !signName.trim()) return;
+    const r = await fetch(`/api/iep/drafts/${activeId}/signatures`, {
+      method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ typedName: signName }),
+    });
+    if (r.ok) {
+      setSignName("");
+      refreshCollab(activeId);
+      loadBundle(activeId); // lifecycle may have flipped to finalised
+    }
+  };
+
+  // Section comments rail (filters comments to current section).
+  const sectionComments = useMemo(
+    () => comments.filter((c) => c.section === section),
+    [comments, section],
+  );
 
   const editable = bundle?.profile.lifecycleState === "draft" || bundle?.profile.lifecycleState === "in_review";
 
@@ -575,6 +676,170 @@ export default function IepDraftEditorPage() {
                     value={bundle.profile.reviewDate ? new Date(bundle.profile.reviewDate).toISOString().split("T")[0] : ""}
                     onChange={(e) => updateField("reviewDate", e.target.value)}
                     className="vi-input rounded-lg px-3 py-2 text-sm" />
+                </div>
+              )}
+
+              {section === "team" && (
+                <div className="space-y-3">
+                  <div className="vi-card p-4 space-y-3">
+                    <div className="flex items-center gap-2 vi-text font-bold text-sm">
+                      <Users size={16} aria-hidden="true" /> {tc("team_title")}
+                    </div>
+                    <p className="text-xs vi-text-muted">{tc("team_help")}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-[1fr_180px_auto] gap-2">
+                      <input
+                        value={newMember.userId}
+                        onChange={(e) => setNewMember({ ...newMember, userId: e.target.value })}
+                        placeholder={tc("team_user_id_placeholder")}
+                        className="vi-input rounded-lg px-3 py-2 text-sm" />
+                      <select
+                        value={newMember.role}
+                        onChange={(e) => setNewMember({ ...newMember, role: e.target.value as typeof TEAM_ROLES[number] })}
+                        className="vi-input rounded-lg px-3 py-2 text-sm">
+                        {TEAM_ROLES.map((r) => (
+                          <option key={r} value={r}>{tc(`role_${r}`)}</option>
+                        ))}
+                      </select>
+                      <button onClick={addTeamMember}
+                        style={{ minHeight: 44 }}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--visual-reading))] text-white font-bold text-sm">
+                        <Plus size={14} aria-hidden="true" /> {tc("add_member")}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="vi-card divide-y vi-border">
+                    {team.length === 0 ? (
+                      <p className="p-4 text-sm vi-text-muted">{tc("team_empty")}</p>
+                    ) : team.map((m) => (
+                      <div key={m.id} className="flex items-center gap-3 p-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold vi-text truncate">{m.name || m.email || m.userId}</div>
+                          <div className="text-xs vi-text-muted">{tc(`role_${m.role}`)}</div>
+                        </div>
+                        <button onClick={() => removeTeamMember(m.id)}
+                          aria-label={tc("remove_member")}
+                          className="text-[hsl(var(--visual-math))]">
+                          <Trash2 size={16} aria-hidden="true" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {section === "signatures" && (
+                <div className="space-y-3">
+                  <div className="vi-card p-4 space-y-3">
+                    <div className="flex items-center gap-2 vi-text font-bold text-sm">
+                      <PenTool size={16} aria-hidden="true" /> {tc("signatures_title")}
+                    </div>
+                    {sigStatus && (
+                      <>
+                        <p className="text-xs vi-text-muted">
+                          {tc("required_roles")}: {sigStatus.required.map((r) => tc(`role_${r}`)).join(", ")}
+                        </p>
+                        {sigStatus.missingRoles.length > 0 ? (
+                          <p className="text-xs font-bold text-[hsl(var(--visual-sel))]">
+                            {tc("awaiting")}: {sigStatus.missingRoles.map((r) => tc(`role_${r}`)).join(", ")}
+                          </p>
+                        ) : (
+                          <p className="text-xs font-bold text-[hsl(var(--visual-science))]">
+                            {tc("all_signed")}
+                          </p>
+                        )}
+                      </>
+                    )}
+                    {bundle.profile.lifecycleState === "in_review" && (
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 pt-2 border-t vi-border">
+                        <input
+                          value={signName}
+                          onChange={(e) => setSignName(e.target.value)}
+                          placeholder={tc("typed_name_placeholder")}
+                          className="vi-input rounded-lg px-3 py-2 text-sm" />
+                        <button onClick={sign} disabled={!signName.trim()}
+                          style={{ minHeight: 44 }}
+                          className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[hsl(var(--visual-reading))] text-white font-bold text-sm disabled:opacity-50">
+                          <PenTool size={14} aria-hidden="true" /> {tc("sign_button")}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="vi-card divide-y vi-border">
+                    {(sigStatus?.signatures || []).length === 0 ? (
+                      <p className="p-4 text-sm vi-text-muted">{tc("no_signatures_yet")}</p>
+                    ) : sigStatus!.signatures.map((s) => (
+                      <div key={s.id} className="p-3 flex items-center gap-3">
+                        <Check size={16} className="text-[hsl(var(--visual-science))]" aria-hidden="true" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold vi-text">{s.typedName}</div>
+                          <div className="text-xs vi-text-muted">
+                            {tc(`role_${s.signerRole}`)} · {new Date(s.signedAt).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {section === "history" && (
+                <div className="vi-card divide-y vi-border">
+                  <div className="p-3 flex items-center gap-2 vi-text font-bold text-sm">
+                    <History size={16} aria-hidden="true" /> {tc("history_title")}
+                  </div>
+                  {revisions.length === 0 ? (
+                    <p className="p-4 text-sm vi-text-muted">{tc("history_empty")}</p>
+                  ) : revisions.map((r) => (
+                    <div key={r.id} className="p-3">
+                      <div className="text-sm font-bold vi-text">
+                        {t(`section_${r.section}`)} · {r.authorName || r.authorId.slice(0, 8)}
+                      </div>
+                      <div className="text-xs vi-text-muted">{new Date(r.createdAt).toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Per-section comments rail (hidden on the meta tabs). */}
+              {(["plop", "goals", "accommodations", "services", "placement", "review"] as Section[]).includes(section) && (
+                <div className="vi-card p-4 space-y-3">
+                  <div className="flex items-center gap-2 vi-text font-bold text-sm">
+                    <MessageCircle size={16} aria-hidden="true" /> {tc("comments_title")}
+                    <span className="ml-auto text-xs vi-text-muted">{sectionComments.length}</span>
+                  </div>
+                  <div className="space-y-2 max-h-72 overflow-auto">
+                    {sectionComments.length === 0 ? (
+                      <p className="text-xs vi-text-muted">{tc("comments_empty")}</p>
+                    ) : sectionComments.map((c) => (
+                      <div key={c.id} className={`p-3 rounded-lg border vi-border ${c.resolvedAt ? "opacity-60" : ""}`}>
+                        <div className="flex items-center gap-2 text-xs vi-text-muted">
+                          <span className="font-bold vi-text">{c.authorName || c.authorId.slice(0, 8)}</span>
+                          <span>·</span>
+                          <span>{new Date(c.createdAt).toLocaleString()}</span>
+                          <button onClick={() => toggleResolved(c.id, !c.resolvedAt)}
+                            aria-label={c.resolvedAt ? tc("reopen") : tc("resolve")}
+                            className="ml-auto text-[hsl(var(--visual-reading))] font-bold inline-flex items-center gap-1">
+                            {c.resolvedAt ? <X size={12} aria-hidden="true" /> : <Check size={12} aria-hidden="true" />}
+                            {c.resolvedAt ? tc("reopen") : tc("resolve")}
+                          </button>
+                        </div>
+                        <p className="text-sm vi-text mt-1 whitespace-pre-wrap">{c.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 pt-2 border-t vi-border">
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder={tc("comment_placeholder")}
+                      rows={2}
+                      className="vi-input rounded-lg px-3 py-2 text-sm" />
+                    <button onClick={postComment} disabled={!newComment.trim()}
+                      style={{ minHeight: 44 }}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--visual-reading))] text-white font-bold text-sm disabled:opacity-50 self-end">
+                      <Send size={14} aria-hidden="true" /> {tc("post_comment")}
+                    </button>
+                  </div>
                 </div>
               )}
 

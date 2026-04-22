@@ -1354,7 +1354,10 @@
     "brain_trigger_regression_check": "リグレッションチェック",
     "brain_trigger_engagement_update": "エンゲージメントプロファイルを更新",
     "brain_trigger_initial_clone": "初期ブレインを作成",
-    "iep_draft_in_progress": "下書きを準備中 — チームが作成中です"
+    "iep_draft_in_progress": "下書きを準備中 — チームが作成中です",
+    "iep_action_needed": "対応が必要：確認して署名してください",
+    "iep_action_needed_help": "ケースマネージャーがIEPの下書きを共有しました。各セクションを確認し、コメントを残して署名してください。",
+    "iep_active": "有効なIEP"
   },
   "language": {
     "en": "English",
@@ -1889,6 +1892,39 @@
     "placement_placeholder": "例：リソース支援付き通常学級",
     "placement_help": "この学習者にとって最も制約の少ない環境を記述してください。",
     "review_date_label": "年次レビュー日",
-    "send_for_review": "レビューに送る"
+    "send_for_review": "レビューに送る",
+    "section_team": "チーム",
+    "section_signatures": "署名",
+    "section_history": "履歴"
+  },
+  "iep_collab": {
+    "team_title": "IEPチーム",
+    "team_help": "このIEPで協力する同僚と家族を追加してください。",
+    "team_user_id_placeholder": "メンバーのユーザーID",
+    "team_empty": "まだメンバーはいません。ケースマネージャーがチームを招待します。",
+    "add_member": "チームに追加",
+    "remove_member": "削除",
+    "role_case_manager": "ケースマネージャー",
+    "role_gen_ed_teacher": "通常学級の教員",
+    "role_sped_teacher": "特別支援教員",
+    "role_therapist": "セラピスト",
+    "role_parent": "保護者",
+    "role_learner": "学習者",
+    "role_admin": "学校管理者",
+    "comments_title": "セクションへのコメント",
+    "comments_empty": "このセクションにはまだコメントがありません。",
+    "comment_placeholder": "コメントを入力します。@名前 でメンバーに通知できます。",
+    "post_comment": "コメントを投稿",
+    "resolve": "解決済みにする",
+    "reopen": "再オープン",
+    "signatures_title": "電子署名",
+    "required_roles": "必要な署名者",
+    "awaiting": "未署名",
+    "all_signed": "必要な署名者全員が署名しました。IEPは確定済みです。",
+    "typed_name_placeholder": "署名するフルネームを入力",
+    "sign_button": "IEPに署名",
+    "no_signatures_yet": "まだ署名はありません。",
+    "history_title": "改訂履歴",
+    "history_empty": "チームが編集すると、ここにセクションのスナップショットが表示されます。"
   }
 }

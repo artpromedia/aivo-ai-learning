@@ -1354,7 +1354,10 @@
     "brain_trigger_regression_check": "회귀 점검",
     "brain_trigger_engagement_update": "참여 프로필 업데이트됨",
     "brain_trigger_initial_clone": "초기 두뇌 생성됨",
-    "iep_draft_in_progress": "초안 작성 중 — 팀이 준비하고 있습니다"
+    "iep_draft_in_progress": "초안 작성 중 — 팀이 준비하고 있습니다",
+    "iep_action_needed": "조치 필요: 검토 및 서명",
+    "iep_action_needed_help": "사례 담당자가 IEP 초안을 공유했습니다. 각 섹션을 읽고 의견을 남기고 서명해 주세요.",
+    "iep_active": "활성 IEP"
   },
   "language": {
     "en": "English",
@@ -1889,6 +1892,39 @@
     "placement_placeholder": "예: 리소스 지원이 있는 일반 교육",
     "placement_help": "이 학습자에게 가장 덜 제한적인 환경을 설명하세요.",
     "review_date_label": "연간 검토일",
-    "send_for_review": "검토 요청"
+    "send_for_review": "검토 요청",
+    "section_team": "팀",
+    "section_signatures": "서명",
+    "section_history": "기록"
+  },
+  "iep_collab": {
+    "team_title": "IEP 팀",
+    "team_help": "이 IEP에 함께할 동료와 가족 구성원을 추가하세요.",
+    "team_user_id_placeholder": "팀원의 사용자 ID",
+    "team_empty": "아직 팀원이 없습니다. 사례 담당자가 팀을 초대합니다.",
+    "add_member": "팀에 추가",
+    "remove_member": "제거",
+    "role_case_manager": "사례 담당자",
+    "role_gen_ed_teacher": "일반 교육 교사",
+    "role_sped_teacher": "특수 교육 교사",
+    "role_therapist": "치료사",
+    "role_parent": "보호자",
+    "role_learner": "학습자",
+    "role_admin": "학교 관리자",
+    "comments_title": "섹션 댓글",
+    "comments_empty": "이 섹션에는 아직 댓글이 없습니다.",
+    "comment_placeholder": "댓글을 남기세요. @이름으로 팀원에게 알릴 수 있습니다.",
+    "post_comment": "댓글 게시",
+    "resolve": "해결됨",
+    "reopen": "다시 열기",
+    "signatures_title": "전자 서명",
+    "required_roles": "필수 서명자",
+    "awaiting": "대기 중",
+    "all_signed": "필수 서명자가 모두 서명했습니다. IEP가 최종 확정되었습니다.",
+    "typed_name_placeholder": "서명할 전체 이름 입력",
+    "sign_button": "IEP 서명",
+    "no_signatures_yet": "아직 서명이 없습니다.",
+    "history_title": "수정 기록",
+    "history_empty": "팀이 편집하면 섹션 스냅샷이 여기에 표시됩니다."
   }
 }

@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, integer, jsonb, text, real } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, integer, jsonb, text, real, uniqueIndex } from "drizzle-orm/pg-core";
 import { functioningLevelEnum } from "./enums.js";
 import { users } from "./users.js";
 import { tenants } from "./tenants.js";
@@ -169,3 +169,57 @@ export const languageProfiles = pgTable("language_profiles", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// Phase C: IEP team collaboration & e-signatures.
+export const iepTeamMembers = pgTable("iep_team_members", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  role: varchar("role", { length: 30 }).notNull(),
+  addedBy: uuid("added_by").references(() => users.id).notNull(),
+  addedAt: timestamp("added_at").defaultNow().notNull(),
+}, (t) => ({
+  unique: uniqueIndex("iep_team_members_profile_user_role_uidx")
+    .on(t.iepProfileId, t.userId, t.role),
+}));
+
+export const iepComments = pgTable("iep_comments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
+  section: varchar("section", { length: 30 }).notNull(),
+  goalId: uuid("goal_id"),
+  authorId: uuid("author_id").references(() => users.id).notNull(),
+  body: text("body").notNull(),
+  mentions: jsonb("mentions").default([]),
+  parentCommentId: uuid("parent_comment_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  resolvedAt: timestamp("resolved_at"),
+});
+
+export const iepRevisions = pgTable("iep_revisions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
+  section: varchar("section", { length: 30 }).notNull(),
+  snapshot: jsonb("snapshot").notNull(),
+  authorId: uuid("author_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const iepSignatures = pgTable("iep_signatures", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
+  signerUserId: uuid("signer_user_id").references(() => users.id).notNull(),
+  signerRole: varchar("signer_role", { length: 30 }).notNull(),
+  typedName: varchar("typed_name", { length: 255 }).notNull(),
+  signedAt: timestamp("signed_at").defaultNow().notNull(),
+  ipHash: varchar("ip_hash", { length: 64 }),
+  status: varchar("status", { length: 20 }).default("signed").notNull(),
+}, (t) => ({
+  // One active signature per (profile, user, role) — guards against duplicate
+  // signs racing past the in-app idempotency check.
+  unique: uniqueIndex("iep_signatures_profile_user_role_uidx")
+    .on(t.iepProfileId, t.signerUserId, t.signerRole),
+}));
+
+// Same protection for team membership: dedupe (profile, user, role).
+export const iepTeamMembersUniq = (() => undefined)();

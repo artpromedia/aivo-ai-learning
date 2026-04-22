@@ -62,6 +62,12 @@ export function renderTemplate(templateId: string, data: TemplateData): { subjec
       return renderMfaCode(data);
     case "district_admin_invite":
       return renderDistrictAdminInvite(data);
+    case "iep_in_review_parent":
+      return renderIepInReviewParent(data);
+    case "iep_finalised_parent":
+      return renderIepFinalisedParent(data);
+    case "iep_comment_mention":
+      return renderIepCommentMention(data);
     default:
       return renderGeneric(data);
   }
@@ -241,6 +247,58 @@ function renderDistrictAdminInvite(data: TemplateData) {
   };
 }
 
+function renderIepInReviewParent(data: TemplateData) {
+  const learnerName = (data.learnerName as string) || "your child";
+  const iepUrl = (data.iepUrl as string) || "#";
+  const html = baseLayout(`
+    <h1 class="title">Action needed: review and sign ${learnerName}'s IEP</h1>
+    <p class="body-text">${learnerName}'s case manager has prepared a draft IEP and is ready for your review.</p>
+    <p class="body-text">Please read each section carefully, leave any comments or questions for the team, and add your signature when you're ready.</p>
+    <p style="text-align:center"><a href="${iepUrl}" class="btn">Review and sign</a></p>
+    <p class="body-text" style="font-size:13px;color:#6b7280">The IEP becomes active only once all required team members have signed.</p>
+  `);
+  return {
+    subject: `Action needed: review and sign ${learnerName}'s IEP`,
+    html,
+    text: `${learnerName}'s draft IEP is ready for your review and signature. Open: ${iepUrl}`,
+  };
+}
+
+function renderIepFinalisedParent(data: TemplateData) {
+  const learnerName = (data.learnerName as string) || "your child";
+  const iepUrl = (data.iepUrl as string) || "#";
+  const html = baseLayout(`
+    <h1 class="title">${learnerName}'s IEP is now active</h1>
+    <p class="body-text">All required signatures are in. ${learnerName}'s IEP is finalised and active.</p>
+    <p class="body-text">You can revisit the document any time to track progress on goals.</p>
+    <p style="text-align:center"><a href="${iepUrl}" class="btn">View active IEP</a></p>
+  `);
+  return {
+    subject: `${learnerName}'s IEP is now active`,
+    html,
+    text: `${learnerName}'s IEP has been signed by all required team members and is now active. View: ${iepUrl}`,
+  };
+}
+
+function renderIepCommentMention(data: TemplateData) {
+  const name = (data.name as string) || "there";
+  const section = (data.section as string) || "the IEP";
+  const snippet = (data.snippet as string) || "";
+  const iepUrl = (data.iepUrl as string) || "#";
+  const html = baseLayout(`
+    <h1 class="title">You were mentioned in an IEP comment</h1>
+    <p class="body-text">Hi ${name},</p>
+    <p class="body-text">A teammate mentioned you in a comment on the <span class="highlight">${section}</span> section.</p>
+    <blockquote style="margin:16px 0;padding:12px 16px;background:#F5F3FF;border-left:4px solid ${BRAND_COLOR};border-radius:8px;font-style:italic;color:#374151">${snippet}</blockquote>
+    <p style="text-align:center"><a href="${iepUrl}" class="btn">Open the IEP</a></p>
+  `);
+  return {
+    subject: `You were mentioned in the ${section} section of an IEP`,
+    html,
+    text: `${name}, you were mentioned in a comment on the ${section} section: "${snippet}". Open: ${iepUrl}`,
+  };
+}
+
 export const AVAILABLE_TEMPLATES = [
   { id: "welcome", name: "Welcome Email", channels: ["email"] },
   { id: "collaboration_invite", name: "Collaboration Invite", channels: ["email"] },
@@ -251,4 +309,7 @@ export const AVAILABLE_TEMPLATES = [
   { id: "iep_update", name: "IEP Goal Update", channels: ["email", "push"] },
   { id: "mfa_code", name: "MFA Verification Code", channels: ["email"] },
   { id: "district_admin_invite", name: "District Admin Invite", channels: ["email"] },
+  { id: "iep_in_review_parent", name: "IEP — In Review (Parent)", channels: ["email"] },
+  { id: "iep_finalised_parent", name: "IEP — Finalised (Parent)", channels: ["email"] },
+  { id: "iep_comment_mention", name: "IEP — Comment Mention", channels: ["email"] },
 ];

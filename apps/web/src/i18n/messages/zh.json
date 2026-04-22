@@ -1371,7 +1371,10 @@
     "brain_trigger_regression_check": "回归检查",
     "brain_trigger_engagement_update": "参与度档案已更新",
     "brain_trigger_initial_clone": "已创建初始大脑",
-    "iep_draft_in_progress": "草稿编写中 — 您的团队正在准备"
+    "iep_draft_in_progress": "草稿编写中 — 您的团队正在准备",
+    "iep_action_needed": "需要操作：审阅并签字",
+    "iep_action_needed_help": "案例负责人已与您分享 IEP 草案。请打开文档逐节阅读、留下评论并签字。",
+    "iep_active": "已生效的 IEP"
   },
   "marketing": {
     "header": {
@@ -1889,6 +1892,39 @@
     "placement_placeholder": "如：普通班加资源支持",
     "placement_help": "描述对该学生而言最少限制的环境。",
     "review_date_label": "年度复审日期",
-    "send_for_review": "提交审阅"
+    "send_for_review": "提交审阅",
+    "section_team": "团队",
+    "section_signatures": "签名",
+    "section_history": "历史"
+  },
+  "iep_collab": {
+    "team_title": "IEP 团队",
+    "team_help": "添加将共同协作此 IEP 的同事和家庭成员。",
+    "team_user_id_placeholder": "队友的用户 ID",
+    "team_empty": "尚无队友。案例负责人会邀请团队成员。",
+    "add_member": "加入团队",
+    "remove_member": "移除",
+    "role_case_manager": "案例负责人",
+    "role_gen_ed_teacher": "普通教育教师",
+    "role_sped_teacher": "特殊教育教师",
+    "role_therapist": "治疗师",
+    "role_parent": "家长 / 监护人",
+    "role_learner": "学生",
+    "role_admin": "学校管理员",
+    "comments_title": "章节评论",
+    "comments_empty": "此章节还没有评论。",
+    "comment_placeholder": "留下评论。使用 @姓名 通知队友。",
+    "post_comment": "发布评论",
+    "resolve": "标记已解决",
+    "reopen": "重新打开",
+    "signatures_title": "电子签字",
+    "required_roles": "必需签字人",
+    "awaiting": "待签字",
+    "all_signed": "所有必需签字人均已签字。IEP 已最终确定。",
+    "typed_name_placeholder": "输入您的全名以签字",
+    "sign_button": "签署 IEP",
+    "no_signatures_yet": "尚无签字。",
+    "history_title": "修订历史",
+    "history_empty": "团队编辑后，将在此处显示各章节的快照。"
   }
 }

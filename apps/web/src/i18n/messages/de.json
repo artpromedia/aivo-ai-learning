@@ -1371,7 +1371,10 @@
     "brain_trigger_regression_check": "Regressionsprüfung",
     "brain_trigger_engagement_update": "Engagement-Profil aktualisiert",
     "brain_trigger_initial_clone": "Erstgehirn erstellt",
-    "iep_draft_in_progress": "Entwurf in Arbeit — Ihr Team bereitet ihn vor"
+    "iep_draft_in_progress": "Entwurf in Arbeit — Ihr Team bereitet ihn vor",
+    "iep_action_needed": "Aktion erforderlich: prüfen und unterschreiben",
+    "iep_action_needed_help": "Die Fallkoordinatorin/der Fallkoordinator hat einen IEP-Entwurf zur Prüfung freigegeben. Öffnen Sie das Dokument, lesen Sie jeden Abschnitt, hinterlassen Sie Kommentare und unterschreiben Sie.",
+    "iep_active": "Aktiver IEP"
   },
   "marketing": {
     "header": {
@@ -1889,6 +1892,39 @@
     "placement_placeholder": "z. B. Regelunterricht mit Förderung",
     "placement_help": "Beschreiben Sie die am wenigsten einschränkende Umgebung.",
     "review_date_label": "Jährliches Überprüfungsdatum",
-    "send_for_review": "Zur Prüfung senden"
+    "send_for_review": "Zur Prüfung senden",
+    "section_team": "Team",
+    "section_signatures": "Unterschriften",
+    "section_history": "Verlauf"
+  },
+  "iep_collab": {
+    "team_title": "IEP-Team",
+    "team_help": "Fügen Sie die Kolleginnen, Kollegen und Familienmitglieder hinzu, die an diesem IEP mitarbeiten.",
+    "team_user_id_placeholder": "Benutzer-ID des Teammitglieds",
+    "team_empty": "Noch keine Teammitglieder. Die Fallkoordination lädt das Team ein.",
+    "add_member": "Zum Team hinzufügen",
+    "remove_member": "Entfernen",
+    "role_case_manager": "Fallkoordination",
+    "role_gen_ed_teacher": "Regelschullehrkraft",
+    "role_sped_teacher": "Sonderpädagogische Lehrkraft",
+    "role_therapist": "Therapeut:in",
+    "role_parent": "Elternteil / Sorgeberechtigte:r",
+    "role_learner": "Lernende:r",
+    "role_admin": "Schulleitung",
+    "comments_title": "Abschnittskommentare",
+    "comments_empty": "Noch keine Kommentare zu diesem Abschnitt.",
+    "comment_placeholder": "Hinterlassen Sie einen Kommentar. Mit @name benachrichtigen Sie ein Teammitglied.",
+    "post_comment": "Kommentar senden",
+    "resolve": "Erledigen",
+    "reopen": "Wieder öffnen",
+    "signatures_title": "Elektronische Unterschriften",
+    "required_roles": "Erforderliche Unterzeichnende",
+    "awaiting": "Ausstehend",
+    "all_signed": "Alle erforderlichen Personen haben unterschrieben. Der IEP ist finalisiert.",
+    "typed_name_placeholder": "Vollständigen Namen zum Unterschreiben eingeben",
+    "sign_button": "IEP unterschreiben",
+    "no_signatures_yet": "Noch keine Unterschriften.",
+    "history_title": "Versionsverlauf",
+    "history_empty": "Snapshots der Abschnitte erscheinen hier, sobald das Team bearbeitet."
   }
 }

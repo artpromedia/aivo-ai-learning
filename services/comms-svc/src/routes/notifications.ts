@@ -208,6 +208,38 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
+  app.post("/api/comms/internal/iep-notify", async (request, reply) => {
+    const internalKey = request.headers["x-internal-key"];
+    const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+    if (!internalKey || !expectedKey || internalKey !== expectedKey) {
+      return reply.status(401).send({ error: "Unauthorized" });
+    }
+    const { template, to, data } = request.body as any;
+    const allowed = new Set(["iep_in_review_parent", "iep_finalised_parent", "iep_comment_mention"]);
+    if (!template || !to || !allowed.has(template)) {
+      return reply.code(400).send({ error: "template and to required" });
+    }
+    if (!isConfigured()) {
+      logger.warn({ to, template }, "IEP notify requested but email not configured (dev mode)");
+      return { status: "dev_mode" };
+    }
+    const rendered = renderTemplate(template, data || {});
+    try {
+      const result = await sendEmail({
+        to,
+        subject: rendered.subject,
+        htmlBody: rendered.html,
+        textBody: rendered.text,
+        tag: template,
+      });
+      return { status: result.status, messageId: result.messageId };
+    } catch (err: any) {
+      logger.error({ err, to, template }, "Failed to send IEP notification");
+      // Best-effort; do not propagate failure beyond a 200-with-error.
+      return { status: "failed" };
+    }
+  });
+
   app.post("/api/comms/internal/password-reset", async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");

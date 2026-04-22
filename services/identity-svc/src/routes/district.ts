@@ -645,12 +645,40 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
         or(eq(iepProfiles.lifecycleState, "draft"), eq(iepProfiles.lifecycleState, "in_review")),
       ));
 
+    // Phase C — IEPs sitting in `in_review` are awaiting one or more
+    // signatures and surface as a separate tile so case managers know
+    // when to nudge signers.
+    const [awaitingSignatures] = await db.select({ count: count() }).from(iepProfiles)
+      .innerJoin(learners, eq(iepProfiles.learnerId, learners.id))
+      .where(and(
+        eq(learners.tenantId, tid),
+        eq(iepProfiles.source, "authored"),
+        eq(iepProfiles.lifecycleState, "in_review"),
+      ));
+
+    // Finalised this calendar month — uses updatedAt as the finalisation
+    // timestamp because lifecycle flips to `finalised` when the last
+    // required signer signs.
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const [finalisedThisMonth] = await db.select({ count: count() }).from(iepProfiles)
+      .innerJoin(learners, eq(iepProfiles.learnerId, learners.id))
+      .where(and(
+        eq(learners.tenantId, tid),
+        eq(iepProfiles.source, "authored"),
+        eq(iepProfiles.lifecycleState, "finalised"),
+        sql`${iepProfiles.updatedAt} >= ${monthStart.toISOString()}`,
+      ));
+
     return {
       active: activeCount.count,
       dueForReview: dueCount.count,
       overdue: overdueCount.count,
       evaluationsInProgress: evalInProgressCount?.count ?? 0,
       drafts: draftCount?.count ?? 0,
+      awaitingSignatures: awaitingSignatures?.count ?? 0,
+      finalisedThisMonth: finalisedThisMonth?.count ?? 0,
     };
   });
 

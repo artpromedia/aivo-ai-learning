@@ -64,6 +64,9 @@ export const districtSettings = pgTable("district_settings", {
   ssoConfig: jsonb("sso_config").default({}),
   branding: jsonb("branding").default({}),
   featureOverrides: jsonb("feature_overrides").default({}),
+  // IEP collaboration policy (Phase C). Default: case manager + parent + gen-ed
+  // teacher must sign before an IEP can transition to `finalised`.
+  iepRequiredSignerRoles: jsonb("iep_required_signer_roles").default(["case_manager", "parent", "gen_ed_teacher"]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -1371,7 +1371,10 @@
     "brain_trigger_regression_check": "रिग्रेशन जाँच",
     "brain_trigger_engagement_update": "एंगेजमेंट प्रोफ़ाइल अपडेट हुई",
     "brain_trigger_initial_clone": "प्रारंभिक ब्रेन बनाया गया",
-    "iep_draft_in_progress": "मसौदा तैयार हो रहा है — आपकी टीम इसे तैयार कर रही है"
+    "iep_draft_in_progress": "मसौदा तैयार हो रहा है — आपकी टीम इसे तैयार कर रही है",
+    "iep_action_needed": "कार्रवाई आवश्यक: समीक्षा और हस्ताक्षर",
+    "iep_action_needed_help": "केस मैनेजर ने IEP का मसौदा आपकी समीक्षा के लिए साझा किया है। दस्तावेज़ खोलें, हर अनुभाग पढ़ें, टिप्पणियाँ छोड़ें और हस्ताक्षर करें।",
+    "iep_active": "सक्रिय IEP"
   },
   "marketing": {
     "header": {
@@ -1889,6 +1892,39 @@
     "placement_placeholder": "जैसे संसाधन सहायता के साथ सामान्य शिक्षा",
     "placement_help": "इस शिक्षार्थी के लिए कम प्रतिबंधात्मक वातावरण का वर्णन करें।",
     "review_date_label": "वार्षिक समीक्षा तिथि",
-    "send_for_review": "समीक्षा हेतु भेजें"
+    "send_for_review": "समीक्षा हेतु भेजें",
+    "section_team": "टीम",
+    "section_signatures": "हस्ताक्षर",
+    "section_history": "इतिहास"
+  },
+  "iep_collab": {
+    "team_title": "IEP टीम",
+    "team_help": "इस IEP पर सहयोग करने वाले सहकर्मियों और परिवार के सदस्यों को जोड़ें।",
+    "team_user_id_placeholder": "टीममेट का यूज़र ID",
+    "team_empty": "अभी कोई सदस्य नहीं। केस मैनेजर टीम को आमंत्रित करता है।",
+    "add_member": "टीम में जोड़ें",
+    "remove_member": "हटाएँ",
+    "role_case_manager": "केस मैनेजर",
+    "role_gen_ed_teacher": "सामान्य शिक्षा शिक्षक",
+    "role_sped_teacher": "विशेष शिक्षा शिक्षक",
+    "role_therapist": "थेरेपिस्ट",
+    "role_parent": "अभिभावक",
+    "role_learner": "शिक्षार्थी",
+    "role_admin": "स्कूल व्यवस्थापक",
+    "comments_title": "अनुभाग टिप्पणियाँ",
+    "comments_empty": "इस अनुभाग पर अभी तक कोई टिप्पणी नहीं है।",
+    "comment_placeholder": "टिप्पणी छोड़ें। साथी को सूचित करने के लिए @नाम का उपयोग करें।",
+    "post_comment": "टिप्पणी पोस्ट करें",
+    "resolve": "हल किया",
+    "reopen": "फिर खोलें",
+    "signatures_title": "ई-हस्ताक्षर",
+    "required_roles": "आवश्यक हस्ताक्षरकर्ता",
+    "awaiting": "प्रतीक्षित",
+    "all_signed": "सभी आवश्यक हस्ताक्षरकर्ताओं ने हस्ताक्षर कर दिए हैं। IEP अंतिम रूप ले चुका है।",
+    "typed_name_placeholder": "हस्ताक्षर के लिए अपना पूरा नाम लिखें",
+    "sign_button": "IEP पर हस्ताक्षर",
+    "no_signatures_yet": "अभी तक कोई हस्ताक्षर नहीं।",
+    "history_title": "संशोधन इतिहास",
+    "history_empty": "टीम के संपादन करते ही अनुभाग के स्नैपशॉट यहाँ दिखाई देंगे।"
   }
 }

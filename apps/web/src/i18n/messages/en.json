@@ -1355,7 +1355,10 @@
     "brain_trigger_regression_check": "Regression check",
     "brain_trigger_engagement_update": "Engagement profile updated",
     "brain_trigger_initial_clone": "Initial brain created",
-    "iep_draft_in_progress": "Draft in progress — your team is preparing this"
+    "iep_draft_in_progress": "Draft in progress — your team is preparing this",
+    "iep_action_needed": "Action needed: review and sign",
+    "iep_action_needed_help": "Your child's case manager has shared a draft IEP for your review. Open the document to read each section, leave comments, and add your signature.",
+    "iep_active": "Active IEP"
   },
   "language": {
     "en": "English",
@@ -1890,6 +1893,39 @@
     "placement_placeholder": "e.g. General education with resource support",
     "placement_help": "Describe the least restrictive environment for this learner.",
     "review_date_label": "Annual review date",
-    "send_for_review": "Send for review"
+    "send_for_review": "Send for review",
+    "section_team": "Team",
+    "section_signatures": "Signatures",
+    "section_history": "History"
+  },
+  "iep_collab": {
+    "team_title": "IEP team",
+    "team_help": "Add the colleagues and family members who will collaborate on this IEP.",
+    "team_user_id_placeholder": "Teammate user ID",
+    "team_empty": "No teammates yet. The case manager invites the team.",
+    "add_member": "Add to team",
+    "remove_member": "Remove",
+    "role_case_manager": "Case manager",
+    "role_gen_ed_teacher": "General-ed teacher",
+    "role_sped_teacher": "Special-ed teacher",
+    "role_therapist": "Therapist",
+    "role_parent": "Parent / guardian",
+    "role_learner": "Learner",
+    "role_admin": "School admin",
+    "comments_title": "Section comments",
+    "comments_empty": "No comments on this section yet.",
+    "comment_placeholder": "Leave a comment. Use @name to notify a teammate.",
+    "post_comment": "Post comment",
+    "resolve": "Resolve",
+    "reopen": "Reopen",
+    "signatures_title": "E-signatures",
+    "required_roles": "Required signers",
+    "awaiting": "Awaiting",
+    "all_signed": "All required signers have signed. The IEP is finalised.",
+    "typed_name_placeholder": "Type your full name to sign",
+    "sign_button": "Sign IEP",
+    "no_signatures_yet": "No signatures yet.",
+    "history_title": "Revision history",
+    "history_empty": "Section snapshots will appear here as the team edits."
   }
 }

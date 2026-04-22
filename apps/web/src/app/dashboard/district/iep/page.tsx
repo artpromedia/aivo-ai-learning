@@ -3,7 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { IconWell, StatIconWell } from "@/components/discovery/_vi";
-import { ClipboardList, Clock, AlertTriangle, Search } from "lucide-react";
+import { ClipboardList, Clock, AlertTriangle, Search, PenTool, CheckCircle2 } from "lucide-react";
 
 interface IepSummary {
   active: number;
@@ -11,6 +11,8 @@ interface IepSummary {
   overdue: number;
   evaluationsInProgress?: number;
   drafts?: number;
+  awaitingSignatures?: number;
+  finalisedThisMonth?: number;
 }
 
 interface InProgressEval {
@@ -138,6 +140,24 @@ export default function DistrictIepPage() {
                   <span className="text-xs vi-text-muted font-medium uppercase">Drafts in Authoring</span>
                 </div>
                 <p className="text-3xl font-bold vi-text">{summary.drafts ?? 0}</p>
+              </div>
+              <div className="vi-card p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <StatIconWell color="amber">
+                    <PenTool size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </StatIconWell>
+                  <span className="text-xs vi-text-muted font-medium uppercase">Awaiting Signatures</span>
+                </div>
+                <p className="text-3xl font-bold vi-text">{summary.awaitingSignatures ?? 0}</p>
+              </div>
+              <div className="vi-card p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <StatIconWell color="science">
+                    <CheckCircle2 size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </StatIconWell>
+                  <span className="text-xs vi-text-muted font-medium uppercase">Finalised This Month</span>
+                </div>
+                <p className="text-3xl font-bold vi-text">{summary.finalisedThisMonth ?? 0}</p>
               </div>
             </div>
           )}

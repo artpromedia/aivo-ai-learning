@@ -6,6 +6,7 @@ import {
   iepServices,
   iepPresentLevels,
   iepEvaluations,
+  iepTeamMembers,
   learners,
   learnerTeachers,
   learnerTherapists,
@@ -166,6 +167,16 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
       authoredByUserId: claims.sub,
       fromEvaluationId: evalRow?.id || null,
     }).returning();
+    // Bootstrap the team: author becomes case_manager. Idempotent via unique
+    // index — best-effort so any race never blocks draft creation.
+    try {
+      await db.insert(iepTeamMembers).values({
+        iepProfileId: profile.id,
+        userId: claims.sub,
+        role: "case_manager",
+        addedBy: claims.sub,
+      });
+    } catch (e: any) { if (String(e?.code) !== "23505") throw e; }
     return reply.code(201).send(profile);
   });
 
@@ -517,6 +528,21 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
       .where(and(eq(iepProfiles.id, id), inArray(iepProfiles.lifecycleState, EDITABLE_LIFECYCLE)))
       .returning();
     if (!u) return reply.code(409).send({ error: "Draft is not editable" });
+    // When sending out for review, ensure the learner's parent is on the team
+    // so they can read the bundle and sign. Idempotent via unique index.
+    if (to === "in_review") {
+      const [learner] = await db.select().from(learners).where(eq(learners.id, profile.learnerId));
+      if (learner?.parentId) {
+        try {
+          await db.insert(iepTeamMembers).values({
+            iepProfileId: id,
+            userId: learner.parentId,
+            role: "parent",
+            addedBy: claims.sub,
+          });
+        } catch (e: any) { if (String(e?.code) !== "23505") throw e; }
+      }
+    }
     return u;
   });
 }

@@ -1371,7 +1371,10 @@
     "brain_trigger_regression_check": "Verificação de regressão",
     "brain_trigger_engagement_update": "Perfil de engajamento atualizado",
     "brain_trigger_initial_clone": "Cérebro inicial criado",
-    "iep_draft_in_progress": "Rascunho em andamento — sua equipe está preparando"
+    "iep_draft_in_progress": "Rascunho em andamento — sua equipe está preparando",
+    "iep_action_needed": "Ação necessária: revisar e assinar",
+    "iep_action_needed_help": "O coordenador do caso compartilhou um rascunho do IEP para sua revisão. Abra o documento, leia cada seção, deixe comentários e assine.",
+    "iep_active": "IEP ativo"
   },
   "marketing": {
     "header": {
@@ -1889,6 +1892,39 @@
     "placement_placeholder": "ex.: Educação geral com apoio",
     "placement_help": "Descreva o ambiente menos restritivo para este aluno.",
     "review_date_label": "Data de revisão anual",
-    "send_for_review": "Enviar para revisão"
+    "send_for_review": "Enviar para revisão",
+    "section_team": "Equipe",
+    "section_signatures": "Assinaturas",
+    "section_history": "Histórico"
+  },
+  "iep_collab": {
+    "team_title": "Equipe do IEP",
+    "team_help": "Adicione colegas e familiares que colaborarão neste IEP.",
+    "team_user_id_placeholder": "ID do usuário do colega",
+    "team_empty": "Ainda sem colegas. O coordenador convida a equipe.",
+    "add_member": "Adicionar à equipe",
+    "remove_member": "Remover",
+    "role_case_manager": "Coordenador do caso",
+    "role_gen_ed_teacher": "Professor(a) de ensino regular",
+    "role_sped_teacher": "Professor(a) de educação especial",
+    "role_therapist": "Terapeuta",
+    "role_parent": "Pai / mãe / responsável",
+    "role_learner": "Estudante",
+    "role_admin": "Administrador escolar",
+    "comments_title": "Comentários da seção",
+    "comments_empty": "Ainda sem comentários nesta seção.",
+    "comment_placeholder": "Deixe um comentário. Use @nome para notificar alguém.",
+    "post_comment": "Publicar comentário",
+    "resolve": "Resolver",
+    "reopen": "Reabrir",
+    "signatures_title": "Assinaturas eletrônicas",
+    "required_roles": "Signatários obrigatórios",
+    "awaiting": "Aguardando",
+    "all_signed": "Todos os signatários necessários assinaram. O IEP está finalizado.",
+    "typed_name_placeholder": "Digite seu nome completo para assinar",
+    "sign_button": "Assinar IEP",
+    "no_signatures_yet": "Ainda sem assinaturas.",
+    "history_title": "Histórico de revisões",
+    "history_empty": "Snapshots das seções aparecerão aqui conforme a equipe editar."
   }
 }

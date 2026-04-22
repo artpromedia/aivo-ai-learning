@@ -1371,7 +1371,10 @@
     "brain_trigger_regression_check": "Vérification de régression",
     "brain_trigger_engagement_update": "Profil d'engagement mis à jour",
     "brain_trigger_initial_clone": "Cerveau initial créé",
-    "iep_draft_in_progress": "Brouillon en cours — votre équipe le prépare"
+    "iep_draft_in_progress": "Brouillon en cours — votre équipe le prépare",
+    "iep_action_needed": "Action requise : examiner et signer",
+    "iep_action_needed_help": "Le coordinateur de cas de votre enfant a partagé un projet de PEI à examiner. Ouvrez le document pour lire chaque section, laisser des commentaires et signer.",
+    "iep_active": "PEI actif"
   },
   "marketing": {
     "header": {
@@ -1889,6 +1892,39 @@
     "placement_placeholder": "ex. Classe ordinaire avec soutien",
     "placement_help": "Décrivez l'environnement le moins restrictif.",
     "review_date_label": "Date de révision annuelle",
-    "send_for_review": "Envoyer en relecture"
+    "send_for_review": "Envoyer en relecture",
+    "section_team": "Équipe",
+    "section_signatures": "Signatures",
+    "section_history": "Historique"
+  },
+  "iep_collab": {
+    "team_title": "Équipe du PEI",
+    "team_help": "Ajoutez les collègues et les proches qui collaboreront sur ce PEI.",
+    "team_user_id_placeholder": "ID utilisateur du coéquipier",
+    "team_empty": "Aucun coéquipier pour l'instant. Le coordinateur invite l'équipe.",
+    "add_member": "Ajouter à l'équipe",
+    "remove_member": "Retirer",
+    "role_case_manager": "Coordinateur de cas",
+    "role_gen_ed_teacher": "Enseignant·e ordinaire",
+    "role_sped_teacher": "Enseignant·e spécialisé·e",
+    "role_therapist": "Thérapeute",
+    "role_parent": "Parent / tuteur",
+    "role_learner": "Apprenant·e",
+    "role_admin": "Administrateur·rice scolaire",
+    "comments_title": "Commentaires de la section",
+    "comments_empty": "Aucun commentaire sur cette section.",
+    "comment_placeholder": "Laissez un commentaire. Utilisez @nom pour notifier un coéquipier.",
+    "post_comment": "Publier le commentaire",
+    "resolve": "Résoudre",
+    "reopen": "Rouvrir",
+    "signatures_title": "Signatures électroniques",
+    "required_roles": "Signataires requis",
+    "awaiting": "En attente",
+    "all_signed": "Tous les signataires requis ont signé. Le PEI est finalisé.",
+    "typed_name_placeholder": "Tapez votre nom complet pour signer",
+    "sign_button": "Signer le PEI",
+    "no_signatures_yet": "Aucune signature pour l'instant.",
+    "history_title": "Historique des révisions",
+    "history_empty": "Les versions de chaque section apparaîtront ici au fil des modifications."
   }
 }

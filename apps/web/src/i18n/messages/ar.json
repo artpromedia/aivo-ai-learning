@@ -1371,7 +1371,10 @@
     "brain_trigger_regression_check": "فحص التراجع",
     "brain_trigger_engagement_update": "تحديث ملف التفاعل",
     "brain_trigger_initial_clone": "تم إنشاء الدماغ الأولي",
-    "iep_draft_in_progress": "المسودة قيد الإعداد — فريقك يحضّرها"
+    "iep_draft_in_progress": "المسودة قيد الإعداد — فريقك يحضّرها",
+    "iep_action_needed": "إجراء مطلوب: المراجعة والتوقيع",
+    "iep_action_needed_help": "شاركت مديرة الحالة مسودة IEP لمراجعتها. افتح المستند لقراءة كل قسم، وأضف ملاحظاتك ووقع.",
+    "iep_active": "IEP فعّال"
   },
   "marketing": {
     "header": {
@@ -1889,6 +1892,39 @@
     "placement_placeholder": "مثلًا: تعليم عام مع دعم مصادر",
     "placement_help": "صِف البيئة الأقل تقييدًا لهذا المتعلم.",
     "review_date_label": "تاريخ المراجعة السنوية",
-    "send_for_review": "إرسال للمراجعة"
+    "send_for_review": "إرسال للمراجعة",
+    "section_team": "الفريق",
+    "section_signatures": "التوقيعات",
+    "section_history": "السجل"
+  },
+  "iep_collab": {
+    "team_title": "فريق IEP",
+    "team_help": "أضف الزملاء وأفراد الأسرة الذين سيتعاونون في هذا IEP.",
+    "team_user_id_placeholder": "معرّف المستخدم لزميل الفريق",
+    "team_empty": "لا يوجد أعضاء بعد. تتولى مديرة الحالة دعوة الفريق.",
+    "add_member": "إضافة إلى الفريق",
+    "remove_member": "إزالة",
+    "role_case_manager": "مدير الحالة",
+    "role_gen_ed_teacher": "معلم التعليم العام",
+    "role_sped_teacher": "معلم التربية الخاصة",
+    "role_therapist": "أخصائي/ة",
+    "role_parent": "ولي الأمر",
+    "role_learner": "المتعلم",
+    "role_admin": "إداري المدرسة",
+    "comments_title": "تعليقات القسم",
+    "comments_empty": "لا توجد تعليقات على هذا القسم بعد.",
+    "comment_placeholder": "اكتب تعليقًا. استخدم @اسم لإشعار زميل.",
+    "post_comment": "نشر التعليق",
+    "resolve": "تم الحل",
+    "reopen": "إعادة فتح",
+    "signatures_title": "التوقيعات الإلكترونية",
+    "required_roles": "الموقعون المطلوبون",
+    "awaiting": "بانتظار التوقيع",
+    "all_signed": "وقّع جميع المطلوبين. تم اعتماد IEP.",
+    "typed_name_placeholder": "اكتب اسمك الكامل للتوقيع",
+    "sign_button": "توقيع IEP",
+    "no_signatures_yet": "لا توجد توقيعات بعد.",
+    "history_title": "سجل المراجعات",
+    "history_empty": "ستظهر لقطات الأقسام هنا عند تحرير الفريق لها."
   }
 }

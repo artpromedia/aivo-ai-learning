@@ -115,6 +115,39 @@ export default function IepDashboardPage() {
   const inFlightDrafts = draftSummaries.filter(
     (d) => d.lifecycleState === "draft" || d.lifecycleState === "in_review",
   );
+  const reviewDraft = draftSummaries.find((d) => d.lifecycleState === "in_review");
+  const activeDraft = draftSummaries.find((d) => d.lifecycleState === "finalised");
+
+  const [typedName, setTypedName] = useState("");
+  const [signing, setSigning] = useState(false);
+  const [signError, setSignError] = useState<string | null>(null);
+  const [signed, setSigned] = useState(false);
+  const submitParentSignature = async () => {
+    if (!reviewDraft || !accessToken || !typedName.trim()) return;
+    setSigning(true); setSignError(null);
+    try {
+      const res = await fetch(`/api/iep/drafts/${reviewDraft.id}/signatures`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ typedName: typedName.trim(), signerRole: "parent" }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setSignError(j?.error || "Could not record signature");
+      } else {
+        setSigned(true);
+        // Refresh draft list so the banner updates if finalisation occurred.
+        fetch(`/api/iep/drafts/learner/${learnerId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }).then(r => r.ok ? r.json() : []).then((d) =>
+          setDraftSummaries(Array.isArray(d) ? d : []),
+        ).catch(() => {});
+      }
+    } catch {
+      setSignError("Network error");
+    }
+    setSigning(false);
+  };
 
   const generateReport = async () => {
     setGeneratingReport(true);
@@ -151,10 +184,62 @@ export default function IepDashboardPage() {
         <div>
           <h1 className="text-2xl font-heading font-bold vi-text">{t("iep_tracking")}</h1>
           <p className="vi-text-muted mt-1">{t("iep_tracking_desc")}</p>
-          {inFlightDrafts.length > 0 && (
+          {inFlightDrafts.length > 0 && !reviewDraft && (
             <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(var(--visual-sel)/0.18)] text-[hsl(var(--visual-sel))] text-xs font-bold">
               <ClipboardList size={14} aria-hidden="true" />
               {t("iep_draft_in_progress")}
+            </div>
+          )}
+          {reviewDraft && (
+            <div className="mt-3 p-3 rounded-xl bg-[hsl(var(--visual-reading)/0.12)] border-l-4 border-[hsl(var(--visual-reading))] space-y-3">
+              <div>
+                <div className="text-sm font-bold text-[hsl(var(--visual-reading))]">
+                  {t.has?.("iep_action_needed") ? t("iep_action_needed") : "Action needed: review and sign"}
+                </div>
+                <p className="text-xs vi-text-muted mt-1">
+                  {t.has?.("iep_action_needed_help")
+                    ? t("iep_action_needed_help")
+                    : "Your child's case manager has shared a draft IEP for your review. Open the document to read each section, leave comments, and add your signature."}
+                </p>
+              </div>
+              {!signed ? (
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                  <input
+                    type="text"
+                    value={typedName}
+                    onChange={(e) => setTypedName(e.target.value)}
+                    placeholder={t.has?.("iep_typed_name_placeholder")
+                      ? t("iep_typed_name_placeholder") : "Type your full name to sign"}
+                    className="flex-1 px-3 py-2 rounded-lg border vi-border vi-surface text-sm"
+                    style={{ minHeight: 44 }}
+                    aria-label="Typed signature"
+                  />
+                  <button
+                    onClick={submitParentSignature}
+                    disabled={signing || !typedName.trim()}
+                    style={{ minHeight: 44 }}
+                    className="px-4 py-2 rounded-full bg-[hsl(var(--visual-primary))] text-white font-bold text-sm disabled:opacity-50">
+                    {signing
+                      ? (t.has?.("iep_signing") ? t("iep_signing") : "Signing…")
+                      : (t.has?.("iep_sign") ? t("iep_sign") : "Sign IEP")}
+                  </button>
+                </div>
+              ) : (
+                <div className="text-xs font-bold text-[hsl(var(--visual-science))]">
+                  {t.has?.("iep_signed_thanks")
+                    ? t("iep_signed_thanks")
+                    : "Thank you. Your signature has been recorded."}
+                </div>
+              )}
+              {signError && (
+                <div className="text-xs font-bold text-[hsl(var(--visual-math))]">{signError}</div>
+              )}
+            </div>
+          )}
+          {activeDraft && (
+            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(var(--visual-science)/0.18)] text-[hsl(var(--visual-science))] text-xs font-bold">
+              <ClipboardList size={14} aria-hidden="true" />
+              {t.has?.("iep_active") ? t("iep_active") : "Active IEP"}
             </div>
           )}
         </div>
