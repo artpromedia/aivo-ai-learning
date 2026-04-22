@@ -215,7 +215,16 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
       return reply.status(401).send({ error: "Unauthorized" });
     }
     const { template, to, data } = request.body as any;
-    const allowed = new Set(["iep_in_review_parent", "iep_finalised_parent", "iep_comment_mention"]);
+    const allowed = new Set([
+      "iep_in_review_parent",
+      "iep_finalised_parent",
+      "iep_comment_mention",
+      "iep_progress_note",
+      "iep_progress_report_sent",
+      "iep_amendment_proposed",
+      "iep_amendment_acknowledged",
+      "iep_review_reminder",
+    ]);
     if (!template || !to || !allowed.has(template)) {
       return reply.code(400).send({ error: "template and to required" });
     }

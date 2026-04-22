@@ -68,6 +68,16 @@ export function renderTemplate(templateId: string, data: TemplateData): { subjec
       return renderIepFinalisedParent(data);
     case "iep_comment_mention":
       return renderIepCommentMention(data);
+    case "iep_progress_note":
+      return renderIepProgressNote(data);
+    case "iep_progress_report_sent":
+      return renderIepProgressReportSent(data);
+    case "iep_amendment_proposed":
+      return renderIepAmendmentProposed(data);
+    case "iep_amendment_acknowledged":
+      return renderIepAmendmentAcknowledged(data);
+    case "iep_review_reminder":
+      return renderIepReviewReminder(data);
     default:
       return renderGeneric(data);
   }
@@ -299,6 +309,100 @@ function renderIepCommentMention(data: TemplateData) {
   };
 }
 
+function renderIepProgressNote(data: TemplateData) {
+  const learnerName = (data.learnerName as string) || "your child";
+  const snippet = (data.snippet as string) || "";
+  const iepUrl = (data.iepUrl as string) || "#";
+  const html = baseLayout(`
+    <h1 class="title">New progress note for ${learnerName}</h1>
+    <p class="body-text">A teacher or therapist shared an update on ${learnerName}'s IEP.</p>
+    <blockquote style="margin:16px 0;padding:12px 16px;background:#F5F3FF;border-left:4px solid ${BRAND_COLOR};border-radius:8px;font-style:italic;color:#374151">${snippet}</blockquote>
+    <p style="text-align:center"><a href="${iepUrl}" class="btn">View update</a></p>
+  `);
+  return {
+    subject: `New IEP update for ${learnerName}`,
+    html,
+    text: `${learnerName}'s team shared a new progress note: "${snippet}". View: ${iepUrl}`,
+  };
+}
+
+function renderIepProgressReportSent(data: TemplateData) {
+  const learnerName = (data.learnerName as string) || "your child";
+  const period = (data.period as string) || "this period";
+  const iepUrl = (data.iepUrl as string) || "#";
+  const html = baseLayout(`
+    <h1 class="title">${learnerName}'s ${period} progress report is ready</h1>
+    <p class="body-text">The case manager has shared the latest IEP progress report covering ${period}.</p>
+    <p style="text-align:center"><a href="${iepUrl}" class="btn">Read the report</a></p>
+  `);
+  return {
+    subject: `${learnerName}'s ${period} IEP progress report`,
+    html,
+    text: `The ${period} IEP progress report for ${learnerName} is ready. Read it here: ${iepUrl}`,
+  };
+}
+
+function renderIepAmendmentProposed(data: TemplateData) {
+  const learnerName = (data.learnerName as string) || "your child";
+  const summary = (data.summary as string) || "an amendment to the IEP";
+  const iepUrl = (data.iepUrl as string) || "#";
+  const html = baseLayout(`
+    <h1 class="title">Action needed: amendment proposed</h1>
+    <p class="body-text">The case manager has proposed an amendment to ${learnerName}'s IEP:</p>
+    <blockquote style="margin:16px 0;padding:12px 16px;background:#F5F3FF;border-left:4px solid ${BRAND_COLOR};border-radius:8px;color:#374151">${summary}</blockquote>
+    <p class="body-text">Please review and acknowledge or raise any objections.</p>
+    <p style="text-align:center"><a href="${iepUrl}" class="btn">Review amendment</a></p>
+  `);
+  return {
+    subject: `Action needed: amendment to ${learnerName}'s IEP`,
+    html,
+    text: `An amendment to ${learnerName}'s IEP needs your review: "${summary}". Review: ${iepUrl}`,
+  };
+}
+
+function renderIepAmendmentAcknowledged(data: TemplateData) {
+  const learnerName = (data.learnerName as string) || "the learner";
+  const response = (data.response as string) || "responded to";
+  const summary = (data.summary as string) || "the amendment";
+  const iepUrl = (data.iepUrl as string) || "#";
+  const html = baseLayout(`
+    <h1 class="title">The family ${response} an amendment</h1>
+    <p class="body-text">${learnerName}'s family has <strong>${response}</strong> the amendment:</p>
+    <blockquote style="margin:16px 0;padding:12px 16px;background:#F5F3FF;border-left:4px solid ${BRAND_COLOR};border-radius:8px;color:#374151">${summary}</blockquote>
+    <p style="text-align:center"><a href="${iepUrl}" class="btn">Open the IEP</a></p>
+  `);
+  return {
+    subject: `Family ${response} an amendment to ${learnerName}'s IEP`,
+    html,
+    text: `${learnerName}'s family has ${response} the amendment "${summary}". Open: ${iepUrl}`,
+  };
+}
+
+function renderIepReviewReminder(data: TemplateData) {
+  const learnerName = (data.learnerName as string) || "your child";
+  const threshold = (data.threshold as number) || 30;
+  const reviewDate = (data.reviewDate as string) || "soon";
+  const recipientRole = (data.recipientRole as string) || "parent";
+  const iepUrl = (data.iepUrl as string) || "#";
+  const isCM = recipientRole === "case_manager";
+  const headline = isCM
+    ? `Annual review for ${learnerName} is due in ${threshold} days`
+    : `${learnerName}'s annual IEP review is in ${threshold} days`;
+  const body = isCM
+    ? `Please confirm meeting logistics, prepare goals progress, and notify the team. Annual review date: <strong>${reviewDate}</strong>.`
+    : `${learnerName}'s annual IEP review is scheduled for <strong>${reviewDate}</strong>. Your case manager will reach out to schedule the meeting.`;
+  const html = baseLayout(`
+    <h1 class="title">${headline}</h1>
+    <p class="body-text">${body}</p>
+    <p style="text-align:center"><a href="${iepUrl}" class="btn">Open the IEP</a></p>
+  `);
+  return {
+    subject: headline,
+    html,
+    text: `${headline}. Open: ${iepUrl}`,
+  };
+}
+
 export const AVAILABLE_TEMPLATES = [
   { id: "welcome", name: "Welcome Email", channels: ["email"] },
   { id: "collaboration_invite", name: "Collaboration Invite", channels: ["email"] },
@@ -312,4 +416,9 @@ export const AVAILABLE_TEMPLATES = [
   { id: "iep_in_review_parent", name: "IEP — In Review (Parent)", channels: ["email"] },
   { id: "iep_finalised_parent", name: "IEP — Finalised (Parent)", channels: ["email"] },
   { id: "iep_comment_mention", name: "IEP — Comment Mention", channels: ["email"] },
+  { id: "iep_progress_note", name: "IEP — Progress Note (Parent)", channels: ["email"] },
+  { id: "iep_progress_report_sent", name: "IEP — Progress Report Sent (Parent)", channels: ["email"] },
+  { id: "iep_amendment_proposed", name: "IEP — Amendment Proposed (Parent)", channels: ["email"] },
+  { id: "iep_amendment_acknowledged", name: "IEP — Amendment Response (Team)", channels: ["email"] },
+  { id: "iep_review_reminder", name: "IEP — Annual Review Reminder", channels: ["email"] },
 ];

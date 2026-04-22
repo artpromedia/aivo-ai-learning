@@ -671,6 +671,24 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
         sql`${iepProfiles.updatedAt} >= ${monthStart.toISOString()}`,
       ));
 
+    // Phase D — count of recent parent-visible items (notes/sent reports/
+    // proposed amendments) across the tenant's finalised IEPs in the last
+    // 14 days. Backed by an internal endpoint on assessment-svc so the
+    // counter respects the same visibility rules as the parent timeline.
+    let unreadParentUpdates = 0;
+    try {
+      const ASSESS_URL = process.env.ASSESSMENT_SVC_URL || "http://localhost:3003";
+      const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY
+        || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+      const r = await fetch(`${ASSESS_URL}/api/iep/internal/unread-parent-updates?tenantId=${tid}`, {
+        headers: { "x-internal-key": INTERNAL_KEY },
+      });
+      if (r.ok) {
+        const j = await r.json() as { count?: number };
+        unreadParentUpdates = Number(j.count || 0);
+      }
+    } catch { /* best-effort */ }
+
     return {
       active: activeCount.count,
       dueForReview: dueCount.count,
@@ -679,6 +697,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
       drafts: draftCount?.count ?? 0,
       awaitingSignatures: awaitingSignatures?.count ?? 0,
       finalisedThisMonth: finalisedThisMonth?.count ?? 0,
+      unreadParentUpdates,
     };
   });
 

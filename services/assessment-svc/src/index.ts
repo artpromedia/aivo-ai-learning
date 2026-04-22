@@ -11,6 +11,7 @@ import { registerIepRoutes } from "./routes/iep.js";
 import { registerIepEvaluationRoutes } from "./routes/iep-evaluations.js";
 import { registerIepAuthoringRoutes } from "./routes/iep-authoring.js";
 import { registerIepCollabRoutes } from "./routes/iep-collab.js";
+import { registerIepUpdatesRoutes, checkReviewReminders } from "./routes/iep-updates.js";
 import { registerLearnerBaselineRoutes } from "./routes/learner-baseline.js";
 import { registerSensoryProfileRoutes } from "./routes/sensory-profile.js";
 
@@ -42,11 +43,22 @@ async function start() {
   await registerIepEvaluationRoutes(app);
   await registerIepAuthoringRoutes(app);
   await registerIepCollabRoutes(app);
+  await registerIepUpdatesRoutes(app);
   await registerLearnerBaselineRoutes(app);
   await registerSensoryProfileRoutes(app);
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Assessment service listening on port ${PORT}`);
+
+  // Phase D — fire annual review reminders (90/60/30 days). Once on boot
+  // (catches anything missed while the service was down) and then daily.
+  // Idempotent at the row level, so multiple instances racing is safe.
+  setTimeout(() => {
+    checkReviewReminders(db).catch((err) => logger.error(err, "Initial reminder run failed"));
+  }, 30_000);
+  setInterval(() => {
+    checkReviewReminders(db).catch((err) => logger.error(err, "Daily reminder run failed"));
+  }, 24 * 60 * 60 * 1000);
 }
 
 start().catch((err) => {

@@ -3,7 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Target, FileText, BarChart3, TrendingUp, TrendingDown, Minus, Activity, ClipboardList, CheckCircle2, XCircle } from "lucide-react";
+import { Target, FileText, BarChart3, TrendingUp, TrendingDown, Minus, Activity, ClipboardList, CheckCircle2, XCircle, Bell, MessageSquare, AlertCircle, CalendarClock, Settings } from "lucide-react";
 import { IconWell } from "@/components/discovery/_vi";
 
 interface GoalProgress {
@@ -74,7 +74,65 @@ export default function IepDashboardPage() {
   const [documents, setDocuments] = useState<IepDocument[]>([]);
   const [report, setReport] = useState<IepReport | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
-  const [activeTab, setActiveTab] = useState<"goals" | "documents" | "motor" | "evaluations" | "report">("goals");
+  const [activeTab, setActiveTab] = useState<"updates" | "goals" | "documents" | "motor" | "evaluations" | "report">("updates");
+  const tu = useTranslations("iep_updates");
+  interface TimelineItem {
+    type: "note" | "report" | "amendment" | "reminder";
+    id: string;
+    at: string;
+    payload: any;
+  }
+  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  type Prefs = { progress_notes: { email: boolean; inApp: boolean }; reports: { email: boolean; inApp: boolean }; amendments: { email: boolean; inApp: boolean }; reminders: { email: boolean; inApp: boolean } };
+  const [prefs, setPrefs] = useState<Prefs | null>(null);
+  const [showPrefs, setShowPrefs] = useState(false);
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
+
+  const refreshTimeline = async () => {
+    if (!accessToken || !learnerId) return;
+    setTimelineLoading(true);
+    try {
+      const r = await fetch(`/api/iep/learners/${learnerId}/timeline`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (r.ok) {
+        const j = await r.json();
+        setTimeline(Array.isArray(j.items) ? j.items : []);
+      }
+    } catch { /* noop */ }
+    setTimelineLoading(false);
+  };
+
+  const respondAmendment = async (aid: string, response: "acknowledged" | "objected", note?: string) => {
+    if (!accessToken) return;
+    setRespondingId(aid);
+    try {
+      await fetch(`/api/iep/amendments/${aid}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ response, note }),
+      });
+      await refreshTimeline();
+    } catch { /* noop */ }
+    setRespondingId(null);
+  };
+
+  const savePrefs = async () => {
+    if (!accessToken || !prefs) return;
+    setSavingPrefs(true);
+    try {
+      const r = await fetch(`/api/iep/preferences`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify(prefs),
+      });
+      if (r.ok) setPrefs(await r.json());
+      setShowPrefs(false);
+    } catch { /* noop */ }
+    setSavingPrefs(false);
+  };
   const [evaluations, setEvaluations] = useState<Array<{
     id: string; status: string; createdAt: string; submittedAt: string | null;
     eligibilityDecision: string | null; decisionCategories: string[] | null; decisionRationale: string | null;
@@ -110,6 +168,15 @@ export default function IepDashboardPage() {
     fetch(`/api/iep/drafts/learner/${learnerId}`, { headers })
       .then(r => r.ok ? r.json() : []).then((d) => setDraftSummaries(Array.isArray(d) ? d : []))
       .catch((err) => console.error("Failed to fetch IEP drafts:", err));
+    refreshTimeline();
+    fetch(`/api/iep/preferences`, { headers })
+      .then(r => r.ok ? r.json() : null).then((p) => { if (p) setPrefs(p as Prefs); })
+      .catch(() => {});
+    // Light polling for the timeline so new notes/reports appear without
+    // a manual refresh. 60s is plenty for the volume.
+    const t = setInterval(refreshTimeline, 60_000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken, learnerId]);
 
   const inFlightDrafts = draftSummaries.filter(
@@ -266,14 +333,162 @@ export default function IepDashboardPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 border-b vi-border pb-1">
-        {(["goals", "documents", "motor", "evaluations", "report"] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-bold rounded-t-lg transition ${activeTab === tab ? "bg-[hsl(var(--visual-surface))] border vi-border border-b-[hsl(var(--visual-surface))] text-[hsl(var(--visual-primary))] -mb-[1px]" : "vi-text-muted hover:vi-text"}`}>
-            {tab === "goals" ? t("goals") : tab === "documents" ? t("documents") : tab === "motor" ? td("motor_progress") : tab === "evaluations" ? te("evaluations_tab") : t("report")}
+      <div className="flex flex-wrap gap-2 border-b vi-border pb-1 items-center justify-between">
+        <div className="flex flex-wrap gap-2">
+          {(["updates", "goals", "documents", "motor", "evaluations", "report"] as const).map(tab => {
+            const unread = tab === "updates"
+              ? timeline.filter((i) => {
+                  const at = new Date(i.at).getTime();
+                  return Date.now() - at < 14 * 86400000;
+                }).length
+              : 0;
+            return (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 text-sm font-bold rounded-t-lg transition flex items-center gap-2 ${activeTab === tab ? "bg-[hsl(var(--visual-surface))] border vi-border border-b-[hsl(var(--visual-surface))] text-[hsl(var(--visual-primary))] -mb-[1px]" : "vi-text-muted hover:vi-text"}`}>
+                {tab === "updates" ? tu("tab") : tab === "goals" ? t("goals") : tab === "documents" ? t("documents") : tab === "motor" ? td("motor_progress") : tab === "evaluations" ? te("evaluations_tab") : t("report")}
+                {tab === "updates" && unread > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-[hsl(var(--visual-primary))] text-white text-[10px]">{unread}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {activeTab === "updates" && (
+          <button onClick={() => setShowPrefs(true)}
+            className="text-xs font-bold vi-text-muted hover:vi-text inline-flex items-center gap-1 px-3 py-1.5 rounded-full vi-surface-soft">
+            <Settings size={14} /> {tu("preferences")}
           </button>
-        ))}
+        )}
       </div>
+
+      {activeTab === "updates" && (
+        <div className="space-y-3">
+          {timelineLoading && timeline.length === 0 ? (
+            <div className="vi-card p-8 text-center vi-text-muted text-sm">{tu("loading")}</div>
+          ) : timeline.length === 0 ? (
+            <div className="vi-card p-12 text-center">
+              <div className="flex justify-center mb-3"><IconWell color="reading"><Bell className="w-7 h-7" /></IconWell></div>
+              <p className="vi-text-muted font-semibold">{tu("none_yet")}</p>
+              <p className="vi-text-muted text-sm mt-2">{tu("none_yet_help")}</p>
+            </div>
+          ) : (
+            timeline.map((item) => (
+              <div key={`${item.type}-${item.id}`} className="vi-card p-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5">
+                    {item.type === "note" && <IconWell color="reading" size="sm"><MessageSquare className="w-4 h-4" /></IconWell>}
+                    {item.type === "report" && <IconWell color="science" size="sm"><FileText className="w-4 h-4" /></IconWell>}
+                    {item.type === "amendment" && <IconWell color="primary" size="sm"><AlertCircle className="w-4 h-4" /></IconWell>}
+                    {item.type === "reminder" && <IconWell color="sel" size="sm"><CalendarClock className="w-4 h-4" /></IconWell>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 text-xs vi-text-muted">
+                      <span className="font-bold uppercase tracking-wide">{tu(`type_${item.type}`)}</span>
+                      <span>·</span>
+                      <span>{new Date(item.at).toLocaleString()}</span>
+                    </div>
+                    {item.type === "note" && (
+                      <>
+                        <p className="text-sm vi-text mt-1">{item.payload.body}</p>
+                        {item.payload.authorName && (
+                          <p className="text-xs vi-text-muted mt-1">{tu("from", { name: item.payload.authorName })}</p>
+                        )}
+                      </>
+                    )}
+                    {item.type === "report" && (
+                      <>
+                        <p className="text-sm font-bold vi-text mt-1">{tu("report_period", { period: item.payload.period })}</p>
+                        {item.payload.narrative && (
+                          <p className="text-sm vi-text mt-1 whitespace-pre-line">{item.payload.narrative}</p>
+                        )}
+                      </>
+                    )}
+                    {item.type === "amendment" && (
+                      <>
+                        <p className="text-sm font-bold vi-text mt-1">{tu("amendment_proposed_by", { name: item.payload.proposedByName || "" })}</p>
+                        <p className="text-sm vi-text mt-1">{item.payload.summary}</p>
+                        <div className="mt-2 inline-flex items-center gap-2">
+                          <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
+                            item.payload.status === "proposed" ? "bg-[hsl(var(--visual-reading)/0.14)] text-[hsl(var(--visual-reading))]" :
+                            item.payload.status === "acknowledged" ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]" :
+                            "bg-[hsl(var(--visual-math)/0.14)] text-[hsl(var(--visual-math))]"
+                          }`}>{tu(`amendment_status_${item.payload.status}`)}</span>
+                        </div>
+                        {item.payload.status === "proposed" && (
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              disabled={respondingId === item.payload.id}
+                              onClick={() => respondAmendment(item.payload.id, "acknowledged")}
+                              style={{ minHeight: 40 }}
+                              className="px-4 py-1.5 rounded-full bg-[hsl(var(--visual-primary))] text-white text-xs font-bold disabled:opacity-50">
+                              {tu("acknowledge")}
+                            </button>
+                            <button
+                              disabled={respondingId === item.payload.id}
+                              onClick={() => respondAmendment(item.payload.id, "objected")}
+                              style={{ minHeight: 40 }}
+                              className="px-4 py-1.5 rounded-full vi-surface-soft text-xs font-bold disabled:opacity-50">
+                              {tu("object")}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {item.type === "reminder" && (
+                      <p className="text-sm vi-text mt-1">
+                        {tu("reminder_text", {
+                          days: item.payload.threshold,
+                          date: new Date(item.payload.reviewDate).toLocaleDateString(),
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {showPrefs && prefs && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowPrefs(false)}>
+          <div className="vi-card p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <h2 className="font-heading font-bold text-lg vi-text mb-1">{tu("preferences_title")}</h2>
+            <p className="text-xs vi-text-muted mb-4">{tu("preferences_help")}</p>
+            <div className="space-y-3">
+              {(["progress_notes", "reports", "amendments", "reminders"] as const).map((cat) => {
+                const locked = cat !== "progress_notes";
+                return (
+                  <div key={cat} className="p-3 rounded-xl vi-surface-soft">
+                    <div className="font-bold text-sm vi-text">{tu(`pref_${cat}`)}</div>
+                    {locked && <p className="text-[11px] vi-text-muted mt-0.5">{tu("pref_required")}</p>}
+                    <div className="flex gap-4 mt-2 text-xs vi-text-muted">
+                      <label className="inline-flex items-center gap-1.5">
+                        <input type="checkbox" checked={prefs[cat].email} disabled={locked && !prefs[cat].inApp}
+                          onChange={(e) => setPrefs({ ...prefs, [cat]: { ...prefs[cat], email: e.target.checked } })} />
+                        {tu("pref_email")}
+                      </label>
+                      <label className="inline-flex items-center gap-1.5">
+                        <input type="checkbox" checked={prefs[cat].inApp} disabled={locked && !prefs[cat].email}
+                          onChange={(e) => setPrefs({ ...prefs, [cat]: { ...prefs[cat], inApp: e.target.checked } })} />
+                        {tu("pref_in_app")}
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setShowPrefs(false)} style={{ minHeight: 44 }}
+                className="px-4 py-2 rounded-full vi-surface-soft text-sm font-bold">{tu("cancel")}</button>
+              <button onClick={savePrefs} disabled={savingPrefs} style={{ minHeight: 44 }}
+                className="px-4 py-2 rounded-full bg-[hsl(var(--visual-primary))] text-white text-sm font-bold disabled:opacity-50">
+                {savingPrefs ? tu("saving") : tu("save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeTab === "goals" && (
         <div className="space-y-4">

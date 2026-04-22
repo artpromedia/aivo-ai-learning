@@ -10,7 +10,7 @@ import {
 
 const PLOP_AREAS = ["academic", "functional", "social", "motor", "communication"] as const;
 const SECTIONS = ["plop", "goals", "accommodations", "services", "placement", "review",
-  "team", "signatures", "history"] as const;
+  "team", "signatures", "history", "updates"] as const;
 type Section = typeof SECTIONS[number];
 
 interface TeamMember { id: string; userId: string; role: string; name: string | null; email: string | null }
@@ -785,6 +785,16 @@ export default function IepDraftEditorPage() {
                 </div>
               )}
 
+              {section === "updates" && (
+                <UpdatesSection
+                  draftId={bundle.profile.id}
+                  goals={bundle.goals}
+                  headers={headers}
+                  isCaseManager={(team.find((m) => m.userId === user?.sub)?.role === "case_manager")}
+                  isFinalised={bundle.profile.lifecycleState === "finalised"}
+                />
+              )}
+
               {section === "history" && (
                 <div className="vi-card divide-y vi-border">
                   <div className="p-3 flex items-center gap-2 vi-text font-bold text-sm">
@@ -857,6 +867,271 @@ export default function IepDraftEditorPage() {
               </div>
             </section>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Inline composer + lists for progress notes, quarterly reports, and
+// amendments. Lives on the teacher draft page so the case manager can
+// author updates in the same surface they used to draft the IEP.
+function UpdatesSection({ draftId, goals, headers, isCaseManager, isFinalised }: {
+  draftId: string;
+  goals: { id: string; goalText: string; domain?: string | null }[];
+  headers: { Authorization: string } | undefined;
+  isCaseManager: boolean;
+  isFinalised: boolean;
+}) {
+  const tu = useTranslations("iep_updates");
+  type Note = { id: string; body: string; goalId: string | null; visibility: string; authorName: string | null; createdAt: string };
+  type Report = { id: string; period: string; narrative: string | null; status: string; sentAt: string | null; createdAt: string };
+  type Amendment = { id: string; summary: string; status: string; proposedChanges: any; acknowledgedAt: string | null; revisionCounter: number; createdAt: string };
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [amendments, setAmendments] = useState<Amendment[]>([]);
+  const [noteBody, setNoteBody] = useState("");
+  const [noteGoalId, setNoteGoalId] = useState<string>("");
+  const [noteVisibility, setNoteVisibility] = useState<"parent" | "team" | "internal">("parent");
+  const [posting, setPosting] = useState(false);
+  const [reportPeriod, setReportPeriod] = useState("");
+  const [reportNarrative, setReportNarrative] = useState("");
+  const [creatingReport, setCreatingReport] = useState(false);
+  const [seedingReport, setSeedingReport] = useState(false);
+  const [amendSummary, setAmendSummary] = useState("");
+  const [amendChanges, setAmendChanges] = useState("");
+  const [creatingAmend, setCreatingAmend] = useState(false);
+
+  const refreshAll = useCallback(async () => {
+    if (!headers) return;
+    const [n, r, a] = await Promise.all([
+      fetch(`/api/iep/drafts/${draftId}/notes`, { headers }).then((x) => x.ok ? x.json() : []),
+      fetch(`/api/iep/drafts/${draftId}/reports`, { headers }).then((x) => x.ok ? x.json() : []),
+      fetch(`/api/iep/drafts/${draftId}/amendments`, { headers }).then((x) => x.ok ? x.json() : []),
+    ]);
+    setNotes(Array.isArray(n) ? n : []);
+    setReports(Array.isArray(r) ? r : []);
+    setAmendments(Array.isArray(a) ? a : []);
+  }, [draftId, headers]);
+
+  useEffect(() => { refreshAll(); }, [refreshAll]);
+
+  const postNote = async () => {
+    if (!headers || !noteBody.trim()) return;
+    setPosting(true);
+    try {
+      const r = await fetch(`/api/iep/drafts/${draftId}/notes`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          body: noteBody.trim(),
+          goalId: noteGoalId || undefined,
+          visibility: noteVisibility,
+        }),
+      });
+      if (r.ok) { setNoteBody(""); setNoteGoalId(""); await refreshAll(); }
+    } catch { /* noop */ }
+    setPosting(false);
+  };
+
+  const seedReport = async () => {
+    if (!headers) return;
+    setSeedingReport(true);
+    try {
+      const r = await fetch(`/api/iep/drafts/${draftId}/reports/seed`, { headers });
+      if (r.ok) {
+        const j = await r.json();
+        if (j.narrative) setReportNarrative(j.narrative);
+      }
+    } catch { /* noop */ }
+    setSeedingReport(false);
+  };
+
+  const createReport = async () => {
+    if (!headers || !reportPeriod.trim()) return;
+    setCreatingReport(true);
+    try {
+      const r = await fetch(`/api/iep/drafts/${draftId}/reports`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ period: reportPeriod.trim(), narrative: reportNarrative }),
+      });
+      if (r.ok) { setReportPeriod(""); setReportNarrative(""); await refreshAll(); }
+    } catch { /* noop */ }
+    setCreatingReport(false);
+  };
+
+  const sendReport = async (rid: string) => {
+    if (!headers) return;
+    await fetch(`/api/iep/drafts/${draftId}/reports/${rid}/send`, {
+      method: "POST", headers,
+    });
+    await refreshAll();
+  };
+
+  const createAmendment = async () => {
+    if (!headers || !amendSummary.trim()) return;
+    setCreatingAmend(true);
+    let parsed: any = {};
+    if (amendChanges.trim()) {
+      try { parsed = JSON.parse(amendChanges); } catch { parsed = { notes: amendChanges }; }
+    }
+    try {
+      const r = await fetch(`/api/iep/drafts/${draftId}/amendments`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ summary: amendSummary.trim(), proposedChanges: parsed }),
+      });
+      if (r.ok) { setAmendSummary(""); setAmendChanges(""); await refreshAll(); }
+    } catch { /* noop */ }
+    setCreatingAmend(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* PROGRESS NOTES */}
+      <div className="vi-card p-4 space-y-3">
+        <div className="font-bold text-sm vi-text">{tu("notes_title")}</div>
+        <p className="text-xs vi-text-muted">{tu("notes_help")}</p>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2">
+          <textarea
+            value={noteBody} onChange={(e) => setNoteBody(e.target.value)}
+            placeholder={tu("note_placeholder")} rows={2}
+            className="vi-input rounded-lg px-3 py-2 text-sm" />
+          <select value={noteGoalId} onChange={(e) => setNoteGoalId(e.target.value)}
+            className="vi-input rounded-lg px-2 py-2 text-sm">
+            <option value="">{tu("goal_any")}</option>
+            {goals.map((g) => (
+              <option key={g.id} value={g.id}>{g.domain || ""}: {g.goalText.slice(0, 40)}</option>
+            ))}
+          </select>
+          <select value={noteVisibility}
+            onChange={(e) => setNoteVisibility(e.target.value as "parent" | "team" | "internal")}
+            className="vi-input rounded-lg px-2 py-2 text-sm">
+            <option value="parent">{tu("vis_parent")}</option>
+            <option value="team">{tu("vis_team")}</option>
+            <option value="internal">{tu("vis_internal")}</option>
+          </select>
+        </div>
+        <div className="flex justify-end">
+          <button onClick={postNote} disabled={posting || !noteBody.trim()}
+            style={{ minHeight: 40 }}
+            className="px-4 py-2 rounded-full bg-[hsl(var(--visual-primary))] text-white font-bold text-xs disabled:opacity-50">
+            {posting ? tu("posting") : tu("post_note")}
+          </button>
+        </div>
+        <div className="space-y-2 max-h-72 overflow-auto pt-2 border-t vi-border">
+          {notes.length === 0 ? (
+            <p className="text-xs vi-text-muted">{tu("no_notes")}</p>
+          ) : notes.map((n) => (
+            <div key={n.id} className="p-3 rounded-lg border vi-border">
+              <div className="flex items-center gap-2 text-xs vi-text-muted">
+                <span className="font-bold vi-text">{n.authorName || ""}</span>
+                <span>·</span>
+                <span>{new Date(n.createdAt).toLocaleString()}</span>
+                <span className="ml-auto px-2 py-0.5 rounded-full vi-surface-soft text-[10px] uppercase font-bold">
+                  {tu(`vis_${n.visibility}`)}
+                </span>
+              </div>
+              <p className="text-sm vi-text mt-1 whitespace-pre-wrap">{n.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* QUARTERLY REPORTS */}
+      {isCaseManager && (
+        <div className="vi-card p-4 space-y-3">
+          <div className="font-bold text-sm vi-text">{tu("reports_title")}</div>
+          <p className="text-xs vi-text-muted">{tu("reports_help")}</p>
+          <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-2">
+            <input value={reportPeriod} onChange={(e) => setReportPeriod(e.target.value)}
+              placeholder={tu("period_placeholder")}
+              className="vi-input rounded-lg px-3 py-2 text-sm" />
+            <textarea value={reportNarrative} onChange={(e) => setReportNarrative(e.target.value)}
+              placeholder={tu("narrative_placeholder")} rows={4}
+              className="vi-input rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={seedReport} disabled={seedingReport} style={{ minHeight: 40 }}
+              className="px-3 py-2 rounded-full vi-surface-soft text-xs font-bold disabled:opacity-50">
+              {seedingReport ? tu("seeding") : tu("ai_seed")}
+            </button>
+            <button onClick={createReport} disabled={creatingReport || !reportPeriod.trim()}
+              style={{ minHeight: 40 }}
+              className="px-4 py-2 rounded-full bg-[hsl(var(--visual-reading))] text-white text-xs font-bold disabled:opacity-50">
+              {creatingReport ? tu("saving") : tu("save_draft_report")}
+            </button>
+          </div>
+          <div className="space-y-2 max-h-72 overflow-auto pt-2 border-t vi-border">
+            {reports.length === 0 ? (
+              <p className="text-xs vi-text-muted">{tu("no_reports")}</p>
+            ) : reports.map((r) => (
+              <div key={r.id} className="p-3 rounded-lg border vi-border">
+                <div className="flex items-center gap-2 text-xs vi-text-muted">
+                  <span className="font-bold vi-text">{r.period}</span>
+                  <span>·</span>
+                  <span>{new Date(r.createdAt).toLocaleString()}</span>
+                  <span className={`ml-auto px-2 py-0.5 rounded-full text-[10px] uppercase font-bold ${
+                    r.status === "sent"
+                      ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]"
+                      : "vi-surface-soft"
+                  }`}>{tu(`status_${r.status}`)}</span>
+                </div>
+                {r.narrative && (
+                  <p className="text-sm vi-text mt-1 whitespace-pre-wrap line-clamp-4">{r.narrative}</p>
+                )}
+                {r.status === "draft" && (
+                  <div className="flex justify-end mt-2">
+                    <button onClick={() => sendReport(r.id)} style={{ minHeight: 36 }}
+                      className="px-3 py-1.5 rounded-full bg-[hsl(var(--visual-primary))] text-white text-xs font-bold">
+                      {tu("send_to_parent")}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* AMENDMENTS — only on finalised IEPs and only the case manager. */}
+      {isCaseManager && isFinalised && (
+        <div className="vi-card p-4 space-y-3">
+          <div className="font-bold text-sm vi-text">{tu("amendments_title")}</div>
+          <p className="text-xs vi-text-muted">{tu("amendments_help")}</p>
+          <input value={amendSummary} onChange={(e) => setAmendSummary(e.target.value)}
+            placeholder={tu("amendment_summary_placeholder")}
+            className="vi-input rounded-lg px-3 py-2 text-sm w-full" />
+          <textarea value={amendChanges} onChange={(e) => setAmendChanges(e.target.value)}
+            placeholder={tu("amendment_changes_placeholder")} rows={4}
+            className="vi-input rounded-lg px-3 py-2 text-sm w-full font-mono" />
+          <div className="flex justify-end">
+            <button onClick={createAmendment} disabled={creatingAmend || !amendSummary.trim()}
+              style={{ minHeight: 40 }}
+              className="px-4 py-2 rounded-full bg-[hsl(var(--visual-primary))] text-white text-xs font-bold disabled:opacity-50">
+              {creatingAmend ? tu("posting") : tu("propose_amendment")}
+            </button>
+          </div>
+          <div className="space-y-2 max-h-72 overflow-auto pt-2 border-t vi-border">
+            {amendments.length === 0 ? (
+              <p className="text-xs vi-text-muted">{tu("no_amendments")}</p>
+            ) : amendments.map((a) => (
+              <div key={a.id} className="p-3 rounded-lg border vi-border">
+                <div className="flex items-center gap-2 text-xs vi-text-muted">
+                  <span>{new Date(a.createdAt).toLocaleString()}</span>
+                  <span className={`ml-auto px-2 py-0.5 rounded-full text-[10px] uppercase font-bold ${
+                    a.status === "acknowledged"
+                      ? "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]"
+                      : a.status === "objected"
+                        ? "bg-[hsl(var(--visual-math)/0.14)] text-[hsl(var(--visual-math))]"
+                        : "bg-[hsl(var(--visual-reading)/0.14)] text-[hsl(var(--visual-reading))]"
+                  }`}>{tu(`amendment_status_${a.status}`)}</span>
+                </div>
+                <p className="text-sm font-bold vi-text mt-1">{a.summary}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -208,6 +208,83 @@ export const iepRevisions = pgTable("iep_revisions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Phase D: parent sharing & ongoing IEP communication.
+// Progress notes are short updates from teachers/therapists scoped to a goal
+// or section, with a visibility flag so internal-team chatter stays away from
+// parents. Reports are quarterly summaries that move through draft → sent.
+// Amendments propose post-finalisation changes parents must acknowledge.
+// Preferences gate parent notifications per category. ReviewReminders give
+// the cron job an idempotency key per (profile, threshold).
+export const iepProgressNotes = pgTable("iep_progress_notes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
+  learnerId: uuid("learner_id").references(() => learners.id).notNull(),
+  goalId: uuid("goal_id"),
+  authorId: uuid("author_id").references(() => users.id).notNull(),
+  body: text("body").notNull(),
+  attachmentUrl: text("attachment_url"),
+  // 'parent' visible to family in the timeline; 'team' restricted to IEP
+  // team members; 'internal' for case-manager private working notes.
+  visibility: varchar("visibility", { length: 20 }).default("parent").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const iepProgressReports = pgTable("iep_progress_reports", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
+  learnerId: uuid("learner_id").references(() => learners.id).notNull(),
+  period: varchar("period", { length: 30 }).notNull(),
+  narrative: text("narrative"),
+  aiSummary: jsonb("ai_summary"),
+  status: varchar("status", { length: 20 }).default("draft").notNull(),
+  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  sentBy: uuid("sent_by").references(() => users.id),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const iepAmendments = pgTable("iep_amendments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
+  learnerId: uuid("learner_id").references(() => learners.id).notNull(),
+  summary: text("summary").notNull(),
+  proposedChanges: jsonb("proposed_changes").default({}).notNull(),
+  // proposed → acknowledged → merged, or proposed → objected.
+  status: varchar("status", { length: 20 }).default("proposed").notNull(),
+  proposedBy: uuid("proposed_by").references(() => users.id).notNull(),
+  acknowledgedBy: uuid("acknowledged_by").references(() => users.id),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  parentResponse: text("parent_response"),
+  revisionCounter: integer("revision_counter").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const parentNotificationPreferences = pgTable("parent_notification_preferences", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  parentId: uuid("parent_id").references(() => users.id).notNull(),
+  // Per-category prefs: { progress_notes: {email,inApp}, reports:..., amendments:..., reminders:... }
+  // Defaults are opt-in for legally significant items (reports, amendments,
+  // reminders); parents can mute progress_notes only.
+  prefs: jsonb("prefs").default({}).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => ({
+  unique: uniqueIndex("parent_notification_preferences_parent_uidx").on(t.parentId),
+}));
+
+export const iepReviewReminders = pgTable("iep_review_reminders", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
+  // Days-out threshold the reminder is for: 90, 60, 30.
+  threshold: integer("threshold").notNull(),
+  reviewDate: timestamp("review_date").notNull(),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+}, (t) => ({
+  unique: uniqueIndex("iep_review_reminders_profile_threshold_uidx")
+    .on(t.iepProfileId, t.threshold),
+}));
+
 export const iepSignatures = pgTable("iep_signatures", {
   id: uuid("id").defaultRandom().primaryKey(),
   iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
