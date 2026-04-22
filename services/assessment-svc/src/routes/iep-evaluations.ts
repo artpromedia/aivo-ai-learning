@@ -60,7 +60,7 @@ async function canRead(db: any, claims: AuthClaims, learnerId: string): Promise<
   const learner = await getLearner(db, learnerId);
   if (!learner) return false;
   if (claims.role === "PLATFORM_ADMIN") return true;
-  if (claims.role === "DISTRICT_ADMIN") {
+  if (claims.role === "DISTRICT_ADMIN" || claims.role === "THERAPIST") {
     return claims.tenantId === learner.tenantId;
   }
   if (await isTeacherOf(db, claims.sub, learnerId)) return true;
