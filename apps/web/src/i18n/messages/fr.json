@@ -1640,5 +1640,14 @@
     "back_to_login": "Retour à la connexion",
     "code_expires": "Le code expire dans 10 minutes.",
     "digit": "Chiffre"
+  },
+  "tier": {
+    "label": "Thème",
+    "early_name": "Prairie Douce",
+    "early_tagline": "K–5 · lumière d'un livre d'images",
+    "middle_name": "Cabane d'Étude",
+    "middle_tagline": "6–8 · découverte crépusculaire à la Ghibli",
+    "high_name": "Studio de Concentration",
+    "high_tagline": "9–12 · calme éditorial"
   }
 }

@@ -1640,5 +1640,14 @@
     "back_to_login": "Volver al inicio de sesión",
     "code_expires": "El código expira en 10 minutos.",
     "digit": "Dígito"
+  },
+  "tier": {
+    "label": "Tema",
+    "early_name": "Pradera Suave",
+    "early_tagline": "K–5 · luz de día de cuento",
+    "middle_name": "Cabaña de Estudio",
+    "middle_tagline": "6–8 · descubrimiento crepuscular estilo Ghibli",
+    "high_name": "Estudio de Concentración",
+    "high_tagline": "9–12 · calma editorial"
   }
 }

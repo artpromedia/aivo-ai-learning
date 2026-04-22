@@ -1,20 +1,44 @@
 import Link from "next/link";
 
-export const metadata = { title: "AIVO — Three Design Directions" };
+export const metadata = { title: "AIVO — Tier Theme Showcase" };
 
-const DIRECTIONS = [
-  { slug: "stillwater", name: "Stillwater", tagline: "calm · minimal · focus-first", color: "#5B7CFF", bg: "#F8FAFD", text: "#2E3A4F" },
-  { slug: "lumen", name: "Lumen", tagline: "warm · narrative · companion", color: "#E76F51", bg: "#FBF1E5", text: "#2A1810" },
-  { slug: "quest", name: "Quest", tagline: "playful · gamified · momentum", color: "#FBBF24", bg: "#1A1B3A", text: "#FFFFFF" },
+const TIERS = [
+  {
+    slug: "tiers/preview",
+    name: "Soft Meadow",
+    tagline: "K–5 · picture-book daylight",
+    color: "#7C3AED",
+    bg: "#FFFAEF",
+    text: "#292F3D",
+  },
+  {
+    slug: "tiers/preview?tier=MIDDLE",
+    name: "Study Treehouse",
+    tagline: "6–8 · Ghibli twilight discovery",
+    color: "#FFB700",
+    bg: "#1F1535",
+    text: "#F5EBD8",
+  },
+  {
+    slug: "tiers/preview?tier=HIGH",
+    name: "Focus Studio",
+    tagline: "9–12 · editorial calm",
+    color: "#7C3AED",
+    bg: "#F4EFE6",
+    text: "#292F3D",
+  },
 ];
 
 export default function ShowcaseIndexPage() {
   return (
     <main style={{ minHeight: "100vh", padding: 48, background: "#fafafa", fontFamily: "system-ui, sans-serif" }}>
-      <h1 style={{ fontSize: 32, marginBottom: 8 }}>AIVO — Three Design Directions</h1>
-      <p style={{ color: "#666", marginBottom: 32 }}>Click any direction to explore the live, interactive showcase.</p>
+      <h1 style={{ fontSize: 32, marginBottom: 8 }}>AIVO — Tier Theme Showcase</h1>
+      <p style={{ color: "#666", marginBottom: 32 }}>
+        Internal QA preview of the three production age-tier themes. The active tier is auto-derived
+        from a learner&rsquo;s grade level on every page under <code>/dashboard/learner/*</code>.
+      </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, maxWidth: 1200 }}>
-        {DIRECTIONS.map((d) => (
+        {TIERS.map((d) => (
           <Link
             key={d.slug}
             href={`/showcase/${d.slug}`}

@@ -55,6 +55,9 @@ export {
 } from "./adapters/TierThemeProvider";
 export type { TierThemeProviderProps } from "./adapters/TierThemeProvider";
 
+export { TierBadge } from "./components/TierBadge";
+export type { TierBadgeProps } from "./components/TierBadge";
+
 export { SkipLink } from "./a11y/SkipLink";
 export type { SkipLinkProps } from "./a11y/SkipLink";
 

@@ -1640,5 +1640,14 @@
     "back_to_login": "Zurück zur Anmeldung",
     "code_expires": "Der Code läuft in 10 Minuten ab.",
     "digit": "Ziffer"
+  },
+  "tier": {
+    "label": "Thema",
+    "early_name": "Sanfte Wiese",
+    "early_tagline": "K–5 · Bilderbuch-Tageslicht",
+    "middle_name": "Studierbaumhaus",
+    "middle_tagline": "6–8 · Ghibli-Dämmerentdeckung",
+    "high_name": "Fokus-Studio",
+    "high_tagline": "9–12 · redaktionelle Ruhe"
   }
 }

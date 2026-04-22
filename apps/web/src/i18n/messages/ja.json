@@ -1640,5 +1640,14 @@
     "back_to_login": "ログインに戻る",
     "code_expires": "コードは10分で期限切れになります。",
     "digit": "桁"
+  },
+  "tier": {
+    "label": "テーマ",
+    "early_name": "やわらかな草原",
+    "early_tagline": "K–5・絵本のような昼の光",
+    "middle_name": "学びのツリーハウス",
+    "middle_tagline": "6–8・ジブリ風たそがれの発見",
+    "high_name": "集中スタジオ",
+    "high_tagline": "9–12・編集者のような静けさ"
   }
 }

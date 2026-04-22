@@ -319,8 +319,10 @@ services/research-svc  — Fastify analytics/research (port 3015)
 - **Primitives**: Button (48/72px hit-target variants), IconText (icon+text dual-encode), Card (predictable slot container)
 - **Layout**: LearnerShell (skip link + top bar + main + break cloud slot), PrimarySlot (single CTA slot), TabsRail (tabbed secondary nav)
 - **Feedback**: BreakCloud (global break overlay), Celebration (tutor-aware, dismissible, motion-budget-aware), PreviewOverlay ("you're about to..." transition card)
-- **Adapters**: SensoryProvider (reads profile → writes CSS vars to :root), FlVariantProvider (exposes FL variant to children via context)
+- **Adapters**: SensoryProvider (reads profile → writes CSS vars to :root), FlVariantProvider (exposes FL variant to children via context), TierThemeProvider (writes `--tier-*` CSS vars + sets `data-tier` from learner gradeLevel)
 - **A11y**: SkipLink, LiveRegion (aria-live polite/assertive announcements)
+- **Tier themes**: 3 production themes (`age-tiers.ts`) — EARLY/K-5 "Soft Meadow" (picture-book daylight), MIDDLE/6-8 "Study Treehouse" (Ghibli twilight), HIGH/9-12 "Focus Studio" (editorial calm). Auto-derived from learner gradeLevel by `gradeToTier()`. Each theme exposes `nameKey`/`taglineKey` for i18n (`tier` namespace, all 10 locales). Surfaced via `<TierBadge>` (framework-agnostic primitive in learner-ui) and `<LocalisedTierBadge>` (apps/web wrapper that injects next-intl translations) in the learner header (`LearnerHome/TopBar.tsx`) and on the parent's per-learner settings page. Mobile mirror lives in `packages/mobile-ui/src/tierTheme.ts`.
+- **Legacy "Direction" showcase system removed (Apr 2026)**: Stillwater/Lumen/Quest precursor themes and `apps/web/src/components/showcase/` were deleted along with their `/showcase/{stillwater,lumen,quest}` routes. The `/showcase` index now points only at the production tier preview at `/showcase/tiers/preview`.
 
 ### Brain Visualization
 - **Component**: `apps/web/src/components/BrainVisualization.tsx`

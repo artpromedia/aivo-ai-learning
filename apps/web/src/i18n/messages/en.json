@@ -1641,5 +1641,14 @@
     "back_to_login": "Back to Login",
     "code_expires": "Code expires in 10 minutes.",
     "digit": "Digit"
+  },
+  "tier": {
+    "label": "Theme",
+    "early_name": "Soft Meadow",
+    "early_tagline": "K–5 · picture-book daylight",
+    "middle_name": "Study Treehouse",
+    "middle_tagline": "6–8 · Ghibli twilight discovery",
+    "high_name": "Focus Studio",
+    "high_tagline": "9–12 · editorial calm"
   }
 }

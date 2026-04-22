@@ -1640,5 +1640,14 @@
     "back_to_login": "返回登录",
     "code_expires": "验证码将在10分钟后过期。",
     "digit": "数字"
+  },
+  "tier": {
+    "label": "主题",
+    "early_name": "柔软草原",
+    "early_tagline": "K–5 · 绘本般的日光",
+    "middle_name": "学习树屋",
+    "middle_tagline": "6–8 · 吉卜力黄昏探索",
+    "high_name": "专注工作室",
+    "high_tagline": "9–12 · 编辑式宁静"
   }
 }

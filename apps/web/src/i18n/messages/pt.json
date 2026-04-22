@@ -1640,5 +1640,14 @@
     "back_to_login": "Voltar ao login",
     "code_expires": "O código expira em 10 minutos.",
     "digit": "Dígito"
+  },
+  "tier": {
+    "label": "Tema",
+    "early_name": "Prado Suave",
+    "early_tagline": "K–5 · luz de livro ilustrado",
+    "middle_name": "Casa na Árvore de Estudos",
+    "middle_tagline": "6–8 · descoberta crepuscular Ghibli",
+    "high_name": "Estúdio de Foco",
+    "high_tagline": "9–12 · calma editorial"
   }
 }

@@ -4,6 +4,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Check, Sun, CloudSun, Moon } from "lucide-react";
+import { gradeToTier, type AgeTier } from "@aivo/learner-ui";
+import { LocalisedTierBadge } from "@/components/LocalisedTierBadge";
 
 interface Settings {
   accommodations: {
@@ -50,6 +52,7 @@ export default function ParentLearnerSettingsPage() {
   const t = useTranslations("parent");
 
   const [learnerName, setLearnerName] = useState("Learner");
+  const [learnerTier, setLearnerTier] = useState<AgeTier | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loadingData, setLoadingData] = useState(true);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -63,7 +66,10 @@ export default function ParentLearnerSettingsPage() {
         .then(r => r.ok ? r.json() : [])
         .then(data => {
           const found = (Array.isArray(data) ? data : []).find((l: any) => l.id === learnerId);
-          if (found) setLearnerName(found.name);
+          if (found) {
+            setLearnerName(found.name);
+            setLearnerTier(gradeToTier(found.gradeLevel ?? null));
+          }
         }),
       fetch(`/api/family/learner-settings/${learnerId}`, { headers: { Authorization: `Bearer ${accessToken}` } })
         .then(r => r.ok ? r.json() : null)
@@ -146,8 +152,9 @@ export default function ParentLearnerSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-heading font-bold vi-text">{t("settings_title", { name: learnerName })}</h1>
+        {learnerTier && <LocalisedTierBadge tier={learnerTier} size="md" showTagline />}
         {saveStatus === "saving" && <span className="text-xs vi-text-muted animate-pulse">Saving...</span>}
         {saveStatus === "saved" && (
           <span className="inline-flex items-center gap-1 text-xs text-[hsl(var(--visual-science))] font-semibold">

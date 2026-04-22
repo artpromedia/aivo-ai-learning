@@ -17,6 +17,10 @@ export interface TierThemeMobile {
   id: AgeTier;
   name: string;
   tagline: string;
+  /** i18n key under the `tier` namespace for the localised display name. */
+  nameKey: string;
+  /** i18n key under the `tier` namespace for the localised tagline. */
+  taglineKey: string;
   colors: {
     bg: string;
     surface: string;
@@ -46,6 +50,8 @@ export const TIER_THEMES_MOBILE: Record<AgeTier, TierThemeMobile> = {
     id: 'EARLY',
     name: 'Soft Meadow',
     tagline: 'K–5 · picture-book daylight',
+    nameKey: 'early_name',
+    taglineKey: 'early_tagline',
     colors: {
       bg: '#FFFAEF',
       surface: '#FFFCF4',
@@ -69,6 +75,8 @@ export const TIER_THEMES_MOBILE: Record<AgeTier, TierThemeMobile> = {
     id: 'MIDDLE',
     name: 'Study Treehouse',
     tagline: '6–8 · Ghibli twilight discovery',
+    nameKey: 'middle_name',
+    taglineKey: 'middle_tagline',
     colors: {
       bg: '#1F1535',
       surface: '#2A1F4D',
@@ -96,6 +104,8 @@ export const TIER_THEMES_MOBILE: Record<AgeTier, TierThemeMobile> = {
     id: 'HIGH',
     name: 'Focus Studio',
     tagline: '9–12 · editorial calm',
+    nameKey: 'high_name',
+    taglineKey: 'high_tagline',
     colors: {
       bg: '#F4EFE6',
       surface: '#FAF6EE',

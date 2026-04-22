@@ -5,6 +5,7 @@ import { useFlVariant } from "@aivo/learner-ui";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/providers/auth-provider";
 import { useTenantBranding } from "@/lib/use-tenant-branding";
+import { LocalisedTierBadge } from "@/components/LocalisedTierBadge";
 
 interface TopBarProps {
   userName: string;
@@ -44,6 +45,7 @@ export function TopBar({ userName, coins, gems, onLogout, onSettings }: TopBarPr
             )}
           </div>
         )}
+        <LocalisedTierBadge size="sm" />
         <span className="hidden sm:inline text-base font-extrabold text-slate-900">{t("greeting", { userName })}</span>
         <button
           onClick={onSettings}
