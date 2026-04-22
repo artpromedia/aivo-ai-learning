@@ -9,6 +9,14 @@ on:
       - "apps/mobile/i18n/**"
       - "scripts/i18n-audit.mjs"
       - ".github/workflows/i18n-file-audit.yml"
+  push:
+    branches: [main, develop]
+    paths:
+      - "apps/web/src/i18n/messages/**"
+      - "apps/marketing/src/i18n/messages/**"
+      - "apps/mobile/i18n/**"
+      - "scripts/i18n-audit.mjs"
+      - ".github/workflows/i18n-file-audit.yml"
   workflow_dispatch:
 
 jobs:
