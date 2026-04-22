@@ -324,7 +324,9 @@ export default function IepDraftEditorPage() {
           </aside>
 
           {bundle && (
-            <section className="space-y-4">
+            // Force a fresh subtree for each draft so any uncontrolled inputs
+            // cannot retain values from a previously loaded draft.
+            <section key={bundle.profile.id} className="space-y-4">
               <nav className="flex flex-wrap gap-1 border-b vi-border">
                 {SECTIONS.map((s) => (
                   <button key={s} onClick={() => setSection(s)}
@@ -345,7 +347,7 @@ export default function IepDraftEditorPage() {
                   {PLOP_AREAS.map((area) => {
                     const cur = bundle.presentLevels.find((p) => p.area === area);
                     return (
-                      <div key={area} className="vi-card p-4 space-y-2">
+                      <div key={`${bundle.profile.id}-${area}`} className="vi-card p-4 space-y-2">
                         <label className="block text-sm font-bold vi-text">{t(`plop_${area}`)}</label>
                         <textarea
                           defaultValue={cur?.narrative || ""}
@@ -411,6 +413,7 @@ export default function IepDraftEditorPage() {
                 <div className="vi-card p-4 space-y-2">
                   <label className="block text-sm font-bold vi-text">{t("accommodations_label")}</label>
                   <textarea
+                    key={`acc-${bundle.profile.id}`}
                     defaultValue={(bundle.profile.accommodations || []).map((a: any) => typeof a === "string" ? a : a.description || JSON.stringify(a)).join("\n")}
                     disabled={!editable}
                     onBlur={(e) => {

@@ -476,12 +476,15 @@ export default function TeacherEvaluationPage() {
                   {active.decisionRationale && <p className="text-sm vi-text-muted italic">{active.decisionRationale}</p>}
                   {active.decidedAt && <p className="text-xs vi-text-muted">{t("decided_at", { date: new Date(active.decidedAt).toLocaleString() })}</p>}
                   {active.decisionEligible === "eligible" && (
-                    <div
-                      role="note"
+                    <button
+                      type="button"
+                      onClick={() => router.push(
+                        `/dashboard/teacher/learners/${learnerId}/iep/draft?fromEvaluation=${active.id}`,
+                      )}
                       style={{ minHeight: 44 }}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full vi-surface-soft vi-text-muted text-sm font-semibold">
-                      {t("start_iep_draft")} · coming soon
-                    </div>
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--visual-reading))] text-white text-sm font-bold">
+                      {t("start_iep_draft")}
+                    </button>
                   )}
                 </div>
               )}
