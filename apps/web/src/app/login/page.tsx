@@ -23,12 +23,13 @@ import {
   Brain,
 } from "lucide-react";
 
+// Subject labels are translated at render time via the `subjectKey` field.
 const SUBJECTS = [
-  { Icon: Star, label: "Math", token: "--visual-math" },
-  { Icon: BookOpen, label: "Reading", token: "--visual-reading" },
-  { Icon: Sparkles, label: "Science", token: "--visual-science" },
-  { Icon: Heart, label: "SEL", token: "--visual-sel" },
-];
+  { Icon: Star, subjectKey: "subject_math", token: "--visual-math" },
+  { Icon: BookOpen, subjectKey: "subject_reading", token: "--visual-reading" },
+  { Icon: Sparkles, subjectKey: "subject_science", token: "--visual-science" },
+  { Icon: Heart, subjectKey: "subject_sel", token: "--visual-sel" },
+] as const;
 
 export default function LoginPage() {
   const { login, pinLogin } = useAuth();
@@ -121,30 +122,29 @@ export default function LoginPage() {
             <div>
               <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur border-2 border-white/20 text-white text-xs font-black uppercase tracking-wider mb-6">
                 <Sparkles size={14} strokeWidth={3} aria-hidden="true" />
-                Built for every brain
+                {t("marketing_eyebrow")}
               </span>
               <h2 className="text-4xl xl:text-5xl font-heading font-bold text-white leading-[1.05]">
-                Every child learns
+                {t("marketing_headline_part1")}
                 <br />
-                <span className="text-[hsl(var(--visual-sel))]">differently.</span>
+                <span className="text-[hsl(var(--visual-sel))]">{t("marketing_headline_part2")}</span>
               </h2>
               <p className="text-lg text-white/80 font-body mt-5 max-w-md leading-relaxed">
-                AIVO&apos;s AI tutors adapt to your child&apos;s unique learning profile,
-                creating a personalized path to success.
+                {t("marketing_subheadline")}
               </p>
             </div>
 
             {/* Subject pictograms */}
             <div className="flex items-center gap-3">
-              {SUBJECTS.map(({ Icon, label, token }) => (
+              {SUBJECTS.map(({ Icon, subjectKey, token }) => (
                 <div
-                  key={label}
+                  key={subjectKey}
                   className="flex items-center gap-2 px-3 py-2 rounded-2xl text-white shadow-lg"
                   style={{ backgroundColor: `hsl(var(${token}))` }}
                 >
                   <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
                   <span className="text-xs font-black uppercase tracking-wider">
-                    {label}
+                    {t(subjectKey)}
                   </span>
                 </div>
               ))}
@@ -169,10 +169,10 @@ export default function LoginPage() {
               </div>
               <div>
                 <p className="text-white font-heading font-bold text-base">
-                  10,000+ families
+                  {t("marketing_families_count")}
                 </p>
                 <p className="text-white/60 text-xs font-body font-semibold">
-                  trust AIVO for learning
+                  {t("marketing_families_caption")}
                 </p>
               </div>
             </div>
@@ -180,11 +180,11 @@ export default function LoginPage() {
 
           <div className="flex items-center gap-6">
             {[
-              { value: "14", label: "AI Tutors", Icon: Brain },
-              { value: "5", label: "Levels", Icon: Star },
-              { value: "6", label: "Subjects", Icon: BookOpen },
-            ].map(({ value, label, Icon }, i, arr) => (
-              <div key={label} className="flex items-center gap-6">
+              { value: "14", labelKey: "stat_ai_tutors", Icon: Brain },
+              { value: "5", labelKey: "stat_levels", Icon: Star },
+              { value: "6", labelKey: "stat_subjects", Icon: BookOpen },
+            ].map(({ value, labelKey, Icon }, i, arr) => (
+              <div key={labelKey} className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center text-white">
                     <Icon size={18} strokeWidth={2.5} aria-hidden="true" />
@@ -194,7 +194,7 @@ export default function LoginPage() {
                       {value}
                     </p>
                     <p className="text-[11px] text-white/60 font-bold uppercase tracking-wider mt-1">
-                      {label}
+                      {t(labelKey)}
                     </p>
                   </div>
                 </div>

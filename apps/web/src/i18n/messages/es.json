@@ -104,7 +104,20 @@
     "agree_terms_prefix": "Al crear una cuenta, aceptas nuestros",
     "and": "y",
     "privacy": "Política de Privacidad",
-    "terms": "Términos de Servicio"
+    "terms": "Términos de Servicio",
+    "marketing_eyebrow": "Built for every brain",
+    "marketing_headline_part1": "Every child learns",
+    "marketing_headline_part2": "differently.",
+    "marketing_subheadline": "AIVO's AI tutors adapt to your child's unique learning profile, creating a personalized path to success.",
+    "subject_math": "Math",
+    "subject_reading": "Reading",
+    "subject_science": "Science",
+    "subject_sel": "SEL",
+    "marketing_families_count": "10,000+ families",
+    "marketing_families_caption": "trust AIVO for learning",
+    "stat_ai_tutors": "AI Tutors",
+    "stat_levels": "Levels",
+    "stat_subjects": "Subjects"
   },
   "onboarding": {
     "add_learner_title": "Agregar un Nuevo Estudiante",
