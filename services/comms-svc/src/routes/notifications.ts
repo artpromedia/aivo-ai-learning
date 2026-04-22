@@ -208,6 +208,93 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
+  // ───────── IN-APP NOTIFICATIONS (parent dashboard) ─────────
+  // Internal-only create endpoint: called by assessment-svc whenever an
+  // IEP-related event fires AND the parent has `inApp: true` in their
+  // preferences. The parent dashboard polls the list/unread endpoints
+  // below to show an unread badge that decrements when items are viewed.
+  app.post("/api/comms/internal/in-app-notify", async (request, reply) => {
+    const internalKey = request.headers["x-internal-key"];
+    const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+    if (!internalKey || !expectedKey || internalKey !== expectedKey) {
+      return reply.status(401).send({ error: "Unauthorized" });
+    }
+    const { parentId, learnerId, category, template, title, body, link } = (request.body as any) || {};
+    if (!parentId || !category || !template || !title) {
+      return reply.code(400).send({ error: "parentId, category, template and title are required" });
+    }
+    try {
+      const { parentInAppNotifications } = await import("@aivo/db");
+      const [row] = await db.insert(parentInAppNotifications).values({
+        parentId,
+        learnerId: learnerId || null,
+        category,
+        template,
+        title: String(title).slice(0, 255),
+        body: body ? String(body).slice(0, 4000) : null,
+        link: link ? String(link).slice(0, 1024) : null,
+      }).returning();
+      return { status: "created", id: row.id };
+    } catch (err: any) {
+      logger.error({ err, parentId, template }, "Failed to create in-app notification");
+      return reply.code(500).send({ error: "Failed to create in-app notification" });
+    }
+  });
+
+  // Authenticated reads/writes for the signed-in parent on their own
+  // notifications. We never let one user read another's inbox.
+  app.get("/api/comms/in-app-notifications", { preHandler: requireAuth }, async (request) => {
+    const user = (request as any).user;
+    const { parentInAppNotifications } = await import("@aivo/db");
+    const { desc, eq, and, isNull, sql } = await import("drizzle-orm");
+    const q = (request.query as any) || {};
+    const onlyUnread = q.unread === "true" || q.unread === "1";
+    const learnerFilter = typeof q.learnerId === "string" ? q.learnerId : null;
+    const where = [eq(parentInAppNotifications.parentId, user.sub)];
+    if (onlyUnread) where.push(isNull(parentInAppNotifications.readAt));
+    if (learnerFilter) where.push(eq(parentInAppNotifications.learnerId, learnerFilter));
+    const items = await db.select().from(parentInAppNotifications)
+      .where(and(...where))
+      .orderBy(desc(parentInAppNotifications.createdAt))
+      .limit(100);
+    const [{ count }] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(parentInAppNotifications)
+      .where(and(
+        eq(parentInAppNotifications.parentId, user.sub),
+        isNull(parentInAppNotifications.readAt),
+        ...(learnerFilter ? [eq(parentInAppNotifications.learnerId, learnerFilter)] : []),
+      ));
+    return { items, unreadCount: count };
+  });
+
+  // Mark notifications as read. Pass `{ ids: [...] }` to mark specific
+  // rows, or `{ all: true, learnerId? }` to mark every unread notification
+  // (optionally scoped to one learner). Always scoped to the caller — no
+  // cross-user mutation possible.
+  app.post("/api/comms/in-app-notifications/mark-read", { preHandler: requireAuth }, async (request, reply) => {
+    const user = (request as any).user;
+    const { parentInAppNotifications } = await import("@aivo/db");
+    const { eq, and, inArray, isNull } = await import("drizzle-orm");
+    const body = (request.body as any) || {};
+    const ids: string[] = Array.isArray(body.ids) ? body.ids.filter((s: any) => typeof s === "string") : [];
+    const all = body.all === true;
+    const learnerId = typeof body.learnerId === "string" ? body.learnerId : null;
+    if (!all && ids.length === 0) {
+      return reply.code(400).send({ error: "Provide ids[] or { all: true }" });
+    }
+    const where = [
+      eq(parentInAppNotifications.parentId, user.sub),
+      isNull(parentInAppNotifications.readAt),
+    ];
+    if (!all) where.push(inArray(parentInAppNotifications.id, ids));
+    if (learnerId) where.push(eq(parentInAppNotifications.learnerId, learnerId));
+    const updated = await db.update(parentInAppNotifications)
+      .set({ readAt: new Date() })
+      .where(and(...where))
+      .returning({ id: parentInAppNotifications.id });
+    return { status: "ok", updated: updated.length };
+  });
+
   app.post("/api/comms/internal/iep-notify", async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");

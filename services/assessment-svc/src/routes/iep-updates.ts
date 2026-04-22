@@ -18,7 +18,10 @@ import {
   users,
 } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
+import { createLogger } from "@aivo/observability";
 import { and, eq, desc, asc, inArray, sql } from "drizzle-orm";
+
+const logger = createLogger("assessment-svc:iep-updates");
 
 interface AuthClaims {
   sub: string;
@@ -127,12 +130,84 @@ async function getParentPrefs(db: any, parentId: string) {
 
 async function bestEffortSendEmail(template: string, to: string, data: Record<string, unknown>) {
   try {
-    await fetch(`${COMMS_URL}/api/comms/internal/iep-notify`, {
+    const res = await fetch(`${COMMS_URL}/api/comms/internal/iep-notify`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
       body: JSON.stringify({ template, to, data }),
     });
-  } catch { /* best-effort */ }
+    if (!res.ok) {
+      logger.warn({ template, to, status: res.status }, "iep-notify email dispatch returned non-2xx");
+    }
+  } catch (err: any) {
+    logger.warn({ template, to, err: err?.message }, "iep-notify email dispatch failed");
+  }
+}
+
+async function bestEffortInAppNotify(payload: {
+  parentId: string;
+  learnerId: string;
+  category: PrefCategory;
+  template: string;
+  title: string;
+  body?: string;
+  link: string;
+}) {
+  try {
+    const res = await fetch(`${COMMS_URL}/api/comms/internal/in-app-notify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      logger.warn({
+        template: payload.template, parentId: payload.parentId,
+        learnerId: payload.learnerId, status: res.status,
+      }, "in-app-notify dispatch returned non-2xx");
+    }
+  } catch (err: any) {
+    logger.warn({
+      template: payload.template, parentId: payload.parentId,
+      learnerId: payload.learnerId, err: err?.message,
+    }, "in-app-notify dispatch failed");
+  }
+}
+
+// Build a short, parent-friendly title/body for the in-app inbox. We
+// derive these from the same `data` payload we pass to the email
+// renderer so the two channels stay consistent.
+function buildInAppContent(
+  category: PrefCategory,
+  template: string,
+  learnerName: string,
+  data: Record<string, unknown>,
+): { title: string; body?: string } {
+  switch (category) {
+    case "progress_notes":
+      return {
+        title: `New progress note for ${learnerName}`,
+        body: typeof data.snippet === "string" ? data.snippet : undefined,
+      };
+    case "reports":
+      return {
+        title: `New IEP progress report for ${learnerName}`,
+        body: typeof data.period === "string" ? `Reporting period: ${data.period}` : undefined,
+      };
+    case "amendments":
+      return {
+        title: `IEP amendment proposed for ${learnerName}`,
+        body: typeof data.summary === "string" ? data.summary : undefined,
+      };
+    case "reminders": {
+      const days = typeof data.threshold === "number" ? data.threshold : undefined;
+      const date = typeof data.reviewDate === "string" ? data.reviewDate : undefined;
+      return {
+        title: `IEP review coming up for ${learnerName}`,
+        body: days && date ? `${days} days until the review meeting (${date}).` : undefined,
+      };
+    }
+    default:
+      return { title: `Update for ${learnerName}` };
+  }
 }
 
 async function notifyParentIfOptedIn(
@@ -145,15 +220,32 @@ async function notifyParentIfOptedIn(
   const learner = await getLearner(db, learnerId);
   if (!learner) return;
   const prefs = await getParentPrefs(db, learner.parentId);
-  if (!prefs[category]?.email) return;
-  const [parent] = await db.select({ email: users.email, name: users.name })
-    .from(users).where(eq(users.id, learner.parentId));
-  if (!parent?.email) return;
-  await bestEffortSendEmail(template, parent.email, {
-    learnerName: learner.name,
-    iepUrl: `${APP_URL}/dashboard/parent/learner/${learner.id}/iep`,
-    ...data,
-  });
+  const wantsEmail = !!prefs[category]?.email;
+  const wantsInApp = !!prefs[category]?.inApp;
+  if (!wantsEmail && !wantsInApp) return;
+  const link = `${APP_URL}/dashboard/parent/learner/${learner.id}/iep`;
+  if (wantsInApp) {
+    const { title, body } = buildInAppContent(category, template, learner.name, data);
+    await bestEffortInAppNotify({
+      parentId: learner.parentId,
+      learnerId: learner.id,
+      category,
+      template,
+      title,
+      body,
+      link,
+    });
+  }
+  if (wantsEmail) {
+    const [parent] = await db.select({ email: users.email, name: users.name })
+      .from(users).where(eq(users.id, learner.parentId));
+    if (!parent?.email) return;
+    await bestEffortSendEmail(template, parent.email, {
+      learnerName: learner.name,
+      iepUrl: link,
+      ...data,
+    });
+  }
 }
 
 // Run the 90/60/30 day pre-review reminder check exactly once per

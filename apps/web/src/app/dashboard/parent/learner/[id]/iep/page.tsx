@@ -92,6 +92,36 @@ export default function IepDashboardPage() {
   const [showPrefs, setShowPrefs] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  // In-app notification inbox state. We keep a server-tracked unread
+  // count so the badge reflects what the parent has actually seen across
+  // sessions/devices, instead of guessing from "items in the last 14
+  // days" like the old badge did.
+  const [inboxUnread, setInboxUnread] = useState(0);
+
+  const refreshInbox = async () => {
+    if (!accessToken || !learnerId) return;
+    try {
+      const r = await fetch(`/api/comms/in-app-notifications?learnerId=${learnerId}&unread=true`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (r.ok) {
+        const j = await r.json();
+        setInboxUnread(typeof j.unreadCount === "number" ? j.unreadCount : 0);
+      }
+    } catch { /* noop */ }
+  };
+
+  const markInboxRead = async () => {
+    if (!accessToken || !learnerId || inboxUnread === 0) return;
+    try {
+      await fetch(`/api/comms/in-app-notifications/mark-read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ all: true, learnerId }),
+      });
+      setInboxUnread(0);
+    } catch { /* noop */ }
+  };
 
   const refreshTimeline = async () => {
     if (!accessToken || !learnerId) return;
@@ -172,15 +202,30 @@ export default function IepDashboardPage() {
       .then(r => r.ok ? r.json() : []).then((d) => setDraftSummaries(Array.isArray(d) ? d : []))
       .catch((err) => console.error("Failed to fetch IEP drafts:", err));
     refreshTimeline();
+    refreshInbox();
     fetch(`/api/iep/preferences`, { headers })
       .then(r => r.ok ? r.json() : null).then((p) => { if (p) setPrefs(p as Prefs); })
       .catch(() => {});
-    // Light polling for the timeline so new notes/reports appear without
-    // a manual refresh. 60s is plenty for the volume.
-    const t = setInterval(refreshTimeline, 60_000);
+    // Light polling for the timeline + in-app inbox so new notes/reports
+    // and the unread badge update without a manual refresh. 60s is plenty
+    // for the volume.
+    const t = setInterval(() => {
+      refreshTimeline();
+      refreshInbox();
+    }, 60_000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken, learnerId]);
+
+  // Default landing tab is "updates", so any unread items the parent has
+  // are considered "viewed" once the inbox count has loaded. This keeps
+  // the badge consistent with what's actually on screen.
+  useEffect(() => {
+    if (activeTab === "updates" && inboxUnread > 0) {
+      markInboxRead();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, inboxUnread]);
 
   const inFlightDrafts = draftSummaries.filter(
     (d) => d.lifecycleState === "draft" || d.lifecycleState === "in_review",
@@ -339,14 +384,12 @@ export default function IepDashboardPage() {
       <div className="flex flex-wrap gap-2 border-b vi-border pb-1 items-center justify-between">
         <div className="flex flex-wrap gap-2">
           {(["updates", "goals", "documents", "motor", "evaluations", "report"] as const).map(tab => {
-            const unread = tab === "updates"
-              ? timeline.filter((i) => {
-                  const at = new Date(i.at).getTime();
-                  return Date.now() - at < 14 * 86400000;
-                }).length
-              : 0;
+            const unread = tab === "updates" ? inboxUnread : 0;
             return (
-              <button key={tab} onClick={() => setActiveTab(tab)}
+              <button key={tab} onClick={() => {
+                setActiveTab(tab);
+                if (tab === "updates") markInboxRead();
+              }}
                 className={`px-4 py-2 text-sm font-bold rounded-t-lg transition flex items-center gap-2 ${activeTab === tab ? "bg-[hsl(var(--visual-surface))] border vi-border border-b-[hsl(var(--visual-surface))] text-[hsl(var(--visual-primary))] -mb-[1px]" : "vi-text-muted hover:vi-text"}`}>
                 {tab === "updates" ? tu("tab") : tab === "goals" ? t("goals") : tab === "documents" ? t("documents") : tab === "motor" ? td("motor_progress") : tab === "evaluations" ? te("evaluations_tab") : t("report")}
                 {tab === "updates" && unread > 0 && (

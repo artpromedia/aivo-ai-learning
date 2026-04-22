@@ -273,6 +273,26 @@ export const parentNotificationPreferences = pgTable("parent_notification_prefer
   unique: uniqueIndex("parent_notification_preferences_parent_uidx").on(t.parentId),
 }));
 
+// In-app notifications for parents. Created alongside (or instead of)
+// emails when a parent has `inApp: true` for the relevant category in
+// their notification preferences. Read by the parent dashboard to show
+// an unread badge; marked-read when the parent opens the Updates tab.
+export const parentInAppNotifications = pgTable("parent_in_app_notifications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  parentId: uuid("parent_id").references(() => users.id).notNull(),
+  learnerId: uuid("learner_id").references(() => learners.id),
+  // One of the keys in DEFAULT_PREFS in iep-updates.ts
+  // (progress_notes | reports | amendments | reminders).
+  category: varchar("category", { length: 30 }).notNull(),
+  // The same template id we use for emails so renderers/observability stay aligned.
+  template: varchar("template", { length: 60 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  body: text("body"),
+  link: varchar("link", { length: 1024 }),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const iepReviewReminders = pgTable("iep_review_reminders", {
   id: uuid("id").defaultRandom().primaryKey(),
   iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
