@@ -579,7 +579,7 @@ export default function IepDashboardPage() {
 
       {activeTab === "goals" && (
         <div className="space-y-4">
-          {!progress || progress.goals.length === 0 ? (
+          {!progress?.goals || progress.goals.length === 0 ? (
             <div className="vi-card p-12 text-center">
               <div className="flex justify-center mb-3"><IconWell color="science"><Target className="w-7 h-7" /></IconWell></div>
               <p className="vi-text-muted font-semibold">{t("no_iep_goals")}</p>
