@@ -13,8 +13,8 @@ import {
   PARENT_ASSESSMENT_SECTIONS,
   REAL_SECTIONS,
   LIKERT5_LABELS,
+  // NOT_SURE_LABEL is intentionally not imported — label now comes from i18n.
   NOT_SURE_VALUE,
-  NOT_SURE_LABEL,
   COMPAT_IDS,
   bandFromDob,
   isQuestionVisible,
@@ -351,7 +351,7 @@ export default function ParentAssessmentPage() {
     // back to the first one rather than silently submitting a partial form.
     if (!consentGiven) {
       setScreen("welcome");
-      setSubmitError("Please give consent on the welcome screen before submitting.");
+      setSubmitError(t("error_consent_required"));
       return;
     }
     const missing = collectMissingRequired(answers, currentBand);
@@ -360,7 +360,9 @@ export default function ParentAssessmentPage() {
       setScreen("section");
       setCurrentSectionIdx(first.sectionIdx);
       setSubmitError(
-        `Please answer the required question${missing.length > 1 ? "s" : ""} before submitting (${missing.length} missing).`,
+        missing.length === 1
+          ? t("error_missing_required_one")
+          : t("error_missing_required_many", { count: missing.length }),
       );
       // Scroll the missing field into view on next paint.
       setTimeout(() => {
@@ -441,6 +443,7 @@ export default function ParentAssessmentPage() {
           saveStatus={saveStatus}
           onBack={() => router.push("/dashboard/parent")}
           tc={tc}
+          t={t}
         />
         <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-5">
           <WelcomeScreen
@@ -449,6 +452,7 @@ export default function ParentAssessmentPage() {
             draftRestored={draftRestored}
             onConsentChange={(v) => setAnswer("consent-1", v)}
             onBegin={beginAssessment}
+            t={t}
           />
         </main>
       </div>
@@ -467,6 +471,7 @@ export default function ParentAssessmentPage() {
           saveStatus={saveStatus}
           onBack={() => router.push("/dashboard/parent")}
           tc={tc}
+          t={t}
         />
         <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-5">
           <SectionProgressChips
@@ -489,6 +494,7 @@ export default function ParentAssessmentPage() {
               answered: countAnswered(s, answers, currentBand),
               total: countTotal(s, currentBand),
             }))}
+            t={t}
           />
         </main>
       </div>
@@ -507,6 +513,7 @@ export default function ParentAssessmentPage() {
         saveStatus={saveStatus}
         onBack={() => router.push("/dashboard/parent")}
         tc={tc}
+          t={t}
       />
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-5">
         <SectionProgressChips
@@ -542,6 +549,7 @@ export default function ParentAssessmentPage() {
           onPrev={goPrevSection}
           onNext={goNextSection}
           onSkip={goNextSection}
+          t={t}
         />
       </main>
     </div>
@@ -553,7 +561,7 @@ export default function ParentAssessmentPage() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Header({
-  learnerName, totalAnswered, totalVisible, overallPct, saveStatus, onBack, tc,
+  learnerName, totalAnswered, totalVisible, overallPct, saveStatus, onBack, tc, t,
 }: {
   learnerName: string;
   totalAnswered: number;
@@ -562,6 +570,7 @@ function Header({
   saveStatus: "idle" | "saving" | "saved";
   onBack: () => void;
   tc: ReturnType<typeof useTranslations>;
+  t: ReturnType<typeof useTranslations>;
 }) {
   return (
     <header className="bg-[hsl(var(--visual-surface))] border-b vi-border sticky top-0 z-20">
@@ -576,14 +585,14 @@ function Header({
         <div className="hidden sm:flex items-center gap-2 min-w-0">
           <IconWell color="primary" size="sm"><Sparkles className="w-4 h-4" strokeWidth={2.5} /></IconWell>
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-wider vi-text-muted opacity-70 truncate">Parent assessment</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider vi-text-muted opacity-70 truncate">{t("header_eyebrow")}</p>
             <p className="text-sm font-extrabold vi-text truncate">
-              {learnerName ? `Tell us about ${learnerName}` : "Tell us about your child"}
+              {learnerName ? t("header_title_with_name", { name: learnerName }) : t("header_title_default")}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <SaveIndicator status={saveStatus} />
+          <SaveIndicator status={saveStatus} t={t} />
           <div className="text-xs font-bold vi-text-muted vi-surface-soft px-3 py-1.5 rounded-full whitespace-nowrap tabular-nums">
             {totalAnswered}/{totalVisible}
           </div>
@@ -599,7 +608,7 @@ function Header({
   );
 }
 
-function SaveIndicator({ status }: { status: "idle" | "saving" | "saved" }) {
+function SaveIndicator({ status, t }: { status: "idle" | "saving" | "saved"; t: ReturnType<typeof useTranslations> }) {
   if (status === "idle") return null;
   const isSaving = status === "saving";
   return (
@@ -608,7 +617,7 @@ function SaveIndicator({ status }: { status: "idle" | "saving" | "saved" }) {
       aria-live="polite"
     >
       {isSaving ? <Cloud className="w-3.5 h-3.5 animate-pulse" /> : <CloudOff className="w-3.5 h-3.5 opacity-60" />}
-      {isSaving ? "Saving…" : "Saved"}
+      {isSaving ? t("save_saving") : t("save_saved")}
     </span>
   );
 }
@@ -618,13 +627,14 @@ function SaveIndicator({ status }: { status: "idle" | "saving" | "saved" }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function WelcomeScreen({
-  learnerName, consentGiven, draftRestored, onConsentChange, onBegin,
+  learnerName, consentGiven, draftRestored, onConsentChange, onBegin, t,
 }: {
   learnerName: string;
   consentGiven: boolean;
   draftRestored: boolean;
   onConsentChange: (v: boolean) => void;
   onBegin: () => void;
+  t: ReturnType<typeof useTranslations>;
 }) {
   return (
     <section className="vi-card p-6 sm:p-8 relative overflow-hidden">
@@ -634,13 +644,12 @@ function WelcomeScreen({
         <div className="flex items-start gap-3">
           <IconWell color="primary" size="lg"><Heart className="w-7 h-7" strokeWidth={2.5} /></IconWell>
           <div className="flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(262_83%_58%)] mb-1">Welcome</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(262_83%_58%)] mb-1">{t("welcome_eyebrow")}</p>
             <h1 className="text-2xl sm:text-3xl font-extrabold vi-text leading-tight">
-              {learnerName ? `Tell us about ${learnerName}` : "Tell us about your child"}
+              {learnerName ? t("header_title_with_name", { name: learnerName }) : t("header_title_default")}
             </h1>
             <p className="vi-text-muted mt-2 text-sm sm:text-base leading-relaxed">
-              The next 12 minutes help your tutors meet your child exactly where they are.
-              Save anytime — come back when you can.
+              {t("welcome_intro")}
             </p>
           </div>
         </div>
@@ -648,23 +657,23 @@ function WelcomeScreen({
         {draftRestored && (
           <div className="vi-card p-3 flex items-center gap-2 text-sm" style={{ background: "hsl(142 71% 45% / 0.08)", borderColor: "hsl(142 71% 45% / 0.3)" }}>
             <Save className="w-4 h-4 text-[hsl(142_71%_45%)] flex-shrink-0" />
-            <span className="vi-text">We restored your saved progress.</span>
+            <span className="vi-text">{t("welcome_draft_restored")}</span>
           </div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <Stat icon="⏱" label="About 12 minutes" />
-          <Stat icon="📑" label="8 short sections" />
-          <Stat icon="💾" label="Autosaved as you go" />
+          <Stat icon="⏱" label={t("welcome_stat_minutes")} />
+          <Stat icon="📑" label={t("welcome_stat_sections")} />
+          <Stat icon="💾" label={t("welcome_stat_autosave")} />
         </div>
 
         <div className="vi-card p-4 vi-surface-soft text-left">
-          <p className="text-xs font-extrabold uppercase tracking-wider text-[hsl(262_83%_58%)] mb-2">What we'll ask about</p>
+          <p className="text-xs font-extrabold uppercase tracking-wider text-[hsl(262_83%_58%)] mb-2">{t("welcome_what_we_ask")}</p>
           <ul className="text-sm vi-text space-y-1.5">
-            <li>• What lights your child up — strengths, interests, what motivates them</li>
-            <li>• How they communicate, connect, and think</li>
-            <li>• How they learn best and the device they'll use</li>
-            <li>• What you'd most like us to help with</li>
+            <li>• {t("welcome_bullet_strengths")}</li>
+            <li>• {t("welcome_bullet_communicate")}</li>
+            <li>• {t("welcome_bullet_learn")}</li>
+            <li>• {t("welcome_bullet_help")}</li>
           </ul>
         </div>
 
@@ -677,8 +686,7 @@ function WelcomeScreen({
           />
           <span className="text-sm vi-text flex-1">
             <ShieldCheck className="inline w-4 h-4 mr-1 text-[hsl(262_83%_58%)]" />
-            <span className="font-bold">I understand</span> my answers will be used to personalize learning for my child.
-            I can edit, export, or delete this anytime.
+            <span className="font-bold">{t("welcome_consent_understand")}</span>{t("welcome_consent_text")}
           </span>
         </label>
 
@@ -688,10 +696,10 @@ function WelcomeScreen({
           className="w-full inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold shadow-xl shadow-[hsl(262_83%_58%/0.3)] hover:scale-[1.01] active:scale-95 transition-transform disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
           style={{ minHeight: "52px" }}
         >
-          {draftRestored ? "Continue" : "Begin"} <ChevronRight className="w-5 h-5" />
+          {draftRestored ? t("welcome_continue") : t("welcome_begin")} <ChevronRight className="w-5 h-5" />
         </button>
         <p className="text-xs vi-text-muted text-center opacity-70">
-          You can skip optional sections and edit anything later.
+          {t("welcome_skip_note")}
         </p>
       </div>
     </section>
@@ -719,6 +727,7 @@ function SectionProgressChips({
   band: AgeBand | null;
   onJump: (i: number) => void;
 }) {
+  const t = useTranslations("assessment");
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
       {REAL_SECTIONS.map((s, idx) => {
@@ -731,7 +740,7 @@ function SectionProgressChips({
             key={s.key}
             onClick={() => onJump(idx)}
             aria-pressed={isCurrent}
-            aria-label={`Section ${s.number}: ${s.label}, ${answered} of ${total} answered`}
+            aria-label={t("chip_aria", { number: s.number, label: s.label, answered, total })}
             className={[
               "flex items-center gap-1.5 flex-shrink-0 px-3 py-2 rounded-full border-2 text-xs font-bold transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%/0.4)]",
               isCurrent
@@ -771,6 +780,7 @@ function SectionView({
   onOtherChange: (id: string, text: string) => void;
 }) {
   const visible = visibleQuestions(section, band);
+  const t = useTranslations("assessment");
   return (
     <section className="vi-card p-6 sm:p-7 space-y-6">
       <div className="flex items-start gap-3 pb-5 border-b vi-border">
@@ -783,8 +793,8 @@ function SectionView({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[hsl(262_83%_58%)] mb-1">
-            Section {section.number} · ~{section.estimatedMinutes} min
-            {section.optional && <span className="ml-2 text-[hsl(43_100%_50%)]">· Optional</span>}
+            {t("section_header", { number: section.number, minutes: section.estimatedMinutes })}
+            {section.optional && <span className="ml-2 text-[hsl(43_100%_50%)]">· {t("question_optional")}</span>}
           </p>
           <h2 className="text-xl sm:text-2xl font-extrabold vi-text leading-tight">{section.label}</h2>
           <p className="vi-text-muted text-sm mt-1.5 leading-relaxed">{section.rationale}</p>
@@ -822,6 +832,7 @@ function QuestionBlock({
   onOtherChange: (t: string) => void;
 }) {
   const labelId = `q-${q.id}-label`;
+  const t = useTranslations("assessment");
   return (
     <div>
       <div className="flex items-baseline gap-2 mb-2">
@@ -830,8 +841,8 @@ function QuestionBlock({
         </span>
         <h3 id={labelId} className="text-base sm:text-lg font-extrabold vi-text leading-snug flex-1">
           {q.text}
-          {q.required && <span className="ml-1.5 text-[hsl(0_72%_51%)]" aria-label="required">*</span>}
-          {!q.required && <span className="ml-2 text-[10px] font-bold uppercase tracking-wider vi-text-muted opacity-60">Optional</span>}
+          {q.required && <span className="ml-1.5 text-[hsl(0_72%_51%)]" aria-label={t("question_required_aria")}>*</span>}
+          {!q.required && <span className="ml-2 text-[10px] font-bold uppercase tracking-wider vi-text-muted opacity-60">{t("question_optional")}</span>}
         </h3>
       </div>
       {q.helpText && (
@@ -870,6 +881,7 @@ function QuestionInput({
   onToggleMulti: (opt: string) => void;
   onOtherChange: (t: string) => void;
 }) {
+  const t = useTranslations("assessment");
   switch (q.type) {
     case "consent_checkbox":
       return null; // Handled inline on the Welcome screen.
@@ -892,7 +904,7 @@ function QuestionInput({
           type="text"
           value={(value as string) ?? ""}
           onChange={(e) => onAnswer(e.target.value)}
-          placeholder="Type here…"
+          placeholder={t("input_placeholder_default")}
           className="w-full rounded-2xl border-2 vi-border px-4 py-3 text-base vi-text placeholder-[hsl(var(--visual-text-muted))] focus:outline-none focus:border-[hsl(262_83%_58%)] transition-colors"
           style={{ minHeight: "44px" }}
         />
@@ -903,21 +915,28 @@ function QuestionInput({
         <textarea
           value={(value as string) ?? ""}
           onChange={(e) => onAnswer(e.target.value)}
-          placeholder="Type here… (no wrong answers)"
+          placeholder={t("input_placeholder_long")}
           rows={3}
           className="w-full rounded-2xl border-2 vi-border p-4 text-sm vi-text placeholder-[hsl(var(--visual-text-muted))] focus:outline-none focus:border-[hsl(262_83%_58%)] resize-y transition-colors"
         />
       );
 
-    case "yes_no":
+    case "yes_no": {
+      // Stable internal values keep backend payload language-agnostic;
+      // labels are translated for the UI only.
+      const yesNoOpts: { value: string; label: string }[] = [
+        { value: "Yes", label: t("yes_no_yes") },
+        { value: "No", label: t("yes_no_no") },
+        { value: "Prefer not to say", label: t("yes_no_prefer_not") },
+      ];
       return (
         <div className="flex gap-2 flex-wrap">
-          {["Yes", "No", "Prefer not to say"].map((opt) => {
-            const selected = value === opt;
+          {yesNoOpts.map((opt) => {
+            const selected = value === opt.value;
             return (
               <button
-                key={opt}
-                onClick={() => onAnswer(opt)}
+                key={opt.value}
+                onClick={() => onAnswer(opt.value)}
                 aria-pressed={selected}
                 className={[
                   "px-5 py-2.5 rounded-full border-2 text-sm font-extrabold transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%/0.4)]",
@@ -927,12 +946,13 @@ function QuestionInput({
                 ].join(" ")}
                 style={{ minHeight: "44px" }}
               >
-                {opt}
+                {opt.label}
               </button>
             );
           })}
         </div>
       );
+    }
 
     case "single_select":
       return (
@@ -1024,16 +1044,24 @@ function SingleSelect({
         );
       })}
       {allowOther && value === "Other" && (
-        <input
-          type="text"
-          value={otherValue}
-          onChange={(e) => onOtherChange(e.target.value)}
-          placeholder="Tell us more…"
-          className="w-full rounded-2xl border-2 vi-border px-4 py-3 text-sm vi-text placeholder-[hsl(var(--visual-text-muted))] focus:outline-none focus:border-[hsl(262_83%_58%)]"
-          style={{ minHeight: "44px" }}
-        />
+        <OtherInput value={otherValue} onChange={onOtherChange} />
       )}
     </div>
+  );
+}
+
+// ─── "Other" free-text input (i18n placeholder) ─────────────────────────────
+function OtherInput({ value, onChange }: { value: string; onChange: (t: string) => void }) {
+  const t = useTranslations("assessment");
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={t("input_placeholder_other_more")}
+      className="w-full rounded-2xl border-2 vi-border px-4 py-3 text-sm vi-text placeholder-[hsl(var(--visual-text-muted))] focus:outline-none focus:border-[hsl(262_83%_58%)]"
+      style={{ minHeight: "44px" }}
+    />
   );
 }
 
@@ -1048,6 +1076,7 @@ function MultiSelect({
   otherValue: string;
   onOtherChange: (t: string) => void;
 }) {
+  const t = useTranslations("assessment");
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2" role="group">
@@ -1077,7 +1106,7 @@ function MultiSelect({
           type="text"
           value={otherValue}
           onChange={(e) => onOtherChange(e.target.value)}
-          placeholder="Other (optional) — type here…"
+          placeholder={t("input_placeholder_other_optional")}
           className="w-full rounded-2xl border-2 vi-border px-4 py-3 text-sm vi-text placeholder-[hsl(var(--visual-text-muted))] focus:outline-none focus:border-[hsl(262_83%_58%)]"
           style={{ minHeight: "44px" }}
         />
@@ -1095,18 +1124,29 @@ function LikertFiveWithUnsure({
   onChange: (v: string) => void;
 }) {
   const isUnsure = value === NOT_SURE_VALUE;
+  const t = useTranslations("assessment");
+  const notSureLabel = t("likert_not_sure");
+  // Translate Likert anchors but keep payload values stable (lib constants).
+  const likertI18nKeys: Record<string, string> = {
+    Never: "likert_never",
+    Rarely: "likert_rarely",
+    Sometimes: "likert_sometimes",
+    Often: "likert_often",
+    Always: "likert_always",
+  };
   return (
     <div role="radiogroup" aria-labelledby={labelledBy} className="space-y-2">
       <div className="grid grid-cols-5 gap-1.5">
         {LIKERT5_LABELS.map((label) => {
           const selected = value === label;
+          const displayLabel = likertI18nKeys[label] ? t(likertI18nKeys[label]) : label;
           return (
             <button
               key={label}
               onClick={() => onChange(label)}
               role="radio"
               aria-checked={selected}
-              aria-label={label}
+              aria-label={displayLabel}
               className={[
                 "px-2 py-3 rounded-2xl border-2 text-xs font-extrabold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%/0.4)]",
                 selected
@@ -1115,7 +1155,7 @@ function LikertFiveWithUnsure({
               ].join(" ")}
               style={{ minHeight: "52px" }}
             >
-              {label}
+              {displayLabel}
             </button>
           );
         })}
@@ -1125,7 +1165,7 @@ function LikertFiveWithUnsure({
         onClick={() => onChange(NOT_SURE_VALUE)}
         role="radio"
         aria-checked={isUnsure}
-        aria-label={NOT_SURE_LABEL}
+        aria-label={notSureLabel}
         className={[
           "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(43_100%_50%/0.4)]",
           isUnsure
@@ -1133,7 +1173,7 @@ function LikertFiveWithUnsure({
             : "vi-border vi-text-muted opacity-70 hover:opacity-100",
         ].join(" ")}
       >
-        <HelpCircle className="w-3 h-3" /> {NOT_SURE_LABEL}
+        <HelpCircle className="w-3 h-3" /> {notSureLabel}
       </button>
     </div>
   );
@@ -1156,6 +1196,7 @@ function RankTopThree({
     else if (picked.length < 3) onChange([...picked, opt]);
   };
 
+  const t = useTranslations("assessment");
   const move = (idx: number, dir: -1 | 1) => {
     const next = [...picked];
     const j = idx + dir;
@@ -1168,7 +1209,7 @@ function RankTopThree({
     <div className="space-y-3">
       <p className="text-xs vi-text-muted">
         <ListChecks className="inline w-3.5 h-3.5 mr-1" />
-        Tap up to 3 in order of importance. Use the arrows to reorder.
+        {t("rank_instructions")}
       </p>
 
       {picked.length > 0 && (
@@ -1183,7 +1224,7 @@ function RankTopThree({
               <button
                 onClick={() => move(i, -1)}
                 disabled={i === 0}
-                aria-label={`Move ${p} up`}
+                aria-label={t("rank_move_up", { item: p })}
                 className="p-1 rounded-full vi-text-muted disabled:opacity-20 hover:vi-text"
               >
                 <ChevronLeft className="w-4 h-4 -rotate-90" />
@@ -1191,17 +1232,17 @@ function RankTopThree({
               <button
                 onClick={() => move(i, 1)}
                 disabled={i === picked.length - 1}
-                aria-label={`Move ${p} down`}
+                aria-label={t("rank_move_down", { item: p })}
                 className="p-1 rounded-full vi-text-muted disabled:opacity-20 hover:vi-text"
               >
                 <ChevronRight className="w-4 h-4 rotate-90" />
               </button>
               <button
                 onClick={() => togglePick(p)}
-                aria-label={`Remove ${p}`}
+                aria-label={t("rank_remove_aria", { item: p })}
                 className="px-2 py-1 rounded-full text-[10px] font-bold vi-text-muted hover:text-[hsl(0_72%_51%)]"
               >
-                Remove
+                {t("rank_remove")}
               </button>
             </div>
           ))}
@@ -1242,7 +1283,7 @@ function RankTopThree({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function SectionFooterNav({
-  isFirst, isLast, isOptional, onPrev, onNext, onSkip,
+  isFirst, isLast, isOptional, onPrev, onNext, onSkip, t,
 }: {
   isFirst: boolean;
   isLast: boolean;
@@ -1250,6 +1291,7 @@ function SectionFooterNav({
   onPrev: () => void;
   onNext: () => void;
   onSkip: () => void;
+  t: ReturnType<typeof useTranslations>;
 }) {
   return (
     <div className="flex items-center justify-between gap-2 pt-2">
@@ -1258,7 +1300,7 @@ function SectionFooterNav({
         className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-bold vi-text-muted hover:vi-surface-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(262_83%_58%/0.4)]"
         style={{ minHeight: "44px" }}
       >
-        <ChevronLeft className="w-4 h-4" /> {isFirst ? "Back to welcome" : "Previous"}
+        <ChevronLeft className="w-4 h-4" /> {isFirst ? t("nav_back_to_welcome") : t("nav_previous")}
       </button>
       <div className="flex gap-2">
         {isOptional && (
@@ -1267,7 +1309,7 @@ function SectionFooterNav({
             className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-bold vi-text-muted hover:vi-surface-soft transition-colors"
             style={{ minHeight: "44px" }}
           >
-            Skip for now
+            {t("nav_skip_for_now")}
           </button>
         )}
         <button
@@ -1275,7 +1317,7 @@ function SectionFooterNav({
           className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold text-sm shadow-lg shadow-[hsl(262_83%_58%/0.3)] hover:scale-105 active:scale-95 transition-transform"
           style={{ minHeight: "44px" }}
         >
-          {isLast ? "Almost done" : "Next"} <ChevronRight className="w-4 h-4" />
+          {isLast ? t("nav_almost_done") : t("nav_next")} <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -1288,7 +1330,7 @@ function SectionFooterNav({
 
 function WrapUpScreen({
   section, answers, learnerName, onAnswer, onBack, onSubmit, submitting, submitError,
-  sectionsAnsweredSummary,
+  sectionsAnsweredSummary, t,
 }: {
   section: AssessmentSection;
   answers: Answers;
@@ -1299,6 +1341,7 @@ function WrapUpScreen({
   submitting: boolean;
   submitError: string | null;
   sectionsAnsweredSummary: { label: string; answered: number; total: number }[];
+  t: ReturnType<typeof useTranslations>;
 }) {
   const totalAnswered = sectionsAnsweredSummary.reduce((n, s) => n + s.answered, 0);
   const totalQs = sectionsAnsweredSummary.reduce((n, s) => n + s.total, 0);
@@ -1311,7 +1354,7 @@ function WrapUpScreen({
         <div className="flex items-start gap-3">
           <IconWell color="sel" size="lg"><Sparkles className="w-7 h-7" strokeWidth={2.5} /></IconWell>
           <div className="flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(43_100%_50%)] mb-1">Almost there</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[hsl(43_100%_50%)] mb-1">{t("wrap_up_eyebrow")}</p>
             <h2 className="text-2xl sm:text-3xl font-extrabold vi-text leading-tight">{section.label}</h2>
             <p className="vi-text-muted mt-2 text-sm leading-relaxed">{section.rationale}</p>
           </div>
@@ -1319,7 +1362,7 @@ function WrapUpScreen({
 
         <div className="vi-card p-4 vi-surface-soft">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[hsl(262_83%_58%)] mb-2">
-            What you've shared so far
+            {t("wrap_up_summary_title")}
           </p>
           <div className="flex items-center gap-3 mb-3">
             <div className="text-3xl font-extrabold vi-text tabular-nums">{pct}%</div>
@@ -1328,7 +1371,7 @@ function WrapUpScreen({
                 <div className="h-full bg-[hsl(142_71%_45%)] transition-all" style={{ width: `${pct}%` }} />
               </div>
               <p className="text-[11px] vi-text-muted mt-1">
-                {totalAnswered} of {totalQs} answered — that's plenty for a strong baseline.
+                {t("wrap_up_summary_progress", { answered: totalAnswered, total: totalQs })}
               </p>
             </div>
           </div>
@@ -1380,8 +1423,9 @@ function WrapUpScreen({
         <div className="vi-card p-3 flex items-start gap-2 text-xs vi-text" style={{ background: "hsl(43 100% 50% / 0.06)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
           <ShieldCheck className="w-4 h-4 text-[hsl(43_100%_50%)] flex-shrink-0 mt-0.5" />
           <span>
-            We'll turn this into a baseline profile for {learnerName || "your child"}.
-            You can edit, export, or delete anything later.
+            {learnerName
+              ? t("wrap_up_baseline_note_with_name", { name: learnerName })
+              : t("wrap_up_baseline_note_default")}
           </span>
         </div>
 
@@ -1391,7 +1435,7 @@ function WrapUpScreen({
             className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-bold vi-text-muted hover:vi-surface-soft transition-colors"
             style={{ minHeight: "44px" }}
           >
-            <ChevronLeft className="w-4 h-4" /> Back
+            <ChevronLeft className="w-4 h-4" /> {t("nav_back")}
           </button>
           <button
             onClick={onSubmit}
@@ -1399,7 +1443,7 @@ function WrapUpScreen({
             className="inline-flex items-center justify-center gap-1.5 px-7 py-3 rounded-full bg-[hsl(142_71%_45%)] text-white font-extrabold text-sm shadow-lg shadow-[hsl(142_71%_45%/0.3)] hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ minHeight: "48px" }}
           >
-            {submitting ? "Submitting…" : <>Submit assessment <Check className="w-4 h-4" strokeWidth={3} /></>}
+            {submitting ? t("wrap_up_submitting") : <>{t("wrap_up_submit")} <Check className="w-4 h-4" strokeWidth={3} /></>}
           </button>
         </div>
       </div>
@@ -1432,7 +1476,7 @@ function AlreadyCompletedScreen({
               <IconWell color="science" size="lg"><CheckCircle2 className="w-10 h-10" strokeWidth={2.5} /></IconWell>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(142_71%_45%)] mb-2">All Done</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(142_71%_45%)] mb-2">{t("already_done_eyebrow")}</p>
               <h1 className="text-2xl font-extrabold vi-text">{t("already_complete_title")}</h1>
               <p className="vi-text-muted mt-2">{t("already_complete_desc", { name: learnerName || t("this_learner") })}</p>
             </div>
@@ -1489,7 +1533,7 @@ function SubmittedScreen({
               <IconWell color="science" size="lg"><CheckCircle2 className="w-10 h-10" strokeWidth={2.5} /></IconWell>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(142_71%_45%)] mb-2">Thank you</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(142_71%_45%)] mb-2">{t("thank_you_eyebrow")}</p>
               <h1 className="text-2xl font-extrabold vi-text">{t("assessment_complete_title")}</h1>
               <p className="vi-text-muted mt-2">{t("assessment_thank_you")}</p>
             </div>
