@@ -8,6 +8,7 @@ import {
   iepEvaluations,
   learners,
   learnerTeachers,
+  learnerTherapists,
 } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 
@@ -21,7 +22,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 const isUuid = (v: unknown): v is string => typeof v === "string" && UUID_RE.test(v);
 
 const PLOP_AREAS = ["academic", "functional", "social", "motor", "communication"] as const;
-const EDITABLE_LIFECYCLE = ["draft", "in_review"] as const;
+type LifecycleState = "draft" | "in_review" | "finalized" | "shared" | "archived";
+const EDITABLE_LIFECYCLE: LifecycleState[] = ["draft", "in_review"];
 
 async function authenticate(req: any, reply: any): Promise<AuthClaims | null> {
   const auth = req.headers.authorization;
@@ -49,6 +51,21 @@ async function isTeacherOf(db: any, userSub: string, learnerId: string): Promise
   return rows.length > 0;
 }
 
+// Therapist assignments are modeled in a separate table from teacher
+// assignments, so we must check it explicitly when authorizing therapist
+// authoring writes.
+async function isTherapistOf(db: any, userSub: string, learnerId: string): Promise<boolean> {
+  if (!isUuid(userSub) || !isUuid(learnerId)) return false;
+  const rows = await db.select().from(learnerTherapists).where(
+    and(
+      eq(learnerTherapists.learnerId, learnerId),
+      eq(learnerTherapists.therapistUserId, userSub),
+      eq(learnerTherapists.status, "ACCEPTED"),
+    ),
+  );
+  return rows.length > 0;
+}
+
 async function getLearner(db: any, learnerId: string) {
   if (!isUuid(learnerId)) return null;
   const [row] = await db.select().from(learners).where(eq(learners.id, learnerId));
@@ -62,10 +79,9 @@ async function canRead(db: any, claims: AuthClaims, learnerId: string): Promise<
   const learner = await getLearner(db, learnerId);
   if (!learner) return false;
   if (claims.role === "PLATFORM_ADMIN") return true;
-  if (claims.role === "DISTRICT_ADMIN" || claims.role === "THERAPIST") {
-    return claims.tenantId === learner.tenantId;
-  }
+  if (claims.role === "DISTRICT_ADMIN") return claims.tenantId === learner.tenantId;
   if (claims.role === "TEACHER" && await isTeacherOf(db, claims.sub, learnerId)) return true;
+  if (claims.role === "THERAPIST" && await isTherapistOf(db, claims.sub, learnerId)) return true;
   return false;
 }
 
@@ -84,8 +100,8 @@ async function canReadSummary(db: any, claims: AuthClaims, learnerId: string): P
 async function canWrite(db: any, claims: AuthClaims, learnerId: string): Promise<boolean> {
   const learner = await getLearner(db, learnerId);
   if (!learner) return false;
-  if ((claims.role === "TEACHER" || claims.role === "THERAPIST")
-      && await isTeacherOf(db, claims.sub, learnerId)) return true;
+  if (claims.role === "TEACHER" && await isTeacherOf(db, claims.sub, learnerId)) return true;
+  if (claims.role === "THERAPIST" && await isTherapistOf(db, claims.sub, learnerId)) return true;
   return false;
 }
 
@@ -101,7 +117,7 @@ async function loadDraftBundle(db: any, profileId: string) {
 }
 
 function isEditable(profile: any): boolean {
-  return profile && (EDITABLE_LIFECYCLE as readonly string[]).includes(profile.lifecycleState);
+  return profile && EDITABLE_LIFECYCLE.includes(profile.lifecycleState as LifecycleState);
 }
 
 export async function registerIepAuthoringRoutes(app: FastifyInstance) {
@@ -235,7 +251,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     }
     if ("reviewDate" in body && body.reviewDate) patch.reviewDate = new Date(body.reviewDate);
     const [updated] = await db.update(iepProfiles).set(patch)
-      .where(and(eq(iepProfiles.id, id), inArray(iepProfiles.lifecycleState, EDITABLE_LIFECYCLE as any)))
+      .where(and(eq(iepProfiles.id, id), inArray(iepProfiles.lifecycleState, EDITABLE_LIFECYCLE)))
       .returning();
     if (!updated) return reply.code(409).send({ error: "Draft is not editable" });
     return updated;
@@ -498,7 +514,7 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     const { to } = req.body as { to: "draft" | "in_review" };
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
     const [u] = await db.update(iepProfiles).set({ lifecycleState: to, updatedAt: new Date() })
-      .where(and(eq(iepProfiles.id, id), inArray(iepProfiles.lifecycleState, EDITABLE_LIFECYCLE as any)))
+      .where(and(eq(iepProfiles.id, id), inArray(iepProfiles.lifecycleState, EDITABLE_LIFECYCLE)))
       .returning();
     if (!u) return reply.code(409).send({ error: "Draft is not editable" });
     return u;
