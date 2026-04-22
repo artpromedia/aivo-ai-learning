@@ -27,11 +27,15 @@ jobs:
 
       - name: Run i18n audit (verbose)
         id: audit
+        shell: bash
         run: |
           set +e
+          set -o pipefail
           node scripts/i18n-audit.mjs --verbose | tee audit.log
-          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          AUDIT_EXIT=${PIPESTATUS[0]}
+          set +o pipefail
           set -e
+          echo "exit_code=$AUDIT_EXIT" >> $GITHUB_OUTPUT
 
       - name: Publish report to step summary
         if: always()
