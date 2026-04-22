@@ -121,6 +121,16 @@ export default function LearnerDetailPage() {
 
       {tab === "iep" && (
         <div className="space-y-4">
+          <div className="flex justify-end">
+            <Link
+              href={`/dashboard/teacher/learners/${l.id}/evaluation`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--visual-reading))] text-white font-bold text-sm"
+              style={{ minHeight: 44 }}
+            >
+              <ClipboardList size={16} strokeWidth={2.5} aria-hidden="true" />
+              Open eligibility evaluation
+            </Link>
+          </div>
           {(data.ieps || []).length === 0 ? (
             <div className="vi-card p-8 text-center">
               <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]">

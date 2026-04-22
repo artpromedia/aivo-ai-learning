@@ -299,22 +299,40 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
     if (existing.status !== "submitted") {
       return reply.code(409).send({ error: "Evaluation must be submitted before recording a decision" });
     }
+    type Decision = "eligible" | "not_eligible" | "needs_more_data";
     const body = req.body as {
-      decision?: "eligible" | "not_eligible" | "needs_more_data";
+      decision?: Decision;
       eligible?: boolean;
       categories?: string[];
       rationale?: string;
     };
-    const decision: "eligible" | "not_eligible" | "needs_more_data" =
-      body.decision ?? (body.eligible === true ? "eligible" : body.eligible === false ? "not_eligible" : null as any);
+    let decision: Decision | null = null;
+    if (body.decision === "eligible" || body.decision === "not_eligible" || body.decision === "needs_more_data") {
+      decision = body.decision;
+    } else if (body.eligible === true) {
+      decision = "eligible";
+    } else if (body.eligible === false) {
+      decision = "not_eligible";
+    }
     if (!decision) {
       return reply.code(400).send({ error: "decision is required" });
     }
+    // Validate categories against the IDEA-13 enum so we don't persist arbitrary strings.
+    const ALLOWED_CATEGORIES = new Set([
+      "autism", "specific_learning_disability", "speech_language_impairment",
+      "other_health_impairment", "emotional_disturbance", "intellectual_disability",
+      "developmental_delay", "hearing_impairment", "visual_impairment",
+      "orthopedic_impairment", "traumatic_brain_injury", "multiple_disabilities",
+      "deaf_blindness", "deafness",
+    ]);
+    const cleanCategories = Array.isArray(body.categories)
+      ? body.categories.filter((c) => typeof c === "string" && ALLOWED_CATEGORIES.has(c))
+      : [];
     // Status-guarded update prevents races with concurrent PATCH/decision requests.
     const updated = await db.update(iepEvaluations).set({
       status: "eligibility_determined",
       decisionEligible: decision,
-      decisionCategories: body.categories || [],
+      decisionCategories: cleanCategories,
       decisionRationale: body.rationale || null,
       decidedAt: new Date(),
       decidedByUserId: claims.sub,
