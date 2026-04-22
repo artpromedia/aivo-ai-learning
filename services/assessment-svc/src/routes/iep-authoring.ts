@@ -78,16 +78,12 @@ async function canReadSummary(db: any, claims: AuthClaims, learnerId: string): P
   return learner.parentId === claims.sub;
 }
 
-// Author-only writes: every content mutation must be backed by an explicit
-// teacher↔learner ACCEPTED link. THERAPIST is treated like TEACHER and must
-// also have an accepted assignment to this specific learner — tenant-wide
-// blanket writes for therapists are not allowed. DISTRICT_ADMIN and
-// PLATFORM_ADMIN retain oversight writes within their tenant scope.
+// Author-only writes: every authoring mutation must be backed by an explicit
+// teacher↔learner ACCEPTED link. TEACHER and THERAPIST are the authoring
+// roles; admins do not bypass the per-learner assignment requirement.
 async function canWrite(db: any, claims: AuthClaims, learnerId: string): Promise<boolean> {
   const learner = await getLearner(db, learnerId);
   if (!learner) return false;
-  if (claims.role === "PLATFORM_ADMIN") return true;
-  if (claims.role === "DISTRICT_ADMIN") return claims.tenantId === learner.tenantId;
   if ((claims.role === "TEACHER" || claims.role === "THERAPIST")
       && await isTeacherOf(db, claims.sub, learnerId)) return true;
   return false;
@@ -258,7 +254,6 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     const [profile] = await db.select().from(iepProfiles).where(eq(iepProfiles.id, id));
     if (!profile) return reply.code(404).send({ error: "Not found" });
     if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
-    if (profile.source !== "authored") return reply.code(409).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
     // Children rows cascade via FK ON DELETE; if not, clean explicitly.

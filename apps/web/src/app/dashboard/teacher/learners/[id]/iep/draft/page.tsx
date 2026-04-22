@@ -54,10 +54,21 @@ export default function IepDraftEditorPage() {
   const [creating, setCreating] = useState(false);
   const headers = useMemo(() => accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined, [accessToken]);
   const lastSaved = useRef<number>(0);
-  // Auto-save buffer + timer are both keyed by draft id so switching drafts
+  // Auto-save buffers + timers are both keyed by draft id so switching drafts
   // mid-debounce can never bleed edits from one profile into another, and a
   // pending patch on draft A always fires even after switching to draft B.
-  const pendingByDraft = useRef<Record<string, Record<string, any>>>({});
+  // The buffer holds:
+  //   - profile: top-level PATCH /api/iep/drafts/:id body
+  //   - plops:   { [area]: narrative } → PUT present-levels/:area
+  //   - goals:   { [goalId]: patch }  → PATCH goals/:goalId
+  //   - services:{ [serviceId]: patch } → PATCH services/:serviceId
+  type DraftBuffer = {
+    profile?: Record<string, any>;
+    plops?: Record<string, string>;
+    goals?: Record<string, Record<string, any>>;
+    services?: Record<string, Record<string, any>>;
+  };
+  const pendingByDraft = useRef<Record<string, DraftBuffer>>({});
   const timerByDraft = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const fromEvalId = searchParams.get("fromEvaluation") || undefined;
 
@@ -95,40 +106,88 @@ export default function IepDraftEditorPage() {
     } finally { setCreating(false); }
   }, [headers, learnerId, fromEvalId]);
 
-  // Flush any pending patch for a specific draft id immediately (e.g. when
-  // switching drafts or unmounting). Returns the in-flight promise.
+  // Flush every pending edit (profile, present-levels, goals, services) for a
+  // specific draft id immediately. Used by the debounce timer, draft switching,
+  // and component unmount.
   const flushDraft = useCallback(async (draftId: string) => {
     if (!headers) return;
     const t = timerByDraft.current[draftId];
     if (t) { clearTimeout(t); delete timerByDraft.current[draftId]; }
-    const body = pendingByDraft.current[draftId];
-    if (!body || Object.keys(body).length === 0) return;
+    const buf = pendingByDraft.current[draftId];
+    if (!buf) return;
     delete pendingByDraft.current[draftId];
+    const calls: Promise<Response>[] = [];
+    const json = (m: string, url: string, body: any) => fetch(url, {
+      method: m, headers: { ...headers!, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (buf.profile && Object.keys(buf.profile).length > 0) {
+      calls.push(json("PATCH", `/api/iep/drafts/${draftId}`, buf.profile));
+    }
+    for (const [area, narrative] of Object.entries(buf.plops || {})) {
+      calls.push(json("PUT", `/api/iep/drafts/${draftId}/present-levels/${area}`, { narrative }));
+    }
+    for (const [goalId, patch] of Object.entries(buf.goals || {})) {
+      calls.push(json("PATCH", `/api/iep/drafts/${draftId}/goals/${goalId}`, patch));
+    }
+    for (const [sId, patch] of Object.entries(buf.services || {})) {
+      calls.push(json("PATCH", `/api/iep/drafts/${draftId}/services/${sId}`, patch));
+    }
+    if (calls.length === 0) return;
     setSaveState("saving");
     try {
-      const r = await fetch(`/api/iep/drafts/${draftId}`, {
-        method: "PATCH", headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (r.ok) { setSaveState("saved"); lastSaved.current = Date.now(); }
+      const results = await Promise.all(calls);
+      if (results.every((r) => r.ok)) { setSaveState("saved"); lastSaved.current = Date.now(); }
       else setSaveState("error");
     } catch { setSaveState("error"); }
   }, [headers]);
 
   // Schedule an auto-save (debounced 1s; fires at most every ~5s).
   // Each draft owns its own bucket AND its own timer.
-  const scheduleSave = useCallback((patch: Record<string, any>) => {
-    if (!activeId) return;
-    const draftId = activeId;
-    const bucket = pendingByDraft.current[draftId] || {};
-    pendingByDraft.current[draftId] = { ...bucket, ...patch };
+  const armTimer = useCallback((draftId: string) => {
     const existing = timerByDraft.current[draftId];
     if (existing) clearTimeout(existing);
     const wait = Math.max(1000, 5000 - (Date.now() - lastSaved.current));
-    timerByDraft.current[draftId] = setTimeout(() => {
-      void flushDraft(draftId);
-    }, wait);
-  }, [activeId, flushDraft]);
+    timerByDraft.current[draftId] = setTimeout(() => { void flushDraft(draftId); }, wait);
+  }, [flushDraft]);
+
+  const scheduleSave = useCallback((patch: Record<string, any>) => {
+    if (!activeId) return;
+    const draftId = activeId;
+    const buf = pendingByDraft.current[draftId] || {};
+    buf.profile = { ...(buf.profile || {}), ...patch };
+    pendingByDraft.current[draftId] = buf;
+    armTimer(draftId);
+  }, [activeId, armTimer]);
+
+  const schedulePlopSave = useCallback((area: string, narrative: string) => {
+    if (!activeId) return;
+    const draftId = activeId;
+    const buf = pendingByDraft.current[draftId] || {};
+    buf.plops = { ...(buf.plops || {}), [area]: narrative };
+    pendingByDraft.current[draftId] = buf;
+    armTimer(draftId);
+  }, [activeId, armTimer]);
+
+  const scheduleGoalSave = useCallback((goalId: string, patch: Record<string, any>) => {
+    if (!activeId) return;
+    const draftId = activeId;
+    const buf = pendingByDraft.current[draftId] || {};
+    buf.goals = buf.goals || {};
+    buf.goals[goalId] = { ...(buf.goals[goalId] || {}), ...patch };
+    pendingByDraft.current[draftId] = buf;
+    armTimer(draftId);
+  }, [activeId, armTimer]);
+
+  const scheduleServiceSave = useCallback((sId: string, patch: Record<string, any>) => {
+    if (!activeId) return;
+    const draftId = activeId;
+    const buf = pendingByDraft.current[draftId] || {};
+    buf.services = buf.services || {};
+    buf.services[sId] = { ...(buf.services[sId] || {}), ...patch };
+    pendingByDraft.current[draftId] = buf;
+    armTimer(draftId);
+  }, [activeId, armTimer]);
 
   // When the active draft changes, flush whatever was buffered for the old one
   // immediately so no edits are stranded behind a cancelled timer.
@@ -378,6 +437,7 @@ export default function IepDraftEditorPage() {
                         <textarea
                           defaultValue={cur?.narrative || ""}
                           disabled={!editable}
+                          onChange={(e) => schedulePlopSave(area, e.target.value)}
                           onBlur={(e) => savePresentLevel(area, e.target.value)}
                           rows={4}
                           className="w-full vi-input rounded-lg p-3 text-sm" />
@@ -397,23 +457,23 @@ export default function IepDraftEditorPage() {
                   {bundle.goals.map((goal) => (
                     <div key={goal.id} className="vi-card p-4 space-y-2">
                       <textarea value={goal.goalText} disabled={!editable}
-                        onChange={(e) => updateGoal(goal.id, { goalText: e.target.value })}
+                        onChange={(e) => { updateGoal(goal.id, { goalText: e.target.value }); scheduleGoalSave(goal.id, { goalText: e.target.value }); }}
                         onBlur={(e) => persistGoal(goal.id, { goalText: e.target.value })}
                         rows={2} placeholder={t("goal_text_placeholder")}
                         className="w-full vi-input rounded-lg p-3 text-sm font-semibold" />
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <input value={goal.domain || ""} disabled={!editable}
-                          onChange={(e) => updateGoal(goal.id, { domain: e.target.value })}
+                          onChange={(e) => { updateGoal(goal.id, { domain: e.target.value }); scheduleGoalSave(goal.id, { domain: e.target.value }); }}
                           onBlur={(e) => persistGoal(goal.id, { domain: e.target.value })}
                           placeholder={t("domain_placeholder")}
                           className="vi-input rounded-lg px-3 py-2 text-sm" />
                         <input value={goal.baseline || ""} disabled={!editable}
-                          onChange={(e) => updateGoal(goal.id, { baseline: e.target.value })}
+                          onChange={(e) => { updateGoal(goal.id, { baseline: e.target.value }); scheduleGoalSave(goal.id, { baseline: e.target.value }); }}
                           onBlur={(e) => persistGoal(goal.id, { baseline: e.target.value })}
                           placeholder={t("baseline_placeholder")}
                           className="vi-input rounded-lg px-3 py-2 text-sm" />
                         <input value={goal.targetCriteria || ""} disabled={!editable}
-                          onChange={(e) => updateGoal(goal.id, { targetCriteria: e.target.value })}
+                          onChange={(e) => { updateGoal(goal.id, { targetCriteria: e.target.value }); scheduleGoalSave(goal.id, { targetCriteria: e.target.value }); }}
                           onBlur={(e) => persistGoal(goal.id, { targetCriteria: e.target.value })}
                           placeholder={t("target_placeholder")}
                           className="vi-input rounded-lg px-3 py-2 text-sm" />
@@ -462,28 +522,28 @@ export default function IepDraftEditorPage() {
                   {bundle.services.map((s) => (
                     <div key={s.id} className="vi-card p-4 grid grid-cols-1 md:grid-cols-6 gap-2">
                       <input value={s.serviceType} disabled={!editable}
-                        onChange={(e) => updateService(s.id, { serviceType: e.target.value })}
+                        onChange={(e) => { updateService(s.id, { serviceType: e.target.value }); scheduleServiceSave(s.id, { serviceType: e.target.value }); }}
                         onBlur={(e) => persistService(s.id, { serviceType: e.target.value })}
                         placeholder={t("service_type")}
                         className="vi-input rounded-lg px-3 py-2 text-sm md:col-span-2" />
                       <input value={s.providerRole || ""} disabled={!editable}
-                        onChange={(e) => updateService(s.id, { providerRole: e.target.value })}
+                        onChange={(e) => { updateService(s.id, { providerRole: e.target.value }); scheduleServiceSave(s.id, { providerRole: e.target.value }); }}
                         onBlur={(e) => persistService(s.id, { providerRole: e.target.value })}
                         placeholder={t("provider_role")}
                         className="vi-input rounded-lg px-3 py-2 text-sm" />
                       <input type="number" value={s.minutesPerWeek ?? ""} disabled={!editable}
-                        onChange={(e) => updateService(s.id, { minutesPerWeek: e.target.value ? Number(e.target.value) : null })}
+                        onChange={(e) => { const v = e.target.value ? Number(e.target.value) : null; updateService(s.id, { minutesPerWeek: v }); scheduleServiceSave(s.id, { minutesPerWeek: v }); }}
                         onBlur={(e) => persistService(s.id, { minutesPerWeek: e.target.value ? Number(e.target.value) : null })}
                         placeholder={t("minutes_per_week")}
                         className="vi-input rounded-lg px-3 py-2 text-sm" />
                       <input value={s.frequency || ""} disabled={!editable}
-                        onChange={(e) => updateService(s.id, { frequency: e.target.value })}
+                        onChange={(e) => { updateService(s.id, { frequency: e.target.value }); scheduleServiceSave(s.id, { frequency: e.target.value }); }}
                         onBlur={(e) => persistService(s.id, { frequency: e.target.value })}
                         placeholder={t("frequency")}
                         className="vi-input rounded-lg px-3 py-2 text-sm" />
                       <div className="flex items-center gap-2">
                         <input value={s.location || ""} disabled={!editable}
-                          onChange={(e) => updateService(s.id, { location: e.target.value })}
+                          onChange={(e) => { updateService(s.id, { location: e.target.value }); scheduleServiceSave(s.id, { location: e.target.value }); }}
                           onBlur={(e) => persistService(s.id, { location: e.target.value })}
                           placeholder={t("location")}
                           className="vi-input rounded-lg px-3 py-2 text-sm flex-1" />
