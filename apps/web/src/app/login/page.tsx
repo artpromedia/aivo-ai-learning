@@ -211,6 +211,12 @@ export default function LoginPage() {
         tabIndex={-1}
         className="flex-1 flex flex-col vi-bg min-h-screen"
       >
+        {/* Mobile-only brand color strip — keeps the AIVO palette present
+            when the marketing rail is hidden below lg. */}
+        <div
+          className="lg:hidden h-1.5 w-full bg-gradient-to-r from-[hsl(var(--visual-math))] via-[hsl(var(--visual-primary))] to-[hsl(var(--visual-science))]"
+          aria-hidden="true"
+        />
         <div className="flex items-center justify-between p-6 lg:p-8">
           <Link href="/" className="lg:hidden">
             <Image
@@ -226,7 +232,7 @@ export default function LoginPage() {
         </div>
 
         <div className="flex-1 flex items-center justify-center px-6 pb-8">
-          <div className="w-full max-w-[440px] vi-card p-8">
+          <div className="w-full max-w-[440px] vi-card p-8 shadow-[0_24px_60px_-20px_rgba(124,58,237,0.22)]">
             {/* Header with welcome icon */}
             <div className="mb-8 flex items-start gap-4">
               <div className="w-14 h-14 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center shrink-0">
@@ -306,7 +312,7 @@ export default function LoginPage() {
                 <div>
                   <label
                     htmlFor="login-email"
-                    className="block text-sm font-bold text-slate-800 mb-2"
+                    className="block text-sm font-bold vi-text mb-2"
                   >
                     {t("email")}
                   </label>
@@ -322,7 +328,7 @@ export default function LoginPage() {
                       required
                       autoComplete="email"
                       style={{ minHeight: 44 }}
-                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
+                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl vi-surface-soft border-2 vi-border vi-text placeholder-slate-400 focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
                       placeholder="parent@example.com"
                     />
                   </div>
@@ -330,7 +336,7 @@ export default function LoginPage() {
                 <div>
                   <label
                     htmlFor="login-password"
-                    className="block text-sm font-bold text-slate-800 mb-2"
+                    className="block text-sm font-bold vi-text mb-2"
                   >
                     {t("password")}
                   </label>
@@ -346,7 +352,7 @@ export default function LoginPage() {
                       required
                       autoComplete="current-password"
                       style={{ minHeight: 44 }}
-                      className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
+                      className="w-full pl-12 pr-12 py-3.5 rounded-2xl vi-surface-soft border-2 vi-border vi-text placeholder-slate-400 focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
                       placeholder="Enter your password"
                     />
                     <button
@@ -398,7 +404,7 @@ export default function LoginPage() {
                 <div>
                   <label
                     htmlFor="parent-id"
-                    className="block text-sm font-bold text-slate-800 mb-2"
+                    className="block text-sm font-bold vi-text mb-2"
                   >
                     {t("parent_email_or_id")}
                   </label>
@@ -414,7 +420,7 @@ export default function LoginPage() {
                       required
                       autoComplete="username"
                       style={{ minHeight: 44 }}
-                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-science))] focus:ring-4 focus:ring-[hsl(var(--visual-science)/0.2)] outline-none transition font-body"
+                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl vi-surface-soft border-2 vi-border vi-text placeholder-slate-400 focus:bg-white focus:border-[hsl(var(--visual-science))] focus:ring-4 focus:ring-[hsl(var(--visual-science)/0.2)] outline-none transition font-body"
                       placeholder="parent@example.com"
                     />
                   </div>
@@ -422,7 +428,7 @@ export default function LoginPage() {
                 <div>
                   <label
                     htmlFor="learner-pin"
-                    className="block text-sm font-bold text-slate-800 mb-2"
+                    className="block text-sm font-bold vi-text mb-2"
                   >
                     {t("learner_pin_label")}
                   </label>
@@ -439,7 +445,7 @@ export default function LoginPage() {
                       maxLength={6}
                       autoComplete="one-time-code"
                       style={{ minHeight: 44 }}
-                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-science))] focus:ring-4 focus:ring-[hsl(var(--visual-science)/0.2)] outline-none transition font-body text-center text-2xl font-black tracking-[0.5em]"
+                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl vi-surface-soft border-2 vi-border vi-text placeholder-slate-400 focus:bg-white focus:border-[hsl(var(--visual-science))] focus:ring-4 focus:ring-[hsl(var(--visual-science)/0.2)] outline-none transition font-body text-center text-2xl font-black tracking-[0.5em]"
                       placeholder="------"
                     />
                   </div>

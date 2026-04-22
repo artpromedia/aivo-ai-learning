@@ -183,6 +183,12 @@ function SignupInner() {
         tabIndex={-1}
         className="flex-1 flex flex-col vi-bg min-h-screen"
       >
+        {/* Mobile-only brand color strip — keeps the AIVO palette present
+            when the marketing rail is hidden below lg. */}
+        <div
+          className="lg:hidden h-1.5 w-full bg-gradient-to-r from-[hsl(var(--visual-math))] via-[hsl(var(--visual-primary))] to-[hsl(var(--visual-science))]"
+          aria-hidden="true"
+        />
         <div className="flex items-center justify-between p-6 lg:p-8">
           <Link href="/" className="lg:hidden">
             <Image
@@ -198,7 +204,7 @@ function SignupInner() {
         </div>
 
         <div className="flex-1 flex items-center justify-center px-6 pb-8">
-          <div className="w-full max-w-[440px] vi-card p-8">
+          <div className="w-full max-w-[440px] vi-card p-8 shadow-[0_24px_60px_-20px_rgba(124,58,237,0.22)]">
             <div className="mb-8">
               <div className="lg:hidden mb-6 flex items-center gap-2 flex-wrap">
                 <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(var(--visual-science)/0.12)] border border-[hsl(var(--visual-science)/0.3)] text-[hsl(var(--visual-science))] text-xs font-bold">
@@ -242,7 +248,7 @@ function SignupInner() {
               <div>
                 <label
                   htmlFor="signup-name"
-                  className="block text-sm font-bold text-slate-800 mb-2"
+                  className="block text-sm font-bold vi-text mb-2"
                 >
                   {t("full_name")}
                 </label>
@@ -258,7 +264,7 @@ function SignupInner() {
                     required
                     autoComplete="name"
                     style={{ minHeight: 44 }}
-                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
+                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl vi-surface-soft border-2 vi-border vi-text placeholder-slate-400 focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
                     placeholder={t("name_placeholder")}
                   />
                 </div>
@@ -267,7 +273,7 @@ function SignupInner() {
               <div>
                 <label
                   htmlFor="signup-email"
-                  className="block text-sm font-bold text-slate-800 mb-2"
+                  className="block text-sm font-bold vi-text mb-2"
                 >
                   {t("email")}
                 </label>
@@ -283,7 +289,7 @@ function SignupInner() {
                     required
                     autoComplete="email"
                     style={{ minHeight: 44 }}
-                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
+                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl vi-surface-soft border-2 vi-border vi-text placeholder-slate-400 focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
                     placeholder="parent@example.com"
                   />
                 </div>
@@ -292,7 +298,7 @@ function SignupInner() {
               <div>
                 <label
                   htmlFor="signup-password"
-                  className="block text-sm font-bold text-slate-800 mb-2"
+                  className="block text-sm font-bold vi-text mb-2"
                 >
                   {t("password")}
                 </label>
@@ -309,7 +315,7 @@ function SignupInner() {
                     minLength={8}
                     autoComplete="new-password"
                     style={{ minHeight: 44 }}
-                    className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-white border-2 vi-border vi-text placeholder-slate-400 focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
+                    className="w-full pl-12 pr-12 py-3.5 rounded-2xl vi-surface-soft border-2 vi-border vi-text placeholder-slate-400 focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
                     placeholder="Min. 8 characters"
                   />
                   <button
