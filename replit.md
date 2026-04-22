@@ -1,399 +1,46 @@
-# AIVO AI Learning Platform v3
+# AIVO AI Learning Platform
 
 ## Overview
-AI-powered adaptive learning platform for neurodiverse children. Features Brain-Clone architecture, 14 AI tutors, 5 functioning levels, and sensory profiles engine.
+AIVO is an AI-powered adaptive learning platform designed for neurodiverse children. It features a unique "Brain-Clone" architecture, 14 specialized AI tutors, 5 functioning levels, and a sensory profiles engine. The platform aims to provide personalized education, enhancing learning outcomes for its target demographic.
 
-## Architecture
+## User Preferences
+I prefer iterative development, with a focus on delivering functional, well-tested components in each step. I appreciate clear communication regarding design choices and potential trade-offs. Ask before making major architectural changes or introducing new external dependencies.
 
-### Monorepo Structure (Turborepo + pnpm)
-```
-apps/web           — Next.js 15 main web app: dashboards + auth (port 5000)
-apps/marketing     — Next.js 15 marketing website (port 4000)
-apps/mobile        — React Native (Expo SDK 54) mobile app
-packages/db        — Drizzle ORM schema (PostgreSQL 16)
-packages/brand     — Design tokens, tutor catalog, roles
-packages/mobile-ui — Shared mobile UI components + theme
-packages/events    — Typed NATS event definitions
-packages/observability — Pino structured logging
-packages/security  — JWT RS256 sign/verify (jose)
-services/identity-svc  — Fastify auth service (port 3001)
-services/assessment-svc — Fastify assessment API (port 3003)
-services/brain-svc     — Python FastAPI brain clone + AI analysis + curriculum engine (port 3002)
-services/ai-svc        — Python FastAPI LLM gateway (port 3004)
-services/learning-svc  — Fastify lesson sessions (port 3005)
-services/tutor-svc     — Fastify tutor management (port 3006)
-services/family-svc    — Fastify family collaboration + IEP (port 3007)
-services/engagement-svc — Fastify gamification engine (port 3008)
-services/billing-svc   — Fastify billing/subscriptions (port 3009)
-services/comms-svc     — Fastify notifications/email/push (port 3010)
-services/i18n-svc      — Fastify internationalization (port 3011)
-services/integrations-svc — Fastify 3rd-party integrations (port 3012)
-services/admin-svc     — Fastify platform admin (port 3013)
-services/status-page-svc — Fastify system health/status (port 3014)
-services/research-svc  — Fastify analytics/research (port 3015)
-```
+## System Architecture
+
+### Monorepo Structure
+The project utilizes a monorepo managed with Turborepo and pnpm, encompassing various applications and services:
+- **Applications**: `web` (Next.js 15 for main dashboards and authentication), `marketing` (Next.js 15 for marketing site), `mobile` (React Native/Expo for mobile app).
+- **Packages**: Shared utilities for database schema (Drizzle ORM), branding assets, mobile UI components, event definitions (NATS), observability (Pino), security (JWT), and internationalization.
+- **Microservices (Fastify/Python FastAPI)**: A suite of services covering identity, assessment, brain-clone logic, AI gateway, learning sessions, tutor management, family collaboration, engagement, billing, communications, internationalization, third-party integrations, admin, status page, and research.
 
 ### Tech Stack
-- **Frontend**: Next.js 15 + Tailwind CSS v4 + TypeScript
-- **Mobile**: React Native (Expo SDK 54) + Expo Router v6 + TypeScript
-- **Backend (TS)**: Fastify 5 + Drizzle ORM + PostgreSQL 16
-- **Backend (Python)**: FastAPI + LiteLLM + Uvicorn (both ai-svc and brain-svc use LiteLLM with fallback chain: Claude Sonnet → Gemini Flash → GPT-4o-mini)
-- **Auth**: JWT RS256 (jose library), refresh tokens, PIN login, Google OAuth, email-based MFA. Public key served at `/api/auth/public-key` for cross-service verification. Brain-svc (Python) fetches and caches the RSA public key from identity-svc. Google Sign-In via `expo-auth-session` on mobile, `POST /api/auth/google` on identity-svc verifies Google ID tokens and creates/links accounts. MFA enforced for admin roles (PLATFORM_ADMIN, DISTRICT_ADMIN, etc.) across all login paths (email, Google). MFA codes: 6-digit numeric, 10min expiry, max 5 attempts, max 3 resends per session. Users can enable/disable MFA in settings (password confirmation required).
-- **Database**: PostgreSQL 16 with JSONB brain states
-- **Email**: Postmark (transactional email via `postmark` SDK in comms-svc)
-- **Styling**: AIVO brand system (purple primary #7C3AED), game-themed Fredoka + Nunito fonts
-- **Marketing Site** (`apps/marketing`): Standalone Next.js app with 10 pages (about, blog, careers, contact, press-kit, privacy-policy, terms-of-service, coppa-compliance, ferpa-compliance, accessibility) + landing page. Shared LegalPageLayout and CompanyPageLayout components. Split from apps/web for independent deployment. SEO: unique metadata per page (title, description, OG tags, Twitter Cards, canonical URLs) via layout.tsx files, Organization JSON-LD on landing page, sitemap.xml via `sitemap.ts`, robots.txt via `robots.ts`. GA4 analytics integration (`src/lib/analytics.ts`, `src/components/GoogleAnalytics.tsx`) with typed helpers (trackCTAClick, trackFormSubmission, trackPricingSelection, trackSignupInitiation). Contact/demo request forms submit via `/api/contact` and `/api/newsletter` (proxy routes to admin-svc at `/api/admin-svc/leads` and `/api/admin-svc/newsletter`). Lead submissions stored in `lead_submissions` DB table via admin-svc. Newsletter signup in footer. B2C CTAs → signup with plan pre-selected (?plan=free/single/family). B2B/district CTAs → `/contact#demo`. Mobile hamburger menu in StickyHeader. 44px min touch targets on all CTAs.
+- **Frontend**: Next.js 15, Tailwind CSS v4, TypeScript
+- **Mobile**: React Native (Expo SDK 54), Expo Router v6, TypeScript
+- **Backend (TypeScript)**: Fastify 5, Drizzle ORM, PostgreSQL 16
+- **Backend (Python)**: FastAPI, LiteLLM (for LLM fallback chain: Claude Sonnet → Gemini Flash → GPT-4o-mini)
+- **Authentication**: JWT RS256 with refresh tokens, PIN login, Google OAuth, and email-based MFA.
+- **Database**: PostgreSQL 16, utilizing JSONB for brain states and a Drizzle ORM managed schema.
+- **Styling**: AIVO brand system with specific color palettes and game-themed fonts (Fredoka, Nunito).
+- **Internationalization**: `next-intl` integration with 10 supported locales, including RTL support for Arabic.
 
-### Key Concepts
-- **14 Tutors**: 7 core (Nova/Math, Sage/ELA, Spark/Science, Chrono/History, Pixel/Coding, Echo/Speech, Harmony/SEL) + 7 expansion (Atlas/Geography, Cadence/Music, Vigor/PE, Lingua/Languages, Forge/STEM Design, Compass/Life Skills, Muse/Creative Writing). All have full system prompts with functioning-level adaptations. Compass includes transition planning module (ages 14-22). Lingua includes bilingual scaffolding with code-switching awareness.
-- **Tutor Avatars**: AI-generated photorealistic portraits in `apps/marketing/public/images/tutors/` and `apps/web/public/images/tutors/` (14 PNG files, 3:4 aspect ratio)
-- **Marketing Website** (`apps/marketing`): Comprehensive landing page with modular components in `apps/marketing/src/components/marketing/`. Sections: Hero (parallax blobs, gradient text, stats bar), Features (6 cards with hover effects), How It Works (4-step flow), Functioning Levels (5-level visual showcase), Brain Clone (dark section with pulsing brain visual), Tutor Carousel (auto-rotating parallax carousel with depth-stacked cards), Testimonials (4 cards with star ratings), Pricing (3 B2C plans + B2B district CTA), FAQ (accordion), CTA (gradient section), Footer (4-column links + compliance badges). Sticky header with scroll-aware transparency. All use Fredoka headings + Nunito body.
-- **5 Functioning Levels**: STANDARD → SUPPORTED → LOW_VERBAL → NON_VERBAL → PRE_SYMBOLIC
-- **13 Roles**: PARENT, LEARNER, TEACHER, CAREGIVER, THERAPIST, DISTRICT_ADMIN, PLATFORM_ADMIN, SALES, MARKETING, CUSTOMER_CARE, SUPPORT, FINANCE, DEVOPS
-- **Seat Allocation (per learner)**: 1 teacher seat, 2 caregiver seats, 1 therapist seat. Enforced in family-svc collaboration routes. Members API returns `seats` object with `{used, max}` per role. Collaboration UI shows seat cards with usage counters and disables invite when full.
-- **Internal Team Dashboards** (`/dashboard/internal/*`): 6 role-specific dashboards — Sales (pipeline, deals, MRR), Marketing (channels, campaigns, audience segments, content performance), Customer Care (tickets, CSAT/NPS, category breakdown), Support (escalations, KB articles, common issues/runbooks, system health), Finance (revenue, subscriptions, cost breakdown, transactions, payment health), DevOps (service health, infrastructure, deployments, alerts, performance metrics). Dark sidebar with role-colored badge. Route-level RBAC: each role can only access their own dashboard, PLATFORM_ADMIN can access all. DashboardHeader with purple accent.
-- **Internationalization (i18n)**: Full `next-intl` integration matching legacy architecture (~2,050 keys, 19 namespaces). Auto-detects browser locale on first visit via `navigator.language`. Persists preference in `localStorage`. 10 supported locales: en, es, fr, de, pt, zh, ja, ko, ar, hi. All 10 locales have complete translations (1243 keys each, full parity). LanguageSwitcher component on landing, login, signup, parent dashboard pages. Parent can select preferred learning language during learner enrollment (saved to `language_profiles` table). i18n-svc serves translations via API with Accept-Language detection. RTL support for Arabic. Translation files at `apps/web/src/i18n/messages/{locale}.json`. Provider at `apps/web/src/providers/i18n-provider.tsx`.
-- **District Admin Dashboard v2.0** (`/dashboard/district`): Fully tenant-scoped via `/api/district/*` endpoints (requireDistrictAdmin middleware, JWT tenantId extraction, PLATFORM_ADMIN override). 15+ pages — Dashboard (8 metric cards + FL distribution chart + action cards + org info), Schools (grid cards + create modal + detail pages), Learners (server-side paginated, FL/grade filters, linked school/parent, detail with IEP/interventions/sensory tabs), Staff (paginated, role filter, invite modal with temp password, detail with school assignments), Families (parent accounts with linked learners), Classrooms (school-filtered, create modal), IEP Management (summary cards: active/due/overdue, full records table with review status), Interventions (tier breakdown, status filter), Analytics (cohorts + engagement + role distribution), Usage (plan-aware limits with progress bars), Settings (persisted notification prefs + feature overrides via district_settings table), Activity Log (paginated admin action timeline), Integrations. DB: 7 new tables (schools, classrooms, classroom_enrollments, staff_assignments, district_settings, district_activity_log, iep_records, interventions) + schoolId on users/learners. White sidebar with violet accent. Accessible by DISTRICT_ADMIN and PLATFORM_ADMIN roles.
-- **District Integrations** (`/dashboard/district/integrations`): Connect third-party platforms (Google Classroom, Clever, ClassLink, Canvas LMS). Full connector catalog with OAuth2/API-key auth flows. Connection management (connect, sync, disconnect). Sync engine pulls rosters (classes, students, teachers) with background processing. Sync history with detailed logs. DB tables: `integration_connections`, `integration_sync_logs`, `integration_roster_mappings` (with uniqueness constraints and indexes). Tenant-scoped RBAC — district admins limited to own tenant data. Coming soon: Schoology, PowerSchool SIS.
-- **Parent Dashboard v2.0** ("Warm Clarity" redesign): Persistent layout shell with collapsible sidebar (64px→220px on hover, 5 tabs: Home/Learners/Inbox/Settings/Help) + mobile bottom tab bar + learner switcher dropdown + notification bell. Learner context sub-layout with back button, learner info bar, and horizontal tab nav (Hub/Progress/Brain/Team/IEP/Sensory/Milestones/Settings). Home page decomposed into WelcomeHero (time-of-day greeting), LearnerSummaryCard, QuickActions, WhileYouWereAway. Learner hub with guided sections. Per-learner settings with auto-save (300ms debounce) to `/api/family/learner-settings/:id` — 4 setting groups: accommodations (readAloud, simplifiedUI, extendedTime, breakReminders, visualSupports, reducedAnimations, highContrast, fontSize), learning goals (dailyGoalMinutes, weeklySessionTarget, preferredSessionTime), notifications (milestoneAlerts, struggleAlerts, weeklyDigest, sessionReminders, iepReminders), tutor preferences (sessionLengthPreference, musicDuringSessions, celebrationAnimations). New pages: inbox, help, milestones. DB tables: learner_settings, parent_notifications, learner_milestones, learner_streaks, learner_badges. All learner sub-pages (overview, brain, gradebook, tutors, collaboration, iep, sensory, recommendations) stripped of duplicate headers to fit in layout shell.
-- **Brain Clone**: Parent Assessment → Baseline Assessment (gated) → Results saved (NO auto-clone) → Parent Pre-Clone Review & COPPA Consent → Clone & Build → Parent Modification & Approval → Versioned snapshots → Rollback
-- **Brain Approval Flow (RAI/XAI + COPPA)**: New gated flow: (1) Parent must complete parent assessment first, (2) Child takes baseline (backend returns 403 if no parent assessment), (3) Baseline `/complete` saves results only — NO auto brain clone, returns `brainCloneStatus: "awaiting_parent_consent"`, (4) Parent visits brain-review page → sees **Pre-Clone Review** with assessment summary + 7-step plan + COPPA consent checkbox, (5) "Approve & Build" triggers `POST /api/brain/clone` (requires parent auth + completed parent assessment + completed baseline), (6) **Brain Building Sequence** plays (6-stage data-driven animation), (7) Parent reviews with 6 tabs + **modification controls**: mastery sliders (0-100%), accommodation toggles + add from predefined list, tutor toggles — all with optional notes, (8) COPPA consent checkbox required again before approve, (9) `POST /{id}/approve` enforces `consent_given: true`, applies parent modifications to mastery/accommodations/tutors, records `coppa_consent` + `parent_modifications` in xai_explanation JSONB. Brain service endpoints: GET `/{id}/pre-clone-data`, GET `/{id}/review`, POST `/clone`, POST `/{id}/approve`, `/{id}/amend`, `/{id}/decline` — all parent-authorized with IDOR protection.
-- **Brain Building Sequence**: 6-stage parent-facing animated visualization (replaces Awakening on parent screen). Stages: (1) Template Selection — blueprint descends with grade/FL label, (2) Domain Assessment Results — grade ladders fill per domain with gap labels, (3) Accommodations — evidence-based cards appear with source badges, (4) Goal Mapping — stepping-stone paths from current to enrolled grade, (5) System Activation — pulse animation with encryption/versioning info, (6) Tutor Connections — each tutor connects with delivery level. Component at `apps/web/src/components/brain/BrainBuildingSequence.tsx`. Skippable animation, auto-advances through stages.
-- **The Awakening Sequence**: (Child-facing, retained) Cinematic 7-phase animation (25s STANDARD, 15s LOW_VERBAL, 10s NON_VERBAL, parent-only PRE_SYMBOLIC) in discovery Finale. Canvas-based particle system runs at 60fps. BrainSphere reusable component at `apps/web/src/components/brain/BrainSphere.tsx`.
-- **Baseline Assessment Breaks**: After each chapter in the Baseline Assessment, learners are offered a 30-45s break activity (Listen to Music, Word Game, or Move & Stretch). Break component at `apps/web/src/components/discovery/BreakActivity.tsx`. Skippable. Music shows animated equalizer bars, word game has letter unscramble, exercise cycles through movement prompts.
-- **All 6 Domains Assessed**: ELA, Math, Science, SEL, Speech, Executive Function — each with 3-5 fallback activities per difficulty tier. Updated FUNCTIONING_LEVEL_CONFIG: STANDARD=6 chapters/5 activities, SUPPORTED=6/4, LOW_VERBAL=6/3, NON_VERBAL=4/3.
+### Key Features
+- **Adaptive Tutors**: 14 AI tutors (7 core, 7 expansion) with adaptive system prompts based on functioning levels.
+- **5 Functioning Levels**: Ranging from STANDARD to PRE_SYMBOLIC, driving content adaptation.
+- **Role-Based Dashboards**: Specific dashboards for parents, learners, teachers, caregivers, therapists, and district admins, with internal dashboards for sales, marketing, customer care, support, finance, and DevOps.
+- **Brain Clone & Approval Flow**: A multi-step process for creating and managing learner "brain clones," including parent assessment, baseline assessment, pre-clone review, COPPA consent, and parent modification controls.
+- **Discovery Adventure**: An immersive, 6-chapter baseline assessment for learners, replacing traditional quizzes with adaptive difficulty and break activities.
+- **The Stage (Learner Experience Engine)**: A full-screen immersive learning environment with beat-based lessons, sensory adaptations, and interactive response types.
+- **Engagement System**: XP engine, level system, streaks, badges, virtual currency, avatar shop, quests, and multiplayer challenges.
+- **Accessibility**: Comprehensive accessibility features including SkipLinks, accessible components, screen reader support, `focus-visible` styling, and automated a11y testing in CI.
 
-### Mobile App (`apps/mobile/`)
-- **Framework**: Expo SDK 54 + Expo Router v6 (file-based routing)
-- **Package**: `@aivo/mobile` with monorepo workspace links to `@aivo/brand`, `@aivo/mobile-ui`
-- **UI Kit**: `packages/mobile-ui/` — AivoButton, AivoCard, AivoHeader, StatCard, EmptyState, LoadingState, TutorCard
-- **Auth**: JWT tokens stored in `expo-secure-store`, auto-refresh, PIN pad for learners
-- **5 Role Dashboards** (47 screens total):
-  - Parent (14): Dashboard, Brain profile, Brain domain drill-down, Brain history, Recommendations, Tutors, IEP, Progress, Session, Co-learn, Onboard, Team, Billing, Settings
-  - Learner (12): World Map, Brain, Shop, Gamification, Stage, Adventure, Tutor session, Homework, Quests, Challenges, Badges, Gradebook
-  - Teacher (6): Classroom, Student brain, Insight, IEP upload, Lesson plan, Analytics
-  - Caregiver (10): Dashboard, Child overview, Brain summary, Accommodations, IEP goals, Gradebook, Session log, Observation, Progress, Notifications, Settings
-  - Therapist (5): Client dashboard, Brain profile, Goals, Notes, Reports
-- **Hooks**: useAuth, useBrain, useEngagement, useLearners, useFamily, useTutor, useSensory, useOffline, useHaptic, useAudio
-- **Fonts**: Nunito (Regular, Bold, SemiBold, ExtraBold) — TTF files in `apps/mobile/assets/fonts/`
-- **API**: Same microservice architecture as web, configured in `apps/mobile/constants/api.ts`
-- **Offline**: NetInfo-based online detection with sync queue (useOffline hook)
-
-### Running Services
-1. **Web App** (port 5000): Next.js 15 main web app (primary UI, Turbopack dev server)
-2. **Identity Service** (ports 3001, 3003, 3005–3015): All 13 Node.js microservices started via `scripts/start-services.sh`
-3. **Brain Service** (port 3002): Python FastAPI brain-svc
-4. **Start application** (port 8080): Expo mobile app (web mode)
-
-### Replit Environment Notes
-- **pnpm version**: Updated `packageManager` to `pnpm@10.26.1` (matches installed version)
-- **Native modules**: `pnpm-workspace.yaml` `onlyBuiltDependencies` includes argon2, esbuild, @parcel/watcher, @swc/core, sharp
-- **Shared packages must be built first**: Run `pnpm --filter @aivo/observability build`, `@aivo/events`, `@aivo/brand`, `@aivo/security`, `@aivo/db` before starting services
-- **Python packages**: `pyproject.toml` pins `fastapi==0.115.12` and `pydantic==2.11.4` / `pydantic-core==2.33.2` for compatibility
-- **tsx**: Installed globally via npm for use in service startup scripts (`scripts/start-services.sh`)
-
-### Database
-- Schema managed by Drizzle ORM in `packages/db/src/schema/`
-- Schema files: enums, tenants, users, learners, assessments, brain, engagement, billing, audit, learning, homework, collaboration, integrations, admin, district
-- Admin tables (in `admin.ts`): admin_audit_log, platform_config, data_requests, ai_usage_log, content_moderation_queue, email_templates, webhooks, webhook_deliveries, api_keys
-- Users table additions: deactivatedAt, lastLoginAt, lastLoginIp
-- Tenants table additions: status, suspendedAt, suspensionReason
-- Migrations in `packages/db/drizzle/`
-- Seed: `pnpm --filter @aivo/db exec tsx src/seed.ts`
-
-### API Routes (proxied via Next.js rewrites)
-- `POST /api/auth/register` — Register new user
-- `POST /api/auth/login` — Email login
-- `POST /api/auth/pin-login` — Learner PIN login
-- `POST /api/auth/refresh` — Refresh access token
-- `GET /api/auth/public-key` — RSA public key for JWT verification (used by Python services)
-- `GET /api/users/me` — Current user profile
-- `GET /api/users/learners` — List learners
-- `POST /api/users/learners` — Create learner (with COPPA consent + curriculum auto-detection)
-- `GET /api/curriculum/lookup?zipCode=&country=` — Lookup curriculum by zip/country
-- `POST /api/assessments/parent` — Parent assessment → functioning level (49 questions, 11 categories)
-- `POST /api/brain/clone` — Clone brain state
-- `GET /api/brain/:learnerId` — Get brain state
-- `POST /api/brain/:learnerId/rollback` — Rollback to snapshot
-- `POST /api/ai/generate` — Generate lesson/practice content via LLM
-- `POST /api/ai/tutor/chat` — Tutor chat completion
-- `POST /api/ai/generate-baseline` — Generate personalized baseline questions from parent assessment
-- `GET /api/assessments/learner/baseline/:learnerId` — Fetch AI-generated baseline questions for learner
-- `POST /api/learning/sessions` — Start lesson session
-- `POST /api/learning/sessions/:id/complete` — Complete session + mastery write-back
-- `GET /api/learning/gradebook/:learnerId` — Gradebook entries
-- `GET /api/learning/path/:learnerId/:subject` — Learning path
-- `GET /api/tutors/catalog` — Tutor catalog with bundles
-- `POST /api/tutors/subscribe` — Subscribe to individual tutor
-- `POST /api/tutors/subscribe-bundle` — Subscribe to tutor bundle
-- `POST /api/tutor/session/start` — Start tutor chat session
-- `POST /api/tutor/session/:id/message` — Send message in tutor chat
-- `POST /api/tutor/session/:id/complete` — Complete tutor session
-- `POST /api/tutors/homework/upload` — Upload homework (image OCR or text)
-- `GET /api/tutors/homework/learner/:learnerId` — List assignments
-- `GET /api/tutors/homework/:assignmentId` — Get assignment detail
-- `POST /api/tutors/homework/session/start` — Start homework help session
-- `POST /api/tutors/homework/session/:id/message` — Chat in homework session
-- `POST /api/tutors/homework/session/:id/complete` — Complete homework session
-- `POST /api/ai/homework/ocr` — OCR processing (ai-svc)
-- `POST /api/ai/homework/adapt` — Adapt problems to functioning level (ai-svc)
-- `POST /api/ai/homework/chat` — Homework chat completion (ai-svc)
-- `POST /api/engagement/xp/award` — Award XP with coin/gem rewards
-- `GET /api/engagement/profile/:learnerId` — Full engagement profile (XP, level, streak, badges, currency)
-- `POST /api/engagement/streak/update` — Update daily streak
-- `POST /api/engagement/streak/freeze` — Freeze streak (max 2/month)
-- `POST /api/engagement/badge/award` — Award badge with rarity
-- `GET /api/engagement/leaderboard/:scope` — Leaderboard (global/class/school)
-- `GET /api/engagement/currency/:learnerId` — Currency balance + transactions
-- `GET /api/engagement/shop/items` — Avatar shop catalog (50 items, 6 categories)
-- `GET /api/engagement/shop/inventory/:learnerId` — Learner's inventory
-- `POST /api/engagement/shop/purchase` — Purchase item with coins/gems
-- `POST /api/engagement/shop/equip` — Equip/unequip avatar item
-- `GET /api/engagement/quests/worlds` — Quest worlds (5 worlds)
-- `GET /api/engagement/quests/:worldKey` — Quest chapters for a world
-- `GET /api/engagement/quests/progress/:learnerId` — Quest progress
-- `POST /api/engagement/quests/start` — Start a quest
-- `POST /api/engagement/quests/complete` — Complete a quest
-- `POST /api/engagement/challenges/create` — Create multiplayer challenge
-- `POST /api/engagement/challenges/join` — Join with invite code
-- `POST /api/engagement/challenges/:challengeId/answer` — Submit answer in challenge
-- `GET /api/engagement/challenges/:challengeId` — Challenge detail + participants
-- `GET /api/engagement/challenges/learner/:learnerId` — Learner's challenges
-- `POST /api/engagement/sel/checkin` — SEL emotion check-in
-- `GET /api/engagement/sel/checkins/:learnerId` — Check-in history
-- `POST /api/engagement/break/log` — Log break activity
-- `GET /api/engagement/breaks/:learnerId` — Break activity history
-- `POST /api/engagement/lesson-plans/create` — Create lesson plan
-- `GET /api/engagement/lesson-plans/teacher` — Teacher's lesson plans
-- `GET /api/engagement/lesson-plans/learner/:learnerId` — Plans for a learner
-- `GET /api/engagement/lesson-plans/:planId` — Lesson plan detail
-- `PUT /api/engagement/lesson-plans/:planId` — Update lesson plan
-- `GET /api/admin/stats` — Admin dashboard stats (users, learners, tenants, role counts)
-- `GET /api/admin/users?page=&pageSize=&search=&role=&sort=&order=` — Admin user listing with server-side pagination/search/sort
-- `GET /api/admin/users/:id` — Full user profile (tenant, learners, active sessions)
-- `PUT /api/admin/users/:id` — Update user (name, email, role, tenantId, avatarUrl)
-- `DELETE /api/admin/users/:id` — Soft-deactivate user (sets deactivatedAt)
-- `POST /api/admin/users/:id/reactivate` — Reactivate deactivated user
-- `POST /api/admin/users/:id/reset-password` — Reset password (returns temp password)
-- `GET /api/admin/learners?page=&pageSize=&search=&sort=&order=` — Learner listing with pagination
-- `GET /api/admin/learners/:id` — Full learner profile (parent, sensory profile, tenant)
-- `GET /api/admin/tenants?page=&pageSize=&search=&sort=&order=` — Tenant listing with pagination
-- `GET /api/admin/tenants/:id` — Full tenant profile (users, learners, counts)
-- `PUT /api/admin/tenants/:id` — Update tenant (name, settings, status, suspension)
-- `POST /api/admin/create-team-member` — Create user with any role (platform admin only, all 13 roles supported; non-internal roles require valid tenantId)
-- `POST /api/admin/impersonate` — Login as another user (platform admin only, returns impersonated JWT + user data)
-- `GET /api/admin-svc/audit-log?action=&actorId=&resourceType=&from=&to=&page=&pageSize=&search=` — Paginated audit log with filters
-- `GET /api/admin-svc/activity` — Recent 20 audit entries for activity feed
-- `GET /api/admin-svc/search?q=` — Cross-entity search (users, learners, tenants)
-- `GET /api/admin-svc/config` — Platform config (loads from platform_config table)
-- `PUT /api/admin-svc/config` — Update platform config (persists to platform_config, logs audit event)
-- `POST /api/family/collaboration/accept-invite` — Accept pending collaboration invites by email
-- `GET /api/family/collaboration/pending-invites` — List pending invites for current user
-- `POST /api/iep/parse` — AI-powered IEP document text parsing via ai-svc
-- `POST /api/ai/parse-iep` — AI IEP document parser (ai-svc direct)
-- `POST /api/learning/path/:learnerId/:subject/init` — Auto-initialize learning path
-- `POST /api/brain/:learnerId/engagement` — Sync engagement data to brain episodic memory
-- `GET /api/brain/:learnerId/next-action` — Brain's recommended next action for learner PrimarySlot (returns tutorKey, title, subtitle, color)
-- `GET /api/brain/:learnerId/sensory-css-vars` — Server-computed CSS variable bundle per FL + sensory profile overrides
-- `GET /api/brain/:learnerId/context` — Full enriched Brain context (brain state + sensory + IEP + language profile)
-- `POST /api/brain/:learnerId/regression-check` — Detect ≥15% mastery regression with causal analysis
-- `POST /api/assessments/sensory-profile` — Create/update learner sensory profile (5 modalities)
-- `GET /api/assessments/sensory-profile/:learnerId` — Get learner sensory profile
-- `POST /api/family/transition/:learnerId` — Create/update IDEA transition plan (ages 14-22)
-- `GET /api/family/transition/:learnerId` — Get transition plan
-- `POST /api/family/language-profile/:learnerId` — Create/update language profile (multilingual brain)
-- `GET /api/family/language-profile/:learnerId` — Get language profile
-- `GET /api/family/data-export/:learnerId` — GDPR-compliant full learner data export (JSON)
-- `POST /api/tutor/session/:id/co-learn` — Activate parent co-learning mode in tutor session
-
-### Frontend Pages
-- `/` — Landing page (parallax tutor carousel)
-- `/login` — Email login + Learner PIN login
-- `/signup` — Parent registration
-- `/dashboard/parent` — Parent dashboard (learner cards with compact Brain Visualization, store link)
-- `/dashboard/parent/store` — Tutor Store (bundles + individual subscribe)
-- `/dashboard/parent/learner/[id]/assessment` — Parent Baseline Assessment (49 questions, 11 categories)
-- `/dashboard/parent/learner/[id]/sensory` — Sensory Profile Questionnaire (5 modalities: visual, auditory, tactile, vestibular, proprioceptive)
-- `/dashboard/parent/learner/[id]/gradebook` — Gradebook (mastery bars, sessions, XP)
-- `/dashboard/teacher` — Teacher dashboard (connected learners grid with Brain Visualization, skeleton loaders, retry)
-- `/dashboard/teacher/lesson-plans` — AI lesson plan generator (form-based generation with brain clone integration, plan list with expand/collapse)
-- `/dashboard/teacher/reports` — Teacher reports (accessible table with caption, scope attributes)
-- `/dashboard/caregiver` — Caregiver dashboard (connected learners with Brain Visualization, skeleton loaders, retry)
-- `/dashboard/caregiver/observations` — Observation journal (mood picker, category, notes submission + recent observations list)
-- `/dashboard/caregiver/sessions` — Session history viewer (stats cards + session table)
-- `/dashboard/therapist` — Therapist dashboard (connected clients grid with Brain Visualization, skeleton loaders, retry)
-- `/dashboard/therapist/sessions` — Session logs (history table + log session form with category, date, duration, notes)
-- `/dashboard/learner` — Learner dashboard v2 (decomposed from 491-line monolith into `LearnerHome/` folder: TopBar, TutorShelf, QuietProgressStrip, SelCheckIn, TodayTab, AdventuresTab, RewardsTab, PreSymbolicView, NonVerbalView, LearnerHome shell. FL variant map: STANDARD=3 tabs/scroll shelf/full progress, SUPPORTED=3 tabs icons only/4 tutors paged, LOW_VERBAL=2 tabs Play/Gifts/stars only, NON_VERBAL=1 full-width picture button/single tutor card/hidden progress, PRE_SYMBOLIC=parent-gated entry. Uses FlVariantProvider+SensoryProvider from learner-ui. Primary slot calls brain next-action API)
-- `/dashboard/learner/assessment` — Discovery Adventure (immersive baseline assessment with 6 themed chapters, tutor characters, adaptive difficulty, adventure map)
-- `/dashboard/learner/lesson/[tutorKey]` — Lesson Chat UI
-- `/dashboard/learner/homework` — Homework Helper (upload photo/paste text, assignment list)
-- `/dashboard/learner/homework/[sessionId]` — Homework Help Session (Socratic chat + problem sidebar)
-- `/dashboard/parent/[learnerId]/homework` — Parent Homework History (view child's homework activity)
-- `/dashboard/parent/learner/[id]/collaboration` — Learning Team (invite teacher/caregiver/therapist)
-- `/dashboard/parent/learner/[id]/recommendations` — Recommendation Inbox (approve/decline/adjust Brain recommendations)
-- `/dashboard/parent/learner/[id]/iep` — IEP Goal Tracking (progress bars, trends, report generation)
-- `/dashboard/learner/quests` — Quest Worlds (5 worlds: Nova, Sage, Spark, Chrono, Pixel)
-- `/dashboard/learner/challenges` — Multiplayer Challenges (create/join with invite codes)
-- `/dashboard/learner/shop` — Avatar Shop (50 items, 6 categories, coin/gem purchase)
-- `/dashboard/learner/leaderboard` — Leaderboard (global/class/school)
-- `/dashboard/learner/badges` — Badges collection page
-- `/dashboard/learner/profile` — Learner profile page
-- `/dashboard/learner/settings` — Learner settings page
-- `/dashboard/learner/tutors` — Tutors browse page
-- `/dashboard/learner/tutors/[tutorKey]` — Tutor detail page
-- `/dashboard/learner/quests/[worldSlug]` — Quest world detail page
-- `/dashboard/parent/learner/[id]/overview` — Parent learner overview
-- `/dashboard/parent/learner/[id]/brain` — Parent brain profile viewer
-- `/dashboard/parent/learner/[id]/tutors` — Parent manage learner tutors
-- `/dashboard/parent/learner/[id]/settings` — Parent per-learner settings
-- `/dashboard/admin` — Platform admin overview (stat cards, role distribution, service health, recent users, 30-day uptime)
-- `/dashboard/admin/activity` — Activity feed (timeline of recent 20 audit entries)
-- `/dashboard/admin/users` — User management with server-side pagination, search, role filtering, deactivation badges
-- `/dashboard/admin/users/[id]` — User detail page (full profile, edit, deactivate/reactivate, reset password, impersonate, linked learners, sessions)
-- `/dashboard/admin/learners` — Learner management with functioning level distribution cards and filtering
-- `/dashboard/admin/learners/[id]` — Learner detail page (demographics, clinical info, sensory profile, curriculum, parent/tenant links)
-- `/dashboard/admin/tenants` — Tenant/district management with type breakdown, district creation form
-- `/dashboard/admin/tenants/[id]` — Tenant detail page (settings, suspension management, users/learners tables, edit modal)
-- `/dashboard/admin/services` — Real-time service health for all 15 microservices, uptime, incident reporting
-- `/dashboard/admin/ai` — AI & Brain model management (LLM providers, brain pipeline, RAI compliance, 14 tutors)
-- `/dashboard/admin/ai/playground` — AI Prompt Playground (test tutor prompts with model/temperature/token controls, chat UI)
-- `/dashboard/admin/ai/moderation` — Content moderation queue (review AI-flagged content, approve/reject, confidence scores)
-- `/dashboard/admin/compliance` — COPPA/FERPA/GDPR/SOC2 compliance dashboards, security controls, consent mgmt
-- `/dashboard/admin/compliance/audit-log` — Full audit log viewer (filterable by action, actor, resource, date range, with expandable JSON details)
-- `/dashboard/admin/compliance/data-requests` — DSAR/GDPR/FERPA data requests with SLA tracking and status management
-- `/dashboard/admin/billing` — Subscription plans (Free/Family/Family Plus/Enterprise), payment gateways, usage metering
-- `/dashboard/admin/billing/revenue` — Revenue dashboard (MRR trend chart, subscriber growth, churn metrics, monthly breakdown table)
-- `/dashboard/admin/billing/invoices` — Invoice management (status filtering, payment tracking, tenant/plan details)
-- `/dashboard/admin/analytics` — Research analytics (engagement metrics, mastery by subject, cohort distribution, anonymized export)
-- `/dashboard/admin/settings` — Feature flags (10 toggles), system limits, platform info, links to sub-pages
-- `/dashboard/admin/settings/emails` — Email template management (preview, edit HTML, variable management)
-- `/dashboard/admin/settings/webhooks` — Webhook endpoint configuration (event selection, delivery status)
-- `/dashboard/admin/settings/api-keys` — API key management (generate, revoke, scope configuration)
-- `/dashboard/internal/sales` — Sales dashboard (pipeline, deals, revenue, MRR/ACV)
-- `/dashboard/internal/marketing` — Marketing dashboard (acquisition channels, campaigns, audience, content)
-- `/dashboard/internal/customer-care` — Customer Care dashboard (tickets, CSAT, NPS, categories)
-- `/dashboard/internal/support` — Support dashboard (escalations, knowledge base, runbooks, diagnostics)
-- `/dashboard/internal/finance` — Finance dashboard (MRR, subscriptions, costs, transactions, payment health)
-- `/dashboard/internal/devops` — DevOps dashboard (service health, infrastructure, deployments, alerts, performance)
-- `/dashboard/notifications` — Cross-role notification inbox (filtering, read/unread)
-
-### Engagement System
-- **engagement-svc** (port 3008): XP engine (14 event types), level system (N²×100), streak engine with freeze support, badge engine with 4 rarity tiers, virtual currency (coins + gems), avatar shop, quests, multiplayer challenges, leaderboards, SEL check-ins, break activities, teacher lesson plans
-- **DB Schema**: 15 engagement tables in `packages/db/src/schema/engagement.ts`
-- **Seed Data**: 50 avatar items (6 categories), 25 quest chapters (5 worlds × 5 chapters)
-
-### Discovery Adventure (Baseline Assessment) — v2 Redesign
-- **Architecture**: Immersive 6-chapter adventure replacing traditional quiz-based baseline assessment
-- **Chapters**: Sage (ELA), Nova (Math), Spark (Science), Harmony (SEL), Echo (Speech), Pixel (Executive Function)
-- **Components**: `apps/web/src/components/discovery/` — PreAdventure (v2: click-to-advance, tap-to-replay tutor intros, "Show me the map first"), AdventureMapPreview (full journey preview screen), ChapterIntro (v2: "Ready?" card with Start/Hear again/Bring my grown-up), ActivityRenderer, ChapterComplete, BreakActivity (v2: learner-controlled duration, no timer minimum, text-free NON_VERBAL/PRE_SYMBOLIC path, parent min-duration setting), Finale (v2: mid-sequence exit with autosave), Awakening
-- **Engine**: `useDiscoveryEngine.ts` — Adaptive difficulty (easy→medium→hard based on chapter performance ≥80%/≤40%), functioning-level-aware chapter counts (STANDARD=6, SUPPORTED=6, LOW_VERBAL=6, NON_VERBAL=4, PRE_SYMBOLIC=0)
-- **Resume Support**: Discovery state auto-persisted to localStorage on every phase change; restored on page reload; cleared on completion. `exitToHome()` saves current progress, `hasSavedProgress()` checks for resume availability.
-- **AI Integration**: Activities generated per chapter via `POST /api/assessments/learner/discovery/:learnerId/chapter` → ai-svc `build_discovery_adventure_prompt()`
-- **Fallback**: Rich local fallback activities for all 6 chapters when AI service unavailable
-- **Completion Flow**: `POST /api/assessments/learner/discovery/:learnerId/complete` → saves assessment_attempt with domain_scores → calls brain-svc `/api/brain/clone` with discovery results + parent assessment data
-- **Brain Creation**: clone_pipeline seeds initial mastery levels from discovery scores (raw_score × difficulty_multiplier), disability_signals from parent assessment, and episodic_memory with both assessment events
-- **Backend**: assessment-svc route + ai-svc `generate-discovery-chapter` endpoint + brain-svc enhanced clone pipeline
-
-### The Stage (Learner Experience Engine) — v2 Redesign
-- **Architecture**: Full-screen immersive learning environment replacing the chat-based lesson UI
-- **Components**: `apps/web/src/components/stage/` — StageLayout (refactored: `role="application"` scoped to ResponseZone only), TutorCharacter, ResponseZone, StageContent, CelebrationOverlay, ProgressPath, BeatPreview, StageBreakCloud
-- **BeatPreview**: Click-to-advance overlay (600-1200ms) shown before each beat; auto-advances on motion budget timer
-- **StageBreakCloud**: 4 break options (breathe, music, stretch, quiet sit) + "Go home" exit; accessible from stage header
-- **Help Button**: Visible "I need help" affordance in stage header
-- **Back Home**: Visible "Back home" button always available
-- **Progress**: Shows "beats until break" checkpoint counter
-- **Subtitles**: ON by default for all FL levels
-- **Particle Counts by FL**: STANDARD=10, SUPPORTED=3, LOW_VERBAL/NON_VERBAL/PRE_SYMBOLIC=0
-- **Co-viewing Badge**: Friendly copy when parent co-viewing active
-- **Hooks**: useSensoryAdapter (loads sensory profile, computes rendering adaptations), useSessionFlow (beat-based state machine), useTTS (Web Speech API per-tutor voices)
-- **Beat System**: Lessons structured as theatrical "beats" — narration, demonstration, interaction, celebration. Each beat specifies visuals, tutor state, interaction type, and transitions.
-- **Response Types**: Multiple choice (adaptive count per functioning level), drag-and-drop, voice input, tap-to-continue
-- **Sensory Adaptations**: Color saturation, animation speed, volume, subtitle mode, motion reduction, contrast boost — all computed from learner's sensory profile
-- **Tutor Themes**: Each of 14 tutors has unique environment (gradient, particles, accent color, env name)
-- **Session Flow**: Opening greeting → Warm-up review → Core lesson beats → Mastery check → Celebration (XP/coins/badges)
-- **CSS Animations**: 17 custom keyframe animations in globals.css (breathe, speak, celebrate, think, float, confetti, etc.)
-
-### packages/learner-ui (Shared Component Kit)
-- **Package**: `packages/learner-ui/` — shared component kit for learner surfaces, imported as `@aivo/learner-ui`
-- **Tokens**: `fl-profiles.ts` (FL_PROFILES: density/maxChoices/textWeight/motionBudget/audioFirst per FL), `motion.ts` (MOTION_BUDGETS: maxParticles/maxConcurrentAnim/transitionMs/celebrationDuration/autoAdvanceMs per FL), `sensory-vars.ts` (CSS variable writer)
-- **Primitives**: Button (48/72px hit-target variants), IconText (icon+text dual-encode), Card (predictable slot container)
-- **Layout**: LearnerShell (skip link + top bar + main + break cloud slot), PrimarySlot (single CTA slot), TabsRail (tabbed secondary nav)
-- **Feedback**: BreakCloud (global break overlay), Celebration (tutor-aware, dismissible, motion-budget-aware), PreviewOverlay ("you're about to..." transition card)
-- **Adapters**: SensoryProvider (reads profile → writes CSS vars to :root), FlVariantProvider (exposes FL variant to children via context), TierThemeProvider (writes `--tier-*` CSS vars + sets `data-tier` from learner gradeLevel)
-- **A11y**: SkipLink, LiveRegion (aria-live polite/assertive announcements)
-- **Tier themes**: 3 production themes (`age-tiers.ts`) — EARLY/K-5 "Soft Meadow" (picture-book daylight), MIDDLE/6-8 "Study Treehouse" (Ghibli twilight), HIGH/9-12 "Focus Studio" (editorial calm). Auto-derived from learner gradeLevel by `gradeToTier()`. Each theme exposes `nameKey`/`taglineKey` for i18n (`tier` namespace, all 10 locales). Surfaced via `<TierBadge>` (framework-agnostic primitive in learner-ui) and `<LocalisedTierBadge>` (apps/web wrapper that injects next-intl translations) in the learner header (`LearnerHome/TopBar.tsx`) and on the parent's per-learner settings page. Mobile mirror lives in `packages/mobile-ui/src/tierTheme.ts`.
-- **Legacy "Direction" showcase system removed (Apr 2026)**: Stillwater/Lumen/Quest precursor themes and `apps/web/src/components/showcase/` were deleted along with their `/showcase/{stillwater,lumen,quest}` routes. The `/showcase` index now points only at the production tier preview at `/showcase/tiers/preview`.
-
-### Brain Visualization
-- **Component**: `apps/web/src/components/BrainVisualization.tsx`
-- **3 Views**: Brain (animated SVG neural net), RAI (safety checks), XAI (domain mastery breakdown)
-- **Integration**: Parent dashboard (compact, per learner card), Teacher/Caregiver/Therapist dashboards (compact, per connected learner)
-- **API**: `GET /api/brain/:learnerId` (JWT-protected via brain-svc auth)
-- **Connected Learners API**: `GET /api/family/collaboration/connected-learners` (returns learners linked to authenticated teacher/caregiver/therapist)
-
-### Deployment Infrastructure
-- **Target**: 4 Hetzner dedicated servers running K3s in HEL1
-- **Helm Chart**: `infra/helm/aivo-service/` — generic per-service chart (deployment, service, HPA, PDB, configmap, service monitor)
-- **Values**: `infra/helm/values/hetzner.yaml` (production), `infra/helm/values/staging.yaml`
-- **Image Registry**: GHCR (`ghcr.io/artpromedia/<service-name>:<tag>`)
-- **CI Workflows** (`.github/workflows/`):
-  - `infra-deploy.yml` — Deploy on infra changes (self-hosted runner)
-  - `deploy-production.yml` — Production deploy on release or manual trigger
-  - `deploy-staging.yml` — Staging deploy on push to develop
-  - `rollback.yml` — Manual per-service or all-services rollback
-- **Self-Hosted Runner**: Registered on Hetzner Server 2 (K3s control plane), labels: `self-hosted, hetzner, production`
-- **Namespaces**: `aivo` (production), `aivo-staging` (staging)
-- **15 Services deployed**: identity-svc, assessment-svc, brain-svc, ai-svc, learning-svc, tutor-svc, family-svc, engagement-svc, billing-svc, comms-svc, i18n-svc, integrations-svc, admin-svc, status-page-svc, research-svc
-- **Python services** (port 8000): brain-svc, ai-svc. All others: port 3000.
-
-### GitHub Repository
-- **New repo**: `artpromedia/aivo-ai-learning` (pushed Phase 0+1 — 125 files, 17,627 lines)
-- **Branch**: `main`
-
-### Accessibility
-- **SkipLink**: `apps/web/src/components/a11y/SkipLink.tsx` — focus-visible skip-to-main-content link, used in all dashboard layouts + parent/learner pages
-- **AccessibleToggle**: `apps/web/src/components/a11y/AccessibleToggle.tsx` — accessible toggle switch component
-- **Dashboard layouts**: All 8 dashboards (admin, district, internal, teacher, therapist, caregiver, parent, learner) have `SkipLink`, `role="navigation"`, `aria-label`, `aria-current="page"`, `aria-hidden` on decorative emoji, `id="main-content"`, `tabIndex={-1}` on main
-- **Screen reader**: Login/signup error `role="alert"`, password toggle `aria-label`, submit `aria-busy`, ARIA live regions in `ResponseZone`, `BrainVisualization` `role="region"`
-- **Global CSS**: `focus-visible` ring styles, `prefers-reduced-motion` media query in `apps/web/src/app/globals.css`
-- **ESLint**: `eslint-plugin-jsx-a11y` installed in `apps/web` with `eslint.config.mjs` (flat config, recommended rules)
-- **Playwright**: a11y test infrastructure in `apps/web/tests/a11y/` with axe-core scans for login, signup, dashboard pages
-- **CI**: `.github/workflows/a11y-tests.yml` — runs eslint jsx-a11y + Playwright axe scans on PR
-- **Docs**: `docs/accessibility-guidelines.md`, `.github/PULL_REQUEST_TEMPLATE.md` (a11y checklist), `docs/launch-readiness.md`
-
-### Security
-- Argon2id password hashing (via `argon2` npm package)
-- Refresh tokens stored as SHA-256 hashes in DB
-- PIN login scoped to parent's own learners only
-- Consent revocation requires ownership verification
-- Unique email constraint on users table
-
-### Environment
-- `DATABASE_URL` — PostgreSQL connection string
-- `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` — RS256 key pair (in .replit userenv)
-- `NEWBUILD` — GitHub PAT for artpromedia/aivo-ai-learning repo
-
-### Sprint 8 — Delegated district admin management (Apr 2026)
-- `requireDistrictAdmin` lives in `services/identity-svc/src/hooks/require-district-admin.ts`; `registerDistrictTenantScope` installs a global `onRequest` hook that gates every `/api/district/*` route. Boot-time route-coverage check + `tests/district-route-coverage.test.ts` smoke run prove every district route is gated.
-- District-admin endpoints (`/api/district/admins/*` + invites) require step-up scope `district:admin-mgmt` and dual-log to `district_activity_log` + `admin_audit_log`. Last active DISTRICT_ADMIN cannot be deactivated.
-- `mfaRequiredFor(db, user)` ORs `featureOverrides.forceMfa` with role-based rules; consumed at all four login paths and step-up.
-- UI: `/dashboard/district/settings/admins` (table + invite/resend/revoke/reactivate/reset modals) + MFA adoption widget on `/dashboard/district/settings`.
-
-### Sprint 9 — District branding + seat self-service + activity export (Apr 2026)
-- `services/identity-svc/src/lib/branding-validation.ts` enforces logo PNG/SVG ≤ 200KB and ≥ 512×128 (PNG IHDR + SVG viewBox parsing) and computes WCAG 2.1 contrast for primaryColor.
-- New endpoints: `POST /api/district/settings/branding/logo` (base64 data URL, no S3 in this env), `PUT /api/district/settings` validates `branding.{primaryColor,supportEmail,displayName}`, `POST /api/district/seats/request` (writes `seat_requests`, notifies billing via comms-svc admin-alert), `GET /api/district/roster.csv`, `GET /api/district/activity/export?format=csv|json` gated by `requireStepUp("data:export")` and writes a `DATA_EXPORT` admin-audit row, `GET /api/branding/public/:tenantId` (unauth, lives outside `/api/district/*`).
-- UI: `/dashboard/district/settings/branding` (logo uploader + WCAG color picker + live preview) and seat-request modal + roster/activity downloads on `/dashboard/district/usage`. `apps/web/src/lib/use-tenant-branding.ts` consumes the public endpoint and writes `--tenant-primary` for parent/learner portals.
-
-### Sprint 10 — Consolidate admin APIs + persist config history (Apr 2026)
-- `services/admin-svc/src/routes/platform.ts` is now the BFF for the four admin reads (`stats`, `users`, `learners`, `tenants` — list + `:id`). Each handler proxies identity-svc over HTTP forwarding the caller's Bearer + query string; failures map to 502.
-- Legacy identity-svc reads still work but emit RFC-8594 `Deprecation: true` + `Sunset: <+90d>` + `Link: </api/admin-svc/...>; rel="successor-version"` headers via `services/identity-svc/src/lib/deprecation.ts`. Hooks run *before* `requireAdmin` so even unauthenticated probes see the deprecation signal.
-- `apps/web/src/app/dashboard/admin/{page,ai,billing,billing/revenue,compliance,learners,learners/[id],tenants,tenants/[id],users,users/[id]}.tsx` + the four internal portals now read from `/api/admin-svc/*`. Mutations stay on identity-svc by design.
-- `PUT /api/admin-svc/config` already inserts an append-only row in `platform_config`; new `GET /api/admin-svc/config/history` joins on `users` and returns the last 200 changes with author email + name + timestamp.
-
-### Sprint 11 — Pentest, SOC 2 evidence, docs (Apr 2026)
-- `.github/workflows/zap-baseline.yml`: weekly authenticated OWASP ZAP baseline against `admin.aivolearning.com` + `district.aivolearning.com`, bearer injected via `secrets.ZAP_*_BEARER`, HTML/MD/JSON report uploaded as artifact.
-- `services/admin-svc/src/lib/soc2-evidence.ts`: nightly cron + `generateEvidenceBundle(db)` builds a tar.gz containing `access-review.csv` (CC6.1/6.2), `audit-merkle.json` (CC7.2 — latest seq + chain hash), `config-history.json` (CC8.1 — last 30 days), `backup-verification.json` (CC7.5), and a `manifest.json` mapping artifacts → controls. Bundles land in `EVIDENCE_DIR` (default `data/evidence/`); each insert in `evidence_bundles` records `sha256` for tamper-evidence. The S3 WORM swap point is documented inline (`S3_SWAP_POINT`) and gated by `EVIDENCE_S3_BUCKET`.
-- `services/admin-svc/src/routes/evidence.ts`: `GET /api/admin-svc/compliance/evidence` (list, PLATFORM_ADMIN), `GET /api/admin-svc/compliance/evidence/:date` (download — step-up `data:export`, sets `X-Evidence-Sha256`), `POST /api/admin-svc/compliance/evidence/run` (manual trigger).
-- `apps/web/src/app/dashboard/admin/compliance/evidence/page.tsx`: lists bundles with size/summary, downloads via step-up modal, and re-hashes the file in-browser against `X-Evidence-Sha256` so auditors see end-to-end integrity.
-- Docs: `docs/security-architecture.md` §1.2 expanded for TOTP + WebAuthn + recovery codes; new §1.5 covers Step-Up scopes; new §1.6 covers SAML/SCIM. New runbooks `docs/runbooks/admin-break-glass.md` (two-person procedure with re-seal step) and `docs/runbooks/audit-restore.md` (chain-break diagnose + restore from nightly bundle anchor).
-- New table `evidence_bundles` (id, bundleDate UNIQUE, filename, sizeBytes, sha256, summary jsonb, generatedAt) added to `packages/db/src/schema/admin.ts` and idempotent `CREATE TABLE IF NOT EXISTS` appended to `scripts/post-merge.sh` (drizzle-kit push is interactive in this env).
+## External Dependencies
+- **PostgreSQL 16**: Primary database for all application data.
+- **NATS**: For typed event definitions and inter-service communication.
+- **LiteLLM**: Used by Python FastAPI services (ai-svc, brain-svc) for managing LLM interactions with a fallback chain (Claude Sonnet, Gemini Flash, GPT-4o-mini).
+- **Postmark**: For transactional email delivery via `comms-svc`.
+- **Google OAuth**: For user authentication and sign-in.
+- **Third-Party Integrations (District Level)**: Google Classroom, Clever, ClassLink, Canvas LMS for roster synchronization.
+- **Hetzner**: Cloud provider for deployment infrastructure.
+- **GitHub Container Registry (GHCR)**: For storing and managing Docker images.
+- **OWASP ZAP**: Used for weekly security baseline scans in CI.

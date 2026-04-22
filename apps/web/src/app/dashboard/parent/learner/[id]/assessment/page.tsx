@@ -484,6 +484,8 @@ export default function ParentAssessmentPage() {
             section={WRAP_UP}
             answers={answers}
             learnerName={learnerName}
+            learnerId={learnerId}
+            accessToken={accessToken}
             onAnswer={setAnswer}
             onBack={() => { setScreen("section"); goToSection(REAL_SECTIONS.length - 1); }}
             onSubmit={submit}
@@ -1325,16 +1327,199 @@ function SectionFooterNav({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// InviteCoParentWidget — wu-coparent: lets the parent send a real invite
+// (email + role) instead of just answering a single-select.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function InviteCoParentWidget({
+  question, questionNumber, value, onAnswer, learnerId, accessToken, t,
+}: {
+  question: AssessmentQuestion;
+  questionNumber: number;
+  value: AnswerValue;
+  onAnswer: (v: AnswerValue) => void;
+  learnerId: string;
+  accessToken: string | null;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const options = question.options ?? [];
+  const yesOpt = options[0] ?? "Yes — send me a link";
+  const laterOpt = options[1] ?? "Maybe later";
+  const noOpt = options[2] ?? "No, just me";
+
+  const [role, setRole] = useState<"coparent" | "teacher">("coparent");
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState<{ role: "coparent" | "teacher"; email: string }[]>([]);
+
+  const isYes = value === yesOpt;
+
+  const sendInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessToken || !email.trim()) return;
+    setSending(true);
+    setError(null);
+    try {
+      const endpoint = role === "teacher" ? "teacher" : "caregiver";
+      const body: Record<string, string> = { email: email.trim() };
+      if (role === "coparent") body.relationship = "Co-parent";
+      const res = await fetch(`/api/family/collaboration/${learnerId}/invite/${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        setSent((prev) => [...prev, { role, email: email.trim() }]);
+        setEmail("");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || t("invite_error_generic"));
+      }
+    } catch {
+      setError(t("invite_error_network"));
+    }
+    setSending(false);
+  };
+
+  return (
+    <div className="vi-card p-5 space-y-4" style={{ background: "hsl(262 83% 58% / 0.04)", borderColor: "hsl(262 83% 58% / 0.25)" }}>
+      <div className="flex items-start gap-2">
+        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[hsl(262_83%_58%)] text-white text-xs font-extrabold flex-shrink-0">
+          {questionNumber}
+        </span>
+        <p className="font-bold vi-text leading-snug">{question.text}</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {[yesOpt, laterOpt, noOpt].map((opt) => {
+          const selected = value === opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onAnswer(opt)}
+              className={[
+                "px-3 py-2.5 rounded-xl text-sm font-bold border transition text-center",
+                selected
+                  ? "bg-[hsl(262_83%_58%)] text-white border-[hsl(262_83%_58%)] shadow-sm"
+                  : "vi-surface-soft vi-text vi-border hover:border-[hsl(262_83%_58%/0.5)]",
+              ].join(" ")}
+              style={{ minHeight: "44px" }}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+
+      {isYes && (
+        <form onSubmit={sendInvite} className="space-y-3 pt-2">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider vi-text-muted mb-1.5">
+              {t("invite_role_label")}
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { key: "coparent" as const, label: t("invite_role_coparent") },
+                { key: "teacher" as const, label: t("invite_role_teacher") },
+              ]).map(({ key, label }) => {
+                const selected = role === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setRole(key)}
+                    className={[
+                      "px-3 py-2 rounded-lg text-sm font-bold border transition",
+                      selected
+                        ? "bg-[hsl(199_89%_48%)] text-white border-[hsl(199_89%_48%)]"
+                        : "vi-surface-soft vi-text vi-border hover:border-[hsl(199_89%_48%/0.5)]",
+                    ].join(" ")}
+                    style={{ minHeight: "40px" }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="wu-coparent-email" className="block text-xs font-bold uppercase tracking-wider vi-text-muted mb-1.5">
+              {t("invite_email_label")}
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                id="wu-coparent-email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t("invite_email_placeholder")}
+                className="flex-1 px-4 py-2.5 rounded-xl border vi-border focus:border-[hsl(199_89%_48%)] focus:ring-2 focus:ring-[hsl(199_89%_48%/0.2)] outline-none font-body bg-white"
+                style={{ minHeight: "44px" }}
+              />
+              <button
+                type="submit"
+                disabled={sending || !email.trim() || !accessToken}
+                className="px-5 py-2.5 rounded-xl bg-[hsl(199_89%_48%)] text-white font-bold text-sm hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                style={{ minHeight: "44px" }}
+              >
+                {sending ? t("invite_sending") : t("invite_send")}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div
+              className="text-xs font-semibold px-3 py-2 rounded-lg"
+              style={{ background: "hsl(0 72% 51% / 0.08)", color: "hsl(0 72% 51%)" }}
+            >
+              {error}
+            </div>
+          )}
+
+          {sent.length > 0 && (
+            <ul className="space-y-1.5 pt-1">
+              {sent.map((s, i) => (
+                <li
+                  key={`${s.email}-${i}`}
+                  className="flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg"
+                  style={{ background: "hsl(142 71% 45% / 0.10)", color: "hsl(142 71% 45%)" }}
+                >
+                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                  <span>
+                    {t("invite_sent_to", {
+                      role: s.role === "teacher" ? t("invite_role_teacher") : t("invite_role_coparent"),
+                      email: s.email,
+                    })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <p className="text-[11px] vi-text-muted">{t("invite_helper")}</p>
+        </form>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // WrapUpScreen (Section 7)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function WrapUpScreen({
-  section, answers, learnerName, onAnswer, onBack, onSubmit, submitting, submitError,
+  section, answers, learnerName, learnerId, accessToken, onAnswer, onBack, onSubmit, submitting, submitError,
   sectionsAnsweredSummary, t,
 }: {
   section: AssessmentSection;
   answers: Answers;
   learnerName: string;
+  learnerId: string;
+  accessToken: string | null;
   onAnswer: (id: string, value: AnswerValue) => void;
   onBack: () => void;
   onSubmit: () => void;
@@ -1397,18 +1582,34 @@ function WrapUpScreen({
 
         {/* Final wrap-up questions */}
         <div className="space-y-5">
-          {section.questions.map((q, idx) => (
-            <QuestionBlock
-              key={q.id}
-              question={q}
-              questionNumber={idx + 1}
-              value={answers[q.id] ?? null}
-              otherValue=""
-              onAnswer={(v) => onAnswer(q.id, v)}
-              onToggleMulti={() => { /* not used in wrap-up */ }}
-              onOtherChange={() => { /* not used in wrap-up */ }}
-            />
-          ))}
+          {section.questions.map((q, idx) => {
+            if (q.id === "wu-coparent") {
+              return (
+                <InviteCoParentWidget
+                  key={q.id}
+                  question={q}
+                  questionNumber={idx + 1}
+                  value={answers[q.id] ?? null}
+                  onAnswer={(v) => onAnswer(q.id, v)}
+                  learnerId={learnerId}
+                  accessToken={accessToken}
+                  t={t}
+                />
+              );
+            }
+            return (
+              <QuestionBlock
+                key={q.id}
+                question={q}
+                questionNumber={idx + 1}
+                value={answers[q.id] ?? null}
+                otherValue=""
+                onAnswer={(v) => onAnswer(q.id, v)}
+                onToggleMulti={() => { /* not used in wrap-up */ }}
+                onOtherChange={() => { /* not used in wrap-up */ }}
+              />
+            );
+          })}
         </div>
 
         {submitError && (
