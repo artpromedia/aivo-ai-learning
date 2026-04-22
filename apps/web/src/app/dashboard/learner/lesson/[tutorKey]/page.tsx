@@ -223,7 +223,25 @@ export default function LessonPage() {
       })
       .catch(() => {});
 
-    fetch(`/api/tutors/curriculum/learner/${user.id}/active`, {
+    const tutorSubjectMap: Record<string, string> = {
+      nova: "math",
+      sage: "ela",
+      spark: "science",
+      chrono: "history",
+      pixel: "coding",
+      echo: "speech",
+      harmony: "sel",
+      atlas: "history",
+      cadence: "art",
+      vigor: "other",
+      lingua: "ela",
+      forge: "science",
+      compass: "sel",
+      muse: "art",
+    };
+    const subjectHint = tutorSubjectMap[tutorKey] || "";
+    const subjectQuery = subjectHint ? `?subject=${subjectHint}` : "";
+    fetch(`/api/tutors/curriculum/learner/${user.id}/active${subjectQuery}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then((r) => (r.ok ? r.json() : null))

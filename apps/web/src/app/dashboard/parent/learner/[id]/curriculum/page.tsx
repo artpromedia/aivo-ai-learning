@@ -186,6 +186,12 @@ export default function ParentLearnerCurriculumPage() {
         weekStart: preview.weekStart || undefined,
         weekEnd: preview.weekEnd || undefined,
         parsedFocus: preview,
+        // Source provenance — kept so the row records what was actually
+        // uploaded (file name, mime type, raw text snippet).
+        sourceType: file ? "file" : "text",
+        fileName: file?.name,
+        mimeType: file?.type,
+        text: text.trim() || undefined,
       };
       const res = await fetch(`/api/tutors/curriculum/upload`, {
         method: "POST",

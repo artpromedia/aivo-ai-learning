@@ -1737,6 +1737,8 @@
       "sel": "Social-emotional",
       "art": "Art",
       "other": "Other"
-    }
+    },
+    "teacher_history_heading": "Recent uploads",
+    "teacher_history_n_learners": "{count} learners"
   }
 }

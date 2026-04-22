@@ -1736,6 +1736,8 @@
     "summary": "摘要",
     "skills": "技能",
     "comma_separated": "用逗号分隔",
-    "stage_banner_label": "本周重点"
+    "stage_banner_label": "本周重点",
+    "teacher_history_heading": "最近上传",
+    "teacher_history_n_learners": "{count} 名学生"
   }
 }

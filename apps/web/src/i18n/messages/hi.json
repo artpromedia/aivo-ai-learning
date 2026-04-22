@@ -1736,6 +1736,8 @@
     "summary": "सारांश",
     "skills": "कौशल",
     "comma_separated": "कॉमा से अलग किए हुए",
-    "stage_banner_label": "इस सप्ताह का फोकस"
+    "stage_banner_label": "इस सप्ताह का फोकस",
+    "teacher_history_heading": "हाल के अपलोड",
+    "teacher_history_n_learners": "{count} शिक्षार्थी"
   }
 }

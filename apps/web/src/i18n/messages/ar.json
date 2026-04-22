@@ -1736,6 +1736,8 @@
     "summary": "الملخص",
     "skills": "المهارات",
     "comma_separated": "مفصولة بفواصل",
-    "stage_banner_label": "تركيز هذا الأسبوع"
+    "stage_banner_label": "تركيز هذا الأسبوع",
+    "teacher_history_heading": "آخر التحميلات",
+    "teacher_history_n_learners": "{count} متعلمين"
   }
 }

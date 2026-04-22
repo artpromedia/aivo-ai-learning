@@ -1736,6 +1736,8 @@
     "summary": "Resumen",
     "skills": "Habilidades",
     "comma_separated": "Separados por comas",
-    "stage_banner_label": "Foco de esta semana"
+    "stage_banner_label": "Foco de esta semana",
+    "teacher_history_heading": "Cargas recientes",
+    "teacher_history_n_learners": "{count} estudiantes"
   }
 }

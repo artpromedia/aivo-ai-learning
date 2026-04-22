@@ -1736,6 +1736,8 @@
     "summary": "概要",
     "skills": "スキル",
     "comma_separated": "カンマ区切り",
-    "stage_banner_label": "今週のフォーカス"
+    "stage_banner_label": "今週のフォーカス",
+    "teacher_history_heading": "最近のアップロード",
+    "teacher_history_n_learners": "{count} 人の学習者"
   }
 }

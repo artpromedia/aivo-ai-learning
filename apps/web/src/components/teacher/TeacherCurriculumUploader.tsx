@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 
 interface ConnectedLearner {
@@ -60,6 +60,38 @@ export default function TeacherCurriculumUploader({
     confidence?: number;
   };
   const [preview, setPreview] = useState<ParsedFocus | null>(null);
+
+  type HistoryEntry = {
+    id: string;
+    learnerId: string;
+    subject: string;
+    title: string | null;
+    status: string;
+    weekStart: string | null;
+    weekEnd: string | null;
+    classGroupId: string | null;
+    createdAt: string;
+  };
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+  const learnerNameById = (id: string) => learners.find((l) => l.id === id)?.name || id.slice(0, 8);
+
+  const loadHistory = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const res = await fetch("/api/tutors/curriculum/mine?limit=20", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(Array.isArray(data.uploads) ? data.uploads : []);
+      }
+    } catch {}
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (open) void loadHistory();
+  }, [open, loadHistory]);
 
   const toggleLearner = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -140,6 +172,11 @@ export default function TeacherCurriculumUploader({
         weekStart: preview.weekStart || undefined,
         weekEnd: preview.weekEnd || undefined,
         parsedFocus: preview,
+        // Source provenance for audit/version trail.
+        sourceType: file ? "file" : "text",
+        fileName: file?.name,
+        mimeType: file?.type,
+        text: text.trim() || undefined,
       };
       const res = await fetch("/api/tutors/curriculum/upload", {
         method: "POST",
@@ -162,6 +199,7 @@ export default function TeacherCurriculumUploader({
       setWeekEnd("");
       setPreview(null);
       if (fileRef.current) fileRef.current.value = "";
+      void loadHistory();
     } catch (err: any) {
       setError(err.message || t("err_upload_failed"));
     } finally {
@@ -304,6 +342,56 @@ export default function TeacherCurriculumUploader({
               {parsing ? t("parsing") : t("parse_preview")}
             </button>
           </div>
+
+          {history.length > 0 && (
+            <div className="rounded-lg border vi-border p-4 space-y-2">
+              <h3 className="text-sm font-semibold vi-text">{t("teacher_history_heading")}</h3>
+              <ul className="divide-y vi-border max-h-48 overflow-auto">
+                {(() => {
+                  // Group by classGroupId so a single multi-learner push collapses to one row.
+                  const seen = new Set<string>();
+                  const grouped: Array<{ entries: HistoryEntry[]; key: string }> = [];
+                  for (const h of history) {
+                    const key = h.classGroupId || h.id;
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                    grouped.push({
+                      key,
+                      entries: history.filter((x) => (x.classGroupId || x.id) === key),
+                    });
+                  }
+                  return grouped.slice(0, 10).map((g) => {
+                    const first = g.entries[0];
+                    return (
+                      <li key={g.key} className="py-2 flex items-start justify-between gap-3 text-xs">
+                        <div className="min-w-0">
+                          <div className="font-medium vi-text truncate">
+                            {first.title || t("untitled")}
+                          </div>
+                          <div className="vi-text-muted">
+                            {t(`subject.${first.subject}`)} ·{" "}
+                            {g.entries.length === 1
+                              ? learnerNameById(first.learnerId)
+                              : t("teacher_history_n_learners", { count: g.entries.length })}
+                            {first.weekStart && ` · ${first.weekStart.slice(0, 10)}`}
+                          </div>
+                        </div>
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 ${
+                            first.status === "ACTIVE"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {first.status === "ACTIVE" ? t("status_active") : t("status_archived")}
+                        </span>
+                      </li>
+                    );
+                  });
+                })()}
+              </ul>
+            </div>
+          )}
 
           {preview && (
             <div className="rounded-lg border-2 border-[hsl(var(--visual-primary))] p-4 space-y-3 bg-[hsl(var(--visual-surface))]">

@@ -358,7 +358,12 @@ export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
       uploaderRole,
       subject: finalSubject,
       title,
-      sourceType: imageBase64 ? "file" : "text",
+      sourceType:
+        typeof body.sourceType === "string" && (body.sourceType === "file" || body.sourceType === "text")
+          ? body.sourceType
+          : imageBase64
+            ? "file"
+            : "text",
       fileName: body.fileName || null,
       mimeType: body.mimeType || null,
       rawText: rawText.slice(0, MAX_TEXT_LEN),
@@ -486,6 +491,34 @@ export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
         notes: r.notes,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
+      })),
+    };
+  });
+
+  // GET /api/tutors/curriculum/mine?limit= — recent uploads by the
+  // authenticated user (teacher upload history). Each row includes
+  // learnerId so the UI can display which learners received it.
+  app.get("/api/tutors/curriculum/mine", async (request, reply) => {
+    const authUser = await extractAuth(request);
+    if (!authUser) return reply.code(401).send({ error: "Authentication required" });
+    const limit = Math.min(50, Math.max(1, parseInt((request.query as any)?.limit, 10) || 20));
+    const rows = await db
+      .select()
+      .from(curriculumUploads)
+      .where(eq(curriculumUploads.uploadedBy, authUser.sub))
+      .orderBy(desc(curriculumUploads.createdAt))
+      .limit(limit);
+    return {
+      uploads: rows.map((r: any) => ({
+        id: r.id,
+        learnerId: r.learnerId,
+        subject: r.subject,
+        title: r.title,
+        status: r.status,
+        weekStart: r.weekStart,
+        weekEnd: r.weekEnd,
+        classGroupId: r.classGroupId,
+        createdAt: r.createdAt,
       })),
     };
   });
