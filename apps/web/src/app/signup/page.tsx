@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useAuth } from "@/providers/auth-provider";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,16 +23,24 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-export default function SignupPage() {
+function SignupInner() {
   const { register } = useAuth();
   const router = useRouter();
+  const params = useSearchParams();
+  const invitedEmail = params.get("email") || "";
   const t = useTranslations("auth");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(invitedEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (invitedEmail && !email) setEmail(invitedEmail);
+    // intentionally only on mount/param change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invitedEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +48,14 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await register(email, password, name, "PARENT");
-      router.push("/");
+      // If they came via an invite link, send them through the
+      // accept-invite flow so the pending caregiver/teacher/therapist
+      // row gets linked to their new account.
+      if (invitedEmail) {
+        router.push(`/accept-invite?email=${encodeURIComponent(invitedEmail)}`);
+      } else {
+        router.push("/");
+      }
     } catch (err: any) {
       setError(err.message || t("register_failed"));
     }
@@ -395,3 +410,12 @@ export default function SignupPage() {
     </div>
   );
 }
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupInner />
+    </Suspense>
+  );
+}
+

@@ -336,6 +336,44 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
+  // Sends a "you've been invited to a learning team" email when a parent
+  // invites a caregiver / co-parent / teacher / therapist via family-svc.
+  // Internal-key auth — same pattern as the other /internal/* endpoints.
+  app.post("/api/comms/internal/team-invite", async (request, reply) => {
+    const internalKey = request.headers["x-internal-key"];
+    const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+    if (!internalKey || !expectedKey || internalKey !== expectedKey) {
+      return reply.status(401).send({ error: "Unauthorized" });
+    }
+    const { to, inviterName, learnerName, role, acceptUrl } = (request.body as any) || {};
+    if (!to || !acceptUrl) {
+      return reply.code(400).send({ error: "to and acceptUrl required" });
+    }
+    if (!isConfigured()) {
+      logger.warn({ to, role }, "Team invite requested but email not configured (dev mode)");
+      return { status: "dev_mode", acceptUrl };
+    }
+    const rendered = renderTemplate("collaboration_invite", {
+      inviterName: inviterName || "A parent",
+      learnerName: learnerName || "their child",
+      role: role || "team member",
+      acceptUrl,
+    });
+    try {
+      const result = await sendEmail({
+        to,
+        subject: rendered.subject,
+        htmlBody: rendered.html,
+        textBody: rendered.text,
+        tag: "collaboration_invite",
+      });
+      return { status: result.status, messageId: result.messageId };
+    } catch (err: any) {
+      logger.error({ err, to }, "Failed to send team invite email");
+      return { status: "failed" };
+    }
+  });
+
   app.post("/api/comms/internal/password-reset", async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");

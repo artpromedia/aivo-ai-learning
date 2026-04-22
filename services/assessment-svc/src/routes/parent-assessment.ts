@@ -1,8 +1,27 @@
 import { FastifyInstance } from "fastify";
-import { parentAssessments, learners, learnerFunctioningLevels } from "@aivo/db";
+import { parentAssessments, learners, learnerFunctioningLevels, learnerCaregivers } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { determineFunctioningLevel } from "../services/level-router.js";
+
+// True when `userId` is either the learner's primary parent or an
+// ACCEPTED caregiver/co-parent on that learner. Co-parents need to take
+// the parent assessment too — their answers may differ and should be
+// captured so the AI tutor sees both perspectives.
+async function isParentOrAcceptedCaregiver(db: any, userId: string, learnerId: string): Promise<boolean> {
+  const [learner] = await db.select({ parentId: learners.parentId })
+    .from(learners).where(eq(learners.id, learnerId)).limit(1);
+  if (!learner) return false;
+  if (learner.parentId === userId) return true;
+  const [cg] = await db.select({ id: learnerCaregivers.id })
+    .from(learnerCaregivers)
+    .where(and(
+      eq(learnerCaregivers.learnerId, learnerId),
+      eq(learnerCaregivers.caregiverUserId, userId),
+      eq(learnerCaregivers.status, "ACCEPTED"),
+    )).limit(1);
+  return !!cg;
+}
 
 async function authenticate(req: any, reply: any) {
   const auth = req.headers.authorization;
@@ -30,7 +49,8 @@ export async function registerParentAssessmentRoutes(app: FastifyInstance) {
       .limit(1);
 
     if (!learner) return reply.status(404).send({ error: "Learner not found" });
-    if (learner.parentId !== userId) return reply.status(403).send({ error: "Forbidden" });
+    const allowed = await isParentOrAcceptedCaregiver(db, userId, learnerId);
+    if (!allowed) return reply.status(403).send({ error: "Forbidden" });
 
     const [row] = await db.select({
       id: parentAssessments.id,
@@ -73,10 +93,18 @@ export async function registerParentAssessmentRoutes(app: FastifyInstance) {
     const user = (req as any).user;
     const body = req.body as any;
 
-    if (user.role !== "PARENT") throw { statusCode: 403, message: "Only parents can submit assessments" };
+    const submitterId = user?.sub || user?.userId || user?.id;
+    const allowed = await isParentOrAcceptedCaregiver(db, submitterId, body.learnerId);
+    if (!allowed) throw { statusCode: 403, message: "Only the parent or an accepted caregiver can submit assessments for this learner" };
+
+    // Tenant must follow the learner, not the submitter — caregivers may
+    // belong to a different tenant than the learner's primary parent.
+    const [learnerRow] = await db.select({ tenantId: learners.tenantId })
+      .from(learners).where(eq(learners.id, body.learnerId)).limit(1);
+    const learnerTenantId = learnerRow?.tenantId || user.tenantId;
 
     const [assessment] = await db.insert(parentAssessments).values({
-      tenantId: user.tenantId,
+      tenantId: learnerTenantId,
       learnerId: body.learnerId,
       communicationMode: body.communicationMode,
       deviceInteraction: body.deviceInteraction,

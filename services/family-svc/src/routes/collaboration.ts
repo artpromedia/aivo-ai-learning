@@ -5,12 +5,64 @@ import {
   learnerCaregivers,
   learnerTherapists,
   learners,
+  users,
   brainInsights,
   brainStates,
   iepGoals,
   therapyGoals,
 } from "@aivo/db";
 import { authenticateRequest, verifyParentOwnership } from "../auth.js";
+
+const COMMS_URL = process.env.COMMS_SVC_URL || "http://localhost:3010";
+const APP_URL = process.env.APP_URL || "http://localhost:5000";
+const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY
+  || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+
+// Best-effort dispatch of a "you're invited" email when a parent adds a
+// caregiver / co-parent / teacher / therapist. Failures are logged but
+// never block the invite write — the invitee can still self-discover the
+// invite by signing up with the same email.
+async function sendTeamInviteEmail(
+  app: FastifyInstance,
+  payload: { to: string; inviterName: string; learnerName: string; role: string },
+) {
+  try {
+    const acceptUrl = `${APP_URL}/accept-invite?email=${encodeURIComponent(payload.to)}`;
+    const res = await fetch(`${COMMS_URL}/api/comms/internal/team-invite`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
+      body: JSON.stringify({ ...payload, acceptUrl }),
+    });
+    if (!res.ok) {
+      app.log.warn({ to: payload.to, role: payload.role, status: res.status },
+        "team-invite email dispatch returned non-2xx");
+    }
+  } catch (err: any) {
+    app.log.warn({ to: payload.to, err: err?.message },
+      "team-invite email dispatch failed");
+  }
+}
+
+// Look up the inviter's name and the learner's name so the invite email
+// can be personalised. Returns sane fallbacks if either lookup misses.
+async function loadInviteContext(
+  db: ReturnType<typeof import("@aivo/db").createDb>,
+  inviterId: string,
+  learnerId: string,
+): Promise<{ inviterName: string; learnerName: string }> {
+  try {
+    const [inviter] = await db.select({ name: users.name })
+      .from(users).where(eq(users.id, inviterId)).limit(1);
+    const [learner] = await db.select({ name: learners.name })
+      .from(learners).where(eq(learners.id, learnerId)).limit(1);
+    return {
+      inviterName: inviter?.name || "A parent",
+      learnerName: learner?.name || "their child",
+    };
+  } catch {
+    return { inviterName: "A parent", learnerName: "their child" };
+  }
+}
 
 interface LearnerId {
   learnerId: string;
@@ -85,9 +137,10 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
 
     const body = request.body as InviteTeacherBody;
     if (!body.email) return reply.code(400).send({ error: "Email is required" });
+    const normalizedEmail = body.email.trim().toLowerCase();
 
     const existing = await db.select().from(learnerTeachers).where(
-      and(eq(learnerTeachers.learnerId, learnerId), eq(learnerTeachers.teacherEmail, body.email))
+      and(eq(learnerTeachers.learnerId, learnerId), eq(learnerTeachers.teacherEmail, normalizedEmail))
     );
     if (existing.length > 0) return reply.code(409).send({ error: "Teacher already invited" });
 
@@ -103,10 +156,13 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     const [record] = await db.insert(learnerTeachers).values({
       tenantId,
       learnerId,
-      teacherEmail: body.email,
+      teacherEmail: normalizedEmail,
       invitedBy: claims.sub,
       status: "PENDING",
     }).returning();
+
+    const ctx = await loadInviteContext(db, claims.sub, learnerId);
+    void sendTeamInviteEmail(app, { to: normalizedEmail, role: "teacher", ...ctx });
 
     return reply.code(201).send(record);
   });
@@ -121,9 +177,10 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
 
     const body = request.body as InviteCaregiverBody;
     if (!body.email) return reply.code(400).send({ error: "Email is required" });
+    const normalizedEmail = body.email.trim().toLowerCase();
 
     const existing = await db.select().from(learnerCaregivers).where(
-      and(eq(learnerCaregivers.learnerId, learnerId), eq(learnerCaregivers.caregiverEmail, body.email))
+      and(eq(learnerCaregivers.learnerId, learnerId), eq(learnerCaregivers.caregiverEmail, normalizedEmail))
     );
     if (existing.length > 0) return reply.code(409).send({ error: "Caregiver already invited" });
 
@@ -139,11 +196,18 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     const [record] = await db.insert(learnerCaregivers).values({
       tenantId,
       learnerId,
-      caregiverEmail: body.email,
+      caregiverEmail: normalizedEmail,
       invitedBy: claims.sub,
       relationship: body.relationship || null,
       status: "PENDING",
     }).returning();
+
+    const ctx = await loadInviteContext(db, claims.sub, learnerId);
+    void sendTeamInviteEmail(app, {
+      to: normalizedEmail,
+      role: body.relationship || "co-parent / caregiver",
+      ...ctx,
+    });
 
     return reply.code(201).send(record);
   });
@@ -158,9 +222,10 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
 
     const body = request.body as InviteTherapistBody;
     if (!body.email) return reply.code(400).send({ error: "Email is required" });
+    const normalizedEmail = body.email.trim().toLowerCase();
 
     const existing = await db.select().from(learnerTherapists).where(
-      and(eq(learnerTherapists.learnerId, learnerId), eq(learnerTherapists.therapistEmail, body.email))
+      and(eq(learnerTherapists.learnerId, learnerId), eq(learnerTherapists.therapistEmail, normalizedEmail))
     );
     if (existing.length > 0) return reply.code(409).send({ error: "Therapist already invited" });
 
@@ -176,12 +241,19 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     const [record] = await db.insert(learnerTherapists).values({
       tenantId,
       learnerId,
-      therapistEmail: body.email,
+      therapistEmail: normalizedEmail,
       invitedBy: claims.sub,
       specialty: body.specialty || null,
       credentials: body.credentials || null,
       status: "PENDING",
     }).returning();
+
+    const ctx = await loadInviteContext(db, claims.sub, learnerId);
+    void sendTeamInviteEmail(app, {
+      to: normalizedEmail,
+      role: body.specialty || "therapist",
+      ...ctx,
+    });
 
     return reply.code(201).send(record);
   });
@@ -420,10 +492,11 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
-    const userEmail = claims.email;
+    const userEmail = (claims.email || "").trim().toLowerCase();
     if (!userEmail) return reply.code(400).send({ error: "User email not found in token" });
 
     const accepted: { role: string; learnerId: string }[] = [];
+    const now = new Date();
 
     const pendingTeacher = await db.select().from(learnerTeachers).where(
       and(eq(learnerTeachers.teacherEmail, userEmail), eq(learnerTeachers.status, "PENDING"))
@@ -432,6 +505,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
       await db.update(learnerTeachers).set({
         teacherUserId: claims.sub,
         status: "ACCEPTED",
+        acceptedAt: now,
       }).where(eq(learnerTeachers.id, row.id));
       accepted.push({ role: "teacher", learnerId: row.learnerId });
     }
@@ -443,6 +517,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
       await db.update(learnerCaregivers).set({
         caregiverUserId: claims.sub,
         status: "ACCEPTED",
+        acceptedAt: now,
       }).where(eq(learnerCaregivers.id, row.id));
       accepted.push({ role: "caregiver", learnerId: row.learnerId });
     }
@@ -454,6 +529,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
       await db.update(learnerTherapists).set({
         therapistUserId: claims.sub,
         status: "ACCEPTED",
+        acceptedAt: now,
       }).where(eq(learnerTherapists.id, row.id));
       accepted.push({ role: "therapist", learnerId: row.learnerId });
     }
