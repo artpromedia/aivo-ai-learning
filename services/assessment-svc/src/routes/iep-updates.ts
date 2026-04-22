@@ -241,9 +241,14 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
       attachmentUrl: iepProgressNotes.attachmentUrl,
       authorId: iepProgressNotes.authorId,
       authorName: users.name,
+      authorRole: iepTeamMembers.role,
       createdAt: iepProgressNotes.createdAt,
     }).from(iepProgressNotes)
       .leftJoin(users, eq(users.id, iepProgressNotes.authorId))
+      .leftJoin(iepTeamMembers, and(
+        eq(iepTeamMembers.iepProfileId, iepProgressNotes.iepProfileId),
+        eq(iepTeamMembers.userId, iepProgressNotes.authorId),
+      ))
       .where(eq(iepProgressNotes.iepProfileId, id))
       .orderBy(desc(iepProgressNotes.createdAt))
       .limit(200);
@@ -529,7 +534,77 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
     // block the others; the parent's acknowledgement is already
     // recorded above.
     if (response === "acknowledged") {
-      const sections = Object.keys((row.proposedChanges as Record<string, unknown>) || {});
+      const proposed = (row.proposedChanges as Record<string, any>) || {};
+      const sections = Object.keys(proposed);
+
+      // ─── APPLY proposedChanges to persisted IEP data ───
+      // Supported shape (intentionally narrow & explicit; unknown
+      // sections fall through into the snapshot as "noted but not
+      // automatically applied" — case-management UI can act on them):
+      //   profile: { reviewDate?, gradeLevel?, placement?,
+      //              accommodations?, communicationSystem? }
+      //   goals:   { add?:    [{goalText, domain, baseline, targetCriteria}],
+      //              update?: [{id, ...same fields}],
+      //              remove?: [goalId] }
+      // Each block is best-effort and isolated so a malformed delta on
+      // one section can't roll back the others.
+      if (proposed.profile && typeof proposed.profile === "object") {
+        const p = proposed.profile;
+        const patch: Record<string, unknown> = {};
+        if (p.reviewDate) patch.reviewDate = new Date(p.reviewDate);
+        if (typeof p.gradeLevel === "string") patch.gradeLevel = p.gradeLevel;
+        if (typeof p.placement === "string") patch.placement = p.placement;
+        if (typeof p.communicationSystem === "string") patch.communicationSystem = p.communicationSystem;
+        if (Array.isArray(p.accommodations)) patch.accommodations = p.accommodations;
+        if (Object.keys(patch).length > 0) {
+          try {
+            await db.update(iepProfiles).set({ ...patch, updatedAt: nowTs })
+              .where(eq(iepProfiles.id, a.iepProfileId));
+          } catch { /* best-effort */ }
+        }
+      }
+      if (proposed.goals && typeof proposed.goals === "object") {
+        const g = proposed.goals;
+        if (Array.isArray(g.add)) {
+          for (const ng of g.add) {
+            if (!ng?.goalText) continue;
+            try {
+              await db.insert(iepGoals).values({
+                learnerId: a.learnerId,
+                iepProfileId: a.iepProfileId,
+                goalText: String(ng.goalText),
+                domain: ng.domain || null,
+                baseline: ng.baseline || null,
+                targetCriteria: ng.targetCriteria || null,
+              });
+            } catch { /* best-effort */ }
+          }
+        }
+        if (Array.isArray(g.update)) {
+          for (const ug of g.update) {
+            if (!ug?.id || !isUuid(ug.id)) continue;
+            const patch: Record<string, unknown> = { updatedAt: nowTs };
+            if (typeof ug.goalText === "string") patch.goalText = ug.goalText;
+            if (typeof ug.domain === "string") patch.domain = ug.domain;
+            if (typeof ug.baseline === "string") patch.baseline = ug.baseline;
+            if (typeof ug.targetCriteria === "string") patch.targetCriteria = ug.targetCriteria;
+            try {
+              await db.update(iepGoals).set(patch)
+                .where(and(eq(iepGoals.id, ug.id), eq(iepGoals.iepProfileId, a.iepProfileId)));
+            } catch { /* best-effort */ }
+          }
+        }
+        if (Array.isArray(g.remove)) {
+          for (const rid of g.remove) {
+            if (!isUuid(rid)) continue;
+            try {
+              await db.update(iepGoals).set({ status: "archived", updatedAt: nowTs })
+                .where(and(eq(iepGoals.id, rid), eq(iepGoals.iepProfileId, a.iepProfileId)));
+            } catch { /* best-effort */ }
+          }
+        }
+      }
+
       try {
         const [profileNow] = await db.select().from(iepProfiles)
           .where(eq(iepProfiles.id, a.iepProfileId));
@@ -543,6 +618,7 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
             goals: goalsNow,
             amendmentId: row.id,
             affectedSections: sections,
+            appliedChanges: proposed,
           },
           authorId: claims.sub,
         });
@@ -630,9 +706,14 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
         goalId: iepProgressNotes.goalId, visibility: iepProgressNotes.visibility,
         attachmentUrl: iepProgressNotes.attachmentUrl,
         authorId: iepProgressNotes.authorId, authorName: users.name,
+        authorRole: iepTeamMembers.role,
         createdAt: iepProgressNotes.createdAt,
       }).from(iepProgressNotes)
         .leftJoin(users, eq(users.id, iepProgressNotes.authorId))
+        .leftJoin(iepTeamMembers, and(
+          eq(iepTeamMembers.iepProfileId, iepProgressNotes.iepProfileId),
+          eq(iepTeamMembers.userId, iepProgressNotes.authorId),
+        ))
         .where(eq(iepProgressNotes.iepProfileId, profile.id))
         .orderBy(desc(iepProgressNotes.createdAt))
         .limit(200),

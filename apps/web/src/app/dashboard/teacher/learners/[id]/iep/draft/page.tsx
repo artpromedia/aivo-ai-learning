@@ -893,6 +893,7 @@ function UpdatesSection({ draftId, goals, headers, isCaseManager, isFinalised }:
   const [noteBody, setNoteBody] = useState("");
   const [noteGoalId, setNoteGoalId] = useState<string>("");
   const [noteVisibility, setNoteVisibility] = useState<"parent" | "team" | "internal">("parent");
+  const [noteAttachment, setNoteAttachment] = useState("");
   const [posting, setPosting] = useState(false);
   const [reportPeriod, setReportPeriod] = useState("");
   const [reportNarrative, setReportNarrative] = useState("");
@@ -927,9 +928,10 @@ function UpdatesSection({ draftId, goals, headers, isCaseManager, isFinalised }:
           body: noteBody.trim(),
           goalId: noteGoalId || undefined,
           visibility: noteVisibility,
+          attachmentUrl: noteAttachment.trim() || undefined,
         }),
       });
-      if (r.ok) { setNoteBody(""); setNoteGoalId(""); await refreshAll(); }
+      if (r.ok) { setNoteBody(""); setNoteGoalId(""); setNoteAttachment(""); await refreshAll(); }
     } catch { /* noop */ }
     setPosting(false);
   };
@@ -1013,6 +1015,12 @@ function UpdatesSection({ draftId, goals, headers, isCaseManager, isFinalised }:
             <option value="internal">{tu("vis_internal")}</option>
           </select>
         </div>
+        <input
+          value={noteAttachment}
+          onChange={(e) => setNoteAttachment(e.target.value)}
+          placeholder={tu("attachment_placeholder")}
+          type="url"
+          className="vi-input rounded-lg px-3 py-2 text-sm w-full" />
         <div className="flex justify-end">
           <button onClick={postNote} disabled={posting || !noteBody.trim()}
             style={{ minHeight: 40 }}

@@ -3,16 +3,20 @@ import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { IconWell, StatIconWell } from "@/components/discovery/_vi";
-import { ClipboardList, Clock, AlertTriangle, Search, PenTool, CheckCircle2 } from "lucide-react";
+import { ClipboardList, Clock, AlertTriangle, Search, PenTool, CheckCircle2, Bell } from "lucide-react";
 
 interface IepSummary {
   active: number;
+  // Phase D contract — same value as legacy `dueForReview`, kept for
+  // back-compat. Prefer `reviewsDueIn30Days` going forward.
+  reviewsDueIn30Days?: number;
   dueForReview: number;
   overdue: number;
   evaluationsInProgress?: number;
   drafts?: number;
   awaitingSignatures?: number;
   finalisedThisMonth?: number;
+  unreadParentUpdates?: number;
 }
 
 interface InProgressEval {
@@ -110,9 +114,18 @@ export default function DistrictIepPage() {
                   <StatIconWell color="amber">
                     <Clock size={22} strokeWidth={2.5} aria-hidden="true" />
                   </StatIconWell>
-                  <span className="text-xs text-[hsl(var(--visual-sel))] font-medium uppercase">Due for Review (30d)</span>
+                  <span className="text-xs text-[hsl(var(--visual-sel))] font-medium uppercase">Reviews Due in 30 Days</span>
                 </div>
-                <p className="text-3xl font-bold text-[hsl(var(--visual-sel))]">{summary.dueForReview}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--visual-sel))]">{summary.reviewsDueIn30Days ?? summary.dueForReview}</p>
+              </div>
+              <div className="vi-card p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <StatIconWell color="reading">
+                    <Bell size={22} strokeWidth={2.5} aria-hidden="true" />
+                  </StatIconWell>
+                  <span className="text-xs vi-text-muted font-medium uppercase">Unread Parent Updates (14d)</span>
+                </div>
+                <p className="text-3xl font-bold vi-text">{summary.unreadParentUpdates ?? 0}</p>
               </div>
               <div className="bg-white rounded-2xl border border-[hsl(var(--visual-math)/0.25)] shadow-sm p-5">
                 <div className="flex items-center gap-3 mb-2">

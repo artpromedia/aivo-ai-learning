@@ -1987,6 +1987,8 @@
     "amendment_changes_placeholder": "Proposed changes (JSON or free text)",
     "no_amendments": "No amendments yet.",
     "propose_amendment": "Propose amendment",
-    "filter_all": "All"
+    "filter_all": "All",
+    "attachment_placeholder": "Optional attachment URL (link to file/work sample)",
+    "attachment_view": "View attachment"
   }
 }

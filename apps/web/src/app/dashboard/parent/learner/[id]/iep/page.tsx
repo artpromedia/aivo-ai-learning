@@ -421,8 +421,21 @@ export default function IepDashboardPage() {
                     {item.type === "note" && (
                       <>
                         <p className="text-sm vi-text mt-1">{item.payload.body}</p>
+                        {item.payload.attachmentUrl && (
+                          <a href={item.payload.attachmentUrl} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-bold mt-2 text-[hsl(var(--visual-primary))] hover:underline">
+                            <FileText className="w-3.5 h-3.5" /> {tu("attachment_view")}
+                          </a>
+                        )}
                         {item.payload.authorName && (
-                          <p className="text-xs vi-text-muted mt-1">{tu("from", { name: item.payload.authorName })}</p>
+                          <p className="text-xs vi-text-muted mt-1">
+                            {tu("from", { name: item.payload.authorName })}
+                            {item.payload.authorRole && (
+                              <span className="ml-1.5 px-1.5 py-0.5 rounded-full vi-surface-soft text-[10px] uppercase font-bold">
+                                {item.payload.authorRole.replace(/_/g, " ")}
+                              </span>
+                            )}
+                          </p>
                         )}
                       </>
                     )}
