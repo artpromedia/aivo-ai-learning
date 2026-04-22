@@ -389,7 +389,10 @@
     "paste_text": "Or paste your homework text",
     "get_help": "Get Help",
     "upload_to_start": "Upload homework to get started",
-    "visit_tutor_store": "Visit Tutor Store"
+    "visit_tutor_store": "Visit Tutor Store",
+    "mic_button": "Dis ton message",
+    "mic_listening": "À l'écoute — touche pour arrêter",
+    "mic_processing": "Transcription…"
   },
   "gamification": {
     "xp": "XP",
@@ -1660,5 +1663,18 @@
     "middle_tagline": "6–8 · découverte crépusculaire à la Ghibli",
     "high_name": "Studio de Concentration",
     "high_tagline": "9–12 · calme éditorial"
+  },
+  "stt": {
+    "tap_to_speak": "Touche pour dire ta réponse",
+    "listening": "À l'écoute…",
+    "listening_stop": "Touche pour arrêter",
+    "processing": "Traitement…",
+    "no_speech": "Je n'ai rien entendu. Réessaie.",
+    "mic_denied": "L'accès au microphone a été bloqué. Autorise-le dans les paramètres du navigateur.",
+    "mic_unavailable": "Le microphone n'est pas disponible sur cet appareil.",
+    "transcription_failed": "Impossible de transcrire. Réessaie.",
+    "audio_capture_error": "Un problème est survenu avec le microphone.",
+    "voice_answer_group": "Réponse vocale",
+    "heard_answer": "Entendu : {text}"
   }
 }

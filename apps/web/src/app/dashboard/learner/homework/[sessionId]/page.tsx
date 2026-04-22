@@ -3,8 +3,15 @@ import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { Lightbulb, Check } from "lucide-react";
+import { Lightbulb, Check, Mic, Loader2, Square } from "lucide-react";
 import { subjectIcon, subjectWellClass } from "@/lib/subject-icons";
+import { useSpeechInput } from "@/components/stage/useSpeechInput";
+import { useLocale } from "@/providers/i18n-provider";
+
+const STT_LOCALE_MAP: Record<string, string> = {
+  en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE", pt: "pt-BR",
+  zh: "zh-CN", ja: "ja-JP", ko: "ko-KR", ar: "ar-SA", hi: "hi-IN",
+};
 
 interface AdaptedProblem {
   problem_number: number;
@@ -29,6 +36,9 @@ export default function HomeworkSessionPage() {
   const params = useParams();
   const t = useTranslations("homework");
   const tCommon = useTranslations("common");
+  const tStt = useTranslations("stt");
+  const { locale } = useLocale();
+  const sttLocale = STT_LOCALE_MAP[locale] || "en-US";
   const sessionId = params.sessionId as string;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -43,6 +53,15 @@ export default function HomeworkSessionPage() {
   const [currentProblem, setCurrentProblem] = useState(0);
   const [completedProblems, setCompletedProblems] = useState<Set<number>>(new Set());
   const [showProblems, setShowProblems] = useState(true);
+
+  const speech = useSpeechInput({
+    locale: sttLocale,
+    onResult: (text) => {
+      if (!text) return;
+      setInput((prev) => (prev ? `${prev} ${text}` : text));
+      setTimeout(() => inputRef.current?.focus(), 0);
+    },
+  });
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/login");
@@ -291,10 +310,48 @@ export default function HomeworkSessionPage() {
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={t("ask_help_placeholder")}
+                placeholder={
+                  speech.status === "listening" ? tStt("listening") :
+                  speech.status === "processing" ? t("mic_processing") :
+                  t("ask_help_placeholder")
+                }
                 className="flex-1 rounded-full border border-slate-200 px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-                disabled={sending}
+                disabled={sending || speech.status === "processing"}
               />
+              {speech.isSupported && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (speech.status === "listening") speech.stop();
+                    else if (speech.status !== "processing") void speech.start();
+                  }}
+                  disabled={sending || speech.status === "processing"}
+                  aria-label={
+                    speech.status === "listening" ? t("mic_listening") :
+                    speech.status === "processing" ? t("mic_processing") :
+                    t("mic_button")
+                  }
+                  aria-pressed={speech.status === "listening"}
+                  className={`w-12 h-12 rounded-full flex items-center justify-center border transition shrink-0 ${
+                    speech.status === "listening"
+                      ? "bg-rose-500 text-white border-rose-500 animate-pulse"
+                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                  } disabled:opacity-50`}
+                  title={
+                    speech.status === "listening" ? t("mic_listening") :
+                    speech.status === "processing" ? t("mic_processing") :
+                    t("mic_button")
+                  }
+                >
+                  {speech.status === "processing" ? (
+                    <Loader2 className="w-5 h-5 animate-spin" strokeWidth={2} aria-hidden />
+                  ) : speech.status === "listening" ? (
+                    <Square className="w-4 h-4 fill-current" strokeWidth={2.5} aria-hidden />
+                  ) : (
+                    <Mic className="w-5 h-5" strokeWidth={2} aria-hidden />
+                  )}
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={sending || !input.trim()}

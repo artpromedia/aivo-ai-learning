@@ -1,8 +1,24 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Check, Mic } from "lucide-react";
+import { Check, Mic, Loader2, AlertCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useLocale } from "@/providers/i18n-provider";
 import type { Beat, FunctioningLevel, SensoryAdaptations } from "./types";
 import { CHOICE_COUNTS } from "./types";
+import { useSpeechInput, type SpeechInputError } from "./useSpeechInput";
+
+const STT_LOCALE_MAP: Record<string, string> = {
+  en: "en-US",
+  es: "es-ES",
+  fr: "fr-FR",
+  de: "de-DE",
+  pt: "pt-BR",
+  zh: "zh-CN",
+  ja: "ja-JP",
+  ko: "ko-KR",
+  ar: "ar-SA",
+  hi: "hi-IN",
+};
 
 interface ResponseZoneProps {
   beat: Beat | null;
@@ -163,20 +179,12 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
 
   if (interaction.type === "voice") {
     return (
-      <div className="w-full flex flex-col items-center gap-3">
-        {interaction.prompt && (
-          <p className="vi-text-muted text-center text-sm font-body">{interaction.prompt}</p>
-        )}
-        <button
-          className="w-20 h-20 rounded-full flex items-center justify-center text-3xl bg-white vi-border border-[3px] hover:vi-surface-soft hover:scale-110 active:scale-95 transition-all shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))]"
-          style={{ boxShadow: `0 4px 14px ${accentColor}33` }}
-          onClick={() => onAnswer(true)}
-          aria-label="Tap to speak your answer"
-        >
-          <Mic className="w-7 h-7 text-slate-700" strokeWidth={2} aria-hidden="true" />
-        </button>
-        <p className="vi-text-muted text-xs font-body" aria-hidden="true">Tap to speak your answer</p>
-      </div>
+      <VoiceResponse
+        prompt={interaction.prompt}
+        onAnswer={onAnswer}
+        accentColor={accentColor}
+        functioningLevel={functioningLevel}
+      />
     );
   }
 
@@ -195,4 +203,122 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
   }
 
   return null;
+}
+
+interface VoiceResponseProps {
+  prompt?: string;
+  onAnswer: (correct: boolean) => void;
+  accentColor: string;
+  functioningLevel: FunctioningLevel;
+}
+
+function VoiceResponse({ prompt, onAnswer, accentColor, functioningLevel }: VoiceResponseProps) {
+  const t = useTranslations("stt");
+  const { locale } = useLocale();
+  const sttLocale = STT_LOCALE_MAP[locale] || "en-US";
+  const isLargeTarget = functioningLevel !== "STANDARD";
+  const [committedText, setCommittedText] = useState<string | null>(null);
+  const answeredRef = useRef(false);
+
+  const { status, transcript, error, isSupported, start, stop, reset } = useSpeechInput({
+    locale: sttLocale,
+    onResult: (text) => {
+      setCommittedText(text);
+      if (!answeredRef.current) {
+        answeredRef.current = true;
+        onAnswer(true);
+      }
+    },
+  });
+
+  useEffect(() => () => { stop(); }, [stop]);
+
+  const handleClick = () => {
+    if (status === "listening") {
+      stop();
+      return;
+    }
+    if (status === "processing") return;
+    answeredRef.current = false;
+    setCommittedText(null);
+    reset();
+    void start();
+  };
+
+  const errorLabel = (e: SpeechInputError | null) => {
+    switch (e) {
+      case "permission_denied": return t("mic_denied");
+      case "no_speech": return t("no_speech");
+      case "unsupported": return t("mic_unavailable");
+      case "network":
+      case "transcription_failed": return t("transcription_failed");
+      case "audio_capture": return t("audio_capture_error");
+      default: return null;
+    }
+  };
+
+  const buttonSize = isLargeTarget ? "w-24 h-24" : "w-20 h-20";
+  const isListening = status === "listening";
+  const isProcessing = status === "processing";
+
+  return (
+    <div className="w-full flex flex-col items-center gap-2" role="group" aria-label={t("voice_answer_group")}>
+      {prompt && (
+        <p className="vi-text-muted text-center text-sm font-body" id="voice-prompt">{prompt}</p>
+      )}
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={!isSupported || isProcessing}
+        aria-label={
+          isListening ? t("listening_stop") :
+          isProcessing ? t("processing") :
+          isSupported ? t("tap_to_speak") : t("mic_unavailable")
+        }
+        aria-pressed={isListening}
+        aria-describedby={prompt ? "voice-prompt" : undefined}
+        className={`relative ${buttonSize} rounded-full flex items-center justify-center bg-white vi-border border-[3px] transition-all shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))] disabled:opacity-50 disabled:cursor-not-allowed ${
+          isListening
+            ? "scale-110 ring-4 ring-[hsl(var(--visual-primary)/0.35)] animate-pulse"
+            : "hover:vi-surface-soft hover:scale-110 active:scale-95"
+        }`}
+        style={{ boxShadow: `0 4px 14px ${accentColor}33` }}
+      >
+        {isProcessing ? (
+          <Loader2 className="w-7 h-7 text-slate-700 animate-spin" strokeWidth={2} aria-hidden="true" />
+        ) : (
+          <Mic className="w-7 h-7 text-slate-700" strokeWidth={2} aria-hidden="true" />
+        )}
+        {isListening && (
+          <span
+            className="absolute inset-0 rounded-full border-2 animate-ping"
+            style={{ borderColor: accentColor }}
+            aria-hidden="true"
+          />
+        )}
+      </button>
+      <p className="vi-text-muted text-xs font-body min-h-4" aria-hidden="true">
+        {isListening ? t("listening") :
+         isProcessing ? t("processing") :
+         !isSupported ? t("mic_unavailable") :
+         t("tap_to_speak")}
+      </p>
+      {committedText && (
+        <p className="text-slate-700 text-sm font-body italic max-w-md text-center" aria-live="polite">
+          “{committedText}”
+        </p>
+      )}
+      {error && (
+        <p className="text-rose-600 text-xs font-body inline-flex items-center gap-1" role="alert">
+          <AlertCircle className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden />
+          {errorLabel(error)}
+        </p>
+      )}
+      <div aria-live="polite" className="sr-only">
+        {isListening && t("listening")}
+        {isProcessing && t("processing")}
+        {status === "idle" && transcript && t("heard_answer", { text: transcript })}
+      </div>
+    </div>
+  );
 }

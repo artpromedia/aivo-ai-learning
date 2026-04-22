@@ -389,7 +389,10 @@
     "paste_text": "Or paste your homework text",
     "get_help": "Get Help",
     "upload_to_start": "Upload homework to get started",
-    "visit_tutor_store": "Visit Tutor Store"
+    "visit_tutor_store": "Visit Tutor Store",
+    "mic_button": "メッセージを話す",
+    "mic_listening": "聞いています — タップで停止",
+    "mic_processing": "文字起こし中…"
   },
   "gamification": {
     "xp": "XP",
@@ -1660,5 +1663,18 @@
     "middle_tagline": "6–8・ジブリ風たそがれの発見",
     "high_name": "集中スタジオ",
     "high_tagline": "9–12・編集者のような静けさ"
+  },
+  "stt": {
+    "tap_to_speak": "タップして答えを話してね",
+    "listening": "聞いています…",
+    "listening_stop": "タップして停止",
+    "processing": "処理中…",
+    "no_speech": "声が聞こえませんでした。もう一度試してね。",
+    "mic_denied": "マイクへのアクセスがブロックされました。ブラウザの設定で許可してください。",
+    "mic_unavailable": "このデバイスではマイクが使えません。",
+    "transcription_failed": "文字起こしできませんでした。もう一度試してね。",
+    "audio_capture_error": "マイクで問題が発生しました。",
+    "voice_answer_group": "音声回答",
+    "heard_answer": "聞いた内容：{text}"
   }
 }

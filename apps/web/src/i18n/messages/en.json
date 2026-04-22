@@ -390,7 +390,10 @@
     "solution_ready": "Solution ready!",
     "try_similar": "Try a similar problem",
     "difficulty": "Difficulty",
-    "time_spent": "Time spent"
+    "time_spent": "Time spent",
+    "mic_button": "Speak your message",
+    "mic_listening": "Listening — tap to stop",
+    "mic_processing": "Transcribing…"
   },
   "gamification": {
     "xp": "XP",
@@ -1661,5 +1664,18 @@
     "middle_tagline": "6–8 · Ghibli twilight discovery",
     "high_name": "Focus Studio",
     "high_tagline": "9–12 · editorial calm"
+  },
+  "stt": {
+    "tap_to_speak": "Tap to speak your answer",
+    "listening": "Listening…",
+    "listening_stop": "Tap to stop",
+    "processing": "Processing…",
+    "no_speech": "I didn't hear anything. Try again.",
+    "mic_denied": "Microphone access was blocked. Allow it in your browser settings.",
+    "mic_unavailable": "Microphone isn't available on this device.",
+    "transcription_failed": "Couldn't transcribe that. Try again.",
+    "audio_capture_error": "Something went wrong with the microphone.",
+    "voice_answer_group": "Voice answer",
+    "heard_answer": "Heard: {text}"
   }
 }

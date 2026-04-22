@@ -389,7 +389,10 @@
     "paste_text": "Or paste your homework text",
     "get_help": "Get Help",
     "upload_to_start": "Upload homework to get started",
-    "visit_tutor_store": "Visit Tutor Store"
+    "visit_tutor_store": "Visit Tutor Store",
+    "mic_button": "تحدّث برسالتك",
+    "mic_listening": "أستمع — اضغط للإيقاف",
+    "mic_processing": "جارٍ التفريغ…"
   },
   "gamification": {
     "xp": "XP",
@@ -1660,5 +1663,18 @@
     "middle_tagline": "الصف 6–8 · اكتشاف الشفق على طراز جيبلي",
     "high_name": "استوديو التركيز",
     "high_tagline": "الصف 9–12 · هدوء تحريري"
+  },
+  "stt": {
+    "tap_to_speak": "اضغط لقول إجابتك",
+    "listening": "أستمع…",
+    "listening_stop": "اضغط للإيقاف",
+    "processing": "جارٍ المعالجة…",
+    "no_speech": "لم أسمع أي شيء. حاول مرة أخرى.",
+    "mic_denied": "تم حظر الوصول إلى الميكروفون. اسمح به من إعدادات المتصفح.",
+    "mic_unavailable": "الميكروفون غير متوفر على هذا الجهاز.",
+    "transcription_failed": "تعذّر التفريغ النصي. حاول مرة أخرى.",
+    "audio_capture_error": "حدث خطأ مع الميكروفون.",
+    "voice_answer_group": "إجابة صوتية",
+    "heard_answer": "سمعت: {text}"
   }
 }
