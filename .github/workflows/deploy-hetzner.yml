@@ -513,9 +513,41 @@ jobs:
             # Mismatches cause strategic-merge to *append* a second ports
             # entry, which then collides on the port name "http" and the
             # upgrade fails with: Duplicate value: "http".
+            EXTRA_SETS=()
             case "$svc" in
               brain-svc)       PORT=8000 ;;
               assessment-svc)  PORT=3003 ;;
+              # These services read a port env var whose name matches what
+              # K8s auto-injects (<SVC-UPPER>_PORT=tcp://ClusterIP:Port).
+              # The tcp:// value causes parseInt() to return NaN → crash.
+              # Explicitly set the colliding var to numeric 3000.
+              admin-svc)        EXTRA_SETS=(--set env.ADMIN_SVC_PORT=3000) ;;
+              billing-svc)      EXTRA_SETS=(--set env.BILLING_SVC_PORT=3000) ;;
+              comms-svc)        EXTRA_SETS=(--set env.COMMS_SVC_PORT=3000) ;;
+              i18n-svc)         EXTRA_SETS=(--set env.I18N_SVC_PORT=3000) ;;
+              integrations-svc) EXTRA_SETS=(--set env.INTEGRATIONS_SVC_PORT=3000) ;;
+              research-svc)     EXTRA_SETS=(--set env.RESEARCH_SVC_PORT=3000) ;;
+              status-page-svc)
+                # status-page-svc requires cluster-local URLs for all 14
+                # downstream services to boot in production.
+                EXTRA_SETS=(
+                  --set env.STATUS_PAGE_SVC_PORT=3000
+                  --set "env.IDENTITY_SVC_URL=http://identity-svc.aivo.svc.cluster.local:3000"
+                  --set "env.BRAIN_SVC_URL=http://brain-svc.aivo.svc.cluster.local:8000"
+                  --set "env.ASSESSMENT_SVC_URL=http://assessment-svc.aivo.svc.cluster.local:3000"
+                  --set "env.AI_SVC_URL=http://ai-svc.aivo.svc.cluster.local:3000"
+                  --set "env.LEARNING_SVC_URL=http://learning-svc.aivo.svc.cluster.local:3000"
+                  --set "env.TUTOR_SVC_URL=http://tutor-svc.aivo.svc.cluster.local:3000"
+                  --set "env.FAMILY_SVC_URL=http://family-svc.aivo.svc.cluster.local:3000"
+                  --set "env.ENGAGEMENT_SVC_URL=http://engagement-svc.aivo.svc.cluster.local:3000"
+                  --set "env.BILLING_SVC_URL=http://billing-svc.aivo.svc.cluster.local:3000"
+                  --set "env.I18N_SVC_URL=http://i18n-svc.aivo.svc.cluster.local:3000"
+                  --set "env.INTEGRATIONS_SVC_URL=http://integrations-svc.aivo.svc.cluster.local:3000"
+                  --set "env.ADMIN_SVC_URL=http://admin-svc.aivo.svc.cluster.local:3000"
+                  --set "env.STATUS_PAGE_SVC_URL=http://status-page-svc.aivo.svc.cluster.local:3000"
+                  --set "env.RESEARCH_SVC_URL=http://research-svc.aivo.svc.cluster.local:3000"
+                )
+                ;;
               *)               PORT=3000 ;;
             esac
             adopt serviceaccount "$svc" "$svc"
@@ -546,6 +578,7 @@ jobs:
                 --set service.targetPort=$PORT \
                 --set env.PORT="$PORT" \
                 --set envFrom[0].secretRef.name=aivo-common-env \
+                "${EXTRA_SETS[@]}" \
                 -n "$NS" --timeout 3m 2>&1
             }
 
