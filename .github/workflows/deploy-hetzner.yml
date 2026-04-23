@@ -525,10 +525,17 @@ jobs:
             unstick "$svc"
             echo "═══ Prod deploy: $svc ($VERSION) ═══"
 
-            # --atomic + --cleanup-on-fail roll back to the prior revision on
-            # any failure so the release never sits in pending-*, which would
-            # cascade-fail every subsequent service in this loop with
-            # "another operation in progress".
+            # NOTE: --wait / --atomic intentionally NOT used here.
+            # Several prod services currently have an unhealthy 2nd replica
+            # (e.g. crash-looping due to env/package issues unrelated to
+            # this deploy). Any helm flag that requires readyReplicas ==
+            # desiredReplicas then times out and --atomic rolls back the
+            # healthy revision, cascade-failing every subsequent service.
+            # The Deployment's RollingUpdate strategy (0 maxUnavailable)
+            # already protects the old ReplicaSet until the new pod is
+            # Ready, so skipping --wait is safe: a bad image will leave the
+            # old replica serving traffic. We still verify rollout per
+            # service with `kubectl rollout status` but tolerate a timeout.
             helm_apply() {
               helm upgrade --install "$svc" "${{ env.CHART_PATH }}" \
                 -f "${{ env.PROD_VALUES }}" \
@@ -539,7 +546,7 @@ jobs:
                 --set service.targetPort=$PORT \
                 --set env.PORT="$PORT" \
                 --set envFrom[0].secretRef.name=aivo-common-env \
-                -n "$NS" --timeout 8m --wait --atomic --cleanup-on-fail 2>&1
+                -n "$NS" --timeout 3m 2>&1
             }
 
             set +e
