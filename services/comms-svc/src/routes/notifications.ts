@@ -510,8 +510,34 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     const html = `<pre style="font-family:ui-monospace,monospace;font-size:13px;line-height:1.5">${text.replace(/[<>&]/g, (c) => ({"<":"&lt;",">":"&gt;","&":"&amp;"} as any)[c])}</pre>`;
     const recipients: string[] = [];
     if (guardianAddr) recipients.push(guardianAddr);
-    if (category === "self_harm" || category === "abuse_disclosure") recipients.push(moderatorAddr);
+    // Hard flags always page the on-call safety moderator (self_harm /
+    // abuse_disclosure / any escalated soft-on-repeat). This guarantees
+    // a human is informed even if the guardian email lookup failed.
+    if (severity === "hard") recipients.push(moderatorAddr);
+    else if (category === "self_harm" || category === "abuse_disclosure") recipients.push(moderatorAddr);
     if (!isConfigured() || recipients.length === 0) {
+      // Never silently drop a hard flag. Persist to the safety-queue
+      // file so an out-of-band cron / on-call sweep can pick it up; if
+      // SAFETY_HARD_FLAG_FAIL_FATAL=1 we 500 to force the caller to
+      // retry instead of believing delivery succeeded.
+      const isHard = severity === "hard" || category === "self_harm" || category === "abuse_disclosure";
+      if (isHard) {
+        try {
+          const fs = await import("node:fs/promises");
+          const path = await import("node:path");
+          const dir = process.env.SAFETY_QUEUE_DIR || ".data/safety-queue";
+          await fs.mkdir(dir, { recursive: true });
+          const file = path.join(dir, `${correlationId}.json`);
+          await fs.writeFile(file, JSON.stringify({ category, severity, correlationId, ageBand, raisedAt, learnerIdHash, queued_at: new Date().toISOString() }));
+          logger.error({ file, category, correlationId }, "Speech Buddy hard flag queued — no recipients/comms unconfigured");
+        } catch (qErr) {
+          logger.error({ err: qErr, category, correlationId }, "Failed to queue hard flag locally");
+        }
+        if (process.env.SAFETY_HARD_FLAG_FAIL_FATAL === "1") {
+          return reply.code(500).send({ error: "no recipients available for hard flag", category, correlationId });
+        }
+        return reply.code(202).send({ status: "queued", recipients, subject, correlationId });
+      }
       logger.warn(
         { recipients, category, severity, correlationId },
         "Speech Buddy safety alert (email not configured or no recipients; logged only)",

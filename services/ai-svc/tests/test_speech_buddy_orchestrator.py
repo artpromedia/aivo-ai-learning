@@ -126,6 +126,88 @@ def test_state_machine_transitions_through_all_runtime_vertices():
     asyncio.new_event_loop().run_until_complete(go())
 
 
+def test_hard_flag_resolves_guardian_and_pages_comms_with_recipient():
+    """End-to-end emitter behaviour: on a hard flag we (a) resolve the
+    guardian email via the injected resolver, (b) POST it to comms-svc
+    along with the safety payload, and (c) include the same correlation
+    id the orchestrator emitted."""
+    posts: list[dict] = []
+    class FakeResp:
+        status_code = 202
+    class FakeHttp:
+        async def post(self, url, json, headers, timeout):  # noqa: A002
+            posts.append({"url": url, "body": json, "headers": headers})
+            return FakeResp()
+    async def go():
+        from ai_svc.speech_buddy.events import EventEmitter
+        from ai_svc.speech_buddy.types import SafetyFlag
+        async def resolver(*, learner_id, tenant_id):
+            assert learner_id == "child-7" and tenant_id == "tenant-A"
+            return "guardian@example.com"
+        emitter = EventEmitter(
+            http_client=FakeHttp(),
+            comms_url="http://comms.local",
+            guardian_email_resolver=resolver,
+        )
+        flag = SafetyFlag(
+            category="self_harm", severity="hard", source="child_input",
+            layer="regex", correlation_id="cor-xyz",
+            raised_at="2026-04-23T00:00:00Z",
+        )
+        await emitter.safety_flag(
+            flag=flag, session_id="s1", age_band="6-9",
+            learner_id_hash="hash", learner_id="child-7", tenant_id="tenant-A",
+        )
+        assert len(posts) == 1
+        assert posts[0]["url"].endswith("/api/comms/internal/speech-buddy-safety")
+        assert posts[0]["body"]["to"] == "guardian@example.com"
+        assert posts[0]["body"]["correlationId"] == "cor-xyz"
+        assert posts[0]["headers"]["x-internal-key"]
+    asyncio.new_event_loop().run_until_complete(go())
+
+
+def test_hard_flag_queues_locally_when_comms_unreachable(tmp_path, monkeypatch):
+    """If comms-svc throws, the hard flag must NOT be silently dropped —
+    it lands in the local safety-queue directory for an ops sweep."""
+    monkeypatch.setenv("SPEECH_BUDDY_SAFETY_QUEUE_DIR", str(tmp_path))
+    class BoomHttp:
+        async def post(self, *a, **k):
+            raise RuntimeError("comms-svc down")
+    async def go():
+        from ai_svc.speech_buddy.events import EventEmitter
+        from ai_svc.speech_buddy.types import SafetyFlag
+        emitter = EventEmitter(http_client=BoomHttp(), comms_url="http://x")
+        await emitter.safety_flag(
+            flag=SafetyFlag(category="self_harm", severity="hard",
+                            source="child_input", layer="regex",
+                            correlation_id="queued-1",
+                            raised_at="2026-04-23T00:00:00Z"),
+            session_id="s1", age_band="6-9", learner_id_hash="h",
+            learner_id="lid", tenant_id="tid",
+        )
+    asyncio.new_event_loop().run_until_complete(go())
+    queued = list(tmp_path.glob("queued-1.json"))
+    assert len(queued) == 1, f"expected hard flag queued locally, got {list(tmp_path.iterdir())}"
+
+
+def test_transcript_store_round_trip_decrypts_back_to_plaintext(tmp_path, monkeypatch):
+    """Regression for the EncryptedTranscript reconstruction bug: put()
+    then get() must decrypt back to the original plaintext."""
+    monkeypatch.setenv("SPEECH_BUDDY_TRANSCRIPT_DIR", str(tmp_path))
+    from ai_svc.speech_buddy.transcript_store import FileTranscriptStore
+    from ai_svc.speech_buddy.encryption import encrypt_transcript, decrypt_transcript
+    store = FileTranscriptStore(root=tmp_path)
+    plaintext = "buddy: hi\nchild: hi back\nbuddy: how are you?"
+    enc = encrypt_transcript("tenant-A", plaintext)
+    uri = store.put(session_id="sess-1", transcript=enc)
+    assert uri
+    fetched = store.get(tenant_id="tenant-A", session_id="sess-1")
+    assert fetched is not None
+    assert decrypt_transcript(fetched) == plaintext
+    # Cross-tenant read must NOT succeed.
+    assert store.get(tenant_id="tenant-B", session_id="sess-1") is None
+
+
 def test_self_harm_input_triggers_crisis_and_ends():
     async def go():
         orchestrator = _orch()

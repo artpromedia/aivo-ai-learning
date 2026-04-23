@@ -24,7 +24,7 @@ function ownerHeaders(owner?: OwnerCtx): Record<string, string> {
   };
 }
 
-async function call<T>(path: string, init: RequestInit & { method: "GET" | "POST" }): Promise<T> {
+async function call<T>(path: string, init: RequestInit & { method: "GET" | "POST"; signal?: AbortSignal }): Promise<T> {
   const res = await fetch(`${AI_SVC_URL}${path}`, {
     ...init,
     headers: {
@@ -32,6 +32,7 @@ async function call<T>(path: string, init: RequestInit & { method: "GET" | "POST
       "x-internal-key": INTERNAL_KEY,
       ...(init.headers || {}),
     },
+    signal: init.signal,
   });
   const text = await res.text();
   let body: any = null;
@@ -127,11 +128,13 @@ export const aiSvc = {
     sessionId: string,
     body: { text?: string; audioBase64?: string; mimeType?: string },
     owner?: OwnerCtx,
+    opts?: { signal?: AbortSignal },
   ) {
     return call<TurnResponse>(`/api/ai/speech-buddy/sessions/${encodeURIComponent(sessionId)}/turn`, {
       method: "POST",
       body: JSON.stringify(body),
       headers: ownerHeaders(owner),
+      signal: opts?.signal,
     });
   },
   endSession(sessionId: string, reason: string, owner?: OwnerCtx) {

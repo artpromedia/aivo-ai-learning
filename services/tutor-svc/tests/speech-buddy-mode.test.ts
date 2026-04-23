@@ -98,6 +98,36 @@ describe("tutor-svc → ai-svc speech buddy client", () => {
     }
   });
 
+  it("forwards an AbortSignal so the WS layer can cancel an in-flight turn on barge-in", async () => {
+    const realFetch = globalThis.fetch;
+    let observedSignal: AbortSignal | undefined;
+    let aborted = false;
+    (globalThis as any).fetch = (_url: string, init: any) => {
+      observedSignal = init.signal;
+      return new Promise((_resolve, reject) => {
+        init.signal?.addEventListener("abort", () => {
+          aborted = true;
+          const e: any = new Error("aborted");
+          e.name = "AbortError";
+          reject(e);
+        });
+      });
+    };
+    const ac = new AbortController();
+    const p = aiSvc.runTurn("s", { text: "hi" }, { tenantId: "t", learnerId: "l" }, { signal: ac.signal });
+    setTimeout(() => ac.abort(), 5);
+    try {
+      await p;
+      assert.fail("expected abort to reject");
+    } catch (err: any) {
+      assert.equal(err.name, "AbortError");
+      assert.ok(observedSignal, "fetch should have received an AbortSignal");
+      assert.equal(aborted, true);
+    } finally {
+      (globalThis as any).fetch = realFetch;
+    }
+  });
+
   it("returns base64 buddy audio in TurnResponse so the WS layer can stream it back", async () => {
     const realFetch = globalThis.fetch;
     const audio = Buffer.from([0x49, 0x44, 0x33, 0x04, 0x00]).toString("base64");

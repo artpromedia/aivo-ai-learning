@@ -69,8 +69,8 @@ class FileTranscriptStore:
             return None
         return EncryptedTranscript(
             tenant_id=data["tenant_id"],
-            nonce=data["nonce"],
-            ciphertext=data["ciphertext"],
+            nonce_b64=data["nonce"],
+            ciphertext_b64=data["ciphertext"],
             algorithm=data.get("algorithm", "AES-256-GCM"),
         )
 

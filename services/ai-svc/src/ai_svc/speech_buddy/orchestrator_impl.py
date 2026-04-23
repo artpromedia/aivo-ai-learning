@@ -542,6 +542,8 @@ class DefaultOrchestrator:
             session_id=rec.session.id,
             age_band=rec.session.age_band,
             learner_id_hash=hash_learner_id(rec.session.learner_id),
+            learner_id=rec.session.learner_id,
+            tenant_id=rec.session.tenant_id,
         )
         # End the session cleanly.
         await self.end_session(rec.session.id, reason="safety_hard_flag")

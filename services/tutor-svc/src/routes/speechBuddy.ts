@@ -191,6 +191,20 @@ export async function registerSpeechBuddyRoutes(app: FastifyInstance) {
         return;
       }
       send({ type: "ready", sessionId: id });
+      // Barge-in: when the child interrupts mid-buddy-TTS, the client sends
+      // `{ type: "barge_in" }`. We abort the in-flight ai-svc /turn fetch
+      // (cancelling planning + TTS), tell the client to stop playback, and
+      // accept the next audio_frame / text_turn immediately. We never wait
+      // for the cancelled turn to "finish" — the AbortError just gets
+      // caught in the message handler.
+      let inFlight: AbortController | null = null;
+      const cancelInFlight = (reason: string) => {
+        if (inFlight) {
+          try { inFlight.abort(); } catch { /* noop */ }
+          inFlight = null;
+          send({ type: "tts_cancelled", reason });
+        }
+      };
       conn.socket.on("message", async (raw: Buffer) => {
         let msg: any;
         try { msg = JSON.parse(raw.toString("utf-8")); }
@@ -209,24 +223,51 @@ export async function registerSpeechBuddyRoutes(app: FastifyInstance) {
             conn.socket.close();
           }
         };
+        if (msg?.type === "barge_in") {
+          // Child started speaking over the buddy. Cancel the in-flight
+          // turn (which is still synthesising or streaming TTS bytes) so
+          // the client stops playback and we don't keep generating audio
+          // the child won't hear. The next audio_frame will start a fresh
+          // turn against the same session.
+          cancelInFlight("barge_in");
+          send({ type: "barge_in_acked" });
+          return;
+        }
         if (msg?.type === "audio_frame" && typeof msg.audioBase64 === "string") {
+          // Implicit barge-in: a fresh frame from the child while a turn
+          // is in flight means they didn't wait — abort the previous one.
+          cancelInFlight("new_audio_frame");
+          inFlight = new AbortController();
+          const ac = inFlight;
           try {
             const turn = await aiSvc.runTurn(id, {
               audioBase64: msg.audioBase64,
               mimeType: typeof msg.mimeType === "string" ? msg.mimeType : "audio/webm",
-            }, owner);
+            }, owner, { signal: ac.signal });
+            if (ac.signal.aborted) return; // raced with barge_in
             emitTurn(turn);
           } catch (err: any) {
+            if (err?.name === "AbortError" || ac.signal.aborted) return;
             send({ type: "error", error: err.message || "turn failed" });
+          } finally {
+            if (inFlight === ac) inFlight = null;
           }
         } else if (msg?.type === "text_turn" && typeof msg.text === "string") {
+          cancelInFlight("new_text_turn");
+          inFlight = new AbortController();
+          const ac = inFlight;
           try {
-            const turn = await aiSvc.runTurn(id, { text: msg.text }, owner);
+            const turn = await aiSvc.runTurn(id, { text: msg.text }, owner, { signal: ac.signal });
+            if (ac.signal.aborted) return;
             emitTurn(turn);
           } catch (err: any) {
+            if (err?.name === "AbortError" || ac.signal.aborted) return;
             send({ type: "error", error: err.message || "turn failed" });
+          } finally {
+            if (inFlight === ac) inFlight = null;
           }
         } else if (msg?.type === "end") {
+          cancelInFlight("session_end");
           try {
             const out = await aiSvc.endSession(id, msg.reason || "completed", owner);
             send({ type: "session_ended", reason: out.endedReason, summary: {
