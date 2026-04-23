@@ -234,12 +234,47 @@ jobs:
               --set service.port=$port \
               --set service.targetPort=$port \
               --set replicaCount=1 \
+              "${EXTRA_SETS[@]}" \
               -n "$NS" --timeout 3m --wait
           }
 
           FAILED=0
           for svc in "${SERVICES[@]}"; do
             PORT=3000
+            # Mirror the per-service env fixes applied in production:
+            #  - Override K8s-injected <SVC-UPPER>_PORT=tcp://... so
+            #    parseInt() receives a numeric value.
+            #  - Supply all *_SVC_URL env vars required by status-page-svc
+            #    at boot in NODE_ENV=production (cluster-local DNS in the
+            #    current namespace).
+            EXTRA_SETS=()
+            case "$svc" in
+              admin-svc)        EXTRA_SETS=(--set env.ADMIN_SVC_PORT=3000) ;;
+              billing-svc)      EXTRA_SETS=(--set env.BILLING_SVC_PORT=3000) ;;
+              comms-svc)        EXTRA_SETS=(--set env.COMMS_SVC_PORT=3000) ;;
+              i18n-svc)         EXTRA_SETS=(--set env.I18N_SVC_PORT=3000) ;;
+              integrations-svc) EXTRA_SETS=(--set env.INTEGRATIONS_SVC_PORT=3000) ;;
+              research-svc)     EXTRA_SETS=(--set env.RESEARCH_SVC_PORT=3000) ;;
+              status-page-svc)
+                EXTRA_SETS=(
+                  --set env.STATUS_PAGE_SVC_PORT=3000
+                  --set "env.IDENTITY_SVC_URL=http://identity-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.BRAIN_SVC_URL=http://brain-svc.${NS}.svc.cluster.local:8000"
+                  --set "env.ASSESSMENT_SVC_URL=http://assessment-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.AI_SVC_URL=http://ai-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.LEARNING_SVC_URL=http://learning-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.TUTOR_SVC_URL=http://tutor-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.FAMILY_SVC_URL=http://family-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.ENGAGEMENT_SVC_URL=http://engagement-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.BILLING_SVC_URL=http://billing-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.I18N_SVC_URL=http://i18n-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.INTEGRATIONS_SVC_URL=http://integrations-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.ADMIN_SVC_URL=http://admin-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.STATUS_PAGE_SVC_URL=http://status-page-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.RESEARCH_SVC_URL=http://research-svc.${NS}.svc.cluster.local:3000"
+                )
+                ;;
+            esac
 
             clear_pending_release "$svc"
             adopt serviceaccount "$svc" "$svc"
