@@ -3,8 +3,12 @@ import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { curriculumUploads, learners, learnerTeachers } from "@aivo/db";
 import { verifyJWT, JWTPayload } from "@aivo/security";
 
+const IS_PROD = process.env.NODE_ENV === "production";
+if (IS_PROD && !process.env.AI_SVC_URL) {
+  throw new Error("tutor-svc: AI_SVC_URL must be set in production");
+}
 const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
-if (process.env.NODE_ENV === "production" && !process.env.INTERNAL_AI_TOKEN) {
+if (IS_PROD && !process.env.INTERNAL_AI_TOKEN) {
   throw new Error(
     "INTERNAL_AI_TOKEN must be set in production (shared secret between tutor-svc and ai-svc).",
   );

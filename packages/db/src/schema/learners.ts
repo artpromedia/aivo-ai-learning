@@ -70,6 +70,10 @@ export const iepProfiles = pgTable("iep_profiles", {
   // repeated notify-in-review calls don't spam the family.
   inReviewNotifiedAt: timestamp("in_review_notified_at"),
   placement: varchar("placement", { length: 100 }),
+  // Bumped each time an amendment is acknowledged + merged. Downstream
+  // signature workflows watch this so they know affected sections
+  // need to be re-signed.
+  revisionCounter: integer("revision_counter").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

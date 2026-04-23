@@ -27,18 +27,28 @@ export function getRpName(): string {
   return PROD_RP_NAME;
 }
 
+const DEFAULT_PROD_ORIGINS = [
+  "https://aivolearning.com",
+  "https://www.aivolearning.com",
+  "https://app.aivolearning.com",
+  "https://admin.aivolearning.com",
+  "https://district.aivolearning.com",
+];
+
 export function getExpectedOrigin(req: { headers: Record<string, string | string[] | undefined> }): string[] {
   const fromEnv = process.env.WEBAUTHN_ORIGINS;
   if (fromEnv) return fromEnv.split(",").map((s) => s.trim()).filter(Boolean);
+
+  // Production: strict static allow-list only. We deliberately do NOT
+  // derive an origin from request headers — that would let a bad
+  // x-forwarded-host bypass origin pinning, which is the entire point
+  // of the WebAuthn check. Override via WEBAUTHN_ORIGINS env if you
+  // need additional origins.
   if (process.env.NODE_ENV === "production") {
-    return [
-      "https://aivolearning.com",
-      "https://www.aivolearning.com",
-      "https://app.aivolearning.com",
-      "https://admin.aivolearning.com",
-      "https://district.aivolearning.com",
-    ];
+    return [...DEFAULT_PROD_ORIGINS];
   }
+
+  // Dev / replit only — localhost fallbacks are intentionally gated to non-prod.
   const proto = (req.headers["x-forwarded-proto"] as string) || "https";
   const rawHost = (req.headers["x-forwarded-host"] || req.headers.host) as string | undefined;
   const host = rawHost?.split(",")[0]?.trim() || "localhost:5000";

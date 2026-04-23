@@ -4,6 +4,11 @@ import { learners } from "@aivo/db";
 import { verifyJWT, JWTPayload } from "@aivo/security";
 
 const INTERNAL_SERVICE_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || "";
+if (process.env.NODE_ENV === "production" && !INTERNAL_SERVICE_TOKEN) {
+  throw new Error(
+    "learning-svc: INTERNAL_SERVICE_TOKEN must be set in production (shared secret for inter-service calls).",
+  );
+}
 
 declare module "fastify" {
   interface FastifyRequest {

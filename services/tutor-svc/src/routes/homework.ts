@@ -13,9 +13,16 @@ const HOMEWORK_SUBJECT_TO_FOCUS: Record<string, string> = {
   OTHER: "other",
 };
 
-const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
-const BRAIN_SVC_URL = process.env.BRAIN_SVC_URL || "http://localhost:3002";
-const LEARNING_SVC_URL = process.env.LEARNING_SVC_URL || "http://localhost:3005";
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`tutor-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const AI_SVC_URL = requireUrl("AI_SVC_URL", "http://localhost:3004");
+const BRAIN_SVC_URL = requireUrl("BRAIN_SVC_URL", "http://localhost:3002");
+const LEARNING_SVC_URL = requireUrl("LEARNING_SVC_URL", "http://localhost:3005");
 
 const SUBJECT_TO_SKU: Record<string, string> = {
   MATH: "ADDON_TUTOR_MATH",

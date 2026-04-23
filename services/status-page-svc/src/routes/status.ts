@@ -4,23 +4,45 @@ import { createLogger } from "@aivo/observability";
 
 const logger = createLogger("status-page-svc:status");
 
-const SERVICES = [
-  { name: "identity-svc", url: "http://localhost:3001/api/auth/health" },
-  { name: "brain-svc", url: "http://localhost:3002/api/brain/health" },
-  { name: "assessment-svc", url: "http://localhost:3003/api/assessments/health" },
-  { name: "ai-svc", url: "http://localhost:3004/api/ai/health" },
-  { name: "learning-svc", url: "http://localhost:3005/api/learning/health" },
-  { name: "tutor-svc", url: "http://localhost:3006/api/tutors/health" },
-  { name: "family-svc", url: "http://localhost:3007/api/family/health" },
-  { name: "engagement-svc", url: "http://localhost:3008/api/engagement/health" },
-  { name: "billing-svc", url: "http://localhost:3009/api/billing/health" },
-  { name: "comms-svc", url: "http://localhost:3010/api/comms/health" },
-  { name: "i18n-svc", url: "http://localhost:3011/api/i18n/health" },
-  { name: "integrations-svc", url: "http://localhost:3012/api/integrations/health" },
-  { name: "admin-svc", url: "http://localhost:3013/api/admin-svc/health" },
-  { name: "status-page-svc", url: "http://localhost:3014/api/status/health" },
-  { name: "research-svc", url: "http://localhost:3015/api/research/health" },
+const IS_PROD = process.env.NODE_ENV === "production";
+
+// Per-service: { envKey, healthPath, devDefault }. In production each envKey is
+// required at boot — missing values throw a loud error so the status page never
+// silently reports a backend as "down" because we polled the wrong host.
+const SERVICE_DEFS: Array<{ name: string; envKey: string; healthPath: string; devDefault: string }> = [
+  { name: "identity-svc",     envKey: "IDENTITY_SVC_URL",     healthPath: "/api/auth/health",         devDefault: "http://localhost:3001" },
+  { name: "brain-svc",        envKey: "BRAIN_SVC_URL",        healthPath: "/api/brain/health",        devDefault: "http://localhost:3002" },
+  { name: "assessment-svc",   envKey: "ASSESSMENT_SVC_URL",   healthPath: "/api/assessments/health",  devDefault: "http://localhost:3003" },
+  { name: "ai-svc",           envKey: "AI_SVC_URL",           healthPath: "/api/ai/health",           devDefault: "http://localhost:3004" },
+  { name: "learning-svc",     envKey: "LEARNING_SVC_URL",     healthPath: "/api/learning/health",     devDefault: "http://localhost:3005" },
+  { name: "tutor-svc",        envKey: "TUTOR_SVC_URL",        healthPath: "/api/tutors/health",       devDefault: "http://localhost:3006" },
+  { name: "family-svc",       envKey: "FAMILY_SVC_URL",       healthPath: "/api/family/health",       devDefault: "http://localhost:3007" },
+  { name: "engagement-svc",   envKey: "ENGAGEMENT_SVC_URL",   healthPath: "/api/engagement/health",   devDefault: "http://localhost:3008" },
+  { name: "billing-svc",      envKey: "BILLING_SVC_URL",      healthPath: "/api/billing/health",      devDefault: "http://localhost:3009" },
+  { name: "comms-svc",        envKey: "COMMS_SVC_URL",        healthPath: "/api/comms/health",        devDefault: "http://localhost:3010" },
+  { name: "i18n-svc",         envKey: "I18N_SVC_URL",         healthPath: "/api/i18n/health",         devDefault: "http://localhost:3011" },
+  { name: "integrations-svc", envKey: "INTEGRATIONS_SVC_URL", healthPath: "/api/integrations/health", devDefault: "http://localhost:3012" },
+  { name: "admin-svc",        envKey: "ADMIN_SVC_URL",        healthPath: "/api/admin-svc/health",    devDefault: "http://localhost:3013" },
+  { name: "status-page-svc",  envKey: "STATUS_PAGE_SVC_URL",  healthPath: "/api/status/health",       devDefault: "http://localhost:3014" },
+  { name: "research-svc",     envKey: "RESEARCH_SVC_URL",     healthPath: "/api/research/health",     devDefault: "http://localhost:3015" },
 ];
+
+const missingProd = IS_PROD ? SERVICE_DEFS.filter((s) => !process.env[s.envKey]).map((s) => s.envKey) : [];
+if (missingProd.length > 0) {
+  throw new Error(
+    `status-page-svc: required service URL env vars missing in production: ${missingProd.join(", ")}`,
+  );
+}
+if (IS_PROD && !process.env.INTERNAL_SERVICE_TOKEN) {
+  throw new Error(
+    "status-page-svc: INTERNAL_SERVICE_TOKEN must be set in production (used to dispatch admin alerts via comms-svc).",
+  );
+}
+
+const SERVICES: Array<{ name: string; url: string }> = SERVICE_DEFS.map((s) => ({
+  name: s.name,
+  url: `${(process.env[s.envKey] || s.devDefault).replace(/\/$/, "")}${s.healthPath}`,
+}));
 
 const SLOW_THRESHOLD_MS = 2000;
 const DOWN_ALERT_AFTER = 3;
@@ -53,7 +75,7 @@ async function alertAdmins(service: string, consecutive: number) {
   if (Date.now() - last < ALERT_COOLDOWN_MS) return;
   lastAlertAt[service] = Date.now();
 
-  const commsUrl = process.env.COMMS_SVC_URL || "http://localhost:3010";
+  const commsUrl = process.env.COMMS_SVC_URL || (IS_PROD ? "" : "http://localhost:3010");
   const token = process.env.INTERNAL_SERVICE_TOKEN;
   if (!token) {
     logger.error({ service, consecutive }, "service_down_no_token");
