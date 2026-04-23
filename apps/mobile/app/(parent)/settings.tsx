@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Modal, Switch, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert, TextInput, Modal, Switch, ActivityIndicator, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 import { API } from '@/constants/api';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, getToken } from '@/lib/api';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -42,6 +43,101 @@ export default function SettingsScreen() {
   const [deleting, setDeleting] = useState(false);
 
   const [exportingData, setExportingData] = useState(false);
+
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(((user as any)?.avatarUrl as string | undefined) ?? null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+
+  useEffect(() => {
+    setAvatarUrl(((user as any)?.avatarUrl as string | undefined) ?? null);
+  }, [user]);
+
+  const uploadAvatar = useCallback(async (uri: string, mime: string) => {
+    setAvatarBusy(true);
+    try {
+      const token = await getToken();
+      if (!token) {
+        Alert.alert(t('common.error'), t('common.error'));
+        return;
+      }
+      const ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+      const fd = new FormData();
+      fd.append('file', {
+        uri,
+        name: `avatar.${ext}`,
+        type: mime,
+      } as any);
+      const res = await fetch(`${API.IDENTITY}/api/users/me/avatar`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd as any,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        Alert.alert(t('common.error'), data?.error || t('parentSettings.avatarUploadFailed'));
+        return;
+      }
+      const newUrl: string = data.avatarUrl;
+      // The API returns a path like /api/avatars/...; for the mobile <Image>
+      // component we need an absolute URL pointing at identity-svc.
+      const absolute = newUrl.startsWith('http') ? newUrl : `${API.IDENTITY}${newUrl}`;
+      setAvatarUrl(`${absolute}?v=${Date.now()}`);
+    } catch {
+      Alert.alert(t('common.error'), t('parentSettings.avatarUploadFailed'));
+    } finally {
+      setAvatarBusy(false);
+    }
+  }, [t]);
+
+  const handlePickAvatar = useCallback(async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(t('common.error'), t('parentSettings.avatarPermissionDenied'));
+      return;
+    }
+    const picked = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (picked.canceled || !picked.assets?.[0]) return;
+    const asset = picked.assets[0];
+    const mime = asset.mimeType || 'image/jpeg';
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) {
+      Alert.alert(t('common.error'), t('parentSettings.avatarInvalidType'));
+      return;
+    }
+    if (asset.fileSize && asset.fileSize > 5 * 1024 * 1024) {
+      Alert.alert(t('common.error'), t('parentSettings.avatarTooLarge'));
+      return;
+    }
+    await uploadAvatar(asset.uri, mime);
+  }, [t, uploadAvatar]);
+
+  const handleRemoveAvatar = useCallback(() => {
+    Alert.alert(
+      t('parentSettings.avatarRemove'),
+      t('parentSettings.avatarRemoveConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('parentSettings.avatarRemove'),
+          style: 'destructive',
+          onPress: async () => {
+            setAvatarBusy(true);
+            try {
+              const res = await apiFetch(API.IDENTITY, '/api/users/me/avatar', { method: 'DELETE' });
+              if (res.ok || res.status === 204) {
+                setAvatarUrl(null);
+              }
+            } finally {
+              setAvatarBusy(false);
+            }
+          },
+        },
+      ],
+    );
+  }, [t]);
 
   useEffect(() => {
     (async () => {
@@ -267,15 +363,35 @@ export default function SettingsScreen() {
 
       <AivoCard style={styles.profileCard}>
         <View style={styles.profileRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.name?.[0] || 'P'}</Text>
-          </View>
-          <View>
+          <Pressable
+            onPress={handlePickAvatar}
+            onLongPress={avatarUrl ? handleRemoveAvatar : undefined}
+            disabled={avatarBusy}
+            style={styles.avatar}
+            accessibilityLabel={t('parentSettings.avatarChange')}
+          >
+            {avatarBusy ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : avatarUrl ? (
+              <Image
+                source={{ uri: avatarUrl }}
+                style={{ width: '100%', height: '100%' }}
+              />
+            ) : (
+              <Text style={styles.avatarText}>{user?.name?.[0] || 'P'}</Text>
+            )}
+          </Pressable>
+          <View style={{ flex: 1 }}>
             <Text style={styles.profileName}>{user?.name}</Text>
             <Text style={styles.profileEmail}>{user?.email}</Text>
             <View style={styles.roleBadge}>
               <Text style={styles.roleText}>{user?.role}</Text>
             </View>
+            <Pressable onPress={handlePickAvatar} disabled={avatarBusy}>
+              <Text style={{ color: colors.primary, fontSize: 12, marginTop: 6, fontWeight: '600' }}>
+                {avatarUrl ? t('parentSettings.avatarChange') : t('parentSettings.avatarAdd')}
+              </Text>
+            </Pressable>
           </View>
         </View>
       </AivoCard>

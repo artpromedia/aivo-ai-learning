@@ -4,6 +4,9 @@ import cookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
+import multipart from "@fastify/multipart";
+import fastifyStatic from "@fastify/static";
+import { promises as fsp } from "node:fs";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
 import { initKeys, logAdminEnterpriseFlags, assertMfaKeyConfigured, registerAdminIpAllowlist } from "@aivo/security";
@@ -20,6 +23,8 @@ import { registerPublicBrandingRoutes } from "./routes/branding-public.js";
 import { registerDistrictAdminRoutes } from "./routes/district-admins.js";
 import { registerSsoRoutes } from "./routes/sso.js";
 import { registerScimRoutes } from "./routes/scim.js";
+import { registerAvatarRoutes } from "./routes/avatars.js";
+import { AVATAR_MAX_BYTES, AVATAR_STORAGE_ROOT } from "./lib/avatar-storage.js";
 import { registerDistrictTenantScope, REQUIRE_DISTRICT_ADMIN_FLAG } from "./hooks/require-district-admin.js";
 
 const logger = createLogger("identity-svc");
@@ -89,6 +94,25 @@ export async function buildApp() {
     timeWindow: "1 minute",
   });
 
+  // Profile-photo upload pipeline: bound the request size to the avatar
+  // limit (5 MB) so an oversized upload is rejected at the framework
+  // boundary rather than buffered into memory by a route handler.
+  await app.register(multipart, {
+    limits: { fileSize: AVATAR_MAX_BYTES, files: 1 },
+  });
+
+  // Static read-only delivery of the re-encoded WebP avatars. Writes are
+  // gated through POST /api/users/me/avatar; this prefix is read-only.
+  await fsp.mkdir(AVATAR_STORAGE_ROOT, { recursive: true }).catch(() => undefined);
+  await app.register(fastifyStatic, {
+    root: AVATAR_STORAGE_ROOT,
+    prefix: "/api/avatars/",
+    decorateReply: false,
+    cacheControl: true,
+    maxAge: "7d",
+    immutable: false,
+  });
+
   await app.register(swagger, {
     openapi: {
       info: {
@@ -136,6 +160,7 @@ export async function buildApp() {
   await registerDistrictAdminRoutes(app);
   await registerSsoRoutes(app);
   await registerScimRoutes(app);
+  await registerAvatarRoutes(app);
   registerTestHelperRoutes(app);
 
   await app.ready();

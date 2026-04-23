@@ -1990,6 +1990,7 @@
     "propose_amendment": "提出修订",
     "filter_all": "全部",
     "attachment_placeholder": "可选附件 URL（文件或作业样例链接）",
-    "attachment_view": "查看附件"
+    "attachment_view": "查看附件",
+    "edit": "编辑"
   }
 }

@@ -1990,6 +1990,7 @@
     "propose_amendment": "수정안 제출",
     "filter_all": "전체",
     "attachment_placeholder": "선택 첨부 URL(파일/결과물 링크)",
-    "attachment_view": "첨부 보기"
+    "attachment_view": "첨부 보기",
+    "edit": "편집"
   }
 }

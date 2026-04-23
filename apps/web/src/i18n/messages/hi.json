@@ -1990,6 +1990,7 @@
     "propose_amendment": "संशोधन प्रस्तावित करें",
     "filter_all": "सभी",
     "attachment_placeholder": "वैकल्पिक अटैचमेंट URL (फ़ाइल/नमूने का लिंक)",
-    "attachment_view": "अटैचमेंट देखें"
+    "attachment_view": "अटैचमेंट देखें",
+    "edit": "संपादित करें"
   }
 }

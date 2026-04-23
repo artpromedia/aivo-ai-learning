@@ -1990,6 +1990,7 @@
     "propose_amendment": "修正案を提出",
     "filter_all": "すべて",
     "attachment_placeholder": "添付 URL（任意。ファイルや作品サンプルへのリンク）",
-    "attachment_view": "添付を表示"
+    "attachment_view": "添付を表示",
+    "edit": "編集"
   }
 }

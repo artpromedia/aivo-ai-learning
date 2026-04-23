@@ -1990,6 +1990,7 @@
     "propose_amendment": "Proposer une modification",
     "filter_all": "Tout",
     "attachment_placeholder": "URL de pièce jointe (facultatif, lien vers le fichier ou échantillon)",
-    "attachment_view": "Voir la pièce jointe"
+    "attachment_view": "Voir la pièce jointe",
+    "edit": "Modifier"
   }
 }

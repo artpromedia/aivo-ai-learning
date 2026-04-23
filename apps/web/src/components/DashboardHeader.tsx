@@ -3,11 +3,13 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { Bell } from "lucide-react";
+import { UserAvatar } from "@/components/UserAvatar";
 
 interface DashboardHeaderProps {
   userName: string;
   userRole: string;
   userEmail?: string;
+  avatarUrl?: string | null;
   accent?: "purple" | "violet" | "blue" | "pink" | "green";
   basePath: string;
   baseLabel: string;
@@ -41,7 +43,7 @@ const ACCENT_TOKEN: Record<string, string> = {
   green:  "text-[hsl(var(--visual-science))]",
 };
 
-export default function DashboardHeader({ userName, userRole, accent = "purple", basePath, baseLabel }: DashboardHeaderProps) {
+export default function DashboardHeader({ userName, userRole, avatarUrl, accent = "purple", basePath, baseLabel }: DashboardHeaderProps) {
   const pathname = usePathname();
   const [showNotifications, setShowNotifications] = useState(false);
   const crumbs = getBreadcrumbs(pathname, basePath, baseLabel);
@@ -121,9 +123,7 @@ export default function DashboardHeader({ userName, userRole, accent = "purple",
         <div className="h-6 w-px vi-border border-l" />
 
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[hsl(var(--visual-primary))] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-            {userName?.charAt(0) || "?"}
-          </div>
+          <UserAvatar avatarUrl={avatarUrl} name={userName} size={32} />
           <div className="hidden md:block">
             <p className="text-sm font-medium vi-text leading-tight">{userName}</p>
             <p className="text-xs vi-text-muted font-medium uppercase tracking-wide">{userRole.replace(/_/g, " ")}</p>

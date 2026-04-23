@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
       { source: "/api/admin/:path*", destination: "http://localhost:3001/api/admin/:path*" },
       { source: "/api/auth/:path*", destination: "http://localhost:3001/api/auth/:path*" },
       { source: "/api/users/:path*", destination: "http://localhost:3001/api/users/:path*" },
+      { source: "/api/avatars/:path*", destination: "http://localhost:3001/api/avatars/:path*" },
       { source: "/api/consent/:path*", destination: "http://localhost:3001/api/consent/:path*" },
       { source: "/api/curriculum/:path*", destination: "http://localhost:3001/api/curriculum/:path*" },
       { source: "/api/assessments/:path*", destination: "http://localhost:3003/api/assessments/:path*" },

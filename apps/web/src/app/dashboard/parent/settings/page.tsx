@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { MfaSettings } from "@/components/settings/MfaSettings";
+import { AvatarUploader } from "@/components/AvatarUploader";
 
 export default function ParentSettingsPage() {
   const { user, accessToken, logout, loading } = useAuth();
@@ -13,6 +14,7 @@ export default function ParentSettingsPage() {
   const t = useTranslations("parent");
   const tc = useTranslations("common");
 
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profileName, setProfileName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
   const [profileMsg, setProfileMsg] = useState("");
@@ -52,6 +54,7 @@ export default function ParentSettingsPage() {
     if (user) {
       setProfileName(user.name || "");
       setProfileEmail(user.email || "");
+      setAvatarUrl((user as any).avatarUrl ?? null);
     }
   }, [user]);
 
@@ -198,6 +201,16 @@ export default function ParentSettingsPage() {
 
       <main className="max-w-3xl mx-auto px-8 py-8 space-y-8">
         <h1 className="text-2xl font-heading font-bold vi-text">{t("account_settings")}</h1>
+
+        <div className="vi-card p-6 space-y-5">
+          <h2 className="text-lg font-heading font-bold vi-text">{tc("avatar_section_title")}</h2>
+          <AvatarUploader
+            currentAvatarUrl={avatarUrl}
+            userName={profileName || user.name}
+            accessToken={accessToken}
+            onChange={(newUrl) => setAvatarUrl(newUrl)}
+          />
+        </div>
 
         <div className="vi-card p-6 space-y-5">
           <h2 className="text-lg font-heading font-bold vi-text">{t("profile_information")}</h2>

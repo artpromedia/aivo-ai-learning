@@ -1990,6 +1990,7 @@
     "propose_amendment": "اقتراح تعديل",
     "filter_all": "الكل",
     "attachment_placeholder": "رابط مرفق اختياري (رابط ملف أو نموذج عمل)",
-    "attachment_view": "عرض المرفق"
+    "attachment_view": "عرض المرفق",
+    "edit": "تعديل"
   }
 }

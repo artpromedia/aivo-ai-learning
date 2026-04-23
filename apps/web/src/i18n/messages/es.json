@@ -1990,6 +1990,7 @@
     "propose_amendment": "Proponer enmienda",
     "filter_all": "Todas",
     "attachment_placeholder": "URL de archivo adjunto opcional (enlace al archivo o muestra de trabajo)",
-    "attachment_view": "Ver adjunto"
+    "attachment_view": "Ver adjunto",
+    "edit": "Editar"
   }
 }
