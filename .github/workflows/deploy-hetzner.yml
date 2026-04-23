@@ -431,7 +431,7 @@ jobs:
           # the runner host has long-stuck dpkg/postinst processes that make
           # apt unusable. kubectl always works here.
           kubectl -n aivo run psqlverify-${GITHUB_RUN_ID} \
-            --rm --restart=Never --quiet --image=postgres:16-alpine \
+            -i --rm --restart=Never --quiet --image=postgres:16-alpine \
             --env=DBURL="$DATABASE_URL" \
             --command -- psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
               -c "select now() as migrated_at, current_database() as db, current_user as usr;"
