@@ -9,6 +9,7 @@ import { registerStoreRoutes } from "./routes/store.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerHomeworkRoutes } from "./routes/homework.js";
 import { registerCurriculumRoutes } from "./routes/curriculum.js";
+import { registerSpeechBuddyRoutes } from "./routes/speechBuddy.js";
 import { registerAuthHook } from "./lib/tenant.js";
 
 const logger = createLogger("tutor-svc");
@@ -30,12 +31,24 @@ async function start() {
   });
   await app.register(swaggerUI, { routePrefix: "/docs" });
 
+  // WebSocket support for the Speech Buddy stream endpoint. The plugin is
+  // optional — if `@fastify/websocket` is not installed the HTTP routes
+  // continue to work and the WS upgrade is simply unavailable.
+  try {
+    // @ts-ignore — optional dependency; HTTP path works without it.
+    const ws = await import("@fastify/websocket").catch(() => null);
+    if (ws) await app.register((ws as any).default as any);
+  } catch {
+    /* WS plugin not installed — http path still works */
+  }
+
   registerHealthRoutes(app);
   registerAuthHook(app);
   registerStoreRoutes(app, db);
   registerChatRoutes(app, db);
   registerHomeworkRoutes(app, db);
   registerCurriculumRoutes(app, db);
+  await registerSpeechBuddyRoutes(app);
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Tutor service listening on port ${PORT}`);

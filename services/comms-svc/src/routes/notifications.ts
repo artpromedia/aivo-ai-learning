@@ -475,6 +475,62 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
+  // ───────── SPEECH BUDDY safety alert (internal) ─────────
+  // Called by ai-svc whenever the multi-layer safety filter raises a
+  // hard flag (self-harm or abuse-disclosure). The payload deliberately
+  // contains NO transcript text — only category, severity, correlation id,
+  // anonymised learner hash, and ageBand. The guardian is paged through
+  // their preferred channel; on-call moderators are CC'd for self_harm
+  // and abuse_disclosure (15-minute SLA per the safety policy).
+  app.post("/api/comms/internal/speech-buddy-safety", async (request, reply) => {
+    const internalKey = request.headers["x-internal-key"];
+    const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+    if (!internalKey || !expectedKey || internalKey !== expectedKey) {
+      return reply.status(401).send({ error: "Unauthorized" });
+    }
+    const { to, learnerIdHash, category, severity, correlationId, ageBand, raisedAt } = (request.body as any) || {};
+    if (!category || !correlationId) {
+      return reply.code(400).send({ error: "category and correlationId required" });
+    }
+    const moderatorAddr = process.env.SAFETY_MODERATOR_EMAIL || "safety@aivo.local";
+    const guardianAddr = typeof to === "string" && to.length > 0 ? to : null;
+    const subject = `[AIVO Speech Buddy] ${String(severity || "hard").toUpperCase()} flag: ${category}`;
+    const lines = [
+      `Severity: ${severity || "hard"}`,
+      `Category: ${category}`,
+      `Age band: ${ageBand || "unknown"}`,
+      `Learner (anonymised): ${(learnerIdHash || "").toString().slice(0, 16)}…`,
+      `Correlation id: ${correlationId}`,
+      `Raised at: ${raisedAt || new Date().toISOString()}`,
+      ``,
+      `This notification deliberately contains NO transcript text.`,
+      `A reviewer-role JWT can fetch the redacted transcript on demand using the correlation id.`,
+    ];
+    const text = lines.join("\n");
+    const html = `<pre style="font-family:ui-monospace,monospace;font-size:13px;line-height:1.5">${text.replace(/[<>&]/g, (c) => ({"<":"&lt;",">":"&gt;","&":"&amp;"} as any)[c])}</pre>`;
+    const recipients: string[] = [];
+    if (guardianAddr) recipients.push(guardianAddr);
+    if (category === "self_harm" || category === "abuse_disclosure") recipients.push(moderatorAddr);
+    if (!isConfigured() || recipients.length === 0) {
+      logger.warn(
+        { recipients, category, severity, correlationId },
+        "Speech Buddy safety alert (email not configured or no recipients; logged only)",
+      );
+      return { status: "logged_only", recipients, subject };
+    }
+    const results: Array<{ to: string; status: string; messageId?: string; error?: string }> = [];
+    for (const addr of recipients) {
+      try {
+        const r = await sendEmail({ to: addr, subject, htmlBody: html, textBody: text, tag: "speech_buddy_safety" });
+        results.push({ to: addr, status: r.status, messageId: r.messageId });
+      } catch (err: any) {
+        logger.error({ err, addr, category }, "Failed to send Speech Buddy safety alert");
+        results.push({ to: addr, status: "failed", error: err.message });
+      }
+    }
+    return { status: "ok", results };
+  });
+
   // Sprint 9 — billing alert for district seat-self-service requests.
   // Internal-only; identity-svc calls this when a district admin asks
   // for more seats. Same internal-key auth as the other /internal/*

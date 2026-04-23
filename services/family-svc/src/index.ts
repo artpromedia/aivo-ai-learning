@@ -12,6 +12,7 @@ import { registerLanguageProfileRoutes } from "./routes/language-profile.js";
 import { registerDataExportRoutes } from "./routes/data-export.js";
 import { registerParentDashboardRoutes } from "./routes/parent-dashboard.js";
 import { registerObservationRoutes } from "./routes/observations.js";
+import { registerSpeechBuddyConsentRoutes } from "./routes/speech-buddy-consent.js";
 
 const logger = createLogger("family-svc");
 const PORT = parseInt(process.env.FAMILY_PORT || "3007", 10);
@@ -36,6 +37,7 @@ async function start() {
   await registerDataExportRoutes(app);
   await registerParentDashboardRoutes(app);
   await registerObservationRoutes(app);
+  await registerSpeechBuddyConsentRoutes(app);
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Family service listening on port ${PORT}`);

@@ -49,6 +49,7 @@ export type StepUpScope =
 export * from "./audit-chain.js";
 export * from "./ip-allowlist.js";
 export * from "./password-policy.js";
+export * from "./flags.js";
 
 export const STEP_UP_SCOPES: readonly StepUpScope[] = [
   "tenant:delete",

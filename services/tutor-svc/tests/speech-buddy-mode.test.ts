@@ -5,6 +5,8 @@ import {
   type StartSessionInput,
   type TurnInput,
 } from "../src/modes/speechBuddy.js";
+import { aiSvc, __testing as aiTesting } from "../src/lib/aiSvc.js";
+import { ConsentError, verifyConsent } from "../src/lib/familyConsent.js";
 
 describe("tutor-svc speech buddy mode scaffold", () => {
   it("exports a stable mode id", () => {
@@ -25,5 +27,90 @@ describe("tutor-svc speech buddy mode scaffold", () => {
   it("TurnInput exposes the post-PII-scrub child utterance field", () => {
     const t: TurnInput = { sessionId: "s1", childUtterance: "hi" };
     assert.equal(t.childUtterance, "hi");
+  });
+});
+
+describe("tutor-svc → ai-svc speech buddy client", () => {
+  it("targets the configured ai-svc base URL", () => {
+    assert.ok(aiTesting.AI_SVC_URL.startsWith("http"));
+  });
+
+  it("sends the internal-service header on every call", async () => {
+    const seenHeaders: Record<string, string>[] = [];
+    const seenUrls: string[] = [];
+    const realFetch = globalThis.fetch;
+    (globalThis as any).fetch = async (url: string, init: any) => {
+      seenUrls.push(url);
+      seenHeaders.push(init.headers as Record<string, string>);
+      return new Response(
+        JSON.stringify({ sessionId: "sx", ageBand: "6-9", locale: "en", nicknameToken: "Buddy", state: "greet", startedAt: "now", targetedSkills: [] }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    };
+    try {
+      await aiSvc.startSession({
+        tenantId: "t1", learnerId: "l1", ageBand: "6-9", locale: "en", consentRecordId: "c1",
+      });
+    } finally {
+      (globalThis as any).fetch = realFetch;
+    }
+    assert.equal(seenUrls.length, 1);
+    assert.match(seenUrls[0], /\/api\/ai\/speech-buddy\/sessions$/);
+    assert.ok(seenHeaders[0]["x-internal-key"], "x-internal-key header missing");
+  });
+
+  it("propagates ai-svc 4xx into a typed error with status", async () => {
+    const realFetch = globalThis.fetch;
+    (globalThis as any).fetch = async () =>
+      new Response(JSON.stringify({ detail: "session not found" }), { status: 404 });
+    try {
+      await aiSvc.runTurn("does-not-exist", { text: "hi" });
+      assert.fail("expected runTurn to throw");
+    } catch (err: any) {
+      assert.equal(err.status, 404);
+      assert.match(err.message, /session not found/);
+    } finally {
+      (globalThis as any).fetch = realFetch;
+    }
+  });
+});
+
+describe("tutor-svc family-consent gate", () => {
+  it("short-circuits via SPEECH_BUDDY_DEV_CONSENTS allow-list", async () => {
+    process.env.SPEECH_BUDDY_DEV_CONSENTS = "tA:lA:cA,tB:lB:cB";
+    const id = await verifyConsent({ tenantId: "tA", learnerId: "lA", ageBand: "6-9" });
+    assert.equal(id, "cA");
+  });
+
+  it("ConsentError is thrown when family-svc returns 404", async () => {
+    delete process.env.SPEECH_BUDDY_DEV_CONSENTS;
+    const realFetch = globalThis.fetch;
+    (globalThis as any).fetch = async () =>
+      new Response(JSON.stringify({ granted: false }), { status: 404 });
+    try {
+      await verifyConsent({ tenantId: "tX", learnerId: "lX", ageBand: "6-9" });
+      assert.fail("expected ConsentError");
+    } catch (err: any) {
+      assert.ok(err instanceof ConsentError, `got ${err}`);
+      assert.equal(err.status, 403);
+    } finally {
+      (globalThis as any).fetch = realFetch;
+    }
+  });
+
+  it("ConsentError is thrown when granted=false even with 200", async () => {
+    delete process.env.SPEECH_BUDDY_DEV_CONSENTS;
+    const realFetch = globalThis.fetch;
+    (globalThis as any).fetch = async () =>
+      new Response(JSON.stringify({ granted: false }), { status: 200 });
+    try {
+      await verifyConsent({ tenantId: "tX", learnerId: "lX", ageBand: "10-12" });
+      assert.fail("expected ConsentError");
+    } catch (err: any) {
+      assert.ok(err instanceof ConsentError);
+      assert.equal(err.status, 403);
+    } finally {
+      (globalThis as any).fetch = realFetch;
+    }
   });
 });
