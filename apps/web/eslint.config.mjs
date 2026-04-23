@@ -1,5 +1,7 @@
 import tseslint from "typescript-eslint";
 import jsxA11y from "eslint-plugin-jsx-a11y";
+import reactHooks from "eslint-plugin-react-hooks";
+import nextPlugin from "@next/eslint-plugin-next";
 
 export default tseslint.config(
   {
@@ -7,6 +9,8 @@ export default tseslint.config(
     extends: [tseslint.configs.base],
     plugins: {
       "jsx-a11y": jsxA11y,
+      "react-hooks": reactHooks,
+      "@next/next": nextPlugin,
     },
     languageOptions: {
       parserOptions: {
