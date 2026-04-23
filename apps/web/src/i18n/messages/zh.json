@@ -1375,7 +1375,11 @@
     "iep_draft_in_progress": "草稿编写中 — 您的团队正在准备",
     "iep_action_needed": "需要操作：审阅并签字",
     "iep_action_needed_help": "案例负责人已与您分享 IEP 草案。请打开文档逐节阅读、留下评论并签字。",
-    "iep_active": "已生效的 IEP"
+    "iep_active": "已生效的 IEP",
+    "iep_typed_name_placeholder": "输入您的全名以签署",
+    "iep_signing": "正在签署…",
+    "iep_sign": "签署 IEP",
+    "iep_signed_thanks": "谢谢。您的签名已记录。"
   },
   "marketing": {
     "header": {

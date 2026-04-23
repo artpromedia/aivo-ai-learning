@@ -1358,7 +1358,11 @@
     "iep_draft_in_progress": "Borrador en progreso — tu equipo lo está preparando",
     "iep_action_needed": "Acción requerida: revisar y firmar",
     "iep_action_needed_help": "El coordinador del caso de su hijo/a compartió un borrador del IEP para que lo revise. Abra el documento para leer cada sección, dejar comentarios y firmar.",
-    "iep_active": "IEP activo"
+    "iep_active": "IEP activo",
+    "iep_typed_name_placeholder": "Escriba su nombre completo para firmar",
+    "iep_signing": "Firmando…",
+    "iep_sign": "Firmar IEP",
+    "iep_signed_thanks": "Gracias. Su firma ha sido registrada."
   },
   "language": {
     "en": "Inglés",

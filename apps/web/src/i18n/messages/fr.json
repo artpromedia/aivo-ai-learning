@@ -1375,7 +1375,11 @@
     "iep_draft_in_progress": "Brouillon en cours — votre équipe le prépare",
     "iep_action_needed": "Action requise : examiner et signer",
     "iep_action_needed_help": "Le coordinateur de cas de votre enfant a partagé un projet de PEI à examiner. Ouvrez le document pour lire chaque section, laisser des commentaires et signer.",
-    "iep_active": "PEI actif"
+    "iep_active": "PEI actif",
+    "iep_typed_name_placeholder": "Saisissez votre nom complet pour signer",
+    "iep_signing": "Signature en cours…",
+    "iep_sign": "Signer le PEI",
+    "iep_signed_thanks": "Merci. Votre signature a été enregistrée."
   },
   "marketing": {
     "header": {

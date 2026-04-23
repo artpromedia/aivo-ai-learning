@@ -1358,7 +1358,11 @@
     "iep_draft_in_progress": "下書きを準備中 — チームが作成中です",
     "iep_action_needed": "対応が必要：確認して署名してください",
     "iep_action_needed_help": "ケースマネージャーがIEPの下書きを共有しました。各セクションを確認し、コメントを残して署名してください。",
-    "iep_active": "有効なIEP"
+    "iep_active": "有効なIEP",
+    "iep_typed_name_placeholder": "署名するにはフルネームを入力してください",
+    "iep_signing": "署名中…",
+    "iep_sign": "IEPに署名",
+    "iep_signed_thanks": "ありがとうございます。署名を記録しました。"
   },
   "language": {
     "en": "英語",

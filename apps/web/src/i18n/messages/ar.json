@@ -1375,7 +1375,11 @@
     "iep_draft_in_progress": "المسودة قيد الإعداد — فريقك يحضّرها",
     "iep_action_needed": "إجراء مطلوب: المراجعة والتوقيع",
     "iep_action_needed_help": "شاركت مديرة الحالة مسودة IEP لمراجعتها. افتح المستند لقراءة كل قسم، وأضف ملاحظاتك ووقع.",
-    "iep_active": "IEP فعّال"
+    "iep_active": "IEP فعّال",
+    "iep_typed_name_placeholder": "اكتب اسمك الكامل للتوقيع",
+    "iep_signing": "جارٍ التوقيع…",
+    "iep_sign": "توقيع IEP",
+    "iep_signed_thanks": "شكرًا لك. تم تسجيل توقيعك."
   },
   "marketing": {
     "header": {

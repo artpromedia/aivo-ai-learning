@@ -1375,7 +1375,11 @@
     "iep_draft_in_progress": "Entwurf in Arbeit — Ihr Team bereitet ihn vor",
     "iep_action_needed": "Aktion erforderlich: prüfen und unterschreiben",
     "iep_action_needed_help": "Die Fallkoordinatorin/der Fallkoordinator hat einen IEP-Entwurf zur Prüfung freigegeben. Öffnen Sie das Dokument, lesen Sie jeden Abschnitt, hinterlassen Sie Kommentare und unterschreiben Sie.",
-    "iep_active": "Aktiver IEP"
+    "iep_active": "Aktiver IEP",
+    "iep_typed_name_placeholder": "Geben Sie Ihren vollständigen Namen ein, um zu unterschreiben",
+    "iep_signing": "Wird unterschrieben…",
+    "iep_sign": "IEP unterschreiben",
+    "iep_signed_thanks": "Danke. Ihre Unterschrift wurde gespeichert."
   },
   "marketing": {
     "header": {

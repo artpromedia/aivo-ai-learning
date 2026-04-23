@@ -1375,7 +1375,11 @@
     "iep_draft_in_progress": "Rascunho em andamento — sua equipe está preparando",
     "iep_action_needed": "Ação necessária: revisar e assinar",
     "iep_action_needed_help": "O coordenador do caso compartilhou um rascunho do IEP para sua revisão. Abra o documento, leia cada seção, deixe comentários e assine.",
-    "iep_active": "IEP ativo"
+    "iep_active": "IEP ativo",
+    "iep_typed_name_placeholder": "Digite seu nome completo para assinar",
+    "iep_signing": "Assinando…",
+    "iep_sign": "Assinar IEP",
+    "iep_signed_thanks": "Obrigado. Sua assinatura foi registrada."
   },
   "marketing": {
     "header": {

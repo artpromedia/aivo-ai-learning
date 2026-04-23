@@ -1358,7 +1358,11 @@
     "iep_draft_in_progress": "Draft in progress — your team is preparing this",
     "iep_action_needed": "Action needed: review and sign",
     "iep_action_needed_help": "Your child's case manager has shared a draft IEP for your review. Open the document to read each section, leave comments, and add your signature.",
-    "iep_active": "Active IEP"
+    "iep_active": "Active IEP",
+    "iep_typed_name_placeholder": "Type your full name to sign",
+    "iep_signing": "Signing…",
+    "iep_sign": "Sign IEP",
+    "iep_signed_thanks": "Thank you. Your signature has been recorded."
   },
   "language": {
     "en": "English",

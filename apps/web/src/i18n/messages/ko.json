@@ -1358,7 +1358,11 @@
     "iep_draft_in_progress": "초안 작성 중 — 팀이 준비하고 있습니다",
     "iep_action_needed": "조치 필요: 검토 및 서명",
     "iep_action_needed_help": "사례 담당자가 IEP 초안을 공유했습니다. 각 섹션을 읽고 의견을 남기고 서명해 주세요.",
-    "iep_active": "활성 IEP"
+    "iep_active": "활성 IEP",
+    "iep_typed_name_placeholder": "서명하려면 전체 이름을 입력하세요",
+    "iep_signing": "서명 중…",
+    "iep_sign": "IEP 서명",
+    "iep_signed_thanks": "감사합니다. 서명이 기록되었습니다."
   },
   "language": {
     "en": "영어",
