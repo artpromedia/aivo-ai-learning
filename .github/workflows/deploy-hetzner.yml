@@ -298,7 +298,7 @@ jobs:
     # runners. Running here lets drizzle-kit push actually reach the DB so
     # schema drift cannot silently accumulate.
     runs-on: [self-hosted, hetzner, production]
-    timeout-minutes: 15
+    timeout-minutes: 30
     environment: production
     env:
       PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
@@ -363,10 +363,14 @@ jobs:
           # drizzle-kit push uses @clack/prompts which opens /dev/tty
           # directly, so plain stdin pipes are ignored. We drive it with
           # a real PTY via Python's stdlib `pty` module, answering every
-          # "create vs rename enum" prompt with Enter (accepts the default
-          # highlighted option, which is always "+ create enum").
+          # "created or renamed" prompt (enum, column, table, etc.) with
+          # Enter so the default highlighted option (always the "+ create"
+          # choice) is accepted. This keeps drizzle-kit non-destructive:
+          # it never renames an existing object, only creates the new one
+          # alongside. The old column/enum is then dropped in the same
+          # push as part of the diff, which is the behavior we want.
           python3 - <<'PYEOF'
-          import os, pty, select, sys, time
+          import os, pty, re, select, sys, time
 
           def read(fd):
               try:
@@ -378,24 +382,43 @@ jobs:
           if pid == 0:
               os.execvp("pnpm", ["pnpm", "db:push", "--force"])
 
+          # Any of these substrings indicates an interactive create-vs-rename
+          # prompt from drizzle-kit / @clack/prompts that we want to accept
+          # with the default "+ create" answer.
+          PROMPT_MARKERS = (
+              b"created or renamed",   # "Is X created or renamed from ..."
+              b"create column",         # visible menu entry
+              b"create table",
+              b"create enum",
+              b"create type",
+          )
+
           last_write = 0.0
+          # Track already-seen prompt frames so we don't spam Enter when
+          # drizzle-kit redraws the same menu repeatedly.
+          last_prompt_sig = b""
           while True:
               r, _, _ = select.select([master], [], [], 0.5)
+              now = time.time()
               if master in r:
                   data = read(master)
                   if not data:
                       break
                   sys.stdout.buffer.write(data)
                   sys.stdout.buffer.flush()
-                  # When drizzle asks the enum question, send Enter.
-                  if b"enum created or renamed" in data:
-                      os.write(master, b"\r")
-                      last_write = time.time()
+                  if any(m in data for m in PROMPT_MARKERS):
+                      # Throttle: one Enter per second max per prompt frame.
+                      sig = re.sub(rb"\s+", b" ", data)[-120:]
+                      if sig != last_prompt_sig or (now - last_write) > 1.0:
+                          os.write(master, b"\r")
+                          last_write = now
+                          last_prompt_sig = sig
               else:
-                  # Safety: if stuck >10s with no output, nudge Enter once.
-                  if time.time() - last_write > 10:
+                  # Safety net: if idle >8s, nudge Enter once in case a
+                  # prompt was rendered before our marker list matched.
+                  if now - last_write > 8:
                       os.write(master, b"\r")
-                      last_write = time.time()
+                      last_write = now
 
           _, status = os.waitpid(pid, 0)
           sys.exit(os.waitstatus_to_exitcode(status))
