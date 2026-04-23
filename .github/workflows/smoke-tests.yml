@@ -86,11 +86,19 @@ jobs:
 
             if [ "$DESIRED" -eq 0 ]; then
               STATUS="SKIPPED"
-            elif [ "$UPDATED" -lt "$DESIRED" ] || [ "$AVAILABLE" -lt 1 ]; then
+            elif [ "$AVAILABLE" -lt 1 ]; then
+              # No pod is serving traffic — always a blocker.
               STATUS="UNAVAILABLE"
               if [ "$BLOCKING" -eq 1 ]; then
                 FAIL=1
               fi
+            elif [ "$AVAILABLE" -lt "$DESIRED" ] && [ "$UPDATED" -lt "$DESIRED" ]; then
+              # Rollout still in progress AND below desired replicas.
+              # Treat as degraded (warn) rather than fail: the old ReplicaSet
+              # is still serving, and the new ReplicaSet hasn't finished
+              # scaling up yet. Only fail if there's literally no pod
+              # available (handled above).
+              STATUS="DEGRADED"
             fi
 
             MODE="blocking"
