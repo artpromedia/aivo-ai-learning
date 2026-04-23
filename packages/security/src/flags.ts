@@ -58,6 +58,92 @@ export function loadAdminEnterpriseFlags(
 
 export const ADMIN_ENTERPRISE: AdminEnterpriseFlags = loadAdminEnterpriseFlags();
 
+/* ----------------------------------------------------------------------------
+ * Speech Buddy feature flag
+ *
+ * `speech_buddy.enabled` is scoped per tenant and per age band so a tenant can
+ * roll out one band at a time. Defaults OFF for every (tenant, band) tuple.
+ *
+ * Configuration source (env, parsed at import time):
+ *   SPEECH_BUDDY_ENABLED_TENANTS = "tenantA:6-9,10-12;tenantB:13-15"
+ *   SPEECH_BUDDY_ENABLED_GLOBAL  = "" | "all" | "6-9,10-12,13-15"
+ *
+ * SPEECH_BUDDY_ENABLED_GLOBAL is for staging / canary only; in production it
+ * should remain unset. A future flag service may replace this env-based store.
+ * ----------------------------------------------------------------------------
+ */
+
+export const SPEECH_BUDDY_AGE_BANDS = ["6-9", "10-12", "13-15"] as const;
+export type SpeechBuddyAgeBand = (typeof SPEECH_BUDDY_AGE_BANDS)[number];
+
+export interface SpeechBuddyFlags {
+  /** Bands enabled for every tenant. Empty in production. */
+  globalBands: ReadonlySet<SpeechBuddyAgeBand>;
+  /** Per-tenant enabled bands. */
+  perTenantBands: ReadonlyMap<string, ReadonlySet<SpeechBuddyAgeBand>>;
+}
+
+function parseBandList(raw: string | undefined): Set<SpeechBuddyAgeBand> {
+  const out = new Set<SpeechBuddyAgeBand>();
+  if (!raw) return out;
+  const trimmed = raw.trim().toLowerCase();
+  if (trimmed === "" || trimmed === "off" || trimmed === "disabled") return out;
+  if (trimmed === "all") {
+    for (const b of SPEECH_BUDDY_AGE_BANDS) out.add(b);
+    return out;
+  }
+  for (const part of trimmed.split(",")) {
+    const v = part.trim();
+    if ((SPEECH_BUDDY_AGE_BANDS as readonly string[]).includes(v)) {
+      out.add(v as SpeechBuddyAgeBand);
+    }
+  }
+  return out;
+}
+
+function parseTenantBands(
+  raw: string | undefined,
+): Map<string, Set<SpeechBuddyAgeBand>> {
+  const out = new Map<string, Set<SpeechBuddyAgeBand>>();
+  if (!raw) return out;
+  for (const entry of raw.split(";")) {
+    const e = entry.trim();
+    if (!e) continue;
+    const idx = e.indexOf(":");
+    if (idx <= 0) continue;
+    const tenantId = e.slice(0, idx).trim();
+    const bands = parseBandList(e.slice(idx + 1));
+    if (tenantId && bands.size > 0) out.set(tenantId, bands);
+  }
+  return out;
+}
+
+export function loadSpeechBuddyFlags(
+  env: NodeJS.ProcessEnv = process.env,
+): SpeechBuddyFlags {
+  return {
+    globalBands: parseBandList(env.SPEECH_BUDDY_ENABLED_GLOBAL),
+    perTenantBands: parseTenantBands(env.SPEECH_BUDDY_ENABLED_TENANTS),
+  };
+}
+
+export const SPEECH_BUDDY_FLAGS: SpeechBuddyFlags = loadSpeechBuddyFlags();
+
+/**
+ * Returns true iff Speech Buddy is enabled for this (tenant, ageBand).
+ * Defaults to false for every unconfigured input.
+ */
+export function isSpeechBuddyEnabled(
+  tenantId: string,
+  ageBand: SpeechBuddyAgeBand,
+  flags: SpeechBuddyFlags = SPEECH_BUDDY_FLAGS,
+): boolean {
+  if (!tenantId) return false;
+  if (flags.globalBands.has(ageBand)) return true;
+  const t = flags.perTenantBands.get(tenantId);
+  return t ? t.has(ageBand) : false;
+}
+
 interface BootstrapLogger {
   info: (obj: Record<string, unknown>, msg?: string) => void;
 }
