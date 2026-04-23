@@ -45,3 +45,4 @@ gitleaks-report.json
 # Temporary helm artifacts
 infra/helm/aivo-ingress.yaml
 infra/helm/values/image-overrides.yaml
+.data/
