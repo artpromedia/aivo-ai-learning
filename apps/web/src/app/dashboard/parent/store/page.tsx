@@ -102,17 +102,22 @@ function TutorStoreContent() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    fetch("/api/tutors/catalog").then(r => r.json()).then(data => {
-      setCatalog(data.tutors || []);
-      setBundles(data.bundles || {});
-    }).catch((err: unknown) => { console.error("Failed to load catalog:", err); });
-  }, []);
+    if (!accessToken) return;
+    fetch("/api/tutors/catalog", { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.json()).then(data => {
+        setCatalog(Array.isArray(data?.tutors) ? data.tutors : []);
+        setBundles(data && typeof data.bundles === "object" ? data.bundles : {});
+      }).catch((err: unknown) => { console.error("Failed to load catalog:", err); });
+  }, [accessToken]);
 
   useEffect(() => {
     if (accessToken && user) {
       fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } })
-        .then(r => r.json()).then(setLearners).catch((err: unknown) => { console.error("Failed to load learners:", err); });
-      fetch(`/api/tutors/active/${user.id}`).then(r => r.json()).then(setActiveSubs).catch((err: unknown) => { console.error("Failed to load subs:", err); });
+        .then(r => r.json()).then(data => setLearners(Array.isArray(data) ? data : []))
+        .catch((err: unknown) => { console.error("Failed to load learners:", err); });
+      fetch(`/api/tutors/active/${user.id}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+        .then(r => r.json()).then(data => setActiveSubs(Array.isArray(data) ? data : []))
+        .catch((err: unknown) => { console.error("Failed to load subs:", err); });
     }
   }, [accessToken, user]);
 
