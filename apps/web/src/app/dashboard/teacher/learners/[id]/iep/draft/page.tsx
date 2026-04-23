@@ -790,7 +790,7 @@ export default function IepDraftEditorPage() {
                   draftId={bundle.profile.id}
                   goals={bundle.goals}
                   headers={headers}
-                  isCaseManager={(team.find((m) => m.userId === user?.sub)?.role === "case_manager")}
+                  isCaseManager={(team.find((m) => m.userId === user?.id)?.role === "case_manager")}
                   isFinalised={bundle.profile.lifecycleState === "finalised"}
                 />
               )}
