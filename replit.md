@@ -34,6 +34,9 @@ The project utilizes a monorepo managed with Turborepo and pnpm, encompassing va
 - **Engagement System**: XP engine, level system, streaks, badges, virtual currency, avatar shop, quests, and multiplayer challenges.
 - **Accessibility**: Comprehensive accessibility features including SkipLinks, accessible components, screen reader support, `focus-visible` styling, and automated a11y testing in CI.
 
+## Backend Boot Ordering
+The Identity Service workflow runs `scripts/start-services.sh`, which launches the ~14 Node and Python backend services. They are deliberately started in **five small groups with a brief pause between groups** rather than fanning out all at once — launching them in parallel exhausts the container's process / thread budget on a fresh boot (`EAGAIN` fork errors, `ERR_WORKER_INIT_FAILED` from tsx) and starves the Next.js workflows (`Web App`, `Marketing Site`) of CPU long enough that their port-readiness check times out. Groups: (1) identity / comms / i18n, (2) assessment / learning, (3) tutor / family / engagement, (4) billing / integrations / admin, (5) status-page / research / ai-svc. Adds ~8 seconds to cold-boot time but keeps every workflow card green. Do not collapse the groups back to a single fan-out without a corresponding bump in container resources.
+
 ## Production Environment Checklist
 The following env vars are validated at service boot when `NODE_ENV=production`. Missing values throw immediately rather than silently falling back to localhost — see `.env.example` for the full list.
 
