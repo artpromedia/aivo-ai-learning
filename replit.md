@@ -24,6 +24,10 @@ The project utilizes a monorepo managed with Turborepo and pnpm, encompassing va
 - **Styling**: AIVO brand system with specific color palettes and game-themed fonts (Fredoka, Nunito).
 - **Internationalization**: `next-intl` integration with 10 supported locales, including RTL support for Arabic. Run `pnpm i18n:audit` (or `pnpm i18n:audit:verbose`) to check locale-file parity across web, marketing, and mobile — it fails on missing/orphan keys and warns on untranslated copy. Wired into CI via `.github/workflows/i18n-file-audit.yml`.
 
+### Database Migration Workflow
+- **Local / dev**: `pnpm --filter @aivo/db db:push` syncs the schema in `packages/db/src/schema/*` directly to the dev DB. Fast, no migration files needed.
+- **Production**: deploys must apply the checked-in SQL files in `packages/db/drizzle/` in numeric order (e.g. `psql -v ON_ERROR_STOP=1 -f 0000_*.sql … -f 0011_*.sql`). Every file is hand-written and uses `IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`, so applying the full set is safe on a fresh DB or one already partially synced via `db:push`. When you add or change columns/tables in `packages/db/src/schema/*`, also add a new numbered SQL file under `packages/db/drizzle/` so production picks the change up.
+
 ### Key Features
 - **Adaptive Tutors**: 14 AI tutors (7 core, 7 expansion) with adaptive system prompts based on functioning levels.
 - **5 Functioning Levels**: Ranging from STANDARD to PRE_SYMBOLIC, driving content adaptation.
