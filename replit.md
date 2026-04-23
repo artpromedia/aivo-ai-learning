@@ -34,6 +34,14 @@ The project utilizes a monorepo managed with Turborepo and pnpm, encompassing va
 - **Engagement System**: XP engine, level system, streaks, badges, virtual currency, avatar shop, quests, and multiplayer challenges.
 - **Accessibility**: Comprehensive accessibility features including SkipLinks, accessible components, screen reader support, `focus-visible` styling, and automated a11y testing in CI.
 
+## Production Environment Checklist
+The following env vars are validated at service boot when `NODE_ENV=production`. Missing values throw immediately rather than silently falling back to localhost — see `.env.example` for the full list.
+
+- **All `*_SVC_URL` (IDENTITY, BRAIN, ASSESSMENT, AI, LEARNING, TUTOR, FAMILY, ENGAGEMENT, BILLING, COMMS, I18N, INTEGRATIONS, ADMIN, STATUS_PAGE, RESEARCH)** — required by `status-page-svc` (builds the health-check map) and by `tutor-svc` for `AI_SVC_URL`, `BRAIN_SVC_URL`, `LEARNING_SVC_URL`.
+- **`INTERNAL_SERVICE_TOKEN`** — required by `learning-svc`, `tutor-svc`, and `status-page-svc`. Shared secret for inter-service `x-service-token` calls.
+- **`INTERNAL_AI_TOKEN`** — required by `tutor-svc` (curriculum routes calling `ai-svc`).
+- **`WEBAUTHN_ORIGINS`** — optional comma-separated allow-list. If unset in production, `identity-svc` returns only the static `aivolearning.com` allow-list and ignores forwarded host headers (no origin reflection).
+
 ## External Dependencies
 - **PostgreSQL 16**: Primary database for all application data.
 - **NATS**: For typed event definitions and inter-service communication.
