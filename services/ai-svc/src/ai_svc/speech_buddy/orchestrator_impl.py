@@ -30,6 +30,7 @@ from .events import EventEmitter, hash_learner_id
 from .safety import HARD_CATEGORIES, SafetyDecision, SafetyFilter
 from .stt import STTAdapter, get_default_stt
 from .tools_impl import DefaultToolset, _SCENARIOS, _FALLBACK_BY_BAND
+from .tracing import trace_span
 from .transcript_store import TranscriptStore, get_default_store
 from .tts import TTSAdapter, TTSResult, get_default_tts
 from .types import (
@@ -212,29 +213,29 @@ class DefaultOrchestrator:
         t_total_start = _now()
 
         # ---- STT (or pass-through text) ------------------------------------
-        t0 = _now()
-        if text is not None:
-            child_text = text.strip()
-        elif audio_bytes is not None:
-            stt_res = await self.stt.transcribe(audio_bytes, mime_type=mime_type, locale=rec.session.locale)
-            child_text = stt_res.transcript
-            # Drop the audio reference deliberately and immediately.
-            audio_bytes = None  # noqa: F841
-            del audio_bytes
-        else:
-            raise ValueError("run_turn requires audio_bytes or text")
-        stt_ms = (_now() - t0) * 1000.0
+        with trace_span("stt", correlation_id, has_audio=audio_bytes is not None) as span_stt:
+            if text is not None:
+                child_text = text.strip()
+            elif audio_bytes is not None:
+                stt_res = await self.stt.transcribe(audio_bytes, mime_type=mime_type, locale=rec.session.locale)
+                child_text = stt_res.transcript
+                # Drop the audio reference deliberately and immediately.
+                audio_bytes = None  # noqa: F841
+                del audio_bytes
+            else:
+                raise ValueError("run_turn requires audio_bytes or text")
+        stt_ms = span_stt.duration_ms
 
         # ---- safety on child_input ----------------------------------------
-        t0 = _now()
-        in_decision = self.safety.check(
-            child_text,
-            source="child_input",
-            locale=rec.session.locale,
-            correlation_id=correlation_id,
-            session_id=session_id,
-        )
-        safety_in_ms = (_now() - t0) * 1000.0
+        with trace_span("safety_in", correlation_id, source="child_input") as span_safety_in:
+            in_decision = self.safety.check(
+                child_text,
+                source="child_input",
+                locale=rec.session.locale,
+                correlation_id=correlation_id,
+                session_id=session_id,
+            )
+        safety_in_ms = span_safety_in.duration_ms
         in_flag = self._promote_or_keep(in_decision, rec, source="child_input")
         if in_flag is not None and in_flag.severity == "hard":
             return await self._fire_crisis_script(
@@ -242,24 +243,24 @@ class DefaultOrchestrator:
             )
 
         # ---- planner -------------------------------------------------------
-        t0 = _now()
-        if in_decision.routed_text is not None:
-            # Soft flag → buddy uses the routed redirect, no LLM gen needed.
-            buddy_text = in_decision.routed_text
-        else:
-            buddy_text = self._plan_buddy_response(rec, child_text)
-        planner_ms = (_now() - t0) * 1000.0
+        with trace_span("planner", correlation_id, state=rec.session.state) as span_plan:
+            if in_decision.routed_text is not None:
+                # Soft flag → buddy uses the routed redirect, no LLM gen needed.
+                buddy_text = in_decision.routed_text
+            else:
+                buddy_text = self._plan_buddy_response(rec, child_text)
+        planner_ms = span_plan.duration_ms
 
         # ---- safety on buddy_output ---------------------------------------
-        t0 = _now()
-        out_decision = self.safety.check(
-            buddy_text,
-            source="buddy_output",
-            locale=rec.session.locale,
-            correlation_id=correlation_id,
-            session_id=session_id,
-        )
-        safety_out_ms = (_now() - t0) * 1000.0
+        with trace_span("safety_out", correlation_id, source="buddy_output") as span_safety_out:
+            out_decision = self.safety.check(
+                buddy_text,
+                source="buddy_output",
+                locale=rec.session.locale,
+                correlation_id=correlation_id,
+                session_id=session_id,
+            )
+        safety_out_ms = span_safety_out.duration_ms
         out_flag = self._promote_or_keep(out_decision, rec, source="buddy_output")
         if out_flag is not None and out_flag.severity == "hard":
             return await self._fire_crisis_script(
@@ -271,14 +272,14 @@ class DefaultOrchestrator:
             buddy_text = out_decision.routed_text
 
         # ---- TTS -----------------------------------------------------------
-        t0 = _now()
-        tts_res: TTSResult = await self.tts.synthesize(
-            buddy_text,
-            age_band=rec.session.age_band,
-            locale=rec.session.locale,
-            slow_talk=False,
-        )
-        tts_ms = (_now() - t0) * 1000.0
+        with trace_span("tts", correlation_id, age_band=rec.session.age_band) as span_tts:
+            tts_res: TTSResult = await self.tts.synthesize(
+                buddy_text,
+                age_band=rec.session.age_band,
+                locale=rec.session.locale,
+                slow_talk=False,
+            )
+        tts_ms = span_tts.duration_ms
 
         # ---- skill scoring + transcript update ----------------------------
         flags: list[SafetyFlag] = []

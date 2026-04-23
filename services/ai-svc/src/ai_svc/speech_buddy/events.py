@@ -56,9 +56,17 @@ class EventEmitter:
     ) -> None:
         self._comms_url = comms_url or os.environ.get("COMMS_SVC_URL", "http://localhost:3009")
         self._http = http_client
-        self._internal_key = internal_key or os.environ.get(
-            "INTERNAL_SERVICE_KEY", "aivo-internal-dev-key"
-        )
+        env_key = os.environ.get("INTERNAL_SERVICE_KEY")
+        if internal_key:
+            self._internal_key = internal_key
+        elif env_key:
+            self._internal_key = env_key
+        elif os.environ.get("NODE_ENV") == "production":
+            # Fail-closed: comms-svc will reject empty key, surfacing the
+            # misconfiguration loudly instead of using a predictable dev key.
+            self._internal_key = ""
+        else:
+            self._internal_key = "aivo-internal-dev-key"
         # Optional async fn(learner_id) -> guardian email. If absent we send
         # an admin alert instead of a parent email; comms-svc will route.
         self._resolve_guardian = guardian_email_resolver

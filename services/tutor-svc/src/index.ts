@@ -9,6 +9,7 @@ import { registerStoreRoutes } from "./routes/store.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerHomeworkRoutes } from "./routes/homework.js";
 import { registerCurriculumRoutes } from "./routes/curriculum.js";
+import websocket from "@fastify/websocket";
 import { registerSpeechBuddyRoutes } from "./routes/speechBuddy.js";
 import { registerAuthHook } from "./lib/tenant.js";
 
@@ -31,16 +32,10 @@ async function start() {
   });
   await app.register(swaggerUI, { routePrefix: "/docs" });
 
-  // WebSocket support for the Speech Buddy stream endpoint. The plugin is
-  // optional — if `@fastify/websocket` is not installed the HTTP routes
-  // continue to work and the WS upgrade is simply unavailable.
-  try {
-    // @ts-ignore — optional dependency; HTTP path works without it.
-    const ws = await import("@fastify/websocket").catch(() => null);
-    if (ws) await app.register((ws as any).default as any);
-  } catch {
-    /* WS plugin not installed — http path still works */
-  }
+  // WebSocket support is REQUIRED for the Speech Buddy stream endpoint.
+  // We register it eagerly so a missing dependency or registration
+  // failure aborts startup instead of degrading silently to HTTP-only.
+  await app.register(websocket);
 
   registerHealthRoutes(app);
   registerAuthHook(app);

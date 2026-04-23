@@ -31,12 +31,24 @@ from ..speech_buddy import (
 router = APIRouter(prefix="/api/ai/speech-buddy", tags=["speech_buddy"])
 
 
-def _internal_key() -> str:
-    return os.environ.get("INTERNAL_SERVICE_KEY", "aivo-internal-dev-key")
+def _internal_key() -> Optional[str]:
+    """Resolve the shared internal-service key.
+
+    Fail-closed in production: if ``INTERNAL_SERVICE_KEY`` is not set
+    when ``NODE_ENV=production`` we return ``None`` — every request
+    is then rejected with 401 instead of accepting the predictable dev
+    key. Same convention as ``services/comms-svc``."""
+    explicit = os.environ.get("INTERNAL_SERVICE_KEY")
+    if explicit:
+        return explicit
+    if os.environ.get("NODE_ENV") == "production":
+        return None
+    return "aivo-internal-dev-key"
 
 
 def _check_internal(x_internal_key: Optional[str]) -> None:
-    if not x_internal_key or x_internal_key != _internal_key():
+    expected = _internal_key()
+    if not expected or not x_internal_key or x_internal_key != expected:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 

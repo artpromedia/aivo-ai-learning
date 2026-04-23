@@ -100,9 +100,17 @@ class DefaultToolset:
             "ENGAGEMENT_SVC_URL", "http://localhost:3008"
         )
         self._http = http_client
-        self._internal_key = internal_key or os.environ.get(
-            "INTERNAL_SERVICE_KEY", "aivo-internal-dev-key"
-        )
+        env_key = os.environ.get("INTERNAL_SERVICE_KEY")
+        if internal_key:
+            self._internal_key = internal_key
+        elif env_key:
+            self._internal_key = env_key
+        elif os.environ.get("NODE_ENV") == "production":
+            # Fail-closed: never silently fall back to the well-known dev
+            # key when running in production.
+            self._internal_key = ""
+        else:
+            self._internal_key = "aivo-internal-dev-key"
         # In-memory journal of evidence persisted this process — used by
         # tests and by the reflection step when engagement-svc is offline.
         self._evidence_journal: list[tuple[str, SkillTag, float]] = []
