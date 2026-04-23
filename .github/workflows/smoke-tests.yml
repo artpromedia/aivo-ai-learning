@@ -166,11 +166,10 @@ jobs:
           }
 
           check_required "health" "http://localhost:13001/health" "200"
-          if [ "${{ inputs.environment }}" = "staging" ]; then
-            check_optional "csrf" "http://localhost:13001/csrf-token" "200,204,404"
-          else
-            check_required "csrf" "http://localhost:13001/csrf-token" "200,204"
-          fi
+          # identity-svc does not implement a generic /csrf-token endpoint —
+          # CSRF is handled per-session elsewhere. Keep as optional diagnostic
+          # so a future route addition shows up, but never fail the pipeline.
+          check_optional "csrf" "http://localhost:13001/csrf-token" "200,204,404"
 
           kill $PF_PID 2>/dev/null || true
 
