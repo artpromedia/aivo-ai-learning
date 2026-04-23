@@ -73,6 +73,46 @@ describe("tutor-svc → ai-svc speech buddy client", () => {
       (globalThis as any).fetch = realFetch;
     }
   });
+
+  it("forwards owner (tenantId, learnerId) headers on turn/end so ai-svc can enforce ownership", async () => {
+    const seenHeaders: Record<string, string>[] = [];
+    const realFetch = globalThis.fetch;
+    (globalThis as any).fetch = async (_url: string, init: any) => {
+      seenHeaders.push(init.headers as Record<string, string>);
+      return new Response(JSON.stringify({
+        buddyText: "ok", buddyAudioBase64: "", nextState: "roleplayTurn",
+        ended: false, endedReason: null, trace: {}, safetyFlags: [], skillEvidence: [],
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    };
+    try {
+      await aiSvc.runTurn("sess-1", { text: "hi" }, { tenantId: "tenant-A", learnerId: "child-7" });
+      await aiSvc.endSession("sess-1", "completed", { tenantId: "tenant-A", learnerId: "child-7" });
+    } finally {
+      (globalThis as any).fetch = realFetch;
+    }
+    assert.equal(seenHeaders.length, 2);
+    for (const h of seenHeaders) {
+      assert.equal(h["x-aivo-tenant-id"], "tenant-A");
+      assert.equal(h["x-aivo-learner-id"], "child-7");
+      assert.ok(h["x-internal-key"], "x-internal-key still required alongside ownership");
+    }
+  });
+
+  it("returns base64 buddy audio in TurnResponse so the WS layer can stream it back", async () => {
+    const realFetch = globalThis.fetch;
+    const audio = Buffer.from([0x49, 0x44, 0x33, 0x04, 0x00]).toString("base64");
+    (globalThis as any).fetch = async () => new Response(JSON.stringify({
+      buddyText: "hi friend", buddyAudioBase64: audio, nextState: "roleplayTurn",
+      ended: false, endedReason: null, trace: {}, safetyFlags: [], skillEvidence: [],
+    }), { status: 200, headers: { "content-type": "application/json" } });
+    try {
+      const r = await aiSvc.runTurn("s", { text: "hi" }, { tenantId: "t", learnerId: "l" });
+      assert.equal(r.buddyAudioBase64, audio);
+      assert.ok(r.buddyAudioBase64.length > 0);
+    } finally {
+      (globalThis as any).fetch = realFetch;
+    }
+  });
 });
 
 describe("tutor-svc family-consent gate", () => {

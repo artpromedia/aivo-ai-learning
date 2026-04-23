@@ -73,6 +73,59 @@ def test_golden_path_three_turn_recess():
     asyncio.new_event_loop().run_until_complete(go())
 
 
+def test_session_ownership_rejects_other_tenants_and_other_learners():
+    """IDOR guard: only the (tenant_id, learner_id) that started a session
+    can run turns or end it. ai-svc routes call assert_owner before doing
+    anything stateful."""
+    async def go():
+        orchestrator = _orch()
+        session = await orchestrator.start_session(
+            tenant_id="tenant-A", learner_id="child-7",
+            age_band="6-9", locale="en", consent_record_id="c1",
+            targeted_skills=("ask_open_question",),
+        )
+        # Same owner — passes
+        orchestrator.assert_owner(session.id, tenant_id="tenant-A", learner_id="child-7")
+        # Wrong tenant — rejected
+        with pytest.raises(PermissionError):
+            orchestrator.assert_owner(session.id, tenant_id="tenant-B", learner_id="child-7")
+        # Wrong learner in the same tenant — rejected
+        with pytest.raises(PermissionError):
+            orchestrator.assert_owner(session.id, tenant_id="tenant-A", learner_id="child-8")
+        # Unknown session — KeyError (route layer maps both this and
+        # PermissionError to 404 to avoid an oracle for valid ids)
+        with pytest.raises(KeyError):
+            orchestrator.assert_owner("does-not-exist", tenant_id="tenant-A", learner_id="child-7")
+    asyncio.new_event_loop().run_until_complete(go())
+
+
+def test_state_machine_transitions_through_all_runtime_vertices():
+    """Verifies greet → roleplayTurn × N → reflect → assignQuest → farewell
+    is actually represented at runtime (not just summary metadata)."""
+    async def go():
+        orchestrator = DefaultOrchestrator(
+            stt=MockSTT(), tts=MockTTS(), toolset=DefaultToolset(),
+            emitter=EventEmitter(), safety=SafetyFilter(),
+            max_roleplay_turns=3,
+        )
+        s = await orchestrator.start_session(
+            tenant_id="t1", learner_id="l1", age_band="6-9", locale="en",
+            consent_record_id="c1", targeted_skills=("ask_open_question",),
+        )
+        assert s.state == "greet"
+        out1 = await orchestrator.run_turn(s.id, text="hi")
+        assert out1.next_state == "roleplayTurn"
+        out2 = await orchestrator.run_turn(s.id, text="ok")
+        assert out2.next_state == "roleplayTurn"
+        out3 = await orchestrator.run_turn(s.id, text="hmm")
+        assert out3.next_state == "reflect"
+        out4 = await orchestrator.run_turn(s.id, text="I felt sad earlier.")
+        assert out4.next_state == "assignQuest"
+        out5 = await orchestrator.run_turn(s.id, text="okay")
+        assert out5.next_state == "farewell"
+    asyncio.new_event_loop().run_until_complete(go())
+
+
 def test_self_harm_input_triggers_crisis_and_ends():
     async def go():
         orchestrator = _orch()

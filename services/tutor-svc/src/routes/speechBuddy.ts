@@ -104,11 +104,15 @@ export async function registerSpeechBuddyRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "text or audioBase64 required" });
     }
     try {
-      const out = await aiSvc.runTurn(id, {
-        text: body.text,
-        audioBase64: body.audioBase64,
-        mimeType: typeof body.mimeType === "string" ? body.mimeType : "audio/webm",
-      });
+      const out = await aiSvc.runTurn(
+        id,
+        {
+          text: body.text,
+          audioBase64: body.audioBase64,
+          mimeType: typeof body.mimeType === "string" ? body.mimeType : "audio/webm",
+        },
+        { tenantId: user.tenantId, learnerId: user.sub },
+      );
       return reply.send(out);
     } catch (err: any) {
       const status = err.status === 404 ? 404 : err.status === 409 ? 409 : 502;
@@ -123,7 +127,10 @@ export async function registerSpeechBuddyRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     const reason = ((req.body as any)?.reason as string) || "completed";
     try {
-      const out = await aiSvc.endSession(id, reason);
+      const out = await aiSvc.endSession(id, reason, {
+        tenantId: user.tenantId,
+        learnerId: user.sub,
+      });
       return reply.send(out);
     } catch (err: any) {
       const status = err.status === 404 ? 404 : 502;
@@ -165,23 +172,22 @@ export async function registerSpeechBuddyRoutes(app: FastifyInstance) {
         conn.socket.close(4401, "unauthorized");
         return;
       }
-      // Validate this session actually belongs to the caller's tenant
-      // by asking ai-svc; ai-svc 404s on unknown ids and only owners can
-      // pass the start-session gate, so a tenant_id mismatch implies a
-      // hijack attempt.
+      // Validate session ownership: ai-svc enforces (tenant, learner) match
+      // via the x-aivo-tenant-id / x-aivo-learner-id headers. A 404 here
+      // means either the session doesn't exist or it belongs to someone
+      // else — we deliberately collapse both into "not found" so this
+      // endpoint can't be used as an oracle for valid session ids.
+      const owner = { tenantId: user.tenantId, learnerId: user.sub };
       try {
-        const url = `${process.env.AI_SVC_URL || "http://localhost:3005"}/api/ai/speech-buddy/sessions/${encodeURIComponent(id)}`;
-        const internalKey = process.env.INTERNAL_SERVICE_KEY ||
-          (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
-        const r = await fetch(url, { headers: { "x-internal-key": internalKey } });
-        if (!r.ok) {
+        await aiSvc.getSession(id, owner);
+      } catch (err: any) {
+        if (err?.status === 404) {
           send({ type: "error", error: "session not found" });
           conn.socket.close(4404, "not found");
-          return;
+        } else {
+          send({ type: "error", error: "ai-svc unreachable" });
+          conn.socket.close(4503, "upstream unavailable");
         }
-      } catch {
-        send({ type: "error", error: "ai-svc unreachable" });
-        conn.socket.close(4503, "upstream unavailable");
         return;
       }
       send({ type: "ready", sessionId: id });
@@ -189,36 +195,40 @@ export async function registerSpeechBuddyRoutes(app: FastifyInstance) {
         let msg: any;
         try { msg = JSON.parse(raw.toString("utf-8")); }
         catch { return send({ type: "error", error: "invalid json" }); }
+        const emitTurn = (turn: import("../lib/aiSvc.js").TurnResponse) => {
+          send({ type: "buddy_text", text: turn.buddyText, ended: turn.ended, nextState: turn.nextState });
+          if (turn.buddyAudioBase64) {
+            // Forward TTS audio back to the child. The bytes are released
+            // to the wire — we never hold them on the server beyond this
+            // synchronous emit. Client decodes & plays via Web Audio.
+            send({ type: "buddy_audio", audioBase64: turn.buddyAudioBase64, mimeType: "audio/mpeg" });
+          }
+          send({ type: "trace", trace: turn.trace, safetyFlags: turn.safetyFlags });
+          if (turn.ended) {
+            send({ type: "session_ended", reason: turn.endedReason });
+            conn.socket.close();
+          }
+        };
         if (msg?.type === "audio_frame" && typeof msg.audioBase64 === "string") {
           try {
             const turn = await aiSvc.runTurn(id, {
               audioBase64: msg.audioBase64,
               mimeType: typeof msg.mimeType === "string" ? msg.mimeType : "audio/webm",
-            });
-            send({ type: "buddy_text", text: turn.buddyText, ended: turn.ended });
-            send({ type: "trace", trace: turn.trace, safetyFlags: turn.safetyFlags });
-            if (turn.ended) {
-              send({ type: "session_ended", reason: turn.endedReason });
-              conn.socket.close();
-            }
+            }, owner);
+            emitTurn(turn);
           } catch (err: any) {
             send({ type: "error", error: err.message || "turn failed" });
           }
         } else if (msg?.type === "text_turn" && typeof msg.text === "string") {
           try {
-            const turn = await aiSvc.runTurn(id, { text: msg.text });
-            send({ type: "buddy_text", text: turn.buddyText, ended: turn.ended });
-            send({ type: "trace", trace: turn.trace, safetyFlags: turn.safetyFlags });
-            if (turn.ended) {
-              send({ type: "session_ended", reason: turn.endedReason });
-              conn.socket.close();
-            }
+            const turn = await aiSvc.runTurn(id, { text: msg.text }, owner);
+            emitTurn(turn);
           } catch (err: any) {
             send({ type: "error", error: err.message || "turn failed" });
           }
         } else if (msg?.type === "end") {
           try {
-            const out = await aiSvc.endSession(id, msg.reason || "completed");
+            const out = await aiSvc.endSession(id, msg.reason || "completed", owner);
             send({ type: "session_ended", reason: out.endedReason, summary: {
               durationSeconds: out.durationSeconds,
               turnCount: out.turnCount,

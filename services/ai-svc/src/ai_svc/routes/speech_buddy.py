@@ -40,6 +40,32 @@ def _check_internal(x_internal_key: Optional[str]) -> None:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
+def _check_ownership(
+    session_id: str,
+    *,
+    tenant_id: Optional[str],
+    learner_id: Optional[str],
+) -> None:
+    """Enforce caller (tenant_id, learner_id) actually owns this session.
+
+    tutor-svc passes these from the verified child JWT on every call.
+    Without them, ai-svc refuses — preventing IDOR where one child guesses
+    or replays another child's session id.
+    """
+    if not tenant_id or not learner_id:
+        raise HTTPException(
+            status_code=400,
+            detail="x-aivo-tenant-id and x-aivo-learner-id headers are required",
+        )
+    try:
+        _orchestrator.assert_owner(session_id, tenant_id=tenant_id, learner_id=learner_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="session not found")
+    except PermissionError:
+        # 404, not 403, to avoid an oracle for valid session ids.
+        raise HTTPException(status_code=404, detail="session not found")
+
+
 # Build a single shared orchestrator for the process. tutor-svc pins each
 # session to one ai-svc instance via the WS endpoint, so the in-memory
 # session map is correct under that routing.
@@ -100,8 +126,15 @@ async def start_session(body: StartSessionBody, x_internal_key: Optional[str] = 
 
 
 @router.post("/sessions/{session_id}/turn")
-async def run_turn(session_id: str, body: TurnBody, x_internal_key: Optional[str] = Header(default=None, alias="x-internal-key")):
+async def run_turn(
+    session_id: str,
+    body: TurnBody,
+    x_internal_key: Optional[str] = Header(default=None, alias="x-internal-key"),
+    x_aivo_tenant_id: Optional[str] = Header(default=None, alias="x-aivo-tenant-id"),
+    x_aivo_learner_id: Optional[str] = Header(default=None, alias="x-aivo-learner-id"),
+):
     _check_internal(x_internal_key)
+    _check_ownership(session_id, tenant_id=x_aivo_tenant_id, learner_id=x_aivo_learner_id)
     if body.text is None and body.audioBase64 is None:
         raise HTTPException(status_code=400, detail="text or audioBase64 required")
     audio_bytes: Optional[bytes] = None
@@ -122,8 +155,12 @@ async def run_turn(session_id: str, body: TurnBody, x_internal_key: Optional[str
         raise HTTPException(status_code=404, detail="session not found")
     except RuntimeError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    import base64 as _b64
     return {
         "buddyText": outcome.buddy_text,
+        "buddyAudioBase64": (
+            _b64.b64encode(outcome.buddy_audio).decode("ascii") if outcome.buddy_audio else ""
+        ),
         "nextState": outcome.next_state,
         "ended": outcome.ended,
         "endedReason": outcome.ended_reason,
@@ -146,8 +183,15 @@ async def run_turn(session_id: str, body: TurnBody, x_internal_key: Optional[str
 
 
 @router.post("/sessions/{session_id}/end")
-async def end_session(session_id: str, body: EndBody, x_internal_key: Optional[str] = Header(default=None, alias="x-internal-key")):
+async def end_session(
+    session_id: str,
+    body: EndBody,
+    x_internal_key: Optional[str] = Header(default=None, alias="x-internal-key"),
+    x_aivo_tenant_id: Optional[str] = Header(default=None, alias="x-aivo-tenant-id"),
+    x_aivo_learner_id: Optional[str] = Header(default=None, alias="x-aivo-learner-id"),
+):
     _check_internal(x_internal_key)
+    _check_ownership(session_id, tenant_id=x_aivo_tenant_id, learner_id=x_aivo_learner_id)
     try:
         return await _orchestrator.end_session(session_id, reason=body.reason)
     except KeyError:
@@ -155,8 +199,14 @@ async def end_session(session_id: str, body: EndBody, x_internal_key: Optional[s
 
 
 @router.get("/sessions/{session_id}")
-async def get_session(session_id: str, x_internal_key: Optional[str] = Header(default=None, alias="x-internal-key")):
+async def get_session(
+    session_id: str,
+    x_internal_key: Optional[str] = Header(default=None, alias="x-internal-key"),
+    x_aivo_tenant_id: Optional[str] = Header(default=None, alias="x-aivo-tenant-id"),
+    x_aivo_learner_id: Optional[str] = Header(default=None, alias="x-aivo-learner-id"),
+):
     _check_internal(x_internal_key)
+    _check_ownership(session_id, tenant_id=x_aivo_tenant_id, learner_id=x_aivo_learner_id)
     try:
         s = _orchestrator.get_session(session_id)
     except KeyError:

@@ -30,6 +30,7 @@ from .events import EventEmitter, hash_learner_id
 from .safety import HARD_CATEGORIES, SafetyDecision, SafetyFilter
 from .stt import STTAdapter, get_default_stt
 from .tools_impl import DefaultToolset, _SCENARIOS, _FALLBACK_BY_BAND
+from .transcript_store import TranscriptStore, get_default_store
 from .tts import TTSAdapter, TTSResult, get_default_tts
 from .types import (
     AgeBand,
@@ -71,6 +72,8 @@ class _SessionRecord:
     terminal_flag: Optional[SafetyFlag] = None
     last_latency_breakdown: dict[str, float] = field(default_factory=dict)
     quest_assigned: Optional[tuple[str, SkillTag]] = None
+    roleplay_turns: int = 0
+    transcript_storage_uri: Optional[str] = None
 
 
 @dataclass
@@ -110,13 +113,29 @@ class DefaultOrchestrator:
         toolset: Optional[DefaultToolset] = None,
         safety: Optional[SafetyFilter] = None,
         emitter: Optional[EventEmitter] = None,
+        transcript_store: Optional[TranscriptStore] = None,
+        max_roleplay_turns: int = 4,
     ) -> None:
         self.stt = stt or get_default_stt()
         self.tts = tts or get_default_tts()
         self.toolset = toolset or DefaultToolset()
         self.emitter = emitter or EventEmitter()
         self.safety = safety or SafetyFilter()
+        self.transcript_store = transcript_store or get_default_store()
+        self.max_roleplay_turns = max_roleplay_turns
         self._sessions: dict[str, _SessionRecord] = {}
+
+    # ---- session ownership check ------------------------------------------
+
+    def assert_owner(self, session_id: str, *, tenant_id: str, learner_id: str) -> None:
+        """Raise PermissionError if (tenant_id, learner_id) doesn't own the session."""
+        rec = self._sessions.get(session_id)
+        if rec is None:
+            raise KeyError(session_id)
+        if rec.session.tenant_id != tenant_id or rec.session.learner_id != learner_id:
+            raise PermissionError(
+                f"caller {tenant_id}:{learner_id} is not the owner of session {session_id}"
+            )
 
     # ---- session lifecycle -------------------------------------------------
 
@@ -309,8 +328,24 @@ class DefaultOrchestrator:
             safety_flag_count=len(flags),
         )
 
-        # advance state
-        rec.session.state = "roleplayTurn"
+        # advance state machine: greet → roleplayTurn × N → reflect →
+        # assignQuest → farewell. (pickScenario runs synchronously inside
+        # start_session, so it never appears as a turn-boundary state.)
+        # Transitions happen *after* the buddy response is computed so the
+        # state always reflects what the *next* turn will do.
+        prior_state = rec.session.state
+        if prior_state == "greet":
+            rec.session.state = "roleplayTurn"
+            rec.roleplay_turns = 1
+        elif prior_state == "roleplayTurn":
+            rec.roleplay_turns += 1
+            if rec.roleplay_turns >= self.max_roleplay_turns:
+                rec.session.state = "reflect"
+        elif prior_state == "reflect":
+            rec.session.state = "assignQuest"
+        elif prior_state == "assignQuest":
+            rec.session.state = "farewell"
+        # `farewell` is terminal — the next /end call closes the session.
 
         total_ms = (_now() - t_total_start) * 1000.0
         trace = TurnTrace(
@@ -347,6 +382,14 @@ class DefaultOrchestrator:
                 rec.session.tenant_id,
                 "\n".join(rec.transcript_lines),
             )
+            # Durable, tenant-scoped persistence — ciphertext only.
+            try:
+                rec.transcript_storage_uri = self.transcript_store.put(
+                    session_id=rec.session.id,
+                    transcript=rec.encrypted_transcript,
+                )
+            except Exception:
+                logger.exception("speech_buddy.transcript_persist_failed")
             # Lightweight quest assignment based on weakest evidence skill.
             quest = self._maybe_assign_quest(rec)
             duration_seconds = max(0, int(_now() - rec.started_perf))
@@ -384,6 +427,7 @@ class DefaultOrchestrator:
             "transcriptCiphertext": (
                 rec.encrypted_transcript.to_dict() if rec.encrypted_transcript else None
             ),
+            "transcriptStorageUri": rec.transcript_storage_uri,
         }
 
     # ---- helpers -----------------------------------------------------------

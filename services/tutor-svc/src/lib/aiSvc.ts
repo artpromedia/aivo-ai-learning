@@ -11,6 +11,19 @@ const INTERNAL_KEY =
   process.env.INTERNAL_SERVICE_KEY ||
   (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
 
+interface OwnerCtx {
+  tenantId: string;
+  learnerId: string;
+}
+
+function ownerHeaders(owner?: OwnerCtx): Record<string, string> {
+  if (!owner) return {};
+  return {
+    "x-aivo-tenant-id": owner.tenantId,
+    "x-aivo-learner-id": owner.learnerId,
+  };
+}
+
 async function call<T>(path: string, init: RequestInit & { method: "GET" | "POST" }): Promise<T> {
   const res = await fetch(`${AI_SVC_URL}${path}`, {
     ...init,
@@ -49,6 +62,7 @@ export interface StartSessionResponse {
 
 export interface TurnResponse {
   buddyText: string;
+  buddyAudioBase64: string;
   nextState: string;
   ended: boolean;
   endedReason: string | null;
@@ -109,18 +123,31 @@ export const aiSvc = {
       body: JSON.stringify(body),
     });
   },
-  runTurn(sessionId: string, body: { text?: string; audioBase64?: string; mimeType?: string }) {
+  runTurn(
+    sessionId: string,
+    body: { text?: string; audioBase64?: string; mimeType?: string },
+    owner?: OwnerCtx,
+  ) {
     return call<TurnResponse>(`/api/ai/speech-buddy/sessions/${encodeURIComponent(sessionId)}/turn`, {
       method: "POST",
       body: JSON.stringify(body),
+      headers: ownerHeaders(owner),
     });
   },
-  endSession(sessionId: string, reason: string) {
+  endSession(sessionId: string, reason: string, owner?: OwnerCtx) {
     return call<EndSessionResponse>(`/api/ai/speech-buddy/sessions/${encodeURIComponent(sessionId)}/end`, {
       method: "POST",
       body: JSON.stringify({ reason }),
+      headers: ownerHeaders(owner),
     });
   },
+  getSession(sessionId: string, owner?: OwnerCtx) {
+    return call<{ sessionId: string; state: string; ageBand: string; locale: string; targetedSkills: string[] }>(
+      `/api/ai/speech-buddy/sessions/${encodeURIComponent(sessionId)}`,
+      { method: "GET", headers: ownerHeaders(owner) },
+    );
+  },
 };
+export type { OwnerCtx };
 
 export const __testing = { AI_SVC_URL, INTERNAL_KEY };
