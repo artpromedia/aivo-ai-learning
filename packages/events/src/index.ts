@@ -31,7 +31,7 @@ export const EVENTS = {
   SPEECH_BUDDY_SESSION_ENDED: "speech_buddy.session.ended",
   SPEECH_BUDDY_TURN_RECORDED: "speech_buddy.turn.recorded",
   SPEECH_BUDDY_SKILL_EVIDENCE: "speech_buddy.skill.evidence",
-  SPEECH_BUDDY_SAFETY_FLAG_RAISED: "speech_buddy.safety.flag_raised",
+  SPEECH_BUDDY_SAFETY_FLAG_RAISED: "speech_buddy.safety.flag.raised",
   SPEECH_BUDDY_QUEST_ASSIGNED: "speech_buddy.quest.assigned",
 } as const;
 
