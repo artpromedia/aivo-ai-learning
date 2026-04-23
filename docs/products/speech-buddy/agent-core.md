@@ -40,6 +40,15 @@ Concrete entry points:
 
 State machine: `greet → pickScenario → roleplayTurn* → reflect → assignQuest → farewell`.
 
+> Implementation note: `pickScenario` is **internal** — it runs once
+> inside `start_session()` (see `orchestrator_impl.py`) and is *not*
+> a runtime turn-boundary state externally observable on the WS
+> stream. The runtime transitions reachable from `run_turn` are
+> `greet → roleplayTurn × N → reflect → assignQuest → farewell`,
+> with `N = max_roleplay_turns` (default 4, configurable on the
+> orchestrator). Clients should not assume `pickScenario` will appear
+> in the `nextState` field of any turn response.
+
 ---
 
 ## 2. Safety policy (operational summary)
