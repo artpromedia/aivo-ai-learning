@@ -70,6 +70,45 @@ export async function bootstrapOpsAlerts(opts: OpsAlertBootstrapOptions): Promis
       }
       return await client.stats_();
     });
+
+    // Prometheus-format exposition (#209). Same auth as JSON endpoint.
+    opts.app.get("/api/internal/metrics/ops-alerts-outbox", async (req, reply) => {
+      if (expectedToken && req.headers["x-service-token"] !== expectedToken) {
+        return reply.code(401).send("# unauthorized\n");
+      }
+      const stats = await client.stats_();
+      const labels = `{service="${stats.service}",store="${stats.storeKind}"}`;
+      const lines = [
+        `# HELP ops_alerts_outbox_depth Current depth of the on-call outbox.`,
+        `# TYPE ops_alerts_outbox_depth gauge`,
+        `ops_alerts_outbox_depth${labels} ${stats.depth}`,
+        `# HELP ops_alerts_outbox_enqueued_total Total envelopes enqueued.`,
+        `# TYPE ops_alerts_outbox_enqueued_total counter`,
+        `ops_alerts_outbox_enqueued_total${labels} ${stats.enqueuedTotal}`,
+        `# HELP ops_alerts_outbox_drained_total Total envelopes successfully delivered.`,
+        `# TYPE ops_alerts_outbox_drained_total counter`,
+        `ops_alerts_outbox_drained_total${labels} ${stats.drainedTotal}`,
+        `# HELP ops_alerts_outbox_dropped_total Total envelopes dropped (e.g. shutdown_timeout).`,
+        `# TYPE ops_alerts_outbox_dropped_total counter`,
+        `ops_alerts_outbox_dropped_total${labels} ${stats.droppedTotal}`,
+        `# HELP ops_alerts_auto_flush_ticks_total Auto-flush ticks attempted.`,
+        `# TYPE ops_alerts_auto_flush_ticks_total counter`,
+        `ops_alerts_auto_flush_ticks_total${labels} ${stats.autoFlushTicksTotal}`,
+        `# HELP ops_alerts_auto_flush_drained_total Envelopes drained during auto-flush.`,
+        `# TYPE ops_alerts_auto_flush_drained_total counter`,
+        `ops_alerts_auto_flush_drained_total${labels} ${stats.autoFlushDrainedTotal}`,
+        `# HELP ops_alerts_auto_flush_errors_total Errors caught inside the auto-flush tick.`,
+        `# TYPE ops_alerts_auto_flush_errors_total counter`,
+        `ops_alerts_auto_flush_errors_total${labels} ${stats.autoFlushErrorsTotal}`,
+        `# HELP ops_alerts_last_auto_flush_seconds Unix timestamp of the most recent auto-flush tick.`,
+        `# TYPE ops_alerts_last_auto_flush_seconds gauge`,
+        `ops_alerts_last_auto_flush_seconds${labels} ${
+          stats.lastAutoFlushAt ? Math.floor(new Date(stats.lastAutoFlushAt).getTime() / 1000) : 0
+        }`,
+      ];
+      reply.header("content-type", "text/plain; version=0.0.4; charset=utf-8");
+      return lines.join("\n") + "\n";
+    });
   }
 
   if (opts.installFatalHandler !== false) {

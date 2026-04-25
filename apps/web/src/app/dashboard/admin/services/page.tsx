@@ -30,6 +30,10 @@ interface OpsAlertsOutboxTile {
   firstNonZeroAt: string | null;
   lastShutdown: { drained: number; lost: number; flushTimedOut: boolean; finishedAt: string } | null;
   shutdownStale: boolean;
+  lastAutoFlushAt: string | null;
+  autoFlushTicksTotal: number;
+  autoFlushDrainedTotal: number;
+  autoFlushErrorsTotal: number;
   fetchedAt: string;
   error?: string;
 }
@@ -296,6 +300,18 @@ export default function AdminServicesPage() {
                         </span>
                       ) : (
                         <span className="italic vi-text-muted">none</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between">
+                      <span>last auto-flush</span>
+                      {t.lastAutoFlushAt ? (
+                        <span className={`font-medium ${t.autoFlushErrorsTotal > 0 ? "text-[hsl(var(--visual-sel))]" : "vi-text"}`}>
+                          {new Date(t.lastAutoFlushAt).toLocaleTimeString()} ·{" "}
+                          {t.autoFlushDrainedTotal} drained
+                          {t.autoFlushErrorsTotal > 0 ? ` · ${t.autoFlushErrorsTotal} err` : ""}
+                        </span>
+                      ) : (
+                        <span className="italic vi-text-muted">never</span>
                       )}
                     </div>
                     {ls && (
