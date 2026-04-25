@@ -64,7 +64,19 @@
     "wait": "待機",
     "logout": "ログアウト",
     "settings": "設定",
-    "loading_detail": "詳細を読み込み中…"
+    "loading_detail": "詳細を読み込み中…",
+    "avatar_section_title": "プロフィール写真",
+    "avatar_change": "写真を変更",
+    "avatar_remove": "写真を削除",
+    "avatar_save": "写真を保存",
+    "avatar_cancel": "キャンセル",
+    "avatar_uploading": "アップロード中…",
+    "avatar_hint": "JPEG、PNG、または WebP。最大 5 MB。正方形の画像が最適です。",
+    "avatar_invalid_type": "JPEG、PNG、または WebP の画像を選択してください。",
+    "avatar_too_large": "画像が 5 MB を超えています。",
+    "avatar_upload_failed": "写真をアップロードできませんでした。もう一度お試しください。",
+    "avatar_remove_failed": "写真を削除できませんでした。もう一度お試しください。",
+    "avatar_preview_alt": "新しいプロフィール写真のプレビュー"
   },
   "auth": {
     "welcome_back": "おかえりなさい",

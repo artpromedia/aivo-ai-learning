@@ -64,7 +64,19 @@
     "wait": "انتظر",
     "logout": "تسجيل الخروج",
     "settings": "الإعدادات",
-    "loading_detail": "جارٍ تحميل التفاصيل…"
+    "loading_detail": "جارٍ تحميل التفاصيل…",
+    "avatar_section_title": "صورة الملف الشخصي",
+    "avatar_change": "تغيير الصورة",
+    "avatar_remove": "إزالة الصورة",
+    "avatar_save": "حفظ الصورة",
+    "avatar_cancel": "إلغاء",
+    "avatar_uploading": "جارٍ الرفع…",
+    "avatar_hint": "JPEG أو PNG أو WebP. حتى 5 ميغابايت. الصور المربعة تعمل بشكل أفضل.",
+    "avatar_invalid_type": "اختر صورة بصيغة JPEG أو PNG أو WebP.",
+    "avatar_too_large": "حجم الصورة أكبر من 5 ميغابايت.",
+    "avatar_upload_failed": "تعذّر رفع الصورة. حاول مرة أخرى.",
+    "avatar_remove_failed": "تعذّر إزالة الصورة. حاول مرة أخرى.",
+    "avatar_preview_alt": "معاينة صورة الملف الشخصي الجديدة"
   },
   "auth": {
     "welcome_back": "مرحباً بعودتك",

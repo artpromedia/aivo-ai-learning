@@ -128,7 +128,15 @@
     "enterPassword": "Ingresa tu contraseña",
     "mfaEnabled": "MFA ha sido activado.",
     "mfaDisabled": "MFA ha sido desactivado.",
-    "enterCode": "Ingresa el código de 6 dígitos enviado a tu correo."
+    "enterCode": "Ingresa el código de 6 dígitos enviado a tu correo.",
+    "avatarChange": "Cambiar foto",
+    "avatarAdd": "Añadir foto",
+    "avatarRemove": "Quitar foto",
+    "avatarRemoveConfirm": "¿Quitar tu foto de perfil?",
+    "avatarUploadFailed": "No se pudo subir la foto. Inténtalo de nuevo.",
+    "avatarPermissionDenied": "Se necesita permiso para acceder a las fotos.",
+    "avatarInvalidType": "Elige una imagen JPEG, PNG o WebP.",
+    "avatarTooLarge": "La imagen supera los 5 MB."
   },
   "parentBilling": {
     "title": "Facturación y Suscripción",

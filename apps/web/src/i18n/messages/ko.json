@@ -64,7 +64,19 @@
     "wait": "대기",
     "logout": "로그아웃",
     "settings": "설정",
-    "loading_detail": "세부 정보 불러오는 중…"
+    "loading_detail": "세부 정보 불러오는 중…",
+    "avatar_section_title": "프로필 사진",
+    "avatar_change": "사진 변경",
+    "avatar_remove": "사진 삭제",
+    "avatar_save": "사진 저장",
+    "avatar_cancel": "취소",
+    "avatar_uploading": "업로드 중…",
+    "avatar_hint": "JPEG, PNG 또는 WebP. 최대 5MB. 정사각형 이미지가 가장 잘 표시됩니다.",
+    "avatar_invalid_type": "JPEG, PNG 또는 WebP 이미지를 선택하세요.",
+    "avatar_too_large": "이미지가 5MB를 초과합니다.",
+    "avatar_upload_failed": "사진을 업로드할 수 없습니다. 다시 시도해 주세요.",
+    "avatar_remove_failed": "사진을 삭제할 수 없습니다. 다시 시도해 주세요.",
+    "avatar_preview_alt": "새 프로필 사진 미리보기"
   },
   "auth": {
     "welcome_back": "다시 오신 것을 환영합니다",
