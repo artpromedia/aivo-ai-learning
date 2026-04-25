@@ -118,7 +118,8 @@ export const iepEvaluations = pgTable("iep_evaluations", {
   learnerId: uuid("learner_id").references(() => learners.id).notNull(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   initiatedByUserId: uuid("initiated_by_user_id").references(() => users.id).notNull(),
-  status: varchar("status", { length: 20 }).default("draft").notNull(),
+  // Widened from 20 → 40 to fit "eligibility_determined" (23 chars).
+  status: varchar("status", { length: 40 }).default("draft").notNull(),
   referralReason: text("referral_reason"),
   assessmentAreas: jsonb("assessment_areas").default([]),
   observations: text("observations"),
@@ -130,6 +131,13 @@ export const iepEvaluations = pgTable("iep_evaluations", {
   decidedAt: timestamp("decided_at"),
   decidedByUserId: uuid("decided_by_user_id").references(() => users.id),
   submittedAt: timestamp("submitted_at"),
+  // Set the first time the parent + district admins are notified that this
+  // evaluation moved from draft → submitted. Used as the idempotency latch
+  // so a retry storm cannot dispatch duplicate alerts.
+  submitNotifiedAt: timestamp("submit_notified_at"),
+  // Set the first time the parent is notified that an eligibility decision
+  // has been recorded. Same idempotency contract.
+  decisionNotifiedAt: timestamp("decision_notified_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
