@@ -3,6 +3,7 @@
  * Single source of truth for both learning-svc and tutor-svc.
  * See docs/xp-quality-metrics.md for the full formula and rationale.
  */
+export * from "./dape.js";
 
 export interface LessonSignals {
   durationSeconds: number;

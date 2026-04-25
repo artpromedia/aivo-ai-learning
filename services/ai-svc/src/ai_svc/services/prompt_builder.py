@@ -86,6 +86,10 @@ def build_tutor_system_prompt(
         )
         layer2_parts.append("\n".join(focus_lines))
 
+    dape_block = _build_dape_block(brain_context.get("dape_profile"))
+    if dape_block:
+        layer2_parts.append(dape_block)
+
     layer2_parts.append(f"\n## Subject Strategy\n{persona.get('subject_strategy', '')}")
 
     scaffolding = _build_scaffolding_instructions(
@@ -95,6 +99,70 @@ def build_tutor_system_prompt(
         layer2_parts.append(scaffolding)
 
     return layer1 + "\n".join(layer2_parts)
+
+
+def _build_dape_block(dape_profile) -> str:
+    """Render a structured DAPE Track section for Vigor when the learner is on
+    the DAPE pathway. Returns "" when DAPE is inactive — the persona narrative
+    already covers fitness as the default branch.
+
+    Expected shape (matches @aivo/scoring's DapeProfileSummary):
+      {
+        "active": true,
+        "source": "service" | "goal" | "service+goal",
+        "totalMotorGoals": int,
+        "categories": [
+          {"id": "locomotor", "label": "Locomotor skills",
+           "goalCount": 2, "sampleGoal": "..."},
+          ...
+        ],
+      }
+    """
+    if not isinstance(dape_profile, dict):
+        return ""
+    if not dape_profile.get("active"):
+        return ""
+
+    categories = dape_profile.get("categories") or []
+    source = dape_profile.get("source") or "goal"
+    total = int(dape_profile.get("totalMotorGoals") or 0)
+
+    source_phrase = {
+        "service": "an active Adapted Physical Education service line on the IEP",
+        "goal": "active motor IEP goals",
+        "service+goal": "both an active DAPE service line and motor IEP goals",
+    }.get(source, "active DAPE indicators on the IEP")
+
+    lines = [
+        "\n## DAPE Track Active",
+        f"This learner has {source_phrase}. Operate in the DAPE track for this "
+        f"session — not general fitness.",
+    ]
+    if total:
+        lines.append(f"- Motor goals on file: {total}")
+    if categories:
+        # Take the top 4 categories by goal count so a single DAPE block
+        # doesn't dominate the system prompt.
+        top = categories[:4]
+        for cat in top:
+            label = cat.get("label") or cat.get("id") or "DAPE skill"
+            count = cat.get("goalCount") or 0
+            sample = cat.get("sampleGoal")
+            line = f"- {label} ({count} goal{'s' if count != 1 else ''})"
+            if sample:
+                snippet = (sample[:120] + "…") if len(sample) > 120 else sample
+                line += f" — example: {snippet}"
+            lines.append(line)
+
+    lines.append(
+        "Lead with one DAPE skill category from the list above. Model the movement "
+        "visually (picture sequence or short demo), name the clinical skill in "
+        "your adult-facing recap, and end the activity with a regulation break "
+        "matched to the learner's sensory profile (seeker → heavy work / "
+        "vestibular; avoider → midline crossing / proprioceptive). Track motor-"
+        "skill progress separately so the Motor Progress report stays accurate."
+    )
+    return "\n".join(lines)
 
 
 def _build_scaffolding_instructions(
