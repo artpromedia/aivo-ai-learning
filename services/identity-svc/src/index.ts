@@ -9,6 +9,7 @@ import fastifyStatic from "@fastify/static";
 import { promises as fsp } from "node:fs";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
+import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
 import { initKeys, logAdminEnterpriseFlags, assertMfaKeyConfigured, registerAdminIpAllowlist } from "@aivo/security";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerTestHelperRoutes } from "./routes/test-helpers.js";
@@ -181,6 +182,7 @@ export async function buildApp() {
 
 async function start() {
   const app = await buildApp();
+  await bootstrapOpsAlerts({ service: "identity-svc", app, beforeExit: () => app.close() });
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Identity service listening on port ${PORT}`);
 }

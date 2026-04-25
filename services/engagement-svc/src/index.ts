@@ -4,6 +4,7 @@ import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
+import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerXpRoutes } from "./routes/xp.js";
 import { registerShopRoutes } from "./routes/shop.js";
@@ -40,6 +41,8 @@ async function start() {
   registerSelRoutes(app, db);
   registerLessonPlanRoutes(app, db);
   registerSiblingRoutes(app, db);
+
+  await bootstrapOpsAlerts({ service: "engagement-svc", app, beforeExit: () => app.close() });
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Engagement service listening on port ${PORT}`);

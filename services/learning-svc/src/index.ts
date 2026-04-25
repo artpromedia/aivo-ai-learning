@@ -4,6 +4,7 @@ import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
+import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerSessionRoutes } from "./routes/sessions.js";
 import { registerAuthHook } from "./lib/tenant.js";
@@ -30,6 +31,8 @@ async function start() {
   registerHealthRoutes(app);
   registerAuthHook(app);
   registerSessionRoutes(app, db);
+
+  await bootstrapOpsAlerts({ service: "learning-svc", app, beforeExit: () => app.close() });
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Learning service listening on port ${PORT}`);

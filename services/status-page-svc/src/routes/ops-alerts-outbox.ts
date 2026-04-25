@@ -61,9 +61,13 @@ function loadSources(): OutboxSource[] {
 
 async function fetchTile(source: OutboxSource): Promise<OutboxTile> {
   const fetchedAt = new Date().toISOString();
+  const token = process.env.INTERNAL_SERVICE_TOKEN;
   try {
     const res = await fetch(`${source.url}/api/internal/ops-alerts-outbox`, {
       signal: AbortSignal.timeout(5000),
+      headers: token
+        ? { "x-service-token": token, "x-internal-service": "status-page-svc" }
+        : undefined,
     });
     if (!res.ok) {
       return {
