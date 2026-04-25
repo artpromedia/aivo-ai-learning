@@ -44,8 +44,35 @@ const consecutiveWarnings: Record<string, number> = {};
 const lastEscalationAt: Record<string, number> = {};
 const ESCALATION_COOLDOWN_MS = 30 * 60 * 1000;
 
+// Every service that calls bootstrapOpsAlerts (i.e. registers
+// /api/internal/ops-alerts-outbox) goes here. We resolve each one's URL
+// from the same *_SVC_URL env vars used by the existing service-health
+// dashboard so a single deploy doesn't have to touch two configs.
+const DEFAULT_SOURCE_KEYS: Array<{ service: string; envKey: string; devDefault: string }> = [
+  { service: "identity-svc",     envKey: "IDENTITY_SVC_URL",     devDefault: "http://localhost:3001" },
+  { service: "assessment-svc",   envKey: "ASSESSMENT_SVC_URL",   devDefault: "http://localhost:3003" },
+  { service: "learning-svc",     envKey: "LEARNING_SVC_URL",     devDefault: "http://localhost:3005" },
+  { service: "tutor-svc",        envKey: "TUTOR_SVC_URL",        devDefault: "http://localhost:3006" },
+  { service: "family-svc",       envKey: "FAMILY_SVC_URL",       devDefault: "http://localhost:3007" },
+  { service: "engagement-svc",   envKey: "ENGAGEMENT_SVC_URL",   devDefault: "http://localhost:3008" },
+  { service: "billing-svc",      envKey: "BILLING_SVC_URL",      devDefault: "http://localhost:3009" },
+  { service: "comms-svc",        envKey: "COMMS_SVC_URL",        devDefault: "http://localhost:3010" },
+  { service: "i18n-svc",         envKey: "I18N_SVC_URL",         devDefault: "http://localhost:3011" },
+  { service: "integrations-svc", envKey: "INTEGRATIONS_SVC_URL", devDefault: "http://localhost:3012" },
+  { service: "admin-svc",        envKey: "ADMIN_SVC_URL",        devDefault: "http://localhost:3013" },
+  { service: "research-svc",     envKey: "RESEARCH_SVC_URL",     devDefault: "http://localhost:3015" },
+];
+
 function loadSources(): OutboxSource[] {
   const raw = process.env.OPS_ALERT_OUTBOX_SOURCES || "";
+  if (raw.trim().length === 0) {
+    // Fallback: every service that is wired to bootstrapOpsAlerts. Resolves
+    // each service's URL from the existing *_SVC_URL env (or its dev default).
+    return DEFAULT_SOURCE_KEYS.map(({ service, envKey, devDefault }) => ({
+      service,
+      url: (process.env[envKey] || devDefault).replace(/\/$/, ""),
+    }));
+  }
   return raw
     .split(",")
     .map((entry) => entry.trim())
