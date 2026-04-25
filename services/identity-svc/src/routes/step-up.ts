@@ -37,8 +37,15 @@ import {
 import { isMfaLocked, recordMfaFailure, clearMfaFailures } from "../services/mfa-lockout.js";
 import { getRpId, getExpectedOrigin, signWebauthnChallenge, verifyWebauthnChallengeToken } from "../services/mfa-webauthn.js";
 
-const COMMS_URL = process.env.COMMS_SVC_URL || "http://localhost:3010";
-const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`identity-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const COMMS_URL = requireUrl("COMMS_SVC_URL", "http://localhost:3010");
+const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || (IS_PROD ? "" : "aivo-internal-dev-key");
 
 function isValidScope(s: unknown): s is StepUpScope {
   return typeof s === "string" && (STEP_UP_SCOPES as readonly string[]).includes(s);

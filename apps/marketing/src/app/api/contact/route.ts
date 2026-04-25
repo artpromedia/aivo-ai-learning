@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const ADMIN_SVC_URL = process.env.ADMIN_SVC_URL || "http://localhost:3013";
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`marketing: ${name} must be set in production`);
+  return devDefault;
+}
+const ADMIN_SVC_URL = requireUrl("ADMIN_SVC_URL", "http://localhost:3013");
 
 export async function POST(req: NextRequest) {
   try {

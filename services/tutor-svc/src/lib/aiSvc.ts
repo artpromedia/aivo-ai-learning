@@ -6,10 +6,17 @@
  * (matches the comms-svc convention).
  */
 
-const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3005";
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`tutor-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const AI_SVC_URL = requireUrl("AI_SVC_URL", "http://localhost:3005");
 const INTERNAL_KEY =
   process.env.INTERNAL_SERVICE_KEY ||
-  (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+  (IS_PROD ? "" : "aivo-internal-dev-key");
 
 interface OwnerCtx {
   tenantId: string;

@@ -92,8 +92,7 @@
     "pleaseEnterEmail": "Please enter your email",
     "somethingWentWrong": "Something went wrong. Please try again.",
     "checkYourEmail": "Check Your Email",
-    "resetEmailSent": "If an account exists for {{email}}, you'll receive a password reset link shortly.",
-    "backToLogin": "Back to Login"
+    "resetEmailSent": "If an account exists for {{email}}, you'll receive a password reset link shortly."
   },
   "parent": {
     "greeting": "Hello, {{name}}",
@@ -129,7 +128,15 @@
     "enterPassword": "Enter your password",
     "mfaEnabled": "MFA has been enabled.",
     "mfaDisabled": "MFA has been disabled.",
-    "enterCode": "Enter the 6-digit code sent to your email."
+    "enterCode": "Enter the 6-digit code sent to your email.",
+    "avatarChange": "Change photo",
+    "avatarAdd": "Add photo",
+    "avatarRemove": "Remove photo",
+    "avatarRemoveConfirm": "Remove your profile photo?",
+    "avatarUploadFailed": "Could not upload photo. Try again.",
+    "avatarPermissionDenied": "Photo access permission is required.",
+    "avatarInvalidType": "Choose a JPEG, PNG, or WebP image.",
+    "avatarTooLarge": "Image is larger than 5 MB."
   },
   "parentBilling": {
     "title": "Billing & Subscription",

@@ -121,7 +121,9 @@ export async function buildApp() {
         version: "1.0.0",
         description: "Authentication, authorization, and user management for AIVO Learning Platform",
       },
-      servers: [{ url: `http://localhost:${PORT}` }],
+      servers: process.env.SWAGGER_SERVER_URL
+        ? [{ url: process.env.SWAGGER_SERVER_URL }]
+        : (process.env.NODE_ENV === "production" ? [] : [{ url: `http://localhost:${PORT}` }]),
       components: {
         securitySchemes: {
           bearerAuth: {

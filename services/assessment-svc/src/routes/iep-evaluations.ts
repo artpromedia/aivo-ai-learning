@@ -8,10 +8,19 @@ import {
 } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 
-const COMMS_URL = process.env.COMMS_SVC_URL || "http://localhost:3010";
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`assessment-svc: ${name} must be set in production`);
+  return devDefault;
+}
+
+const COMMS_URL = requireUrl("COMMS_SVC_URL", "http://localhost:3010");
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY
   || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
-const APP_URL = process.env.APP_URL || "http://localhost:5000";
+const APP_URL = requireUrl("APP_URL", "http://localhost:5000");
+const AI_SVC_URL = requireUrl("AI_SVC_URL", "http://localhost:3004");
 
 // Best-effort email dispatch — comms-svc failures must never block the
 // state-machine transition, so any throw is swallowed and logged upstream.
@@ -280,7 +289,6 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
       return reply.code(403).send({ error: "Access denied" });
     }
 
-    const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
     let suggestion: any = null;
     try {
       const aiRes = await fetch(`${AI_SVC_URL}/api/ai/eligibility-suggest`, {

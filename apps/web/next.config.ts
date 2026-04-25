@@ -1,5 +1,29 @@
 import type { NextConfig } from "next";
 
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`apps/web: ${name} must be set in production`);
+  return devDefault;
+}
+
+const IDENTITY_SVC_URL    = requireUrl("IDENTITY_SVC_URL",    "http://localhost:3001");
+const BRAIN_SVC_URL       = requireUrl("BRAIN_SVC_URL",       "http://localhost:3002");
+const ASSESSMENT_SVC_URL  = requireUrl("ASSESSMENT_SVC_URL",  "http://localhost:3003");
+const AI_SVC_URL          = requireUrl("AI_SVC_URL",          "http://localhost:3004");
+const LEARNING_SVC_URL    = requireUrl("LEARNING_SVC_URL",    "http://localhost:3005");
+const TUTOR_SVC_URL       = requireUrl("TUTOR_SVC_URL",       "http://localhost:3006");
+const FAMILY_SVC_URL      = requireUrl("FAMILY_SVC_URL",      "http://localhost:3007");
+const ENGAGEMENT_SVC_URL  = requireUrl("ENGAGEMENT_SVC_URL",  "http://localhost:3008");
+const BILLING_SVC_URL     = requireUrl("BILLING_SVC_URL",     "http://localhost:3009");
+const COMMS_SVC_URL       = requireUrl("COMMS_SVC_URL",       "http://localhost:3010");
+const I18N_SVC_URL        = requireUrl("I18N_SVC_URL",        "http://localhost:3011");
+const INTEGRATIONS_SVC_URL = requireUrl("INTEGRATIONS_SVC_URL", "http://localhost:3012");
+const ADMIN_SVC_URL       = requireUrl("ADMIN_SVC_URL",       "http://localhost:3013");
+const STATUS_PAGE_SVC_URL = requireUrl("STATUS_PAGE_SVC_URL", "http://localhost:3014");
+const RESEARCH_SVC_URL    = requireUrl("RESEARCH_SVC_URL",    "http://localhost:3015");
+
 const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
@@ -11,28 +35,28 @@ const nextConfig: NextConfig = {
   ],
   async rewrites() {
     return [
-      { source: "/api/admin/:path*", destination: "http://localhost:3001/api/admin/:path*" },
-      { source: "/api/auth/:path*", destination: "http://localhost:3001/api/auth/:path*" },
-      { source: "/api/users/:path*", destination: "http://localhost:3001/api/users/:path*" },
-      { source: "/api/avatars/:path*", destination: "http://localhost:3001/api/avatars/:path*" },
-      { source: "/api/consent/:path*", destination: "http://localhost:3001/api/consent/:path*" },
-      { source: "/api/curriculum/:path*", destination: "http://localhost:3001/api/curriculum/:path*" },
-      { source: "/api/assessments/:path*", destination: "http://localhost:3003/api/assessments/:path*" },
-      { source: "/api/iep/:path*", destination: "http://localhost:3003/api/iep/:path*" },
-      { source: "/api/brain/:path*", destination: "http://localhost:3002/api/brain/:path*" },
-      { source: "/api/ai/:path*", destination: "http://localhost:3004/api/ai/:path*" },
-      { source: "/api/learning/:path*", destination: "http://localhost:3005/api/learning/:path*" },
-      { source: "/api/tutors/:path*", destination: "http://localhost:3006/api/tutors/:path*" },
-      { source: "/api/tutor/:path*", destination: "http://localhost:3006/api/tutor/:path*" },
-      { source: "/api/family/:path*", destination: "http://localhost:3007/api/family/:path*" },
-      { source: "/api/engagement/:path*", destination: "http://localhost:3008/api/engagement/:path*" },
-      { source: "/api/billing/:path*", destination: "http://localhost:3009/api/billing/:path*" },
-      { source: "/api/comms/:path*", destination: "http://localhost:3010/api/comms/:path*" },
-      { source: "/api/i18n/:path*", destination: "http://localhost:3011/api/i18n/:path*" },
-      { source: "/api/integrations/:path*", destination: "http://localhost:3012/api/integrations/:path*" },
-      { source: "/api/admin-svc/:path*", destination: "http://localhost:3013/api/admin-svc/:path*" },
-      { source: "/api/status/:path*", destination: "http://localhost:3014/api/status/:path*" },
-      { source: "/api/research/:path*", destination: "http://localhost:3015/api/research/:path*" },
+      { source: "/api/admin/:path*",        destination: `${IDENTITY_SVC_URL}/api/admin/:path*` },
+      { source: "/api/auth/:path*",         destination: `${IDENTITY_SVC_URL}/api/auth/:path*` },
+      { source: "/api/users/:path*",        destination: `${IDENTITY_SVC_URL}/api/users/:path*` },
+      { source: "/api/avatars/:path*",      destination: `${IDENTITY_SVC_URL}/api/avatars/:path*` },
+      { source: "/api/consent/:path*",      destination: `${IDENTITY_SVC_URL}/api/consent/:path*` },
+      { source: "/api/curriculum/:path*",   destination: `${IDENTITY_SVC_URL}/api/curriculum/:path*` },
+      { source: "/api/assessments/:path*",  destination: `${ASSESSMENT_SVC_URL}/api/assessments/:path*` },
+      { source: "/api/iep/:path*",          destination: `${ASSESSMENT_SVC_URL}/api/iep/:path*` },
+      { source: "/api/brain/:path*",        destination: `${BRAIN_SVC_URL}/api/brain/:path*` },
+      { source: "/api/ai/:path*",           destination: `${AI_SVC_URL}/api/ai/:path*` },
+      { source: "/api/learning/:path*",     destination: `${LEARNING_SVC_URL}/api/learning/:path*` },
+      { source: "/api/tutors/:path*",       destination: `${TUTOR_SVC_URL}/api/tutors/:path*` },
+      { source: "/api/tutor/:path*",        destination: `${TUTOR_SVC_URL}/api/tutor/:path*` },
+      { source: "/api/family/:path*",       destination: `${FAMILY_SVC_URL}/api/family/:path*` },
+      { source: "/api/engagement/:path*",   destination: `${ENGAGEMENT_SVC_URL}/api/engagement/:path*` },
+      { source: "/api/billing/:path*",      destination: `${BILLING_SVC_URL}/api/billing/:path*` },
+      { source: "/api/comms/:path*",        destination: `${COMMS_SVC_URL}/api/comms/:path*` },
+      { source: "/api/i18n/:path*",         destination: `${I18N_SVC_URL}/api/i18n/:path*` },
+      { source: "/api/integrations/:path*", destination: `${INTEGRATIONS_SVC_URL}/api/integrations/:path*` },
+      { source: "/api/admin-svc/:path*",    destination: `${ADMIN_SVC_URL}/api/admin-svc/:path*` },
+      { source: "/api/status/:path*",       destination: `${STATUS_PAGE_SVC_URL}/api/status/:path*` },
+      { source: "/api/research/:path*",     destination: `${RESEARCH_SVC_URL}/api/research/:path*` },
     ];
   },
 };

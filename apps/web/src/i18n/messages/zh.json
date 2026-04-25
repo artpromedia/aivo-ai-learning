@@ -64,7 +64,19 @@
     "wait": "等待",
     "logout": "退出登录",
     "settings": "设置",
-    "loading_detail": "正在加载详情…"
+    "loading_detail": "正在加载详情…",
+    "avatar_section_title": "头像",
+    "avatar_change": "更换照片",
+    "avatar_remove": "移除照片",
+    "avatar_save": "保存照片",
+    "avatar_cancel": "取消",
+    "avatar_uploading": "上传中…",
+    "avatar_hint": "JPEG、PNG 或 WebP。最大 5 MB。正方形图片效果最佳。",
+    "avatar_invalid_type": "请选择 JPEG、PNG 或 WebP 图片。",
+    "avatar_too_large": "图片大于 5 MB。",
+    "avatar_upload_failed": "无法上传照片。请重试。",
+    "avatar_remove_failed": "无法移除照片。请重试。",
+    "avatar_preview_alt": "新头像预览"
   },
   "auth": {
     "welcome_back": "欢迎回来",

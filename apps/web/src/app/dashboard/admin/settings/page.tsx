@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { IconWell } from "@/components/discovery/_vi";
 import { Settings, Mail, Webhook, KeyRound, type LucideIcon } from "lucide-react";
+import { AvatarUploader } from "@/components/AvatarUploader";
 
 interface PlatformConfig {
   featureFlags: Record<string, boolean>;
@@ -19,6 +20,11 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) setAvatarUrl((user as { avatarUrl?: string | null }).avatarUrl ?? null);
+  }, [user]);
 
   const isPlatformAdmin = user?.role === "PLATFORM_ADMIN";
 
@@ -155,6 +161,18 @@ export default function AdminSettingsPage() {
           </div>
         )}
       </div>
+
+      {user && (
+        <div className="vi-card p-6 space-y-5">
+          <h2 className="font-heading font-bold text-lg vi-text">{tc("avatar_section_title")}</h2>
+          <AvatarUploader
+            currentAvatarUrl={avatarUrl}
+            userName={user.name}
+            accessToken={accessToken}
+            onChange={(newUrl) => setAvatarUrl(newUrl)}
+          />
+        </div>
+      )}
 
       <div className="vi-card p-6">
         <h2 className="font-heading font-bold text-lg vi-text mb-1">Feature Flags</h2>

@@ -3,6 +3,15 @@ import { iepDocuments, iepProfiles, iepGoals, learners, learnerFunctioningLevels
 import { verifyJWT } from "@aivo/security";
 import { eq } from "drizzle-orm";
 
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`assessment-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const AI_SVC_URL = requireUrl("AI_SVC_URL", "http://localhost:3004");
+
 async function authenticate(req: any, reply: any) {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer ")) return reply.status(401).send({ error: "Unauthorized" });
@@ -106,8 +115,6 @@ export async function registerIepRoutes(app: FastifyInstance) {
   }, async (req) => {
     const db = (app as any).db;
     const body = req.body as { learnerId: string; documentText: string; fileName?: string };
-
-    const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
 
     let parsedData: any;
     try {
