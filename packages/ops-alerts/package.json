@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsc",
     "prepare": "tsc",
-    "test": "node --test --import tsx 'src/**/*.test.ts'"
+    "test": "node --test --import tsx 'src/**/*.test.ts' 'test/**/*.test.ts'"
   },
   "dependencies": {
     "@aivo/observability": "workspace:*"
