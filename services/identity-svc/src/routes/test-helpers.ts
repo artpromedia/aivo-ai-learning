@@ -16,8 +16,10 @@ import {
   mfaCodes,
   tenants,
   learners,
+  learnerTeachers,
   iepProfiles,
   iepProgressNotes,
+  iepEvaluations,
 } from "@aivo/db";
 import { eq, and, sql } from "drizzle-orm";
 import argon2 from "argon2";
@@ -259,6 +261,138 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
       iepProfileId: profile.id,
       notes: { parentNoteId: parentNote.id, internalNoteId: internalNote.id },
       bodies: { parent: parentNoteBody, internal: internalNoteBody },
+    };
+  });
+
+  // Idempotent seeding for the eligibility-evaluation Playwright spec.
+  // Builds a single B2B_DISTRICT tenant with:
+  //   - A PARENT user
+  //   - A TEACHER user with an ACCEPTED learnerTeachers link to the learner.
+  //   - A LEARNER (under the parent).
+  // Any pre-existing iep_evaluations rows for the learner are removed so the
+  // spec opens against a deterministic empty state. Re-running the endpoint
+  // resets passwords and clears prior evaluations.
+  app.post<{
+    Body: {
+      parentEmail: string;
+      parentPassword: string;
+      teacherEmail: string;
+      teacherPassword: string;
+      learnerName?: string;
+      tenantName?: string;
+    };
+  }>("/api/__test__/seed-iep-evaluation-fixture", async (req, reply) => {
+    if (!testModeEnabled()) return reply.status(404).send({ error: "Not found" });
+    const db = (app as any).db;
+    const {
+      parentEmail,
+      parentPassword,
+      teacherEmail,
+      teacherPassword,
+      learnerName = "E2E Eval Learner",
+      tenantName,
+    } = req.body;
+    if (!parentEmail || !parentPassword || !teacherEmail || !teacherPassword) {
+      return reply.status(400).send({
+        error: "parentEmail, parentPassword, teacherEmail, teacherPassword required",
+      });
+    }
+    if (parentEmail.toLowerCase() === teacherEmail.toLowerCase()) {
+      return reply.status(400).send({ error: "parent and teacher emails must differ" });
+    }
+
+    // Single tenant: a B2B district school. Parent and teacher both live
+    // inside it so the teacher's tenantId check passes alongside the
+    // learnerTeachers ACCEPTED link.
+    const tName = tenantName
+      || `E2E Eval Tenant <${teacherEmail.toLowerCase()}>`;
+    let [tenant] = await db.select().from(tenants).where(eq(tenants.name, tName)).limit(1);
+    if (!tenant) {
+      [tenant] = await db.insert(tenants)
+        .values({ name: tName, type: "B2B_DISTRICT" as any })
+        .returning();
+    }
+
+    async function upsertUser(email: string, password: string, role: string, name: string, tenantId: string) {
+      const lc = email.toLowerCase();
+      const passwordHash = await argon2.hash(password);
+      let [u] = await db.select().from(users).where(eq(users.email, lc)).limit(1);
+      if (u) {
+        await db.update(users).set({
+          passwordHash, role: role as any, tenantId,
+          mfaEnabled: false, deactivatedAt: null,
+        }).where(eq(users.id, u.id));
+        [u] = await db.select().from(users).where(eq(users.id, u.id)).limit(1);
+      } else {
+        [u] = await db.insert(users).values({
+          email: lc, name, passwordHash, role: role as any, tenantId, mfaEnabled: false,
+        }).returning();
+      }
+      return u;
+    }
+
+    const parentUser = await upsertUser(parentEmail, parentPassword, "PARENT", "E2E Eval Parent", tenant.id);
+    const teacherUser = await upsertUser(teacherEmail, teacherPassword, "TEACHER", "E2E Eval Teacher", tenant.id);
+
+    // Learner needs an underlying user row (LEARNER role).
+    const learnerUserName = `${learnerName} <${parentUser.id}>`;
+    let [learnerUser] = await db.select().from(users)
+      .where(and(eq(users.name, learnerUserName), eq(users.role, "LEARNER" as any))).limit(1);
+    if (!learnerUser) {
+      [learnerUser] = await db.insert(users).values({
+        name: learnerUserName, role: "LEARNER" as any, tenantId: tenant.id,
+      }).returning();
+    } else if (learnerUser.tenantId !== tenant.id) {
+      await db.update(users).set({ tenantId: tenant.id }).where(eq(users.id, learnerUser.id));
+    }
+
+    let [learner] = await db.select().from(learners)
+      .where(and(eq(learners.userId, learnerUser.id), eq(learners.parentId, parentUser.id))).limit(1);
+    if (!learner) {
+      [learner] = await db.insert(learners).values({
+        tenantId: tenant.id,
+        userId: learnerUser.id,
+        parentId: parentUser.id,
+        name: learnerName,
+        gradeLevel: "3",
+      }).returning();
+    } else if (learner.tenantId !== tenant.id) {
+      await db.update(learners).set({ tenantId: tenant.id })
+        .where(eq(learners.id, learner.id));
+    }
+
+    // Establish the ACCEPTED teacher↔learner link the eligibility writes
+    // gate on. Look it up first to keep the helper idempotent across re-runs.
+    let [link] = await db.select().from(learnerTeachers).where(
+      and(
+        eq(learnerTeachers.learnerId, learner.id),
+        eq(learnerTeachers.teacherUserId, teacherUser.id),
+      ),
+    ).limit(1);
+    if (!link) {
+      [link] = await db.insert(learnerTeachers).values({
+        tenantId: tenant.id,
+        learnerId: learner.id,
+        teacherEmail: teacherUser.email,
+        teacherUserId: teacherUser.id,
+        invitedBy: parentUser.id,
+        status: "ACCEPTED",
+        acceptedAt: new Date(),
+      } as any).returning();
+    } else if (link.status !== "ACCEPTED") {
+      await db.update(learnerTeachers).set({ status: "ACCEPTED", acceptedAt: new Date() })
+        .where(eq(learnerTeachers.id, link.id));
+    }
+
+    // Reset evaluations so the spec opens with no rows. iep_profiles created
+    // off prior runs are left in place — the spec asserts on the
+    // evaluation list, not the IEP authoring list.
+    await db.delete(iepEvaluations).where(eq(iepEvaluations.learnerId, learner.id));
+
+    return {
+      parent: { id: parentUser.id, email: parentUser.email, tenantId: tenant.id },
+      teacher: { id: teacherUser.id, email: teacherUser.email, tenantId: tenant.id },
+      learner: { id: learner.id, name: learner.name, tenantId: tenant.id },
     };
   });
 }
