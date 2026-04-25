@@ -1901,7 +1901,9 @@
     "section_team": "Equipo",
     "section_signatures": "Firmas",
     "section_history": "Historial",
-    "section_updates": "Novedades"
+    "section_updates": "Novedades",
+    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
+    "view_source_evaluation": "View source evaluation"
   },
   "iep_collab": {
     "team_title": "Equipo del IEP",

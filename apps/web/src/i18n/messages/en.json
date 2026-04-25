@@ -1901,7 +1901,9 @@
     "section_team": "Team",
     "section_signatures": "Signatures",
     "section_history": "History",
-    "section_updates": "Updates"
+    "section_updates": "Updates",
+    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
+    "view_source_evaluation": "View source evaluation"
   },
   "iep_collab": {
     "team_title": "IEP team",

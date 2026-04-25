@@ -1901,7 +1901,9 @@
     "section_team": "팀",
     "section_signatures": "서명",
     "section_history": "기록",
-    "section_updates": "업데이트"
+    "section_updates": "업데이트",
+    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
+    "view_source_evaluation": "View source evaluation"
   },
   "iep_collab": {
     "team_title": "IEP 팀",

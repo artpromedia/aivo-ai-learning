@@ -1901,7 +1901,9 @@
     "section_team": "团队",
     "section_signatures": "签名",
     "section_history": "历史",
-    "section_updates": "动态"
+    "section_updates": "动态",
+    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
+    "view_source_evaluation": "View source evaluation"
   },
   "iep_collab": {
     "team_title": "IEP 团队",
