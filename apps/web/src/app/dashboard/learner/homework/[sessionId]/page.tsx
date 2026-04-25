@@ -56,6 +56,7 @@ export default function HomeworkSessionPage() {
 
   const speech = useSpeechInput({
     locale: sttLocale,
+    authToken: accessToken,
     onResult: (text) => {
       if (!text) return;
       setInput((prev) => (prev ? `${prev} ${text}` : text));

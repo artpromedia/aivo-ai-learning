@@ -8,6 +8,11 @@ export interface UseSpeechInputOptions {
   onResult?: (transcript: string) => void;
   onError?: (error: SpeechInputError) => void;
   maxDurationMs?: number;
+  /**
+   * Bearer token forwarded to /api/ai/transcribe. The endpoint requires a
+   * signed-in user; without this the MediaRecorder fallback path will 401.
+   */
+  authToken?: string | null;
 }
 
 export type SpeechInputError =
@@ -68,7 +73,7 @@ async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 export function useSpeechInput(opts: UseSpeechInputOptions = {}): SpeechInputApi {
-  const { locale = "en-US", onResult, onError, maxDurationMs = 20000 } = opts;
+  const { locale = "en-US", onResult, onError, maxDurationMs = 20000, authToken } = opts;
   const [status, setStatus] = useState<SpeechInputStatus>("idle");
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<SpeechInputError | null>(null);
@@ -218,9 +223,11 @@ export function useSpeechInput(opts: UseSpeechInputOptions = {}): SpeechInputApi
       const blob = new Blob(captured, { type: recorder.mimeType || mime || "audio/webm" });
       try {
         const audio_base64 = await blobToBase64(blob);
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
         const res = await fetch("/api/ai/transcribe", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({
             audio_base64,
             mime_type: blob.type,
@@ -228,7 +235,10 @@ export function useSpeechInput(opts: UseSpeechInputOptions = {}): SpeechInputApi
           }),
         });
         if (!res.ok) {
-          fail("transcription_failed");
+          // 401/403 are auth errors — keep them distinct so the UI can prompt
+          // the learner to sign in again rather than retry the recording.
+          if (res.status === 401 || res.status === 403) fail("permission_denied");
+          else fail("transcription_failed");
           return;
         }
         if (cancelledRef.current || !mountedRef.current) return;
@@ -254,7 +264,7 @@ export function useSpeechInput(opts: UseSpeechInputOptions = {}): SpeechInputApi
         try { recorderRef.current.stop(); } catch {}
       }
     }, maxDurationMs);
-  }, [cleanupAudio, fail, finish, locale, maxDurationMs, recorderSupported, safeSet]);
+  }, [cleanupAudio, fail, finish, locale, maxDurationMs, recorderSupported, safeSet, authToken]);
 
   const start = useCallback(async () => {
     if (status === "listening" || status === "processing") return;

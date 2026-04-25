@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Check, Mic, Loader2, AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/providers/i18n-provider";
+import { useAuth } from "@/providers/auth-provider";
 import type { Beat, FunctioningLevel, SensoryAdaptations } from "./types";
 import { CHOICE_COUNTS } from "./types";
 import { useSpeechInput, type SpeechInputError } from "./useSpeechInput";
@@ -215,6 +216,7 @@ interface VoiceResponseProps {
 function VoiceResponse({ prompt, onAnswer, accentColor, functioningLevel }: VoiceResponseProps) {
   const t = useTranslations("stt");
   const { locale } = useLocale();
+  const { accessToken } = useAuth();
   const sttLocale = STT_LOCALE_MAP[locale] || "en-US";
   const isLargeTarget = functioningLevel !== "STANDARD";
   const [committedText, setCommittedText] = useState<string | null>(null);
@@ -222,6 +224,7 @@ function VoiceResponse({ prompt, onAnswer, accentColor, functioningLevel }: Voic
 
   const { status, transcript, error, isSupported, start, stop, reset } = useSpeechInput({
     locale: sttLocale,
+    authToken: accessToken,
     onResult: (text) => {
       setCommittedText(text);
       if (!answeredRef.current) {
