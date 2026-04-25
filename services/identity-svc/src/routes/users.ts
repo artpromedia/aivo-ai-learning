@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { users, learners, consentRecords, languageProfiles } from "@aivo/db";
+import { users, learners, tenants, consentRecords, languageProfiles } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { and, eq } from "drizzle-orm";
 import { lookupCurriculum } from "../services/curriculum-lookup.js";
@@ -147,6 +147,41 @@ export async function registerUserRoutes(app: FastifyInstance) {
       }
       if (!tenantId) {
         return reply.status(400).send({ error: "Missing tenant context" });
+      }
+
+      // Sprint task #12 — licensing seat enforcement.
+      //   * B2C_PARENT_PAY tenants: capped at 1 learner per parent.
+      //   * B2B_SEAT_LICENSED tenants: capped by tenants.seat_limit
+      //     (NULL = unlimited).
+      // We read the tenant licensing tier inside the handler instead of
+      // caching so a tier upgrade takes effect on the next request.
+      const [tenantRow] = await db.select({
+        type: tenants.type,
+        licensingTier: tenants.licensingTier,
+        seatLimit: tenants.seatLimit,
+      }).from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+      const tier = tenantRow?.licensingTier
+        || (tenantRow?.type === "B2C_FAMILY" ? "B2C_PARENT_PAY" : "B2B_SEAT_LICENSED");
+      if (tier === "B2C_PARENT_PAY") {
+        const existingForParent = await db.select({ id: learners.id }).from(learners)
+          .where(eq(learners.parentId, parentUserId)).limit(2);
+        if (existingForParent.length >= 1) {
+          return reply.status(409).send({
+            error: "B2C accounts are limited to one learner. Upgrade to a school plan to add more.",
+            licensingTier: tier,
+          });
+        }
+      } else if (tier === "B2B_SEAT_LICENSED" && typeof tenantRow?.seatLimit === "number") {
+        const tenantLearners = await db.select({ id: learners.id }).from(learners)
+          .where(eq(learners.tenantId, tenantId));
+        if (tenantLearners.length >= tenantRow.seatLimit) {
+          return reply.status(409).send({
+            error: "Seat limit reached for this district plan.",
+            licensingTier: tier,
+            seatLimit: tenantRow.seatLimit,
+            currentSeats: tenantLearners.length,
+          });
+        }
       }
 
       const [learnerUser] = await db.insert(users).values({

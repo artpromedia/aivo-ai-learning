@@ -11,6 +11,7 @@ import {
   learners,
   learnerTeachers,
   learnerTherapists,
+  users,
 } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 
@@ -80,6 +81,18 @@ async function getLearner(db: any, learnerId: string) {
   return row || null;
 }
 
+// SPED_LEAD: school-scoped admin (sprint task #12). Authority limited to
+// users sharing the learner's school (via users.school_id).
+async function isSpedLeadForLearner(db: any, claims: AuthClaims, learner: any): Promise<boolean> {
+  if (claims.role !== "SPED_LEAD") return false;
+  if (claims.tenantId !== learner.tenantId) return false;
+  if (!learner.schoolId) return false;
+  const [u] = await db.select({ schoolId: users.schoolId })
+    .from(users).where(eq(users.id, claims.sub));
+  if (!u?.schoolId) return false;
+  return u.schoolId === learner.schoolId;
+}
+
 // Authoring team only — full draft contents must NOT be exposed to parents.
 // Parents see the read-only "draft in progress" chip via the list-summary
 // endpoint, which returns minimal metadata only.
@@ -88,6 +101,7 @@ async function canRead(db: any, claims: AuthClaims, learnerId: string): Promise<
   if (!learner) return false;
   if (claims.role === "PLATFORM_ADMIN") return true;
   if (claims.role === "DISTRICT_ADMIN") return claims.tenantId === learner.tenantId;
+  if (await isSpedLeadForLearner(db, claims, learner)) return true;
   if (claims.role === "TEACHER" && await isTeacherOf(db, claims.sub, learnerId)) return true;
   if (claims.role === "THERAPIST" && await isTherapistOf(db, claims.sub, learnerId)) return true;
   return false;
@@ -108,6 +122,9 @@ async function canReadSummary(db: any, claims: AuthClaims, learnerId: string): P
 async function canWrite(db: any, claims: AuthClaims, learnerId: string): Promise<boolean> {
   const learner = await getLearner(db, learnerId);
   if (!learner) return false;
+  // SPED_LEAD inherits draft-write authority within their school so they
+  // can shepherd drafts (assign case managers, edit before sign-off).
+  if (await isSpedLeadForLearner(db, claims, learner)) return true;
   if (claims.role === "TEACHER" && await isTeacherOf(db, claims.sub, learnerId)) return true;
   if (claims.role === "THERAPIST" && await isTherapistOf(db, claims.sub, learnerId)) return true;
   return false;
@@ -254,7 +271,35 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
         createdAt: r.createdAt,
       }));
     }
-    return rows;
+    // For authoring-team viewers, decorate each draft with the current
+    // case manager (sprint task #12 — surface it on draft cards). The
+    // case manager is whichever team member holds role='case_manager';
+    // expected to be exactly one row but we coalesce defensively.
+    if (rows.length === 0) return rows;
+    const profileIds = rows.map((r: any) => r.id);
+    const caseManagers = await db.select({
+      iepProfileId: iepTeamMembers.iepProfileId,
+      userId: iepTeamMembers.userId,
+      name: users.name,
+      email: users.email,
+    }).from(iepTeamMembers)
+      .leftJoin(users, eq(users.id, iepTeamMembers.userId))
+      .where(and(
+        inArray(iepTeamMembers.iepProfileId, profileIds),
+        eq(iepTeamMembers.role, "case_manager"),
+      ));
+    const cmByProfile = new Map<string, { userId: string; name: string | null; email: string | null }>();
+    for (const cm of caseManagers) {
+      if (!cmByProfile.has(cm.iepProfileId)) {
+        cmByProfile.set(cm.iepProfileId, {
+          userId: cm.userId, name: cm.name ?? null, email: cm.email ?? null,
+        });
+      }
+    }
+    return rows.map((r: any) => ({
+      ...r,
+      caseManager: cmByProfile.get(r.id) || null,
+    }));
   });
 
   // Get full draft bundle (profile + plops + services + goals).

@@ -4,6 +4,7 @@ import {
   iepEvaluations,
   learners,
   learnerTeachers,
+  users,
 } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 
@@ -56,6 +57,23 @@ async function getLearner(db: any, learnerId: string) {
   return row || null;
 }
 
+// SPED_LEAD: school-scoped IEP admin (sprint task #12). The role's
+// authority is constrained to the school the user is assigned to via
+// users.school_id — district-wide DISTRICT_ADMINs and platform admins
+// retain broader access.
+async function isSpedLeadForLearner(db: any, claims: AuthClaims, learner: any): Promise<boolean> {
+  if (claims.role !== "SPED_LEAD") return false;
+  if (claims.tenantId !== learner.tenantId) return false;
+  // Must share the same school. If either side is missing the school_id,
+  // we deny — SPED_LEAD without a school assignment is a misconfiguration
+  // we won't paper over.
+  if (!learner.schoolId) return false;
+  const [u] = await db.select({ schoolId: users.schoolId })
+    .from(users).where(eq(users.id, claims.sub));
+  if (!u?.schoolId) return false;
+  return u.schoolId === learner.schoolId;
+}
+
 async function canRead(db: any, claims: AuthClaims, learnerId: string): Promise<boolean> {
   const learner = await getLearner(db, learnerId);
   if (!learner) return false;
@@ -63,6 +81,7 @@ async function canRead(db: any, claims: AuthClaims, learnerId: string): Promise<
   if (claims.role === "DISTRICT_ADMIN" || claims.role === "THERAPIST") {
     return claims.tenantId === learner.tenantId;
   }
+  if (await isSpedLeadForLearner(db, claims, learner)) return true;
   if (await isTeacherOf(db, claims.sub, learnerId)) return true;
   if (await isParentOf(db, claims.sub, learnerId)) return true;
   return false;
@@ -75,6 +94,7 @@ async function canWrite(db: any, claims: AuthClaims, learnerId: string): Promise
   if (claims.role === "DISTRICT_ADMIN" || claims.role === "THERAPIST") {
     return claims.tenantId === learner.tenantId;
   }
+  if (await isSpedLeadForLearner(db, claims, learner)) return true;
   if (claims.role === "TEACHER" && await isTeacherOf(db, claims.sub, learnerId)) return true;
   return false;
 }
