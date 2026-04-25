@@ -3,8 +3,10 @@ import Fastify from "fastify";
   import swagger from "@fastify/swagger";
   import swaggerUI from "@fastify/swagger-ui";
   import { createLogger } from "@aivo/observability";
+  import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
   import { registerHealthRoutes } from "./routes/health.js";
   import { registerStatusRoutes } from "./routes/status.js";
+  import { registerOpsAlertsOutboxRoutes } from "./routes/ops-alerts-outbox.js";
 
   const logger = createLogger("status-page-svc");
   const PORT = parseInt(process.env.STATUS_PAGE_SVC_PORT || "3014", 10);
@@ -26,6 +28,9 @@ import Fastify from "fastify";
 
     registerHealthRoutes(app);
     registerStatusRoutes(app);
+    registerOpsAlertsOutboxRoutes(app);
+
+    await bootstrapOpsAlerts({ service: "status-page-svc", app, beforeExit: () => app.close() });
 
     await app.listen({ port: PORT, host: "0.0.0.0" });
     logger.info(`AIVO Status Page Service listening on port ${PORT}`);

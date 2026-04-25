@@ -4,6 +4,7 @@ import Fastify from "fastify";
   import swaggerUI from "@fastify/swagger-ui";
   import { createLogger } from "@aivo/observability";
   import { createDb } from "@aivo/db";
+  import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
   import { registerHealthRoutes } from "./routes/health.js";
   import { registerAnalyticsRoutes } from "./routes/analytics.js";
 
@@ -28,6 +29,8 @@ import Fastify from "fastify";
 
     registerHealthRoutes(app);
     registerAnalyticsRoutes(app, db);
+
+    await bootstrapOpsAlerts({ service: "research-svc", app, beforeExit: () => app.close() });
 
     await app.listen({ port: PORT, host: "0.0.0.0" });
     logger.info(`AIVO Research Service listening on port ${PORT}`);

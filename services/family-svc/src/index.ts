@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
+import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
 import { initKeys } from "@aivo/security";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerCollaborationRoutes } from "./routes/collaboration.js";
@@ -38,6 +39,8 @@ async function start() {
   await registerParentDashboardRoutes(app);
   await registerObservationRoutes(app);
   await registerSpeechBuddyConsentRoutes(app);
+
+  await bootstrapOpsAlerts({ service: "family-svc", app, beforeExit: () => app.close() });
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Family service listening on port ${PORT}`);

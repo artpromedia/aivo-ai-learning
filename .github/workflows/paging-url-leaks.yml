@@ -1,0 +1,22 @@
+name: paging url leak guardrail
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  scan:
+    name: scan source for hard-coded paging URLs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: scan
+        run: node scripts/check-paging-url-leaks.mjs
+      - name: self-test the guardrail itself
+        run: node scripts/check-paging-url-leaks.test.mjs
