@@ -1684,7 +1684,12 @@
     "transcription_failed": "تعذّر التفريغ النصي. حاول مرة أخرى.",
     "audio_capture_error": "حدث خطأ مع الميكروفون.",
     "voice_answer_group": "إجابة صوتية",
-    "heard_answer": "سمعت: {text}"
+    "heard_answer": "سمعت: {text}",
+    "not_quite": "تقريبًا — حاول مرة أخرى.",
+    "try_again": "حاول مرة أخرى",
+    "skip": "تخطي",
+    "answer_correct": "صحيح!",
+    "answer_not_quite": "تقريبًا. سمعت: {text}"
   },
   "curriculum": {
     "title": "تركيز المنهج هذا الأسبوع",

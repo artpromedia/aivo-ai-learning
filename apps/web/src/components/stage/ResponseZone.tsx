@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Check, Mic, Loader2, AlertCircle } from "lucide-react";
+import { Check, Mic, Loader2, AlertCircle, RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/providers/i18n-provider";
 import type { Beat, FunctioningLevel, SensoryAdaptations } from "./types";
 import { CHOICE_COUNTS } from "./types";
 import { useSpeechInput, type SpeechInputError } from "./useSpeechInput";
+import { matchVoiceAnswer } from "./voiceMatch";
 
 const STT_LOCALE_MAP: Record<string, string> = {
   en: "en-US",
@@ -181,6 +182,7 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
     return (
       <VoiceResponse
         prompt={interaction.prompt}
+        correctAnswer={interaction.correctAnswer}
         onAnswer={onAnswer}
         accentColor={accentColor}
         functioningLevel={functioningLevel}
@@ -207,24 +209,28 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
 
 interface VoiceResponseProps {
   prompt?: string;
+  correctAnswer?: string;
   onAnswer: (correct: boolean) => void;
   accentColor: string;
   functioningLevel: FunctioningLevel;
 }
 
-function VoiceResponse({ prompt, onAnswer, accentColor, functioningLevel }: VoiceResponseProps) {
+function VoiceResponse({ prompt, correctAnswer, onAnswer, accentColor, functioningLevel }: VoiceResponseProps) {
   const t = useTranslations("stt");
   const { locale } = useLocale();
   const sttLocale = STT_LOCALE_MAP[locale] || "en-US";
   const isLargeTarget = functioningLevel !== "STANDARD";
   const [committedText, setCommittedText] = useState<string | null>(null);
+  const [matched, setMatched] = useState<boolean | null>(null);
   const answeredRef = useRef(false);
 
   const { status, transcript, error, isSupported, start, stop, reset } = useSpeechInput({
     locale: sttLocale,
     onResult: (text) => {
       setCommittedText(text);
-      if (!answeredRef.current) {
+      const result = matchVoiceAnswer(text, correctAnswer);
+      setMatched(result.matched);
+      if (result.matched && !answeredRef.current) {
         answeredRef.current = true;
         onAnswer(true);
       }
@@ -239,10 +245,16 @@ function VoiceResponse({ prompt, onAnswer, accentColor, functioningLevel }: Voic
       return;
     }
     if (status === "processing") return;
-    answeredRef.current = false;
     setCommittedText(null);
+    setMatched(null);
     reset();
     void start();
+  };
+
+  const handleAcceptIncorrect = () => {
+    if (answeredRef.current) return;
+    answeredRef.current = true;
+    onAnswer(false);
   };
 
   const errorLabel = (e: SpeechInputError | null) => {
@@ -304,9 +316,41 @@ function VoiceResponse({ prompt, onAnswer, accentColor, functioningLevel }: Voic
          t("tap_to_speak")}
       </p>
       {committedText && (
-        <p className="text-slate-700 text-sm font-body italic max-w-md text-center" aria-live="polite">
+        <p
+          className={`text-sm font-body italic max-w-md text-center ${
+            matched === true ? "text-emerald-700" :
+            matched === false ? "text-rose-700" :
+            "text-slate-700"
+          }`}
+          aria-live="polite"
+        >
           “{committedText}”
         </p>
+      )}
+      {matched === false && !isListening && !isProcessing && (
+        <div className="flex flex-col items-center gap-2" role="status">
+          <p className="text-rose-600 text-xs font-body">
+            {t("not_quite")}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleClick}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-heading font-bold bg-white vi-border border-2 text-slate-800 hover:vi-surface-soft active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))]"
+              aria-label={t("try_again")}
+            >
+              <RotateCcw className="w-4 h-4" strokeWidth={2.5} aria-hidden />
+              {t("try_again")}
+            </button>
+            <button
+              type="button"
+              onClick={handleAcceptIncorrect}
+              className="px-4 py-2 rounded-full text-sm font-heading font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[hsl(var(--visual-primary))]"
+            >
+              {t("skip")}
+            </button>
+          </div>
+        </div>
       )}
       {error && (
         <p className="text-rose-600 text-xs font-body inline-flex items-center gap-1" role="alert">
@@ -317,7 +361,9 @@ function VoiceResponse({ prompt, onAnswer, accentColor, functioningLevel }: Voic
       <div aria-live="polite" className="sr-only">
         {isListening && t("listening")}
         {isProcessing && t("processing")}
-        {status === "idle" && transcript && t("heard_answer", { text: transcript })}
+        {status === "idle" && committedText && matched === true && t("answer_correct")}
+        {status === "idle" && committedText && matched === false && t("answer_not_quite", { text: committedText })}
+        {status === "idle" && transcript && matched === null && t("heard_answer", { text: transcript })}
       </div>
     </div>
   );

@@ -1684,7 +1684,12 @@
     "transcription_failed": "No se pudo transcribir. Inténtalo de nuevo.",
     "audio_capture_error": "Hubo un problema con el micrófono.",
     "voice_answer_group": "Respuesta por voz",
-    "heard_answer": "Escuché: {text}"
+    "heard_answer": "Escuché: {text}",
+    "not_quite": "Casi… inténtalo otra vez.",
+    "try_again": "Inténtalo de nuevo",
+    "skip": "Saltar",
+    "answer_correct": "¡Correcto!",
+    "answer_not_quite": "Casi. Escuché: {text}"
   },
   "curriculum": {
     "title": "Enfoque curricular semanal",

@@ -1684,7 +1684,12 @@
     "transcription_failed": "Impossible de transcrire. Réessaie.",
     "audio_capture_error": "Un problème est survenu avec le microphone.",
     "voice_answer_group": "Réponse vocale",
-    "heard_answer": "Entendu : {text}"
+    "heard_answer": "Entendu : {text}",
+    "not_quite": "Presque — essaie encore.",
+    "try_again": "Réessayer",
+    "skip": "Passer",
+    "answer_correct": "Correct !",
+    "answer_not_quite": "Presque. J'ai entendu : {text}"
   },
   "curriculum": {
     "title": "Focus du programme de la semaine",
