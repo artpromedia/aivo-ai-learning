@@ -10,6 +10,15 @@ import {
 } from "@aivo/db";
 import { authenticateRequest, requireSelfOrRole } from "../auth.js";
 
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`engagement-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const BRAIN_SVC_URL = requireUrl("BRAIN_SVC_URL", "http://localhost:3002");
+
 const XP_EVENT_TYPES = [
   "lesson_completed",
   "tutor_session_completed",
@@ -75,7 +84,7 @@ const BADGE_RULES: { type: string; name: string; rarity: string; check: (totalXp
 
 async function notifyBrain(learnerId: string, engagement: Record<string, unknown>, authHeader: string) {
   try {
-    await fetch(`http://localhost:3002/api/brain/${learnerId}/engagement`, {
+    await fetch(`${BRAIN_SVC_URL}/api/brain/${learnerId}/engagement`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: authHeader },
       body: JSON.stringify({ engagement }),

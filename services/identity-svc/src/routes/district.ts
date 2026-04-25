@@ -14,6 +14,17 @@ import { requireStepUp } from "./step-up.js";
 import { parseLogoDataUrl, wcagContrastRatio, WCAG_AA_NORMAL } from "../lib/branding-validation.js";
 void verifyJWT; // kept for potential token introspection helpers
 
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`identity-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const ASSESSMENT_SVC_URL = requireUrl("ASSESSMENT_SVC_URL", "http://localhost:3003");
+const COMMS_SVC_URL = requireUrl("COMMS_SVC_URL", "http://localhost:3003");
+const DEV_INTERNAL_KEY = IS_PROD ? "" : "aivo-internal-dev-key";
+
 function safePage(val: any): number {
   const n = parseInt(val || "1", 10);
   return Number.isNaN(n) || n < 1 ? 1 : n;
@@ -677,10 +688,8 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     // counter respects the same visibility rules as the parent timeline.
     let unreadParentUpdates = 0;
     try {
-      const ASSESS_URL = process.env.ASSESSMENT_SVC_URL || "http://localhost:3003";
-      const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY
-        || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
-      const r = await fetch(`${ASSESS_URL}/api/iep/internal/unread-parent-updates?tenantId=${tid}`, {
+      const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || DEV_INTERNAL_KEY;
+      const r = await fetch(`${ASSESSMENT_SVC_URL}/api/iep/internal/unread-parent-updates?tenantId=${tid}`, {
         headers: { "x-internal-key": INTERNAL_KEY },
       });
       if (r.ok) {
@@ -860,11 +869,9 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
       // Best-effort billing notification — never block the request on a
       // downstream comms outage. Calls the dedicated billing-alert
       // internal endpoint with the shared internal key.
-      const commsUrl = process.env.COMMS_SVC_URL || "http://localhost:3003";
-      const internalKey = process.env.INTERNAL_SERVICE_KEY
-        || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+      const internalKey = process.env.INTERNAL_SERVICE_KEY || DEV_INTERNAL_KEY;
       try {
-        const r = await fetch(`${commsUrl}/api/comms/internal/billing-alert`, {
+        const r = await fetch(`${COMMS_SVC_URL}/api/comms/internal/billing-alert`, {
           method: "POST",
           headers: { "content-type": "application/json", "x-internal-key": internalKey },
           body: JSON.stringify({

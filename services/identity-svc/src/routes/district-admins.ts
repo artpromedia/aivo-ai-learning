@@ -27,6 +27,15 @@ import { requireStepUp } from "./step-up.js";
 const INVITE_TTL_HOURS = 72;
 const STEP_UP_SCOPE = "district:admin-mgmt" as const;
 
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`identity-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const COMMS_SVC_URL = requireUrl("COMMS_SVC_URL", "http://localhost:3003");
+
 function hashInviteToken(raw: string): string {
   return crypto.createHash("sha256").update(raw).digest("hex");
 }
@@ -70,9 +79,8 @@ async function emailInvite(opts: {
   to: string; name: string; districtName?: string; inviteUrl: string;
 }) {
   const internalKey = process.env.INTERNAL_SERVICE_KEY || "";
-  const commsUrl = process.env.COMMS_SVC_URL || "http://localhost:3003";
   try {
-    await fetch(`${commsUrl}/api/comms/internal/district-admin-invite`, {
+    await fetch(`${COMMS_SVC_URL}/api/comms/internal/district-admin-invite`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-internal-key": internalKey },
       body: JSON.stringify(opts),

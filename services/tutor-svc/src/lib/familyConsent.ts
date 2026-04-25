@@ -13,10 +13,17 @@
  * format: "tenant1:learner1:consent1,tenant2:learner2:consent2".
  */
 
-const FAMILY_SVC_URL = process.env.FAMILY_SVC_URL || "http://localhost:3007";
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`tutor-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const FAMILY_SVC_URL = requireUrl("FAMILY_SVC_URL", "http://localhost:3007");
 const INTERNAL_KEY =
   process.env.INTERNAL_SERVICE_KEY ||
-  (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+  (IS_PROD ? "" : "aivo-internal-dev-key");
 
 export class ConsentError extends Error {
   status: number;

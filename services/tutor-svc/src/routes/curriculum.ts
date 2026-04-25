@@ -4,10 +4,13 @@ import { curriculumUploads, learners, learnerTeachers } from "@aivo/db";
 import { verifyJWT, JWTPayload } from "@aivo/security";
 
 const IS_PROD = process.env.NODE_ENV === "production";
-if (IS_PROD && !process.env.AI_SVC_URL) {
-  throw new Error("tutor-svc: AI_SVC_URL must be set in production");
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`tutor-svc: ${name} must be set in production`);
+  return devDefault;
 }
-const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
+const AI_SVC_URL = requireUrl("AI_SVC_URL", "http://localhost:3004");
 if (IS_PROD && !process.env.INTERNAL_AI_TOKEN) {
   throw new Error(
     "INTERNAL_AI_TOKEN must be set in production (shared secret between tutor-svc and ai-svc).",

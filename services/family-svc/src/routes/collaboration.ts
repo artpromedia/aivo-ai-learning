@@ -13,10 +13,17 @@ import {
 } from "@aivo/db";
 import { authenticateRequest, verifyParentOwnership } from "../auth.js";
 
-const COMMS_URL = process.env.COMMS_SVC_URL || "http://localhost:3010";
-const APP_URL = process.env.APP_URL || "http://localhost:5000";
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`family-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const COMMS_URL = requireUrl("COMMS_SVC_URL", "http://localhost:3010");
+const APP_URL = requireUrl("APP_URL", "http://localhost:5000");
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY
-  || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+  || (IS_PROD ? "" : "aivo-internal-dev-key");
 
 // Best-effort dispatch of a "you're invited" email when a parent adds a
 // caregiver / co-parent / teacher / therapist. Failures are logged but
