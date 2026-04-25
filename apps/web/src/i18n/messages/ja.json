@@ -1906,7 +1906,9 @@
     "section_team": "チーム",
     "section_signatures": "署名",
     "section_history": "履歴",
-    "section_updates": "最新情報"
+    "section_updates": "最新情報",
+    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
+    "view_source_evaluation": "View source evaluation"
   },
   "iep_collab": {
     "team_title": "IEPチーム",

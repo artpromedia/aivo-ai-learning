@@ -169,6 +169,63 @@ function isEditable(profile: any): boolean {
   return profile && EDITABLE_LIFECYCLE.includes(profile.lifecycleState as LifecycleState);
 }
 
+// Build present-levels narrative seeds from an eligibility evaluation. Each
+// emitted line is prefixed with a label so the teacher can see at a glance
+// what was carried over and what they still need to expand. The seeds are
+// intentionally conservative — the evaluation rationale and observations are
+// staging text, not the finished present-levels narrative.
+function summarizeAssessmentAreas(areas: unknown): string {
+  if (!Array.isArray(areas) || areas.length === 0) return "";
+  const parts: string[] = [];
+  for (const a of areas) {
+    if (!a || typeof a !== "object") continue;
+    const area = String((a as any).area || "").trim();
+    if (!area) continue;
+    const method = String((a as any).method || "").trim();
+    const findings = String((a as any).findings || "").trim();
+    const score = String((a as any).score || "").trim();
+    const detail = [method, findings, score].filter(Boolean).join(" — ");
+    parts.push(detail ? `${area}: ${detail}` : area);
+  }
+  return parts.join("\n");
+}
+
+function buildPresentLevelSeeds(evalRow: any): Array<{ area: string; narrative: string }> {
+  const seeds: Array<{ area: string; narrative: string }> = [];
+  const dateLabel = evalRow.decidedAt
+    ? new Date(evalRow.decidedAt).toISOString().slice(0, 10)
+    : new Date(evalRow.createdAt).toISOString().slice(0, 10);
+  const header = `(Pre-filled from eligibility evaluation on ${dateLabel}.)`;
+  // Academic narrative gets the team rationale, the original referral concern,
+  // any teacher observations, and a flat dump of assessment-area findings.
+  const academicChunks: string[] = [header];
+  if (evalRow.decisionRationale) {
+    academicChunks.push(`Eligibility rationale: ${evalRow.decisionRationale}`);
+  }
+  if (evalRow.referralReason) {
+    academicChunks.push(`Referral concern: ${evalRow.referralReason}`);
+  }
+  if (evalRow.observations) {
+    academicChunks.push(`Observations: ${evalRow.observations}`);
+  }
+  const areaSummary = summarizeAssessmentAreas(evalRow.assessmentAreas);
+  if (areaSummary) {
+    academicChunks.push(`Assessment areas reviewed:\n${areaSummary}`);
+  }
+  if (academicChunks.length > 1) {
+    seeds.push({ area: "academic", narrative: academicChunks.join("\n\n") });
+  }
+  // Functional narrative carries the family voice when the evaluation captured
+  // it — teachers most often expand this section with input from home.
+  if (evalRow.parentInput) {
+    seeds.push({
+      area: "functional",
+      narrative: `${header}\n\nParent input: ${evalRow.parentInput}`,
+    });
+  }
+  return seeds;
+}
+
 export async function registerIepAuthoringRoutes(app: FastifyInstance) {
   // Create new authored draft (optionally seeded from an eligibility evaluation).
   app.post("/api/iep/drafts", {
@@ -215,6 +272,24 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
       authoredByUserId: claims.sub,
       fromEvaluationId: evalRow?.id || null,
     }).returning();
+    // Carry evaluation context into the present-levels stubs so the teacher
+    // is editing seeded text instead of a blank textarea. Best-effort —
+    // failing to seed must never block the draft itself, since the teacher
+    // can always type the narrative manually.
+    if (evalRow) {
+      const seeds = buildPresentLevelSeeds(evalRow);
+      if (seeds.length > 0) {
+        try {
+          await db.insert(iepPresentLevels).values(
+            seeds.map((s) => ({
+              iepProfileId: profile.id, area: s.area, narrative: s.narrative,
+            })),
+          );
+        } catch (err) {
+          req.log.error({ err }, "iep-draft: failed to seed present-levels from evaluation");
+        }
+      }
+    }
     // Bootstrap the team: author becomes case_manager. Idempotent via unique
     // index — best-effort so any race never blocks draft creation.
     try {

@@ -1906,7 +1906,9 @@
     "section_team": "Équipe",
     "section_signatures": "Signatures",
     "section_history": "Historique",
-    "section_updates": "Actualités"
+    "section_updates": "Actualités",
+    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
+    "view_source_evaluation": "View source evaluation"
   },
   "iep_collab": {
     "team_title": "Équipe du PEI",

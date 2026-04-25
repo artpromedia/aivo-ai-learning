@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   ArrowLeft, Save, Sparkles, Trash2, Plus, AlertCircle, CheckCircle2, Send,
-  Users, MessageCircle, PenTool, History, Check, X,
+  Users, MessageCircle, PenTool, History, Check, X, Link2,
 } from "lucide-react";
 
 const PLOP_AREAS = ["academic", "functional", "social", "motor", "communication"] as const;
@@ -45,6 +45,7 @@ interface Profile {
   assistiveTechnology?: any[] | null;
   communicationSystem?: string | null;
   disabilityCategories?: string[] | null;
+  fromEvaluationId?: string | null;
 }
 interface PresentLevel { id: string; area: string; narrative: string }
 interface Goal {
@@ -516,6 +517,22 @@ export default function IepDraftEditorPage() {
             // Force a fresh subtree for each draft so any uncontrolled inputs
             // cannot retain values from a previously loaded draft.
             <section key={bundle.profile.id} className="space-y-4">
+              {bundle.profile.fromEvaluationId && (
+                <div
+                  data-testid="seeded-from-evaluation"
+                  className="vi-card p-3 flex flex-wrap items-center gap-3 bg-[hsl(var(--visual-reading)/0.08)] border-l-4 border-[hsl(var(--visual-reading))]">
+                  <Link2 size={16} className="text-[hsl(var(--visual-reading))] shrink-0" aria-hidden="true" />
+                  <p className="text-sm vi-text font-semibold flex-1 min-w-0">
+                    {t("seeded_from_evaluation")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/dashboard/iep-evaluation/${learnerId}`)}
+                    className="text-xs font-bold text-[hsl(var(--visual-reading))] underline">
+                    {t("view_source_evaluation")}
+                  </button>
+                </div>
+              )}
               <nav className="flex flex-wrap gap-1 border-b vi-border">
                 {SECTIONS.map((s) => (
                   <button key={s} onClick={() => setSection(s)}
