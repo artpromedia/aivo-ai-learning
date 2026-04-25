@@ -32,6 +32,11 @@ import path from "path";
 import { gzipSync } from "zlib";
 import { users, adminAuditLog, platformConfig, evidenceBundles, sessions } from "@aivo/db";
 import { desc, sql, eq, gte } from "drizzle-orm";
+import {
+  createDrizzleAdvisoryLock,
+  createDrizzleLedger,
+  startSafeCron,
+} from "@aivo/scheduling";
 
 const INTERNAL_ROLES = [
   "PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING",
@@ -86,6 +91,15 @@ function buildTar(entries: Array<{ name: string; data: Buffer }>): Buffer {
 
 async function buildAccessReview(db: any): Promise<{ csv: string; rows: number }> {
   // Last successful login per user via sessions.createdAt MAX.
+  //
+  // Task #74: drizzle binds JS arrays as a *tuple* of parameters
+  // (`ANY($1, $2, ...$N)` instead of `ANY($1::text[])`), which Postgres rejects
+  // with "op ANY/ALL (array) requires array". We instead build the ARRAY[]
+  // literal at template-substitution time. INTERNAL_ROLES is a hard-coded
+  // constant, so SQL injection isn't a concern.
+  const rolesArray = sql.raw(
+    `ARRAY[${INTERNAL_ROLES.map((r) => `'${r}'`).join(",")}]::text[]`,
+  );
   const rows = await db.execute(sql`
     SELECT u.id, u.email, u.name, u.role, u.tenant_id,
            u.mfa_enabled,
@@ -93,7 +107,7 @@ async function buildAccessReview(db: any): Promise<{ csv: string; rows: number }
            u.last_login_at,
            (SELECT MAX(s.created_at) FROM sessions s WHERE s.user_id = u.id) AS last_session_at
     FROM users u
-    WHERE u.role = ANY(${INTERNAL_ROLES})
+    WHERE u.role = ANY(${rolesArray})
     ORDER BY u.role, u.email
   `);
   const data: any[] = (rows as any).rows ?? rows;
@@ -216,27 +230,29 @@ export async function generateEvidenceBundle(db: any, opts: { date?: Date } = {}
 }
 
 /**
- * Schedule the evidence cron. Fires once at boot (so the dev env always
- * has at least one bundle to inspect) and then daily at 02:00 UTC.
+ * Schedule the evidence cron via `@aivo/scheduling` (Task #62) so a leader
+ * crash can't silently skip a day's bundle and the run shows up on the
+ * Background Jobs admin page (Tasks #67, #78). Returns the scheduler handle so
+ * the internal "Run now" route can call it.
  */
-export function startEvidenceCron(db: any, log: { info: Function; error: Function }) {
-  const tick = async () => {
-    try {
+export function startEvidenceCron(
+  db: any,
+  log: { info: Function; error: Function },
+) {
+  const lock = createDrizzleAdvisoryLock(db);
+  const ledger = createDrizzleLedger(db);
+  return startSafeCron({
+    jobName: "admin.soc2-evidence",
+    ledger,
+    lock,
+    log: log as { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void },
+    run: async () => {
       const result = await generateEvidenceBundle(db);
-      log.info({ bundleDate: result.bundleDate, sha256: result.sha256, sizeBytes: result.sizeBytes }, "soc2 evidence bundle generated");
-    } catch (e: any) {
-      log.error({ err: e?.message, stack: e?.stack }, "soc2 evidence cron failed");
-    }
-  };
-  // Boot run, but don't block startup.
-  setTimeout(tick, 5_000).unref();
-  // Schedule next 02:00 UTC, then every 24h.
-  const now = new Date();
-  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 2, 0, 0));
-  if (next.getTime() <= now.getTime()) next.setUTCDate(next.getUTCDate() + 1);
-  const delay = next.getTime() - now.getTime();
-  setTimeout(() => {
-    tick();
-    setInterval(tick, 24 * 60 * 60 * 1000).unref();
-  }, delay).unref();
+      log.info(
+        { bundleDate: result.bundleDate, sha256: result.sha256, sizeBytes: result.sizeBytes },
+        "soc2 evidence bundle generated",
+      );
+      return { status: "ok" };
+    },
+  });
 }
