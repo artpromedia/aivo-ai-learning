@@ -13,6 +13,7 @@ import { registerIepEvaluationRoutes } from "./routes/iep-evaluations.js";
 import { registerIepAuthoringRoutes } from "./routes/iep-authoring.js";
 import { registerIepCollabRoutes } from "./routes/iep-collab.js";
 import { registerIepUpdatesRoutes, checkReviewReminders } from "./routes/iep-updates.js";
+import { registerIepParentShareRoutes } from "./routes/iep-parent-share.js";
 import { registerLearnerBaselineRoutes } from "./routes/learner-baseline.js";
 import { registerSensoryProfileRoutes } from "./routes/sensory-profile.js";
 
@@ -45,6 +46,7 @@ async function start() {
   await registerIepAuthoringRoutes(app);
   await registerIepCollabRoutes(app);
   await registerIepUpdatesRoutes(app);
+  await registerIepParentShareRoutes(app);
   await registerLearnerBaselineRoutes(app);
   await registerSensoryProfileRoutes(app);
 

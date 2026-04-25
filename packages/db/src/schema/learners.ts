@@ -322,6 +322,40 @@ export const iepReviewReminders = pgTable("iep_review_reminders", {
     .on(t.iepProfileId, t.threshold),
 }));
 
+// Phase D — Parent share links for finalised IEPs.
+// Parents sometimes need to share the finalised IEP with someone outside
+// the AIVO platform (a private tutor, a non-custodial parent who isn't on
+// the team, an outside therapist). A signed share token gives that
+// recipient a read-only parent-summary view of the IEP without granting
+// them an account in the system.
+//
+// Tokens are scoped to the IEP profile, expire (default 14 days), and
+// store the issuer + revocation flag so the case manager / parent can
+// kill access if a recipient should no longer have the link. The token
+// itself is hashed before storage so leaking the table doesn't leak the
+// shareable URL.
+export const iepParentShareLinks = pgTable("iep_parent_share_links", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  iepProfileId: uuid("iep_profile_id")
+    .references(() => iepProfiles.id, { onDelete: "cascade" }).notNull(),
+  // Sha-256 of the random token. The plaintext token is shown to the
+  // issuer once at creation time and never persisted server-side.
+  tokenHash: varchar("token_hash", { length: 64 }).notNull(),
+  // Optional human label so the parent can recognise which link they're
+  // revoking ("Tutor — Mrs. Reyes"). Free-form, not used for auth.
+  label: varchar("label", { length: 120 }),
+  issuedByUserId: uuid("issued_by_user_id").references(() => users.id).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+  // Last successful redemption — surfaced in the issuer's UI so parents
+  // can tell whether anyone has actually opened the link.
+  lastAccessedAt: timestamp("last_accessed_at"),
+  accessCount: integer("access_count").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => ({
+  uniqueTokenHash: uniqueIndex("iep_parent_share_links_token_hash_uidx").on(t.tokenHash),
+}));
+
 export const iepSignatures = pgTable("iep_signatures", {
   id: uuid("id").defaultRandom().primaryKey(),
   iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
