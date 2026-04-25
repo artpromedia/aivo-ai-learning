@@ -1684,7 +1684,12 @@
     "transcription_failed": "लिप्यंतरण नहीं हो सका। फिर से कोशिश करें।",
     "audio_capture_error": "माइक्रोफ़ोन में कोई समस्या हुई।",
     "voice_answer_group": "आवाज़ से जवाब",
-    "heard_answer": "सुना: {text}"
+    "heard_answer": "सुना: {text}",
+    "not_quite": "थोड़ा कम — फिर से कोशिश करें।",
+    "try_again": "फिर से कोशिश करें",
+    "skip": "छोड़ें",
+    "answer_correct": "सही जवाब!",
+    "answer_not_quite": "लगभग। सुना: {text}"
   },
   "curriculum": {
     "title": "इस हफ़्ते का पाठ्यक्रम फ़ोकस",
