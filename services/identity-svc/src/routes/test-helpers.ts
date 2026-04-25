@@ -264,48 +264,43 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
     };
   });
 
-  // Idempotent seeding for the eligibility-evaluation Playwright spec.
-  // Builds a single B2B_DISTRICT tenant with:
-  //   - A PARENT user
-  //   - A TEACHER user with an ACCEPTED learnerTeachers link to the learner.
-  //   - A LEARNER (under the parent).
-  // Any pre-existing iep_evaluations rows for the learner are removed so the
-  // spec opens against a deterministic empty state. Re-running the endpoint
-  // resets passwords and clears prior evaluations.
-  app.post<{
-    Body: {
-      parentEmail: string;
-      parentPassword: string;
-      teacherEmail: string;
-      teacherPassword: string;
-      learnerName?: string;
-      tenantName?: string;
-    };
-  }>("/api/__test__/seed-iep-evaluation-fixture", async (req, reply) => {
-    if (!testModeEnabled()) return reply.status(404).send({ error: "Not found" });
+  // Idempotent seeding for the IEP authoring Playwright spec (task #14).
+  // Builds a B2B_DISTRICT tenant with TEACHER + PARENT + LEARNER, plus an
+  // ACCEPTED learnerTeachers link the IEP authoring writes gate on.
+  // Re-running clears prior authored drafts so the spec opens against an
+  // empty drafts list.
+  type SeedFixtureBody = {
+    parentEmail: string;
+    parentPassword: string;
+    teacherEmail: string;
+    teacherPassword: string;
+    learnerName?: string;
+    tenantName?: string;
+  };
+
+  async function seedTeacherParentLearnerFixture(
+    body: SeedFixtureBody,
+    defaults: { learnerName: string; tenantPrefix: string; parentLabel: string; teacherLabel: string },
+    cleanup: (ctx: { db: any; learnerId: string }) => Promise<void>,
+  ) {
     const db = (app as any).db;
     const {
       parentEmail,
       parentPassword,
       teacherEmail,
       teacherPassword,
-      learnerName = "E2E Eval Learner",
+      learnerName = defaults.learnerName,
       tenantName,
-    } = req.body;
+    } = body;
+
     if (!parentEmail || !parentPassword || !teacherEmail || !teacherPassword) {
-      return reply.status(400).send({
-        error: "parentEmail, parentPassword, teacherEmail, teacherPassword required",
-      });
+      return { status: 400, payload: { error: "parentEmail, parentPassword, teacherEmail, teacherPassword required" } };
     }
     if (parentEmail.toLowerCase() === teacherEmail.toLowerCase()) {
-      return reply.status(400).send({ error: "parent and teacher emails must differ" });
+      return { status: 400, payload: { error: "parent and teacher emails must differ" } };
     }
 
-    // Single tenant: a B2B district school. Parent and teacher both live
-    // inside it so the teacher's tenantId check passes alongside the
-    // learnerTeachers ACCEPTED link.
-    const tName = tenantName
-      || `E2E Eval Tenant <${teacherEmail.toLowerCase()}>`;
+    const tName = tenantName || `${defaults.tenantPrefix} <${teacherEmail.toLowerCase()}>`;
     let [tenant] = await db.select().from(tenants).where(eq(tenants.name, tName)).limit(1);
     if (!tenant) {
       [tenant] = await db.insert(tenants)
@@ -331,10 +326,9 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
       return u;
     }
 
-    const parentUser = await upsertUser(parentEmail, parentPassword, "PARENT", "E2E Eval Parent", tenant.id);
-    const teacherUser = await upsertUser(teacherEmail, teacherPassword, "TEACHER", "E2E Eval Teacher", tenant.id);
+    const parentUser = await upsertUser(parentEmail, parentPassword, "PARENT", defaults.parentLabel, tenant.id);
+    const teacherUser = await upsertUser(teacherEmail, teacherPassword, "TEACHER", defaults.teacherLabel, tenant.id);
 
-    // Learner needs an underlying user row (LEARNER role).
     const learnerUserName = `${learnerName} <${parentUser.id}>`;
     let [learnerUser] = await db.select().from(users)
       .where(and(eq(users.name, learnerUserName), eq(users.role, "LEARNER" as any))).limit(1);
@@ -361,8 +355,6 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
         .where(eq(learners.id, learner.id));
     }
 
-    // Establish the ACCEPTED teacher↔learner link the eligibility writes
-    // gate on. Look it up first to keep the helper idempotent across re-runs.
     let [link] = await db.select().from(learnerTeachers).where(
       and(
         eq(learnerTeachers.learnerId, learner.id),
@@ -384,15 +376,55 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
         .where(eq(learnerTeachers.id, link.id));
     }
 
-    // Reset evaluations so the spec opens with no rows. iep_profiles created
-    // off prior runs are left in place — the spec asserts on the
-    // evaluation list, not the IEP authoring list.
-    await db.delete(iepEvaluations).where(eq(iepEvaluations.learnerId, learner.id));
+    await cleanup({ db, learnerId: learner.id });
 
     return {
-      parent: { id: parentUser.id, email: parentUser.email, tenantId: tenant.id },
-      teacher: { id: teacherUser.id, email: teacherUser.email, tenantId: tenant.id },
-      learner: { id: learner.id, name: learner.name, tenantId: tenant.id },
+      status: 200,
+      payload: {
+        parent: { id: parentUser.id, email: parentUser.email, tenantId: tenant.id },
+        teacher: { id: teacherUser.id, email: teacherUser.email, tenantId: tenant.id },
+        learner: { id: learner.id, name: learner.name, tenantId: tenant.id },
+      },
     };
+  }
+
+  // Idempotent seeding for eligibility-evaluation e2e tests.
+  app.post<{ Body: SeedFixtureBody }>("/api/__test__/seed-iep-evaluation-fixture", async (req, reply) => {
+    if (!testModeEnabled()) return reply.status(404).send({ error: "Not found" });
+    const result = await seedTeacherParentLearnerFixture(
+      req.body,
+      {
+        learnerName: "E2E Eval Learner",
+        tenantPrefix: "E2E Eval Tenant",
+        parentLabel: "E2E Eval Parent",
+        teacherLabel: "E2E Eval Teacher",
+      },
+      async ({ db, learnerId }) => {
+        await db.delete(iepEvaluations).where(eq(iepEvaluations.learnerId, learnerId));
+      },
+    );
+    if (result.status !== 200) return reply.status(result.status).send(result.payload);
+    return result.payload;
+  });
+
+  // Idempotent seeding for IEP authoring e2e tests.
+  app.post<{ Body: SeedFixtureBody }>("/api/__test__/seed-iep-authoring-fixture", async (req, reply) => {
+    if (!testModeEnabled()) return reply.status(404).send({ error: "Not found" });
+    const result = await seedTeacherParentLearnerFixture(
+      req.body,
+      {
+        learnerName: "E2E Authoring Learner",
+        tenantPrefix: "E2E Authoring Tenant",
+        parentLabel: "E2E Authoring Parent",
+        teacherLabel: "E2E Authoring Teacher",
+      },
+      async ({ db, learnerId }) => {
+        await db.delete(iepProfiles).where(
+          and(eq(iepProfiles.learnerId, learnerId), eq(iepProfiles.source, "authored")),
+        );
+      },
+    );
+    if (result.status !== 200) return reply.status(result.status).send(result.payload);
+    return result.payload;
   });
 }

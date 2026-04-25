@@ -1,6 +1,6 @@
 import { createDb } from "./index.js";
-import { tenants, users, learners } from "./schema/index.js";
-import { eq } from "drizzle-orm";
+import { tenants, users, learners, learnerTeachers } from "./schema/index.js";
+import { and, eq } from "drizzle-orm";
 import argon2 from "argon2";
 
 /**
@@ -98,6 +98,81 @@ async function seedDemo() {
       });
     }
     console.log(`  ↳ ${l.email} grade=${l.gradeLevel} → ${l.tier}`);
+  }
+
+  // 5. Demo TEACHER inside a B2B school tenant, accepted onto the K-5 demo
+  //    learner. The IEP authoring flow gates writes on a TEACHER role plus
+  //    an ACCEPTED learnerTeachers link, so without this fixture the
+  //    Playwright authoring spec couldn't run against the dev DB.
+  let schoolTenantId: string;
+  const existingSchool = await db.select().from(tenants)
+    .where(eq(tenants.name, "Demo School")).limit(1);
+  if (existingSchool.length > 0) {
+    schoolTenantId = existingSchool[0].id;
+  } else {
+    const [t] = await db.insert(tenants).values({
+      name: "Demo School", type: "B2B_DISTRICT" as any,
+    }).returning();
+    schoolTenantId = t.id;
+  }
+  console.log(`✓ Demo School tenant: ${schoolTenantId}`);
+
+  const teacherEmail = "teacher@demo.aivo";
+  let teacherId: string;
+  const existingTeacher = await db.select().from(users)
+    .where(eq(users.email, teacherEmail)).limit(1);
+  if (existingTeacher.length > 0) {
+    teacherId = existingTeacher[0].id;
+    await db.update(users).set({
+      passwordHash, role: "TEACHER" as any,
+      tenantId: schoolTenantId, emailVerified: true,
+    }).where(eq(users.id, teacherId));
+  } else {
+    const [u] = await db.insert(users).values({
+      tenantId: schoolTenantId,
+      email: teacherEmail,
+      passwordHash,
+      name: "Demo Teacher",
+      role: "TEACHER" as any,
+      emailVerified: true,
+    }).returning();
+    teacherId = u.id;
+  }
+  console.log(`✓ teacher@demo.aivo (Demo Teacher) — ${teacherId}`);
+
+  // Pick the K-5 demo learner (Mia) for the assignment so the seeded teacher
+  // has an obvious target. Lookup is by email/name pair to stay idempotent.
+  const [miaUser] = await db.select().from(users)
+    .where(eq(users.email, "mia@demo.aivo")).limit(1);
+  if (miaUser) {
+    const [miaLearner] = await db.select().from(learners)
+      .where(eq(learners.userId, miaUser.id)).limit(1);
+    if (miaLearner) {
+      const [existingLink] = await db.select().from(learnerTeachers).where(
+        and(
+          eq(learnerTeachers.learnerId, miaLearner.id),
+          eq(learnerTeachers.teacherUserId, teacherId),
+        ),
+      ).limit(1);
+      if (existingLink) {
+        if (existingLink.status !== "ACCEPTED") {
+          await db.update(learnerTeachers).set({
+            status: "ACCEPTED", acceptedAt: new Date(),
+          }).where(eq(learnerTeachers.id, existingLink.id));
+        }
+      } else {
+        await db.insert(learnerTeachers).values({
+          tenantId: demoTenantId,
+          learnerId: miaLearner.id,
+          teacherEmail,
+          teacherUserId: teacherId,
+          invitedBy: parentId,
+          status: "ACCEPTED",
+          acceptedAt: new Date(),
+        } as any);
+      }
+      console.log(`  ↳ Demo Teacher accepted onto Mia (${miaLearner.id})`);
+    }
   }
 
   console.log(`\nAll demo accounts use password: ${PASSWORD}`);
