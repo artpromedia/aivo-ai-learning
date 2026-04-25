@@ -1,6 +1,9 @@
 import { FastifyInstance } from "fastify";
 import { eq, and, desc, isNull, asc, sql } from "drizzle-orm";
-import { learners, learnerSettings, parentNotifications, learnerMilestones, learnerStreaks, learnerBadges, users } from "@aivo/db";
+import {
+  learners, learnerSettings, parentNotifications, learnerMilestones,
+  learnerStreaks, learnerBadges, users, parentInAppNotifications,
+} from "@aivo/db";
 import { authenticateRequest, verifyParentOwnership } from "../auth.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -65,6 +68,12 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     return updated;
   });
 
+  // The parent inbox is a merged feed: legacy `parent_notifications` rows
+  // (milestones, progress, recommendations, brain_review etc.) plus the
+  // newer `parent_in_app_notifications` rows the IEP Phase D pipeline
+  // creates when a parent has `inApp: true` for a category. This way the
+  // bell badge in the dashboard header reflects every unread item across
+  // every learner, not just the per-learner Updates tab.
   app.get("/api/family/inbox/:parentId", async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
@@ -74,35 +83,121 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
 
     const { filter, limit: lim } = req.query as { filter?: string; limit?: string };
     const pageSize = Math.min(parseInt(lim || "50"), 100);
-
-    let conditions: any[] = [eq(parentNotifications.parentId, parentId), isNull(parentNotifications.dismissedAt)];
-    if (filter === "unread") conditions.push(isNull(parentNotifications.readAt));
+    const onlyUnread = filter === "unread";
 
     try {
-      const items = await db.select().from(parentNotifications)
-        .where(and(...conditions))
-        .orderBy(desc(parentNotifications.createdAt))
-        .limit(pageSize);
+      const legacyConds: any[] = [
+        eq(parentNotifications.parentId, parentId),
+        isNull(parentNotifications.dismissedAt),
+      ];
+      if (onlyUnread) legacyConds.push(isNull(parentNotifications.readAt));
 
-      const [unreadCount] = await db.select({ count: sql<number>`count(*)` }).from(parentNotifications)
-        .where(and(eq(parentNotifications.parentId, parentId), isNull(parentNotifications.readAt), isNull(parentNotifications.dismissedAt)));
+      const iepConds: any[] = [eq(parentInAppNotifications.parentId, parentId)];
+      if (onlyUnread) iepConds.push(isNull(parentInAppNotifications.readAt));
 
-      return { items, unreadCount: Number(unreadCount?.count || 0) };
+      const [legacyRows, iepRows, legacyUnread, iepUnread] = await Promise.all([
+        db.select().from(parentNotifications)
+          .where(and(...legacyConds))
+          .orderBy(desc(parentNotifications.createdAt))
+          .limit(pageSize),
+        db.select().from(parentInAppNotifications)
+          .where(and(...iepConds))
+          .orderBy(desc(parentInAppNotifications.createdAt))
+          .limit(pageSize),
+        db.select({ count: sql<number>`count(*)` }).from(parentNotifications)
+          .where(and(
+            eq(parentNotifications.parentId, parentId),
+            isNull(parentNotifications.readAt),
+            isNull(parentNotifications.dismissedAt),
+          )),
+        db.select({ count: sql<number>`count(*)` }).from(parentInAppNotifications)
+          .where(and(
+            eq(parentInAppNotifications.parentId, parentId),
+            isNull(parentInAppNotifications.readAt),
+          )),
+      ]);
+
+      const legacyMapped = legacyRows.map((n: any) => ({
+        id: n.id,
+        source: "family" as const,
+        parentId: n.parentId,
+        learnerId: n.learnerId,
+        type: n.type,
+        title: n.title,
+        body: n.body,
+        actionUrl: n.actionUrl,
+        urgency: n.urgency || "normal",
+        readAt: n.readAt,
+        dismissedAt: n.dismissedAt,
+        createdAt: n.createdAt,
+      }));
+      const iepMapped = iepRows.map((n: any) => ({
+        id: n.id,
+        source: "iep" as const,
+        parentId: n.parentId,
+        learnerId: n.learnerId,
+        // The inbox UI keys icons off `type`. Map every IEP category to the
+        // existing iep_reminder visual so we don't have to teach the UI new
+        // icons; the actual category is preserved on the row for clients
+        // that care.
+        type: "iep_reminder",
+        category: n.category,
+        title: n.title,
+        body: n.body,
+        actionUrl: n.link,
+        urgency: "normal" as const,
+        readAt: n.readAt,
+        dismissedAt: null,
+        createdAt: n.createdAt,
+      }));
+
+      const items = [...legacyMapped, ...iepMapped]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, pageSize);
+
+      const unreadCount = Number(legacyUnread[0]?.count || 0) + Number(iepUnread[0]?.count || 0);
+      return { items, unreadCount };
     } catch (_err) {
       return { items: [], unreadCount: 0 };
     }
   });
+
+  // Mark-read / dismiss accept either source. We look the id up in the
+  // legacy table first (the common case — most parent inbox traffic still
+  // flows through it), then fall back to the IEP in-app table. UUIDs are
+  // globally unique so there's no realistic collision between the two.
+  // For IEP rows, dismiss is treated as mark-read since the table has no
+  // dismissed_at column — we don't want to block a parent from clearing
+  // an item just because it came from the IEP pipeline.
+  async function findInboxRow(notificationId: string) {
+    if (!isUuid(notificationId)) return null;
+    const [legacy] = await db.select().from(parentNotifications)
+      .where(eq(parentNotifications.id, notificationId));
+    if (legacy) return { source: "family" as const, row: legacy };
+    const [iep] = await db.select().from(parentInAppNotifications)
+      .where(eq(parentInAppNotifications.id, notificationId));
+    if (iep) return { source: "iep" as const, row: iep };
+    return null;
+  }
 
   app.put("/api/family/inbox/:notificationId/read", async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { notificationId } = req.params as { notificationId: string };
 
-    const [notif] = await db.select().from(parentNotifications).where(eq(parentNotifications.id, notificationId));
-    if (!notif) return reply.code(404).send({ error: "Not found" });
-    if (notif.parentId !== auth.sub && auth.role !== "PLATFORM_ADMIN") return reply.code(403).send({ error: "Forbidden" });
+    const found = await findInboxRow(notificationId);
+    if (!found) return reply.code(404).send({ error: "Not found" });
+    if (found.row.parentId !== auth.sub && auth.role !== "PLATFORM_ADMIN") {
+      return reply.code(403).send({ error: "Forbidden" });
+    }
 
-    await db.update(parentNotifications).set({ readAt: new Date() }).where(eq(parentNotifications.id, notificationId));
+    if (found.source === "family") {
+      await db.update(parentNotifications).set({ readAt: new Date() })
+        .where(eq(parentNotifications.id, notificationId));
+    } else {
+      await db.update(parentInAppNotifications).set({ readAt: new Date() })
+        .where(eq(parentInAppNotifications.id, notificationId));
+    }
     return { success: true };
   });
 
@@ -111,11 +206,21 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     if (!auth) return;
     const { notificationId } = req.params as { notificationId: string };
 
-    const [notif] = await db.select().from(parentNotifications).where(eq(parentNotifications.id, notificationId));
-    if (!notif) return reply.code(404).send({ error: "Not found" });
-    if (notif.parentId !== auth.sub && auth.role !== "PLATFORM_ADMIN") return reply.code(403).send({ error: "Forbidden" });
+    const found = await findInboxRow(notificationId);
+    if (!found) return reply.code(404).send({ error: "Not found" });
+    if (found.row.parentId !== auth.sub && auth.role !== "PLATFORM_ADMIN") {
+      return reply.code(403).send({ error: "Forbidden" });
+    }
 
-    await db.update(parentNotifications).set({ dismissedAt: new Date() }).where(eq(parentNotifications.id, notificationId));
+    if (found.source === "family") {
+      await db.update(parentNotifications).set({ dismissedAt: new Date() })
+        .where(eq(parentNotifications.id, notificationId));
+    } else {
+      // IEP rows have no dismissed_at — mark read so they leave the
+      // unread-only feed and the bell badge.
+      await db.update(parentInAppNotifications).set({ readAt: new Date() })
+        .where(eq(parentInAppNotifications.id, notificationId));
+    }
     return { success: true };
   });
 

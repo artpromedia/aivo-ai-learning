@@ -20,6 +20,7 @@ import {
   iepProfiles,
   iepProgressNotes,
   iepEvaluations,
+  parentInAppNotifications,
 } from "@aivo/db";
 import { eq, and, sql } from "drizzle-orm";
 import argon2 from "argon2";
@@ -129,6 +130,12 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
       learnerName?: string;
       parentNoteBody?: string;
       internalNoteBody?: string;
+      // Sprint 3 task #18: when true, additionally seed an unread row in
+      // parent_in_app_notifications so the spec can assert the global
+      // dashboard bell picks up IEP-pipeline events, not just legacy
+      // parent_notifications.
+      seedInAppUnread?: boolean;
+      inAppTitle?: string;
     };
   }>("/api/__test__/seed-iep-timeline-fixture", async (req, reply) => {
     if (!testModeEnabled()) return reply.status(404).send({ error: "Not found" });
@@ -141,6 +148,8 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
       learnerName = "E2E Updates Learner",
       parentNoteBody = "PARENT_VISIBLE_NOTE_BODY: timeline e2e parent-visible",
       internalNoteBody = "INTERNAL_ONLY_NOTE_BODY: timeline e2e internal-only",
+      seedInAppUnread = false,
+      inAppTitle = "E2E in-app: new progress note",
     } = req.body;
     if (!parentEmail || !parentPassword || !teacherEmail || !teacherPassword) {
       return reply.status(400).send({
@@ -254,6 +263,23 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
       visibility: "internal",
     }).returning();
 
+    let inAppNotificationId: string | null = null;
+    if (seedInAppUnread) {
+      // Reset existing in-app rows for this parent so re-runs start clean.
+      await db.delete(parentInAppNotifications)
+        .where(eq(parentInAppNotifications.parentId, parentUser.id));
+      const [row] = await db.insert(parentInAppNotifications).values({
+        parentId: parentUser.id,
+        learnerId: learner.id,
+        category: "progress_notes",
+        template: "iep_progress_note",
+        title: inAppTitle,
+        body: parentNoteBody,
+        link: `/dashboard/parent/learner/${learner.id}/iep`,
+      }).returning();
+      inAppNotificationId = row.id;
+    }
+
     return {
       parent: { id: parentUser.id, email: parentUser.email, tenantId: parentTenant.id },
       teacher: { id: teacherUser.id, email: teacherUser.email, tenantId: teacherTenant.id },
@@ -261,6 +287,8 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
       iepProfileId: profile.id,
       notes: { parentNoteId: parentNote.id, internalNoteId: internalNote.id },
       bodies: { parent: parentNoteBody, internal: internalNoteBody },
+      inAppNotificationId,
+      inAppTitle: seedInAppUnread ? inAppTitle : null,
     };
   });
 
