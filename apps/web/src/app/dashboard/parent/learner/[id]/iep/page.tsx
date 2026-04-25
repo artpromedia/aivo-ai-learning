@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Target, FileText, BarChart3, TrendingUp, TrendingDown, Minus, Activity, ClipboardList, CheckCircle2, XCircle, Bell, MessageSquare, AlertCircle, CalendarClock, Settings } from "lucide-react";
 import { IconWell } from "@/components/discovery/_vi";
+import { useParentLayout } from "@/app/dashboard/parent/layout";
 
 interface GoalProgress {
   goalId: string;
@@ -111,6 +112,7 @@ export default function IepDashboardPage() {
     } catch { /* noop */ }
   };
 
+  const { refreshUnread: refreshGlobalBell } = useParentLayout();
   const markInboxRead = async () => {
     if (!accessToken || !learnerId || inboxUnread === 0) return;
     try {
@@ -120,6 +122,10 @@ export default function IepDashboardPage() {
         body: JSON.stringify({ all: true, learnerId }),
       });
       setInboxUnread(0);
+      // Tell the dashboard layout to re-fetch its merged unread count so
+      // the bell badge in the header decrements immediately instead of
+      // waiting for the 60s poll.
+      refreshGlobalBell();
     } catch { /* noop */ }
   };
 

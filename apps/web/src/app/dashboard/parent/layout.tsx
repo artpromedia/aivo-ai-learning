@@ -39,6 +39,11 @@ interface ParentLayoutContextType {
   setActiveLearner: (l: Learner) => void;
   unreadCount: number;
   refreshLearners: () => void;
+  // Pages that mark notifications read (e.g. the per-learner Updates tab)
+  // call this so the global bell badge decrements without waiting for the
+  // 60s poll. Decoupled from the fetch so callers don't need to know the
+  // endpoint.
+  refreshUnread: () => void;
 }
 
 const ParentLayoutContext = createContext<ParentLayoutContextType>({
@@ -47,6 +52,7 @@ const ParentLayoutContext = createContext<ParentLayoutContextType>({
   setActiveLearner: () => {},
   unreadCount: 0,
   refreshLearners: () => {},
+  refreshUnread: () => {},
 });
 
 export const useParentLayout = () => useContext(ParentLayoutContext);
@@ -124,13 +130,26 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
 
   useEffect(() => { refreshLearners(); }, [refreshLearners]);
 
-  useEffect(() => {
+  // Bell badge unread count. The family-svc inbox endpoint merges legacy
+  // `parent_notifications` with the IEP `parent_in_app_notifications`
+  // pipeline, so a single fetch covers every unread item the parent has
+  // across every learner.
+  const refreshUnread = useCallback(() => {
     if (!accessToken || !user) return;
     fetch(`/api/family/inbox/${user.id}?filter=unread&limit=1`, { headers: { Authorization: `Bearer ${accessToken}` } })
       .then(r => r.ok ? r.json() : { unreadCount: 0 })
       .then(data => setUnreadCount(data.unreadCount || 0))
       .catch(() => {});
   }, [accessToken, user]);
+
+  useEffect(() => {
+    refreshUnread();
+    // Light polling so a new IEP update lands in the bell within a minute
+    // even if the parent hasn't navigated. Mirrors the per-learner
+    // Updates tab cadence so the two stay in sync.
+    const t = setInterval(refreshUnread, 60_000);
+    return () => clearInterval(t);
+  }, [refreshUnread]);
 
   useEffect(() => {
     const pathMatch = pathname.match(/\/learner\/([^/]+)/);
@@ -175,7 +194,7 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
   };
 
   return (
-    <ParentLayoutContext.Provider value={{ learners, activeLearner, setActiveLearner, unreadCount, refreshLearners }}>
+    <ParentLayoutContext.Provider value={{ learners, activeLearner, setActiveLearner, unreadCount, refreshLearners, refreshUnread }}>
       <div className="min-h-screen vi-bg">
         <nav
           aria-label="Parent sidebar"
