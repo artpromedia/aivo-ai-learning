@@ -80,7 +80,8 @@ export const iepProfiles = pgTable("iep_profiles", {
 
 export const iepPresentLevels = pgTable("iep_present_levels", {
   id: uuid("id").defaultRandom().primaryKey(),
-  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
+  iepProfileId: uuid("iep_profile_id")
+    .references(() => iepProfiles.id, { onDelete: "cascade" }).notNull(),
   area: varchar("area", { length: 30 }).notNull(),
   narrative: text("narrative"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -88,7 +89,8 @@ export const iepPresentLevels = pgTable("iep_present_levels", {
 
 export const iepServices = pgTable("iep_services", {
   id: uuid("id").defaultRandom().primaryKey(),
-  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id).notNull(),
+  iepProfileId: uuid("iep_profile_id")
+    .references(() => iepProfiles.id, { onDelete: "cascade" }).notNull(),
   serviceType: varchar("service_type", { length: 60 }).notNull(),
   providerRole: varchar("provider_role", { length: 60 }),
   minutesPerWeek: integer("minutes_per_week"),
@@ -102,7 +104,8 @@ export const iepServices = pgTable("iep_services", {
 export const iepGoals = pgTable("iep_goals", {
   id: uuid("id").defaultRandom().primaryKey(),
   learnerId: uuid("learner_id").references(() => learners.id).notNull(),
-  iepProfileId: uuid("iep_profile_id").references(() => iepProfiles.id),
+  iepProfileId: uuid("iep_profile_id")
+    .references(() => iepProfiles.id, { onDelete: "cascade" }),
   goalText: text("goal_text").notNull(),
   domain: varchar("domain", { length: 100 }),
   baseline: varchar("baseline", { length: 255 }),

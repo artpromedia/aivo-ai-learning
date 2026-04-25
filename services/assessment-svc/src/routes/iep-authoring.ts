@@ -333,10 +333,9 @@ export async function registerIepAuthoringRoutes(app: FastifyInstance) {
     if (profile.source !== "authored") return reply.code(404).send({ error: "Not an authored draft" });
     if (!await canWrite(db, claims, profile.learnerId)) return reply.code(403).send({ error: "Forbidden" });
     if (!isEditable(profile)) return reply.code(409).send({ error: "Draft is not editable" });
-    // Children rows cascade via FK ON DELETE; if not, clean explicitly.
-    await db.delete(iepGoals).where(eq(iepGoals.iepProfileId, id));
-    await db.delete(iepPresentLevels).where(eq(iepPresentLevels.iepProfileId, id));
-    await db.delete(iepServices).where(eq(iepServices.iepProfileId, id));
+    // present-levels, services, and goals cascade-delete via FK ON DELETE
+    // CASCADE (migration 0013), so a single DELETE on the parent profile
+    // sweeps the children atomically.
     await db.delete(iepProfiles).where(eq(iepProfiles.id, id));
     return reply.code(204).send();
   });
