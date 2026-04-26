@@ -118,7 +118,10 @@ export const iepEvaluations = pgTable("iep_evaluations", {
   learnerId: uuid("learner_id").references(() => learners.id).notNull(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   initiatedByUserId: uuid("initiated_by_user_id").references(() => users.id).notNull(),
-  status: varchar("status", { length: 20 }).default("draft").notNull(),
+  // Widened from 20 → 40 to fit "eligibility_determined" (23 chars). The
+  // 0009 migration created this as varchar(20); 0012 widens it in place so
+  // the decision handler can actually persist the terminal status.
+  status: varchar("status", { length: 40 }).default("draft").notNull(),
   referralReason: text("referral_reason"),
   assessmentAreas: jsonb("assessment_areas").default([]),
   observations: text("observations"),
