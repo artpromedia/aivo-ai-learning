@@ -5,6 +5,7 @@ import { tutorSessions } from "@aivo/db";
 import { resolveTenantIdForLearner } from "../lib/tenant.js";
 import { computeTutorXp, computeTutorQuality, type TutorSignals } from "../services/scoring.js";
 import { getActiveCurriculumFocus } from "./curriculum.js";
+import { loadDapeProfile } from "../lib/dape.js";
 
 const TUTOR_SKU_TO_SUBJECT: Record<string, string> = {
   ADDON_TUTOR_MATH: "math",
@@ -98,6 +99,17 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
         if (focus) (brainContext as any).curriculum_focus = focus;
       } catch (err) {
         console.error("Failed to load curriculum focus (non-blocking):", err);
+      }
+    }
+
+    // Vigor (PE & Health) is the only tutor that branches on DAPE. Loading
+    // the profile for every other tutor would be wasted DB work.
+    if (TUTOR_SKU_TO_KEY[tutorSku] === "vigor") {
+      try {
+        const dapeProfile = await loadDapeProfile(db, learnerId);
+        if (dapeProfile.active) (brainContext as any).dape_profile = dapeProfile;
+      } catch (err) {
+        console.error("Failed to load DAPE profile (non-blocking):", err);
       }
     }
 

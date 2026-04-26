@@ -341,3 +341,84 @@ class TestScaffoldingAndRemediation:
         prompt = build_tutor_system_prompt("ADDON_TUTOR_MATH", {}, "STANDARD")
         assert "Scaffolding Mode" not in prompt
         assert "Mastery Trend" not in prompt
+
+
+class TestDapeBlock:
+    """Vigor's DAPE Track section is only rendered when brain_context contains
+    an active dape_profile. The persona narrative covers fitness as the
+    default branch when DAPE is inactive."""
+
+    def test_no_dape_block_when_profile_absent(self):
+        prompt = build_tutor_system_prompt('ADDON_TUTOR_PE_HEALTH', {}, 'STANDARD')
+        assert '## DAPE Track Active' not in prompt
+
+    def test_no_dape_block_when_profile_inactive(self):
+        ctx = {'dape_profile': {'active': False, 'categories': [], 'totalMotorGoals': 0}}
+        prompt = build_tutor_system_prompt('ADDON_TUTOR_PE_HEALTH', ctx, 'STANDARD')
+        assert '## DAPE Track Active' not in prompt
+
+    def test_dape_block_renders_when_active(self):
+        ctx = {
+            'dape_profile': {
+                'active': True,
+                'source': 'service+goal',
+                'totalMotorGoals': 3,
+                'categories': [
+                    {'id': 'locomotor', 'label': 'Locomotor skills',
+                     'goalCount': 2, 'sampleGoal': 'Skip across the gym'},
+                    {'id': 'midline_crossing', 'label': 'Midline crossing',
+                     'goalCount': 1, 'sampleGoal': 'Cross-crawl 20 times'},
+                ],
+            }
+        }
+        prompt = build_tutor_system_prompt('ADDON_TUTOR_PE_HEALTH', ctx, 'STANDARD')
+        assert '## DAPE Track Active' in prompt
+        assert 'both an active DAPE service line and motor IEP goals' in prompt
+        assert 'Motor goals on file: 3' in prompt
+        assert 'Locomotor skills (2 goals)' in prompt
+        assert 'Skip across the gym' in prompt
+        assert 'Midline crossing (1 goal)' in prompt
+        # Reminds Vigor to keep tracking motor progress separately so the
+        # parent / therapist Motor Progress report stays accurate.
+        assert 'regulation break' in prompt.lower()
+
+    def test_dape_block_truncates_long_sample_goals(self):
+        long_goal = 'A' * 200
+        ctx = {
+            'dape_profile': {
+                'active': True,
+                'source': 'goal',
+                'totalMotorGoals': 1,
+                'categories': [
+                    {'id': 'locomotor', 'label': 'Locomotor skills',
+                     'goalCount': 1, 'sampleGoal': long_goal},
+                ],
+            }
+        }
+        prompt = build_tutor_system_prompt('ADDON_TUTOR_PE_HEALTH', ctx, 'STANDARD')
+        assert long_goal not in prompt
+        assert 'A' * 120 + '…' in prompt
+
+    def test_dape_block_caps_at_four_categories(self):
+        cats = [
+            {'id': i, 'label': f'Cat {i}', 'goalCount': 5 - n}
+            for n, i in enumerate(['locomotor', 'object_control', 'balance',
+                                   'midline_crossing', 'fine_motor'])
+        ]
+        ctx = {'dape_profile': {'active': True, 'source': 'goal',
+                                'totalMotorGoals': 5, 'categories': cats}}
+        prompt = build_tutor_system_prompt('ADDON_TUTOR_PE_HEALTH', ctx, 'STANDARD')
+        assert 'Cat locomotor' in prompt
+        assert 'Cat midline_crossing' in prompt
+        # Fifth category (fine_motor) must not appear.
+        assert 'Cat fine_motor' not in prompt
+
+    def test_dape_block_handles_unknown_source(self):
+        ctx = {'dape_profile': {'active': True, 'source': 'mystery',
+                                'totalMotorGoals': 1,
+                                'categories': [{'id': 'balance', 'label': 'Balance',
+                                                'goalCount': 1}]}}
+        prompt = build_tutor_system_prompt('ADDON_TUTOR_PE_HEALTH', ctx, 'STANDARD')
+        assert '## DAPE Track Active' in prompt
+        assert 'active DAPE indicators on the IEP' in prompt
+

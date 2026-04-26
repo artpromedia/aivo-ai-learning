@@ -12,15 +12,21 @@
  * the schema.
  */
 
-export type DapeCategory =
-  | "locomotor"
-  | "object_control"
-  | "balance"
-  | "midline_crossing"
-  | "heavy_work"
-  | "vestibular"
-  | "fine_motor"
-  | "handwriting_prep";
+// Goal-detection helpers (isDapeGoal, categoriseDapeGoal, splitDomain,
+// DAPE_CATEGORY_LABELS, DapeCategory) are owned by @aivo/scoring so other
+// services can reuse them without dragging in the activity catalog. The
+// activity library + functioning-tier adaptations stay here because they
+// are family-svc-specific UI content.
+import {
+  type DapeCategory,
+  DAPE_CATEGORY_LABELS,
+  splitDomain,
+  isDapeGoal,
+  categoriseDapeGoal,
+} from "@aivo/scoring";
+
+export { DAPE_CATEGORY_LABELS, splitDomain, isDapeGoal, categoriseDapeGoal };
+export type { DapeCategory };
 
 export type SensoryProfileType = "seeker" | "avoider" | "any";
 
@@ -47,17 +53,6 @@ export interface DapeActivity {
   /** Optional image url (curated stock GIF) — layered in later. */
   imageUrl?: string;
 }
-
-export const DAPE_CATEGORY_LABELS: Record<DapeCategory, string> = {
-  locomotor: "Locomotor skills",
-  object_control: "Object control",
-  balance: "Balance",
-  midline_crossing: "Midline crossing",
-  heavy_work: "Heavy work / proprioceptive",
-  vestibular: "Vestibular regulation",
-  fine_motor: "Fine motor",
-  handwriting_prep: "Handwriting prep",
-};
 
 export const DAPE_LIBRARY: DapeActivity[] = [
   // ── Locomotor ──────────────────────────────────────────────────────────
@@ -436,73 +431,6 @@ export const DAPE_LIBRARY: DapeActivity[] = [
     partnerCue: "Multi-sensory letter formation is the gold standard for emerging writers.",
   },
 ];
-
-/** Map IEP-goal language → DAPE category. */
-const KEYWORD_MAP: Array<[RegExp, DapeCategory]> = [
-  [/\b(walk|run|jump|hop|gallop|skip|locomotor|gait|motor\s*planning)\b/i, "locomotor"],
-  [/\b(catch|throw|kick|strike|object\s*control|ball)\b/i, "object_control"],
-  [/\b(balance|stand|posture|stability)\b/i, "balance"],
-  [/\b(midline|cross|bilateral|crossing\s*midline)\b/i, "midline_crossing"],
-  [/\b(heavy\s*work|proprioceptive|push|pull|carry|deep\s*pressure)\b/i, "heavy_work"],
-  [/\b(vestibular|spin|rock|swing|sensory\s*regulat)\b/i, "vestibular"],
-  [/\b(fine\s*motor|pinch|grasp|finger|manipulat)\b/i, "fine_motor"],
-  [/\b(handwriting|letter\s*formation|pencil|writing\s*legib)\b/i, "handwriting_prep"],
-];
-
-/** Map a stored sub_domain identifier (from the IEP parser) → DAPE category. */
-const SUB_DOMAIN_MAP: Record<string, DapeCategory> = {
-  locomotor: "locomotor",
-  object_control: "object_control",
-  balance: "balance",
-  midline_crossing: "midline_crossing",
-  heavy_work: "heavy_work",
-  vestibular: "vestibular",
-  fine_motor: "fine_motor",
-  handwriting_prep: "handwriting_prep",
-  motor_planning: "locomotor",
-  adapted_pe: "locomotor",
-};
-
-// DAPE keyword list. Intentionally strict: bare "motor" and "coordination"
-// are excluded because they appear in many non-PE goals (e.g.
-// "visual-motor integration for reading"). Motor planning is included
-// because it is a core DAPE skill area.
-const MOTOR_HINT = /\b(gross\s*motor|fine\s*motor|adapted\s*pe|adapted\s*physical|\bdape\b|locomotor|object\s*control|midline\s*crossing|motor\s*planning|handwriting\s*(?:legib|formation)|pencil\s*grip|bilateral\s*coordination|gait\s*training|balance\s*(?:training|skills)|vestibular\s*regulation|proprioceptive\s*input|heavy\s*work)\b/i;
-
-/** Root domains where we treat the goal as DAPE. */
-const DAPE_DOMAINS = new Set(["motor", "gross_motor", "fine_motor", "dape", "adapted_pe", "physical"]);
-/** Root domains where text-based DAPE matches are *not* trusted (the goal is scoped elsewhere). */
-const NON_DAPE_DOMAINS = new Set(["math", "ela", "speech", "behavior", "social", "life_skills", "executive_function"]);
-
-/** Split a composite "domain:sub_domain" string (as persisted from the IEP parser). */
-export function splitDomain(domain?: string | null): { root: string; sub: string | null } {
-  const raw = (domain || "").toLowerCase();
-  const idx = raw.indexOf(":");
-  if (idx === -1) return { root: raw, sub: null };
-  return { root: raw.slice(0, idx), sub: raw.slice(idx + 1) };
-}
-
-/** True if a goal looks DAPE-relevant by domain or wording. */
-export function isDapeGoal(goal: { domain?: string | null; goalText?: string | null }): boolean {
-  const { root, sub } = splitDomain(goal.domain);
-  if (DAPE_DOMAINS.has(root)) return true;
-  if (sub && SUB_DOMAIN_MAP[sub]) return true;
-  if (NON_DAPE_DOMAINS.has(root)) return false;
-  return MOTOR_HINT.test(goal.goalText || "");
-}
-
-/** Categorise a goal into one (or more) DAPE skill categories. Uses the
- * persisted sub_domain when available, then falls back to keyword scan. */
-export function categoriseDapeGoal(goalText: string, domain?: string | null): DapeCategory[] {
-  const matches = new Set<DapeCategory>();
-  const { sub } = splitDomain(domain);
-  if (sub && SUB_DOMAIN_MAP[sub]) matches.add(SUB_DOMAIN_MAP[sub]);
-  for (const [regex, cat] of KEYWORD_MAP) {
-    if (regex.test(goalText)) matches.add(cat);
-  }
-  if (matches.size === 0) matches.add("locomotor");
-  return Array.from(matches);
-}
 
 /** Pick an activity for the given category and functioning level. */
 export function pickActivity(
