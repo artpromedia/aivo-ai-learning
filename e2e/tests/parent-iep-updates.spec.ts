@@ -41,6 +41,10 @@ interface SeedResult {
   iepProfileId: string;
   notes: { parentNoteId: string; internalNoteId: string };
   bodies: { parent: string; internal: string };
+  // Populated only when the seeder is asked to insert an unread in-app
+  // notification — used by the global bell badge spec.
+  inAppNotificationId?: string | null;
+  inAppTitle?: string | null;
 }
 
 interface TimelineNotePayload {
@@ -62,7 +66,7 @@ interface TimelineResponse {
 
 let seed: SeedResult | null = null;
 
-async function trySeed(): Promise<SeedResult | null> {
+async function trySeed(opts: { withInApp?: boolean } = {}): Promise<SeedResult | null> {
   try {
     const ctx = await pwRequest.newContext({ baseURL: IDENTITY_BASE });
     const res = await ctx.post("/api/__test__/seed-iep-timeline-fixture", {
@@ -73,6 +77,7 @@ async function trySeed(): Promise<SeedResult | null> {
         teacherPassword: TEACHER_PASSWORD,
         parentNoteBody: PARENT_NOTE,
         internalNoteBody: INTERNAL_NOTE,
+        seedInAppUnread: !!opts.withInApp,
       },
       failOnStatusCode: false,
     });
@@ -213,5 +218,72 @@ test.describe("parent IEP Updates timeline — UI + cross-tenant safety", () => 
       .not.toContain(PARENT_NOTE);
     expect(deniedText, "denied response must not echo internal note bodies")
       .not.toContain(INTERNAL_NOTE);
+  });
+});
+
+// Sprint 3 task #18: the parent dashboard header bell aggregates the
+// merged inbox feed (legacy parent_notifications + IEP
+// parent_in_app_notifications). When the IEP pipeline creates a row, the
+// bell badge must reflect it on every page of the parent dashboard, not
+// just inside the per-learner Updates tab.
+test.describe("parent dashboard global bell — IEP in-app notifications surface in the header", () => {
+  let bellSeed: SeedResult | null = null;
+
+  test.beforeAll(async () => {
+    bellSeed = await trySeed({ withInApp: true });
+    test.skip(
+      !bellSeed || !bellSeed.inAppNotificationId,
+      `Requires identity-svc seed-iep-timeline-fixture with seedInAppUnread support at ${IDENTITY_BASE}.`,
+    );
+  });
+
+  test("the bell badge picks up an unread IEP in-app notification on the dashboard home", async ({ page, context }) => {
+    const fixture = bellSeed!;
+    await loginViaApi(context.request, PARENT_EMAIL, PARENT_PASSWORD);
+
+    // Wait for the layout's merged-inbox unread call so we can inspect
+    // the count the bell receives.
+    const inboxPromise = page.waitForResponse(
+      (r) => r.url().includes(`/api/family/inbox/${fixture.parent.id}`)
+        && r.url().includes("filter=unread")
+        && r.status() === 200,
+      { timeout: 15_000 },
+    );
+    await page.goto(`/dashboard/parent`);
+    const inboxResp = await inboxPromise;
+    const inboxJson = await inboxResp.json();
+    expect(typeof inboxJson.unreadCount).toBe("number");
+    expect(inboxJson.unreadCount, "merged unread count includes the IEP in-app row").toBeGreaterThanOrEqual(1);
+
+    // The header bell renders a numeric badge when unreadCount > 0. We
+    // can't rely on the icon alone (it's an SVG without text) — instead
+    // assert the aria-label which the layout sets when there are unread
+    // items.
+    const bell = page.getByRole("link", { name: /Inbox.*unread/ });
+    await expect(bell).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("the inbox page shows the IEP in-app notification with a link back to the learner's Updates tab", async ({ page, context }) => {
+    const fixture = bellSeed!;
+    await loginViaApi(context.request, PARENT_EMAIL, PARENT_PASSWORD);
+
+    const inboxPromise = page.waitForResponse(
+      (r) => r.url().endsWith(`/api/family/inbox/${fixture.parent.id}`)
+        && r.status() === 200,
+      { timeout: 15_000 },
+    );
+    await page.goto(`/dashboard/parent/inbox`);
+    const inboxResp = await inboxPromise;
+    const json = await inboxResp.json();
+    const items = (json.items || []) as Array<{
+      source?: string; learnerId?: string; actionUrl?: string; title?: string;
+    }>;
+    const iep = items.find((i) => i.source === "iep");
+    expect(iep, "merged inbox feed must include an IEP-source row").toBeTruthy();
+    expect(iep!.learnerId).toBe(fixture.learner.id);
+    expect(iep!.actionUrl).toContain(`/dashboard/parent/learner/${fixture.learner.id}/iep`);
+    if (fixture.inAppTitle) {
+      await expect(page.getByText(fixture.inAppTitle, { exact: false })).toBeVisible({ timeout: 10_000 });
+    }
   });
 });

@@ -285,3 +285,193 @@ test("amendment proposal snapshots the CURRENT profile + goals (not the proposed
     await teardown(app, db);
   }
 });
+
+test("timeline: bogus learner UUID returns 404, not 403, so attackers can't tell tenants apart", { skip: SKIP }, async () => {
+  const { app, db } = await bootstrap();
+  const f = await seed(db);
+  try {
+    const token = await tokenFor(f.parentA, "PARENT", f.tenantA);
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/iep/learners/00000000-0000-4000-8000-000000000000/timeline`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    assert.equal(res.statusCode, 404);
+  } finally {
+    await cleanup(db, f);
+    await teardown(app, db);
+  }
+});
+
+test("timeline: malformed learner id returns 400 before any DB lookup", { skip: SKIP }, async () => {
+  const { app, db } = await bootstrap();
+  const f = await seed(db);
+  try {
+    const token = await tokenFor(f.parentA, "PARENT", f.tenantA);
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/iep/learners/not-a-uuid/timeline`,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    assert.equal(res.statusCode, 400);
+  } finally {
+    await cleanup(db, f);
+    await teardown(app, db);
+  }
+});
+
+test("timeline: missing/invalid bearer token is 401, not 403", { skip: SKIP }, async () => {
+  const { app, db } = await bootstrap();
+  const f = await seed(db);
+  try {
+    const noAuth = await app.inject({
+      method: "GET",
+      url: `/api/iep/learners/${f.learnerA}/timeline`,
+    });
+    assert.equal(noAuth.statusCode, 401);
+
+    const badToken = await app.inject({
+      method: "GET",
+      url: `/api/iep/learners/${f.learnerA}/timeline`,
+      headers: { Authorization: "Bearer not.a.valid.jwt" },
+    });
+    assert.equal(badToken.statusCode, 401);
+  } finally {
+    await cleanup(db, f);
+    await teardown(app, db);
+  }
+});
+
+test("timeline: same-tenant DISTRICT_ADMIN can read the timeline", { skip: SKIP }, async () => {
+  const { app, db } = await bootstrap();
+  const f = await seed(db);
+  try {
+    const token = await tokenFor(f.districtAdminA, "DISTRICT_ADMIN", f.tenantA);
+    const res = await getTimeline(app, f.learnerA, token);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.json().iepProfileId, f.profileA);
+  } finally {
+    await cleanup(db, f);
+    await teardown(app, db);
+  }
+});
+
+test("timeline: cross-tenant DISTRICT_ADMIN is forbidden", { skip: SKIP }, async () => {
+  const { app, db } = await bootstrap();
+  const f = await seed(db);
+  try {
+    // District admin scoped to tenantB must NOT see tenantA learners just
+    // because they have an admin role — district admin's bypass is
+    // same-tenant-only.
+    const token = await tokenFor(f.districtAdminA, "DISTRICT_ADMIN", f.tenantB);
+    const res = await getTimeline(app, f.learnerA, token);
+    assert.equal(res.statusCode, 403);
+  } finally {
+    await cleanup(db, f);
+    await teardown(app, db);
+  }
+});
+
+// ───────── Visibility tier tests ─────────
+// These exercise the per-role filtering of timeline items. They're
+// security-critical: a regression here would either leak internal team
+// notes to families/auditors, or hide reports from parents who need them.
+
+async function seedNotesAndReports(db: any, f: Fixture) {
+  const { iepProgressNotes, iepProgressReports } = await import("@aivo/db");
+  await db.insert(iepProgressNotes).values([
+    { iepProfileId: f.profileA, learnerId: f.learnerA, authorId: f.teacherA,
+      body: "PARENT_NOTE",   visibility: "parent" },
+    { iepProfileId: f.profileA, learnerId: f.learnerA, authorId: f.teacherA,
+      body: "TEAM_NOTE",     visibility: "team" },
+    { iepProfileId: f.profileA, learnerId: f.learnerA, authorId: f.caseManagerA,
+      body: "INTERNAL_NOTE", visibility: "internal" },
+  ] as any);
+  await db.insert(iepProgressReports).values([
+    { iepProfileId: f.profileA, learnerId: f.learnerA, period: "Q1",
+      narrative: "DRAFT_REPORT", status: "draft", createdBy: f.caseManagerA },
+    { iepProfileId: f.profileA, learnerId: f.learnerA, period: "Q2",
+      narrative: "SENT_REPORT",  status: "sent",  createdBy: f.caseManagerA,
+      sentBy: f.caseManagerA, sentAt: new Date() },
+  ] as any);
+}
+
+test("timeline: parent sees only parent-visible notes and only sent reports", { skip: SKIP }, async () => {
+  const { app, db } = await bootstrap();
+  const f = await seed(db);
+  try {
+    await seedNotesAndReports(db, f);
+    const token = await tokenFor(f.parentA, "PARENT", f.tenantA);
+    const res = await getTimeline(app, f.learnerA, token);
+    assert.equal(res.statusCode, 200);
+    const items = res.json().items as Array<{ type: string; payload: any }>;
+    const noteBodies = items.filter(i => i.type === "note").map(i => i.payload.body);
+    assert.deepEqual(noteBodies.sort(), ["PARENT_NOTE"],
+      "parents must NEVER see team or internal notes");
+    const reportNarratives = items.filter(i => i.type === "report").map(i => i.payload.narrative);
+    assert.deepEqual(reportNarratives.sort(), ["SENT_REPORT"],
+      "parents must NEVER see draft reports — only sent ones");
+  } finally {
+    await cleanup(db, f);
+    await teardown(app, db);
+  }
+});
+
+test("timeline: IEP team member sees the full feed including internal notes and draft reports", { skip: SKIP }, async () => {
+  const { app, db } = await bootstrap();
+  const f = await seed(db);
+  try {
+    await seedNotesAndReports(db, f);
+    const token = await tokenFor(f.teacherA, "TEACHER", f.tenantA);
+    const res = await getTimeline(app, f.learnerA, token);
+    assert.equal(res.statusCode, 200);
+    const items = res.json().items as Array<{ type: string; payload: any }>;
+    const noteBodies = items.filter(i => i.type === "note").map(i => i.payload.body);
+    assert.deepEqual(noteBodies.sort(), ["INTERNAL_NOTE", "PARENT_NOTE", "TEAM_NOTE"]);
+    const reportNarratives = items.filter(i => i.type === "report").map(i => i.payload.narrative);
+    assert.deepEqual(reportNarratives.sort(), ["DRAFT_REPORT", "SENT_REPORT"]);
+  } finally {
+    await cleanup(db, f);
+    await teardown(app, db);
+  }
+});
+
+test("timeline: district admin (no team membership) sees parent+team notes but never internal, and only sent reports", { skip: SKIP }, async () => {
+  const { app, db } = await bootstrap();
+  const f = await seed(db);
+  try {
+    await seedNotesAndReports(db, f);
+    const token = await tokenFor(f.districtAdminA, "DISTRICT_ADMIN", f.tenantA);
+    const res = await getTimeline(app, f.learnerA, token);
+    assert.equal(res.statusCode, 200);
+    const items = res.json().items as Array<{ type: string; payload: any }>;
+    const noteBodies = items.filter(i => i.type === "note").map(i => i.payload.body);
+    assert.deepEqual(noteBodies.sort(), ["PARENT_NOTE", "TEAM_NOTE"],
+      "district admin oversees but does NOT receive the team's internal-only notes");
+    const reportNarratives = items.filter(i => i.type === "report").map(i => i.payload.narrative);
+    assert.deepEqual(reportNarratives.sort(), ["SENT_REPORT"],
+      "district admin sees finalised reports only — drafts are team-private");
+  } finally {
+    await cleanup(db, f);
+    await teardown(app, db);
+  }
+});
+
+test("timeline: PLATFORM_ADMIN sees the full feed even without team membership", { skip: SKIP }, async () => {
+  const { app, db } = await bootstrap();
+  const f = await seed(db);
+  try {
+    await seedNotesAndReports(db, f);
+    const token = await tokenFor(f.platformAdmin, "PLATFORM_ADMIN", f.tenantB);
+    const res = await getTimeline(app, f.learnerA, token);
+    assert.equal(res.statusCode, 200);
+    const items = res.json().items as Array<{ type: string; payload: any }>;
+    const noteBodies = items.filter(i => i.type === "note").map(i => i.payload.body);
+    assert.deepEqual(noteBodies.sort(), ["INTERNAL_NOTE", "PARENT_NOTE", "TEAM_NOTE"]);
+    const reportNarratives = items.filter(i => i.type === "report").map(i => i.payload.narrative);
+    assert.deepEqual(reportNarratives.sort(), ["DRAFT_REPORT", "SENT_REPORT"]);
+  } finally {
+    await cleanup(db, f);
+    await teardown(app, db);
+  }
+});
