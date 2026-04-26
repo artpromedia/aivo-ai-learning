@@ -78,6 +78,12 @@ export function renderTemplate(templateId: string, data: TemplateData): { subjec
       return renderIepAmendmentAcknowledged(data);
     case "iep_review_reminder":
       return renderIepReviewReminder(data);
+    case "evaluation_submitted":
+      return renderEvaluationSubmittedParent(data);
+    case "evaluation_submitted_admin":
+      return renderEvaluationSubmittedAdmin(data);
+    case "evaluation_decided":
+      return renderEvaluationDecidedParent(data);
     default:
       return renderGeneric(data);
   }
@@ -403,6 +409,56 @@ function renderIepReviewReminder(data: TemplateData) {
   };
 }
 
+// Evaluation lifecycle notifications (sprint task #10). Sent when an
+// eligibility evaluation moves draft → submitted (parent + tenant
+// district admins) and submitted → eligibility_determined (parent only).
+function renderEvaluationSubmittedParent(data: TemplateData) {
+  const learnerName = (data.learnerName as string) || "your child";
+  const url = (data.url as string) || "#";
+  const html = baseLayout(`
+    <h1 class="title">${learnerName}'s evaluation has been submitted</h1>
+    <p class="body-text">The evaluation team has submitted ${learnerName}'s eligibility evaluation for review. You'll receive another notification once a decision has been recorded.</p>
+    <p style="text-align:center"><a href="${url}" class="btn">Open dashboard</a></p>
+  `);
+  return {
+    subject: `${learnerName}'s evaluation has been submitted`,
+    html,
+    text: `${learnerName}'s eligibility evaluation has been submitted by the team. View: ${url}`,
+  };
+}
+
+function renderEvaluationSubmittedAdmin(data: TemplateData) {
+  const learnerName = (data.learnerName as string) || "a learner";
+  const url = (data.url as string) || "#";
+  const html = baseLayout(`
+    <h1 class="title">New eligibility evaluation submitted</h1>
+    <p class="body-text">An eligibility evaluation for ${learnerName} has been submitted in your district and is awaiting team decision.</p>
+    <p style="text-align:center"><a href="${url}" class="btn">Open district dashboard</a></p>
+  `);
+  return {
+    subject: `New eligibility evaluation submitted — ${learnerName}`,
+    html,
+    text: `An eligibility evaluation for ${learnerName} has been submitted. View: ${url}`,
+  };
+}
+
+function renderEvaluationDecidedParent(data: TemplateData) {
+  const learnerName = (data.learnerName as string) || "your child";
+  const url = (data.url as string) || "#";
+  const decision = String(data.decision || "needs_more_data").replace(/_/g, " ");
+  const html = baseLayout(`
+    <h1 class="title">Eligibility decision recorded for ${learnerName}</h1>
+    <p class="body-text">The IEP team has recorded an eligibility decision: <strong>${decision}</strong>.</p>
+    <p class="body-text">Open the dashboard to view the team rationale and next steps.</p>
+    <p style="text-align:center"><a href="${url}" class="btn">View decision</a></p>
+  `);
+  return {
+    subject: `Eligibility decision for ${learnerName}: ${decision}`,
+    html,
+    text: `The IEP team has recorded an eligibility decision for ${learnerName}: ${decision}. View: ${url}`,
+  };
+}
+
 export const AVAILABLE_TEMPLATES = [
   { id: "welcome", name: "Welcome Email", channels: ["email"] },
   { id: "collaboration_invite", name: "Collaboration Invite", channels: ["email"] },
@@ -421,4 +477,7 @@ export const AVAILABLE_TEMPLATES = [
   { id: "iep_amendment_proposed", name: "IEP — Amendment Proposed (Parent)", channels: ["email"] },
   { id: "iep_amendment_acknowledged", name: "IEP — Amendment Response (Team)", channels: ["email"] },
   { id: "iep_review_reminder", name: "IEP — Annual Review Reminder", channels: ["email"] },
+  { id: "evaluation_submitted", name: "Evaluation — Submitted (Parent)", channels: ["email"] },
+  { id: "evaluation_submitted_admin", name: "Evaluation — Submitted (District Admin)", channels: ["email"] },
+  { id: "evaluation_decided", name: "Evaluation — Decision Recorded (Parent)", channels: ["email"] },
 ];

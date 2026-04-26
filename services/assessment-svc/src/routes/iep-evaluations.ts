@@ -1,11 +1,49 @@
 import { FastifyInstance } from "fastify";
-import { eq, and, or, desc } from "drizzle-orm";
+import { eq, and, or, desc, isNull } from "drizzle-orm";
 import {
   iepEvaluations,
   learners,
   learnerTeachers,
+  users,
 } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
+
+const COMMS_URL = process.env.COMMS_SVC_URL || "http://localhost:3010";
+const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY
+  || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+const APP_URL = process.env.APP_URL || "http://localhost:5000";
+
+// Best-effort email dispatch — comms-svc failures must never block the
+// state-machine transition, so any throw is swallowed and logged upstream.
+async function bestEffortSendEmail(template: string, to: string, data: Record<string, unknown>) {
+  try {
+    await fetch(`${COMMS_URL}/api/comms/internal/iep-notify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
+      body: JSON.stringify({ template, to, data }),
+    });
+  } catch { /* swallow */ }
+}
+
+// Best-effort in-app notification (parent-only inbox). Mirrors the email
+// fan-out so a parent who has the in-app channel enabled gets the badge.
+async function bestEffortInAppNotify(payload: {
+  parentId: string;
+  learnerId: string;
+  category: string;
+  template: string;
+  title: string;
+  body?: string;
+  link?: string;
+}) {
+  try {
+    await fetch(`${COMMS_URL}/api/comms/internal/in-app-notify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
+      body: JSON.stringify(payload),
+    });
+  } catch { /* swallow */ }
+}
 
 interface AuthClaims {
   sub: string;
@@ -249,7 +287,9 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
     return row;
   });
 
-  // Submit (move from draft → submitted)
+  // Submit (move from draft → submitted). Fires parent + district-admin
+  // notifications exactly once per evaluation via the submit_notified_at
+  // latch — a retried submit cannot duplicate the alert.
   app.post("/api/iep/evaluations/:id/submit", async (req, reply) => {
     const claims = await authenticate(req, reply);
     if (!claims) return;
@@ -263,9 +303,34 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
     if (existing.status !== "draft") {
       return reply.code(409).send({ error: `Cannot submit from status '${existing.status}'` });
     }
+    // Status-guarded UPDATE so concurrent submit retries elect a single
+    // winner at the database — the read-then-write check above is a
+    // TOCTOU and cannot be relied on alone.
     const [row] = await db.update(iepEvaluations)
       .set({ status: "submitted", submittedAt: new Date(), updatedAt: new Date() })
-      .where(eq(iepEvaluations.id, id)).returning();
+      .where(and(eq(iepEvaluations.id, id), eq(iepEvaluations.status, "draft")))
+      .returning();
+    if (!row) {
+      return reply.code(409).send({ error: "Evaluation status changed; please reload" });
+    }
+    // Idempotent notification dispatch: claim the latch atomically and
+    // only fan out if the UPDATE wins. Concurrent submit retries see
+    // `notified.length === 0` and skip dispatch entirely.
+    void (async () => {
+      try {
+        const notified = await db.update(iepEvaluations)
+          .set({ submitNotifiedAt: new Date() })
+          .where(and(
+            eq(iepEvaluations.id, id),
+            isNull(iepEvaluations.submitNotifiedAt),
+          ))
+          .returning({ id: iepEvaluations.id });
+        if (notified.length === 0) return;
+        await dispatchSubmittedNotifications(db, row);
+      } catch (err) {
+        req.log.error({ err, evaluationId: id }, "evaluation-submit notify dispatch failed");
+      }
+    })();
     return row;
   });
 
@@ -341,6 +406,100 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
     if (updated.length === 0) {
       return reply.code(409).send({ error: "Evaluation status changed; please reload" });
     }
+    // Notify the parent that the eligibility decision has been recorded —
+    // exactly once per evaluation via the decision_notified_at latch.
+    void (async () => {
+      try {
+        const notified = await db.update(iepEvaluations)
+          .set({ decisionNotifiedAt: new Date() })
+          .where(and(
+            eq(iepEvaluations.id, id),
+            isNull(iepEvaluations.decisionNotifiedAt),
+          ))
+          .returning({ id: iepEvaluations.id });
+        if (notified.length === 0) return;
+        await dispatchDecidedNotifications(db, updated[0]);
+      } catch (err) {
+        req.log.error({ err, evaluationId: id }, "evaluation-decision notify dispatch failed");
+      }
+    })();
     return updated[0];
   });
+}
+
+// Fan out parent + district-admin notifications when an evaluation is
+// submitted. Best-effort: any individual recipient failure is logged
+// upstream and swallowed — comms-svc unavailability must never block a
+// teacher's workflow.
+async function dispatchSubmittedNotifications(db: any, evalRow: any) {
+  const [learner] = await db.select().from(learners).where(eq(learners.id, evalRow.learnerId));
+  if (!learner) return;
+  const [parent] = await db.select({
+    id: users.id, email: users.email, name: users.name,
+  }).from(users).where(eq(users.id, learner.parentId));
+  const learnerLink = `${APP_URL}/dashboard/parent/learner/${learner.id}`;
+  if (parent?.email) {
+    await bestEffortSendEmail("evaluation_submitted", parent.email, {
+      learnerName: learner.name,
+      submittedAt: evalRow.submittedAt,
+      url: learnerLink,
+    });
+  }
+  if (parent?.id) {
+    await bestEffortInAppNotify({
+      parentId: parent.id,
+      learnerId: learner.id,
+      category: "evaluations",
+      template: "evaluation_submitted",
+      title: `Evaluation submitted for ${learner.name}`,
+      body: "The evaluation team has submitted the eligibility evaluation. You will be notified again when a decision is recorded.",
+      link: learnerLink,
+    });
+  }
+  // District admin email digest. The dashboard tile aggregates submitted
+  // evaluations from /api/iep/evaluations/learner/:id; the email here is
+  // a courtesy ping so admins don't have to refresh the tile to notice.
+  const districtAdmins = await db.select({ email: users.email })
+    .from(users)
+    .where(and(eq(users.role, "DISTRICT_ADMIN"), eq(users.tenantId, evalRow.tenantId)));
+  for (const admin of districtAdmins) {
+    if (!admin.email) continue;
+    await bestEffortSendEmail("evaluation_submitted_admin", admin.email, {
+      learnerName: learner.name,
+      submittedAt: evalRow.submittedAt,
+      url: `${APP_URL}/dashboard/district`,
+    });
+  }
+}
+
+// Parent-only fan-out when the team records a decision. District admins
+// don't get a per-decision email — they pull from the existing dashboard
+// tile + can subscribe to /api/iep/evaluations/learner endpoints.
+async function dispatchDecidedNotifications(db: any, evalRow: any) {
+  const [learner] = await db.select().from(learners).where(eq(learners.id, evalRow.learnerId));
+  if (!learner) return;
+  const [parent] = await db.select({
+    id: users.id, email: users.email, name: users.name,
+  }).from(users).where(eq(users.id, learner.parentId));
+  const learnerLink = `${APP_URL}/dashboard/parent/learner/${learner.id}`;
+  const decision = evalRow.decisionEligible || "needs_more_data";
+  if (parent?.email) {
+    await bestEffortSendEmail("evaluation_decided", parent.email, {
+      learnerName: learner.name,
+      decision,
+      decidedAt: evalRow.decidedAt,
+      url: learnerLink,
+    });
+  }
+  if (parent?.id) {
+    await bestEffortInAppNotify({
+      parentId: parent.id,
+      learnerId: learner.id,
+      category: "evaluations",
+      template: "evaluation_decided",
+      title: `Eligibility decision recorded for ${learner.name}`,
+      body: `The team has recorded a decision: ${decision.replace(/_/g, " ")}.`,
+      link: learnerLink,
+    });
+  }
 }
