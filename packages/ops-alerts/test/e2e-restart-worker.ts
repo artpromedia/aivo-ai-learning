@@ -19,6 +19,7 @@ async function main() {
     outbox: new FileOpsAlertOutboxStore(outboxPath),
     autoFlushIntervalMs: 0,
     attemptTimeoutMs: 1500,
+    logger: { warn: () => {}, info: () => {}, error: () => {}, fatal: () => {} } as any,
   });
 
   if (action === "queue") {
@@ -28,12 +29,12 @@ async function main() {
       message: "should survive restart",
       context: { phase: "pre-kill" },
     });
-    console.log("queued");
+    process.stdout.write("queued\n");
     process.exit(0);
   }
   if (action === "drain") {
     const result = await client.flushOutbox();
-    console.log(JSON.stringify(result));
+    process.stdout.write(JSON.stringify(result) + "\n");
     process.exit(0);
   }
   console.error(`unknown action: ${action}`);

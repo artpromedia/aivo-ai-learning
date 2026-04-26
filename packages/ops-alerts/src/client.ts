@@ -169,13 +169,21 @@ export class OpsAlertClient {
     while (Date.now() < deadline) {
       const remainingBefore = await this.opts.outbox.size();
       if (remainingBefore === 0) break;
-      const result = await this.opts.outbox.drain(async (envelope) => {
-        if (Date.now() >= deadline) throw new Error("shutdown deadline reached");
-        const ok = await this.deliver({ ...envelope, attempt: envelope.attempt + 1 });
-        if (!ok) throw new Error("delivery failed");
-      });
-      drained += result.drained;
-      if (result.remaining === remainingBefore) {
+      let drainedThisPass = 0;
+      try {
+        const result = await this.opts.outbox.drain(async (envelope) => {
+          if (Date.now() >= deadline) throw new Error("shutdown deadline reached");
+          const ok = await this.deliver({ ...envelope, attempt: envelope.attempt + 1 });
+          if (!ok) throw new Error("delivery failed");
+        });
+        drainedThisPass = result.drained;
+      } catch {
+        // delivery failure leaves the head of the queue in place; the next
+        // loop iteration sees the same remainingBefore and exits below.
+      }
+      drained += drainedThisPass;
+      const remainingAfter = await this.opts.outbox.size();
+      if (remainingAfter === remainingBefore) {
         flushTimedOut = true;
         break;
       }

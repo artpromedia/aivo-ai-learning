@@ -1,13 +1,23 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { createLogger } from "@aivo/observability";
-import { loadChannels, REQUIRED_CHANNELS_IN_PROD, type ChannelConfig } from "./channels.js";
+import { loadChannels, publicView, REQUIRED_CHANNELS_IN_PROD, type ChannelConfig } from "./channels.js";
+import { fanOut, type ForwarderDeps, type OpsAlertEnvelope } from "./forwarders.js";
 
 const logger = createLogger("alerts-proxy-svc");
 const PORT = parseInt(process.env.ALERTS_PROXY_SVC_PORT || "3016", 10);
 const IS_PROD = process.env.NODE_ENV === "production";
 
-export async function buildServer(channels: ChannelConfig[] = loadChannels()) {
+export interface BuildServerOptions {
+  channels?: ChannelConfig[];
+  forwarderDeps?: ForwarderDeps;
+}
+
+export async function buildServer(opts: BuildServerOptions | ChannelConfig[] = {}) {
+  const options: BuildServerOptions = Array.isArray(opts) ? { channels: opts } : opts;
+  const channels = options.channels ?? loadChannels();
+  const forwarderDeps: ForwarderDeps = options.forwarderDeps ?? {};
+
   const app = Fastify({ logger: false });
   await app.register(cors, { origin: true, credentials: true });
 
@@ -19,6 +29,7 @@ export async function buildServer(channels: ChannelConfig[] = loadChannels()) {
       service: "alerts-proxy-svc",
       timestamp: new Date().toISOString(),
       channels: configured,
+      channelDetail: publicView(channels),
       missingRequired: missing,
       productionReady: missing.length === 0,
     };
@@ -29,16 +40,59 @@ export async function buildServer(channels: ChannelConfig[] = loadChannels()) {
     if (!body || typeof body !== "object") {
       return reply.code(400).send({ error: "missing body" });
     }
-    const enabled = channels.filter((c) => c.configured);
-    if (enabled.length === 0 && IS_PROD) {
-      logger.error({}, "ops_alert.proxy.no_channels_in_prod");
-      return reply.code(503).send({ error: "no channels configured" });
+    if (typeof body.service !== "string" || typeof body.title !== "string" || typeof body.message !== "string") {
+      return reply.code(400).send({ error: "service, title, and message are required" });
     }
+    const severity = body.severity === "critical" || body.severity === "warning" ? body.severity : "info";
+    const enabled = channels.filter((c) => c.configured);
+    if (enabled.length === 0) {
+      if (IS_PROD) {
+        logger.error({}, "ops_alert.proxy.no_channels_in_prod");
+        return reply.code(503).send({ error: "no channels configured" });
+      }
+      logger.warn({ service: body.service }, "ops_alert.proxy.no_channels_dev");
+      return { delivered: [], accepted: 0, results: [] };
+    }
+
+    const envelope: OpsAlertEnvelope = {
+      id: typeof body.id === "string" ? body.id : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      service: body.service,
+      severity,
+      title: body.title,
+      message: body.message,
+      context: typeof body.context === "object" && body.context !== null ? (body.context as Record<string, unknown>) : undefined,
+      occurredAt: typeof body.occurredAt === "string" ? body.occurredAt : new Date().toISOString(),
+      attempt: typeof body.attempt === "number" ? body.attempt : 0,
+    };
+
+    const results = await fanOut(envelope, channels, forwarderDeps);
+    const deliveredChannels = results.filter((r) => r.delivered).map((r) => r.channel);
+
     logger.info(
-      { service: body.service, severity: body.severity, channels: enabled.map((c) => c.id) },
+      {
+        service: envelope.service,
+        severity: envelope.severity,
+        attempted: enabled.map((c) => c.id),
+        delivered: deliveredChannels,
+        results: results.map(({ channel, delivered, status, error, skipped }) => ({
+          channel,
+          delivered,
+          status,
+          error,
+          skipped,
+        })),
+      },
       "ops_alert.proxy.page",
     );
-    return { delivered: enabled.map((c) => c.id), accepted: enabled.length };
+
+    const allFailed = deliveredChannels.length === 0 && results.some((r) => !r.skipped);
+    if (allFailed) {
+      return reply.code(502).send({
+        error: "all configured channels failed",
+        results,
+      });
+    }
+    return { delivered: deliveredChannels, accepted: results.length, results };
   });
 
   return app;

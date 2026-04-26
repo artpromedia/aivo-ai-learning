@@ -5,6 +5,12 @@ import Fastify from "fastify";
   import { createLogger } from "@aivo/observability";
   import { createDb } from "@aivo/db";
   import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
+  import {
+    startSafeCron,
+    createDrizzleAdvisoryLock,
+    createDrizzleLedger,
+  } from "@aivo/scheduling";
+  import { runConnectorSyncWatchdogOnce } from "./lib/connector-sync-watchdog.js";
   import { registerHealthRoutes } from "./routes/health.js";
   import { registerConnectorRoutes } from "./routes/connectors.js";
 
@@ -33,6 +39,14 @@ import Fastify from "fastify";
     registerConnectorRoutes(app, db);
 
     await bootstrapOpsAlerts({ service: "integrations-svc", app, beforeExit: () => app.close() });
+
+    startSafeCron({
+      jobName: "integrations.connector-sync-watchdog",
+      lock: createDrizzleAdvisoryLock(db as any),
+      ledger: createDrizzleLedger(db as any),
+      log: logger,
+      run: () => runConnectorSyncWatchdogOnce(db),
+    });
 
     await app.listen({ port: PORT, host: "0.0.0.0" });
     logger.info(`AIVO Integrations Service listening on port ${PORT}`);

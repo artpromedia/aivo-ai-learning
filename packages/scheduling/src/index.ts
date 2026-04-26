@@ -279,6 +279,18 @@ export const JOB_REGISTRY: JobRegistryEntry[] = [
     periodMs: DEFAULT_PERIOD_MS,
   },
   {
+    jobName: "engagement.weekly-rollup",
+    service: "engagement-svc",
+    description: "Aggregate the previous week's XP into the per-learner rollup table.",
+    periodMs: 7 * DEFAULT_PERIOD_MS,
+  },
+  {
+    jobName: "integrations.connector-sync-watchdog",
+    service: "integrations-svc",
+    description: "Flag integration_connections rows whose external sync has gone stale.",
+    periodMs: DEFAULT_PERIOD_MS,
+  },
+  {
     jobName: "identity.session-housekeeping",
     service: "identity-svc",
     description: "Expire stale sessions and refresh-token rows.",
