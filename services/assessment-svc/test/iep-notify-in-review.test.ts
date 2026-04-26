@@ -18,19 +18,19 @@ const SKIP = !process.env.DATABASE_URL;
 
 async function bootstrap() {
   const Fastify = (await import("fastify")).default;
-  const { createDb } = await import("@aivo/db");
+  const { provisionTestDatabase } = await import("@aivo/db");
   const { registerIepCollabRoutes } = await import("../src/routes/iep-collab.js");
-  const db = createDb(process.env.DATABASE_URL!);
+  const { db, teardown: closeDb } = await provisionTestDatabase();
   const app = Fastify({ logger: false });
   (app as any).db = db;
   await registerIepCollabRoutes(app);
   await app.ready();
-  return { app, db };
+  return { app, db, closeDb };
 }
 
-async function teardown(app: any, db: any) {
+async function teardown(app: any, closeDb: () => Promise<void>) {
   await app.close();
-  try { await (db as any).$client?.end?.({ timeout: 2 }); } catch { /* ignore */ }
+  await closeDb();
 }
 
 interface Fixture {
@@ -98,7 +98,7 @@ async function tokenFor(sub: string, role: string, tenantId: string): Promise<st
 
 test("notify-in-review: concurrent calls dispatch parent notification exactly once",
   { skip: SKIP }, async () => {
-    const { app, db } = await bootstrap();
+    const { app, db, closeDb } = await bootstrap();
     const f = await seed(db);
     // Stub global fetch (used by bestEffortSendEmail) to count outbound calls
     // to comms-svc/internal/iep-notify so we can assert dedup at the wire.
@@ -134,6 +134,6 @@ test("notify-in-review: concurrent calls dispatch parent notification exactly on
     } finally {
       globalThis.fetch = originalFetch;
       await cleanup(db, f);
-      await teardown(app, db);
+      await teardown(app, closeDb);
     }
   });

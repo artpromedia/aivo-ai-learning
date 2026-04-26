@@ -10,3 +10,4 @@ export function createDb(url: string) {
 export type Database = ReturnType<typeof createDb>;
 export * from "./schema/index.js";
 export * from "./audit-append.js";
+export * from "./test-helpers.js";
