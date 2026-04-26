@@ -1684,7 +1684,12 @@
     "transcription_failed": "Não consegui transcrever. Tente novamente.",
     "audio_capture_error": "Ocorreu um problema com o microfone.",
     "voice_answer_group": "Resposta por voz",
-    "heard_answer": "Ouvi: {text}"
+    "heard_answer": "Ouvi: {text}",
+    "not_quite": "Quase lá — tente novamente.",
+    "try_again": "Tentar novamente",
+    "skip": "Pular",
+    "answer_correct": "Correto!",
+    "answer_not_quite": "Quase. Ouvi: {text}"
   },
   "curriculum": {
     "title": "Foco curricular semanal",

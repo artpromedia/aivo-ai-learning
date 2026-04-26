@@ -1684,7 +1684,12 @@
     "transcription_failed": "전사에 실패했어요. 다시 시도해 주세요.",
     "audio_capture_error": "마이크에 문제가 생겼어요.",
     "voice_answer_group": "음성 답변",
-    "heard_answer": "들은 내용: {text}"
+    "heard_answer": "들은 내용: {text}",
+    "not_quite": "아쉬워요 — 다시 해 보세요.",
+    "try_again": "다시 시도",
+    "skip": "건너뛰기",
+    "answer_correct": "정답!",
+    "answer_not_quite": "아쉬워요. 들은 내용: {text}"
   },
   "curriculum": {
     "title": "이번 주 커리큘럼 포커스",

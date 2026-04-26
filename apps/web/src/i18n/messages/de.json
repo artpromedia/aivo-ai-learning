@@ -1684,7 +1684,12 @@
     "transcription_failed": "Konnte nicht transkribiert werden. Versuch es erneut.",
     "audio_capture_error": "Mit dem Mikrofon ist etwas schiefgelaufen.",
     "voice_answer_group": "Sprachantwort",
-    "heard_answer": "Gehört: {text}"
+    "heard_answer": "Gehört: {text}",
+    "not_quite": "Fast — versuch es noch einmal.",
+    "try_again": "Nochmal versuchen",
+    "skip": "Überspringen",
+    "answer_correct": "Richtig!",
+    "answer_not_quite": "Fast. Ich habe gehört: {text}"
   },
   "curriculum": {
     "title": "Wochen-Lehrplanfokus",

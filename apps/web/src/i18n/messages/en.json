@@ -1684,7 +1684,12 @@
     "transcription_failed": "Couldn't transcribe that. Try again.",
     "audio_capture_error": "Something went wrong with the microphone.",
     "voice_answer_group": "Voice answer",
-    "heard_answer": "Heard: {text}"
+    "heard_answer": "Heard: {text}",
+    "not_quite": "Not quite — try once more.",
+    "try_again": "Try again",
+    "skip": "Skip",
+    "answer_correct": "Correct!",
+    "answer_not_quite": "Not quite. I heard: {text}"
   },
   "curriculum": {
     "title": "Weekly curriculum focus",

@@ -1684,7 +1684,12 @@
     "transcription_failed": "文字起こしできませんでした。もう一度試してね。",
     "audio_capture_error": "マイクで問題が発生しました。",
     "voice_answer_group": "音声回答",
-    "heard_answer": "聞いた内容：{text}"
+    "heard_answer": "聞いた内容：{text}",
+    "not_quite": "おしい！もう一度ためしてね。",
+    "try_again": "もう一度",
+    "skip": "スキップ",
+    "answer_correct": "せいかい！",
+    "answer_not_quite": "おしい。聞いた内容：{text}"
   },
   "curriculum": {
     "title": "今週のカリキュラム重点",

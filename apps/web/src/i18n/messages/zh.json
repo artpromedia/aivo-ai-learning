@@ -1684,7 +1684,12 @@
     "transcription_failed": "无法转录，请再试一次。",
     "audio_capture_error": "麦克风出了点问题。",
     "voice_answer_group": "语音回答",
-    "heard_answer": "听到：{text}"
+    "heard_answer": "听到：{text}",
+    "not_quite": "差一点——再试一次。",
+    "try_again": "再试一次",
+    "skip": "跳过",
+    "answer_correct": "正确！",
+    "answer_not_quite": "差一点。我听到：{text}"
   },
   "curriculum": {
     "title": "本周课程重点",
