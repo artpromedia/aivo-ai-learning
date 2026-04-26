@@ -6,9 +6,18 @@ import postgres from "postgres";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
 import { bootstrapOpsAlerts, postgresJsOutboxClient } from "@aivo/ops-alerts";
+import {
+  startSafeCron,
+  createDrizzleAdvisoryLock,
+  createDrizzleLedger,
+} from "@aivo/scheduling";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerPlanRoutes } from "./routes/plans.js";
 import { registerWebhookRoutes } from "./routes/webhooks.js";
+import { registerDailyJobsRoutes } from "./routes/daily-jobs.js";
+import { registerCouponRoutes } from "./routes/coupons.js";
+import { registerInternalJobRoutes } from "./routes/internal-jobs.js";
+import { runExpiryBatchForScheduler } from "./lib/expiryReminderService.js";
 
 const logger = createLogger("billing-svc");
 const PORT = parseInt(process.env.BILLING_SVC_PORT || "3009", 10);
@@ -31,9 +40,24 @@ async function start() {
   });
   await app.register(swaggerUI, { routePrefix: "/docs" });
 
+  const lock = createDrizzleAdvisoryLock(db as any);
+  const ledger = createDrizzleLedger(db as any);
+  const expiryHandle = startSafeCron({
+    jobName: "billing.daily-expiry-reminders",
+    ledger,
+    lock,
+    log: logger,
+    run: () => runExpiryBatchForScheduler(db),
+  });
+
   registerHealthRoutes(app);
   registerPlanRoutes(app, db);
   registerWebhookRoutes(app);
+  registerDailyJobsRoutes(app, db);
+  registerCouponRoutes(app, db);
+  registerInternalJobRoutes(app, {
+    "billing.daily-expiry-reminders": expiryHandle,
+  });
 
   let sharedSql: ReturnType<typeof postgres> | null = null;
   const opsAlerts = await bootstrapOpsAlerts({

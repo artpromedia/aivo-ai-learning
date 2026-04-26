@@ -187,6 +187,21 @@ async function start() {
   await bootstrapOpsAlerts({ service: "identity-svc", app, beforeExit: () => app.close() });
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Identity service listening on port ${PORT}`);
+  // Sprint 7: fleet-wide daily housekeeping via the shared scheduler.
+  try {
+    const { startSafeCron, createDrizzleAdvisoryLock, createDrizzleLedger } = await import("@aivo/scheduling");
+    const { runSessionHousekeepingOnce } = await import("./lib/session-housekeeping.js");
+    const db = createDb(process.env.DATABASE_URL ?? "");
+    startSafeCron({
+      jobName: "identity.session-housekeeping",
+      lock: createDrizzleAdvisoryLock(db as any),
+      ledger: createDrizzleLedger(db as any),
+      log: logger,
+      run: () => runSessionHousekeepingOnce(db),
+    });
+  } catch (e) {
+    logger.error(e, "failed to start session-housekeeping cron");
+  }
 }
 
 // Only auto-start when invoked as the entry module (not when imported

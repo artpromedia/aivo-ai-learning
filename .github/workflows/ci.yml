@@ -60,6 +60,60 @@ jobs:
       - name: Build all packages and services
         run: pnpm build
 
+  background-jobs-tests:
+    name: Background Jobs & Scheduler Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint-and-typecheck
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: aivo_test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm --filter @aivo/db --filter @aivo/security --filter @aivo/observability --filter @aivo/scheduling --filter @aivo/ops-alert build
+
+      - name: Run scheduling unit tests
+        run: pnpm --filter @aivo/scheduling test
+
+      - name: Run ops-alert unit tests
+        run: pnpm --filter @aivo/ops-alert test
+
+      - name: Run admin-svc tests (incl. crash-recovery + jobs endpoint)
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/aivo_test_db
+        run: pnpm --filter @aivo/admin-svc test
+
+      - name: Run billing-svc tests (daily-jobs + coupons + expiry-reminder)
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/aivo_test_db
+        run: pnpm --filter @aivo/billing-svc test
+
+      - name: Run comms-svc tests (email-events webhook)
+        run: pnpm --filter @aivo/comms-svc test
+
   brain-svc:
     name: Brain Service (Python)
     runs-on: ubuntu-latest
