@@ -7,10 +7,26 @@ ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mfa_failed_attempts" integer DEFAU
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mfa_failed_last_at" timestamp;--> statement-breakpoint
 
 ALTER TABLE "mfa_codes" ADD COLUMN IF NOT EXISTS "code_hash" varchar(64);--> statement-breakpoint
-UPDATE "mfa_codes" SET "code_hash" = encode(sha256("code"::bytea), 'hex') WHERE "code_hash" IS NULL AND "code" IS NOT NULL;--> statement-breakpoint
-ALTER TABLE "mfa_codes" ALTER COLUMN "code" DROP NOT NULL;--> statement-breakpoint
-DELETE FROM "mfa_codes" WHERE "code_hash" IS NULL;--> statement-breakpoint
-ALTER TABLE "mfa_codes" ALTER COLUMN "code_hash" SET NOT NULL;--> statement-breakpoint
+-- Backfill + cleanup gated on the legacy "code" column still existing.
+-- A dev DB bootstrapped via `db:push` will already be in the post-drop
+-- shape; running these statements unconditionally would crash with
+-- `column "code" does not exist`. The guard makes db:migrate idempotent.
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'mfa_codes' AND column_name = 'code'
+  ) THEN
+    UPDATE "mfa_codes" SET "code_hash" = encode(sha256("code"::bytea), 'hex') WHERE "code_hash" IS NULL AND "code" IS NOT NULL;
+    EXECUTE 'ALTER TABLE "mfa_codes" ALTER COLUMN "code" DROP NOT NULL';
+    DELETE FROM "mfa_codes" WHERE "code_hash" IS NULL;
+  END IF;
+END $$;--> statement-breakpoint
+-- After the (possibly skipped) backfill, code_hash is the source of
+-- truth and must be NOT NULL. Wrap in DO so re-running on a DB where
+-- the constraint already exists is a no-op.
+DO $$ BEGIN
+  ALTER TABLE "mfa_codes" ALTER COLUMN "code_hash" SET NOT NULL;
+EXCEPTION WHEN others THEN NULL; END $$;--> statement-breakpoint
 ALTER TABLE "mfa_codes" DROP COLUMN IF EXISTS "code";--> statement-breakpoint
 
 CREATE TABLE IF NOT EXISTS "webauthn_credentials" (
