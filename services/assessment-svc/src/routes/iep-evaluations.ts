@@ -45,6 +45,15 @@ async function bestEffortInAppNotify(payload: {
   } catch { /* swallow */ }
 }
 
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`assessment-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const AI_SVC_URL = requireUrl("AI_SVC_URL", "http://localhost:3004");
+
 interface AuthClaims {
   sub: string;
   tenantId: string;
@@ -280,7 +289,6 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
       return reply.code(403).send({ error: "Access denied" });
     }
 
-    const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
     let suggestion: any = null;
     try {
       const aiRes = await fetch(`${AI_SVC_URL}/api/ai/eligibility-suggest`, {

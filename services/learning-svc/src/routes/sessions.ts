@@ -5,7 +5,14 @@ import { generateLessonContent, getSubjectForTutor, fetchPersonalizedTopics } fr
 import { computeLessonXp, computeCompletionQuality, type LessonSignals } from "../services/scoring.js";
 import { resolveTenantId, requireLearnerAccess } from "../lib/tenant.js";
 
-const BRAIN_SVC_URL = process.env.BRAIN_SVC_URL || "http://localhost:3002";
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`learning-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const BRAIN_SVC_URL = requireUrl("BRAIN_SVC_URL", "http://localhost:3002");
 
 async function fetchBrainContext(learnerId: string): Promise<Record<string, unknown>> {
   try {

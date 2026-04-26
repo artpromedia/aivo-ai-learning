@@ -41,9 +41,16 @@ async function requirePlatformAdmin(req: any, reply: any) {
  * store gates both services — preventing replay of a step-up token here
  * after it was already consumed there (or vice versa).
  */
-const IDENTITY_URL = process.env.IDENTITY_SVC_URL || "http://localhost:3001";
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`admin-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const IDENTITY_URL = requireUrl("IDENTITY_SVC_URL", "http://localhost:3001");
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY
-  || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+  || (IS_PROD ? "" : "aivo-internal-dev-key");
 
 async function requireDataExportStepUp(req: any, reply: any) {
   // Always delegate to identity-svc — including the missing-token case —

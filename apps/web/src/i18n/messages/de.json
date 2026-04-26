@@ -64,7 +64,19 @@
     "wait": "Warten",
     "logout": "Abmelden",
     "settings": "Einstellungen",
-    "loading_detail": "Details werden geladen…"
+    "loading_detail": "Details werden geladen…",
+    "avatar_section_title": "Profilbild",
+    "avatar_change": "Foto ändern",
+    "avatar_remove": "Foto entfernen",
+    "avatar_save": "Foto speichern",
+    "avatar_cancel": "Abbrechen",
+    "avatar_uploading": "Wird hochgeladen …",
+    "avatar_hint": "JPEG, PNG oder WebP. Bis zu 5 MB. Quadratische Bilder funktionieren am besten.",
+    "avatar_invalid_type": "Wähle ein JPEG-, PNG- oder WebP-Bild.",
+    "avatar_too_large": "Bild ist größer als 5 MB.",
+    "avatar_upload_failed": "Foto konnte nicht hochgeladen werden. Bitte erneut versuchen.",
+    "avatar_remove_failed": "Foto konnte nicht entfernt werden. Bitte erneut versuchen.",
+    "avatar_preview_alt": "Vorschau des neuen Profilbilds"
   },
   "auth": {
     "welcome_back": "Willkommen zurück",

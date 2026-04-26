@@ -3,7 +3,15 @@ import { eq, and, desc } from "drizzle-orm";
 import { lessonPlans } from "@aivo/db";
 import { authenticateRequest, requireRole } from "../auth.js";
 
-const AI_SVC_URL = process.env.AI_SVC_URL || "http://localhost:3004";
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`engagement-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const AI_SVC_URL = requireUrl("AI_SVC_URL", "http://localhost:3004");
+const BRAIN_SVC_URL = requireUrl("BRAIN_SVC_URL", "http://localhost:3002");
 
 export function registerLessonPlanRoutes(
   app: FastifyInstance,
@@ -72,7 +80,7 @@ export function registerLessonPlanRoutes(
 
     let brainData = null;
     try {
-      const brainRes = await fetch(`http://localhost:3002/api/brain/${body.learnerId}`, {
+      const brainRes = await fetch(`${BRAIN_SVC_URL}/api/brain/${body.learnerId}`, {
         headers: { Authorization: request.headers.authorization || "" },
       });
       if (brainRes.ok) brainData = await brainRes.json();

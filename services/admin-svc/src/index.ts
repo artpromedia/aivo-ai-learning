@@ -31,7 +31,9 @@ import Fastify from "fastify";
     await app.register(swagger, {
       openapi: {
         info: { title: "AIVO Admin Service", version: "1.0.0" },
-        servers: [{ url: `http://localhost:${PORT}` }],
+        servers: process.env.SWAGGER_SERVER_URL
+          ? [{ url: process.env.SWAGGER_SERVER_URL }]
+          : (process.env.NODE_ENV === "production" ? [] : [{ url: `http://localhost:${PORT}` }]),
         components: {
           securitySchemes: { bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
         },

@@ -32,10 +32,17 @@ interface AuthClaims {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const isUuid = (v: unknown): v is string => typeof v === "string" && UUID_RE.test(v);
 
-const COMMS_URL = process.env.COMMS_SVC_URL || "http://localhost:3010";
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`assessment-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const COMMS_URL = requireUrl("COMMS_SVC_URL", "http://localhost:3010");
+const APP_URL = requireUrl("APP_URL", "http://localhost:5000");
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY
-  || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
-const APP_URL = process.env.APP_URL || "http://localhost:5000";
+  || (IS_PROD ? "" : "aivo-internal-dev-key");
 
 const NOTE_VISIBILITIES = ["parent", "team", "internal"] as const;
 type NoteVisibility = typeof NOTE_VISIBILITIES[number];

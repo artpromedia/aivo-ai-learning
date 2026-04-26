@@ -188,8 +188,15 @@ async function verifyGoogleToken(idToken: string): Promise<{ email: string; name
   }
 }
 
-const COMMS_URL = process.env.COMMS_SVC_URL || process.env.COMMS_SERVICE_URL || "http://localhost:3003";
-const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+const IS_PROD_AUTH = process.env.NODE_ENV === "production";
+function requireCommsUrl(): string {
+  const v = process.env.COMMS_SVC_URL || process.env.COMMS_SERVICE_URL;
+  if (v) return v;
+  if (IS_PROD_AUTH) throw new Error("identity-svc: COMMS_SVC_URL must be set in production");
+  return "http://localhost:3003";
+}
+const COMMS_URL = requireCommsUrl();
+const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY || (IS_PROD_AUTH ? "" : "aivo-internal-dev-key");
 
 function generateMfaCode(): string {
   return crypto.randomInt(100000, 999999).toString();

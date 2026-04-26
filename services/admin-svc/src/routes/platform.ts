@@ -17,7 +17,14 @@ import { verifyJWT } from "@aivo/security";
 import { desc, eq } from "drizzle-orm";
 import { logAuditEvent } from "./audit.js";
 
-const IDENTITY_URL = process.env.IDENTITY_SVC_URL || "http://localhost:3001";
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`admin-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const IDENTITY_URL = requireUrl("IDENTITY_SVC_URL", "http://localhost:3001");
 
 async function requireAdmin(req: any, reply: any) {
   const auth = req.headers.authorization;

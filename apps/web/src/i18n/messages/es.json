@@ -64,7 +64,19 @@
     "wait": "Espera",
     "logout": "Cerrar sesión",
     "settings": "Configuración",
-    "loading_detail": "Cargando detalle…"
+    "loading_detail": "Cargando detalle…",
+    "avatar_section_title": "Foto de perfil",
+    "avatar_change": "Cambiar foto",
+    "avatar_remove": "Quitar foto",
+    "avatar_save": "Guardar foto",
+    "avatar_cancel": "Cancelar",
+    "avatar_uploading": "Subiendo…",
+    "avatar_hint": "JPEG, PNG o WebP. Hasta 5 MB. Las imágenes cuadradas funcionan mejor.",
+    "avatar_invalid_type": "Elige una imagen JPEG, PNG o WebP.",
+    "avatar_too_large": "La imagen supera los 5 MB.",
+    "avatar_upload_failed": "No se pudo subir la foto. Inténtalo de nuevo.",
+    "avatar_remove_failed": "No se pudo quitar la foto. Inténtalo de nuevo.",
+    "avatar_preview_alt": "Vista previa de la nueva foto de perfil"
   },
   "auth": {
     "welcome_back": "Bienvenido de nuevo",

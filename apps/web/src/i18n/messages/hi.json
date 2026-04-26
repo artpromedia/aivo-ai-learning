@@ -64,7 +64,19 @@
     "wait": "प्रतीक्षा",
     "logout": "लॉग आउट",
     "settings": "सेटिंग्स",
-    "loading_detail": "विवरण लोड हो रहा है…"
+    "loading_detail": "विवरण लोड हो रहा है…",
+    "avatar_section_title": "प्रोफ़ाइल चित्र",
+    "avatar_change": "फ़ोटो बदलें",
+    "avatar_remove": "फ़ोटो हटाएँ",
+    "avatar_save": "फ़ोटो सहेजें",
+    "avatar_cancel": "रद्द करें",
+    "avatar_uploading": "अपलोड हो रहा है…",
+    "avatar_hint": "JPEG, PNG या WebP। 5 MB तक। चौकोर छवियाँ सबसे अच्छी रहती हैं।",
+    "avatar_invalid_type": "JPEG, PNG या WebP छवि चुनें।",
+    "avatar_too_large": "छवि 5 MB से बड़ी है।",
+    "avatar_upload_failed": "फ़ोटो अपलोड नहीं हो सका। पुनः प्रयास करें।",
+    "avatar_remove_failed": "फ़ोटो हटाया नहीं जा सका। पुनः प्रयास करें।",
+    "avatar_preview_alt": "नई प्रोफ़ाइल फ़ोटो पूर्वावलोकन"
   },
   "auth": {
     "welcome_back": "वापस स्वागत है",

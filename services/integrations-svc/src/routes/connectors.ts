@@ -3,6 +3,15 @@ import { verifyJWT } from "@aivo/security";
 import { eq, and, desc } from "drizzle-orm";
 import { integrationConnections, integrationSyncLogs, integrationRosterMappings } from "@aivo/db";
 
+const IS_PROD = process.env.NODE_ENV === "production";
+function requireUrl(name: string, devDefault: string): string {
+  const v = process.env[name];
+  if (v) return v;
+  if (IS_PROD) throw new Error(`integrations-svc: ${name} must be set in production`);
+  return devDefault;
+}
+const APP_URL = requireUrl("APP_URL", "http://localhost:5000");
+
 export const CONNECTORS = [
   {
     id: "google_classroom",
@@ -223,7 +232,7 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
     const state = Buffer.from(JSON.stringify({ tenantId, connectorId })).toString("base64url");
     const params = new URLSearchParams({
       client_id: config.clientId,
-      redirect_uri: redirectUri || `${process.env.APP_URL || "http://localhost:5000"}/api/integrations/oauth/callback`,
+      redirect_uri: redirectUri || `${APP_URL}/api/integrations/oauth/callback`,
       response_type: "code",
       scope: config.scopes.join(" "),
       state,
@@ -250,7 +259,7 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
           code,
           client_id: config.clientId,
           client_secret: config.clientSecret,
-          redirect_uri: `${process.env.APP_URL || "http://localhost:5000"}/api/integrations/oauth/callback`,
+          redirect_uri: `${APP_URL}/api/integrations/oauth/callback`,
           grant_type: "authorization_code",
         }),
       });
