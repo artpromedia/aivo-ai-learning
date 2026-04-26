@@ -19,6 +19,25 @@ interface Incident {
   resolvedAt?: string;
 }
 
+interface OpsAlertsOutboxTile {
+  service: string;
+  state: "healthy" | "warning" | "unreachable";
+  storeKind: string | null;
+  depth: number;
+  enqueuedTotal: number;
+  drainedTotal: number;
+  droppedTotal: number;
+  firstNonZeroAt: string | null;
+  lastShutdown: { drained: number; lost: number; flushTimedOut: boolean; finishedAt: string } | null;
+  shutdownStale: boolean;
+  lastAutoFlushAt: string | null;
+  autoFlushTicksTotal: number;
+  autoFlushDrainedTotal: number;
+  autoFlushErrorsTotal: number;
+  fetchedAt: string;
+  error?: string;
+}
+
 const ALL_SERVICES = [
   { name: "identity-svc", port: 3001, desc: "Authentication, users, RBAC" },
   { name: "brain-svc", port: 3002, desc: "Brain clone engine (Python)" },
@@ -44,6 +63,7 @@ export default function AdminServicesPage() {
   const [serviceStatuses, setServiceStatuses] = useState<ServiceStatus[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [uptime, setUptime] = useState<any>(null);
+  const [outboxTiles, setOutboxTiles] = useState<OpsAlertsOutboxTile[]>([]);
   const [loading, setLoading] = useState(true);
   const [overallStatus, setOverallStatus] = useState("checking");
   const [showIncidentForm, setShowIncidentForm] = useState(false);
@@ -56,7 +76,8 @@ export default function AdminServicesPage() {
       fetch("/api/status/overview").then((r) => r.ok ? r.json() : null).catch(() => null),
       fetch("/api/status/incidents").then((r) => r.ok ? r.json() : []).catch(() => []),
       fetch("/api/status/uptime").then((r) => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([overview, incidentData, uptimeData]) => {
+      fetch("/api/status/ops-alerts-outbox").then((r) => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([overview, incidentData, uptimeData, outboxData]) => {
       if (overview?.services) {
         setServiceStatuses(overview.services.map((s: any) => ({
           name: s.name,
@@ -68,6 +89,7 @@ export default function AdminServicesPage() {
       const incArr = incidentData?.incidents || (Array.isArray(incidentData) ? incidentData : []);
       setIncidents(incArr);
       setUptime(uptimeData);
+      if (outboxData?.tiles) setOutboxTiles(outboxData.tiles);
     }).finally(() => setLoading(false));
 
     const interval = setInterval(() => {
@@ -81,6 +103,10 @@ export default function AdminServicesPage() {
             })));
             setOverallStatus(data.overall === "major_outage" ? "outage" : data.overall || "checking");
           }
+        }).catch(() => {});
+      fetch("/api/status/ops-alerts-outbox").then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (data?.tiles) setOutboxTiles(data.tiles);
         }).catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
@@ -197,6 +223,109 @@ export default function AdminServicesPage() {
                     }`}>
                       {status}
                     </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="vi-card overflow-hidden">
+        <div className="p-5 border-b vi-border">
+          <h2 className="font-heading font-bold text-lg vi-text">On-call Alert Queue</h2>
+          <p className="text-xs vi-text-muted mt-1">
+            Per-service ops-alerts outbox depth. Warning state escalates to PagerDuty after 3 consecutive checks.
+          </p>
+        </div>
+        {outboxTiles.length === 0 ? (
+          <div className="p-8 text-center vi-text-muted text-sm">No services reporting. Check OPS_ALERT_OUTBOX_SOURCES.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 p-5">
+            {outboxTiles.map((t) => {
+              const stateColor =
+                t.state === "healthy"
+                  ? "bg-[hsl(var(--visual-science)/0.10)] border-[hsl(var(--visual-science)/0.30)]"
+                  : t.state === "warning"
+                  ? "bg-[hsl(var(--visual-sel)/0.12)] border-[hsl(var(--visual-sel)/0.40)]"
+                  : "bg-[hsl(var(--visual-math)/0.08)] border-[hsl(var(--visual-math)/0.30)]";
+              const badgeColor =
+                t.state === "healthy"
+                  ? "bg-[hsl(var(--visual-science)/0.18)] text-[hsl(var(--visual-science))]"
+                  : t.state === "warning"
+                  ? "bg-[hsl(var(--visual-sel)/0.22)] text-[hsl(var(--visual-sel))]"
+                  : "bg-[hsl(var(--visual-math)/0.18)] text-[hsl(var(--visual-math))]";
+              const ls = t.lastShutdown;
+              return (
+                <div key={t.service} className={`rounded-xl border p-4 ${stateColor}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-semibold vi-text">{t.service}</p>
+                    <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold uppercase ${badgeColor}`}>
+                      {t.state}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 text-center">
+                    <div>
+                      <p className="text-2xl font-bold vi-text">{t.depth}</p>
+                      <p className="text-[10px] vi-text-muted">depth</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold vi-text">{t.enqueuedTotal}</p>
+                      <p className="text-[10px] vi-text-muted">queued</p>
+                    </div>
+                    <div>
+                      <p className={`text-2xl font-bold ${t.droppedTotal > 0 ? "text-[hsl(var(--visual-math))]" : "vi-text"}`}>
+                        {t.droppedTotal}
+                      </p>
+                      <p className="text-[10px] vi-text-muted">dropped</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-current/10 text-[11px] vi-text-muted">
+                    <div className="flex justify-between">
+                      <span>store</span>
+                      <span className="font-medium vi-text">{t.storeKind ?? "—"}</span>
+                    </div>
+                    {t.firstNonZeroAt && (
+                      <div className="flex justify-between">
+                        <span>first non-zero</span>
+                        <span className="font-medium vi-text">{new Date(t.firstNonZeroAt).toLocaleTimeString()}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span>last deploy drain</span>
+                      {ls ? (
+                        <span className={`font-medium ${t.shutdownStale ? "vi-text-muted italic" : "vi-text"}`}>
+                          drained {ls.drained} / lost {ls.lost}
+                          {ls.flushTimedOut ? " (timeout)" : ""}
+                        </span>
+                      ) : (
+                        <span className="italic vi-text-muted">none</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between">
+                      <span>last auto-flush</span>
+                      {t.lastAutoFlushAt ? (
+                        <span className={`font-medium ${t.autoFlushErrorsTotal > 0 ? "text-[hsl(var(--visual-sel))]" : "vi-text"}`}>
+                          {new Date(t.lastAutoFlushAt).toLocaleTimeString()} ·{" "}
+                          {t.autoFlushDrainedTotal} drained
+                          {t.autoFlushErrorsTotal > 0 ? ` · ${t.autoFlushErrorsTotal} err` : ""}
+                        </span>
+                      ) : (
+                        <span className="italic vi-text-muted">never</span>
+                      )}
+                    </div>
+                    {ls && (
+                      <div className="flex justify-between">
+                        <span>at</span>
+                        <span className={`font-medium ${t.shutdownStale ? "italic text-[hsl(var(--visual-math))]" : "vi-text"}`}>
+                          {new Date(ls.finishedAt).toLocaleString()}
+                          {t.shutdownStale ? " (stale)" : ""}
+                        </span>
+                      </div>
+                    )}
+                    {t.error && (
+                      <div className="mt-1 text-[hsl(var(--visual-math))] italic">{t.error}</div>
+                    )}
                   </div>
                 </div>
               );

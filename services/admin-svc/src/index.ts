@@ -4,6 +4,7 @@ import Fastify from "fastify";
   import swaggerUI from "@fastify/swagger-ui";
   import { createLogger } from "@aivo/observability";
   import { createDb } from "@aivo/db";
+  import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
   import { logAdminEnterpriseFlags, registerAdminIpAllowlist } from "@aivo/security";
   import { registerHealthRoutes } from "./routes/health.js";
   import { registerPlatformRoutes } from "./routes/platform.js";
@@ -50,6 +51,8 @@ import Fastify from "fastify";
     registerApiKeyRoutes(app, db);
     registerScimTokenRoutes(app, db);
     registerEvidenceRoutes(app, db);
+
+    await bootstrapOpsAlerts({ service: "admin-svc", app, beforeExit: () => app.close() });
 
     await app.listen({ port: PORT, host: "0.0.0.0" });
     logger.info(`AIVO Admin Service listening on port ${PORT}`);

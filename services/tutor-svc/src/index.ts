@@ -4,6 +4,7 @@ import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
+import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerStoreRoutes } from "./routes/store.js";
 import { registerChatRoutes } from "./routes/chat.js";
@@ -44,6 +45,8 @@ async function start() {
   registerHomeworkRoutes(app, db);
   registerCurriculumRoutes(app, db);
   await registerSpeechBuddyRoutes(app);
+
+  await bootstrapOpsAlerts({ service: "tutor-svc", app, beforeExit: () => app.close() });
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Tutor service listening on port ${PORT}`);

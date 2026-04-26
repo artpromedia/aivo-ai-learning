@@ -4,6 +4,7 @@ import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
+import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerParentAssessmentRoutes } from "./routes/parent-assessment.js";
 import { registerAssessmentRoutes } from "./routes/assessments.js";
@@ -46,6 +47,8 @@ async function start() {
   await registerIepUpdatesRoutes(app);
   await registerLearnerBaselineRoutes(app);
   await registerSensoryProfileRoutes(app);
+
+  await bootstrapOpsAlerts({ service: "assessment-svc", app, beforeExit: () => app.close() });
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Assessment service listening on port ${PORT}`);
