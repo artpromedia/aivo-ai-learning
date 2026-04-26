@@ -116,6 +116,7 @@ jobs:
             identity-svc assessment-svc brain-svc ai-svc learning-svc
             tutor-svc family-svc engagement-svc billing-svc comms-svc
             i18n-svc integrations-svc admin-svc status-page-svc research-svc
+            alerts-proxy-svc
           )
 
           PYTHON_SERVICES=(brain-svc ai-svc)
@@ -177,3 +178,25 @@ jobs:
           kubectl -n ${{ env.NAMESPACE }} get deployments
           echo ""
           echo "═══ Production deployment complete ═══"
+
+      # Deploy gate (#174): the alerts-proxy must report Slack/PagerDuty/Opsgenie
+      # all configured before traffic is allowed to depend on it. We port-forward
+      # to the just-rolled service and exercise /api/alerts/health via the
+      # smoke-test script. A miss here exits non-zero and fails the deploy.
+      - name: alerts-proxy deploy gate
+        run: |
+          set -euo pipefail
+          NS="${{ env.NAMESPACE }}"
+          kubectl -n "$NS" rollout status deployment/alerts-proxy-svc --timeout=2m
+          kubectl -n "$NS" port-forward svc/alerts-proxy-svc 13016:3016 &
+          PF_PID=$!
+          trap "kill $PF_PID || true" EXIT
+          # Wait for port-forward to be ready before smoke test.
+          for _ in $(seq 1 20); do
+            if curl -fs --max-time 2 "http://127.0.0.1:13016/api/alerts/health" >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          SMOKE_TARGET_URL="http://127.0.0.1:13016" SMOKE_RETRIES="3" \
+            pnpm --filter @aivo/alerts-proxy-svc smoke

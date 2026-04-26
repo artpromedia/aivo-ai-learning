@@ -5,6 +5,12 @@ import swaggerUI from "@fastify/swagger-ui";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
 import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
+import {
+  startSafeCron,
+  createDrizzleAdvisoryLock,
+  createDrizzleLedger,
+} from "@aivo/scheduling";
+import { runWeeklyRollupOnce } from "./lib/weekly-rollup.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerXpRoutes } from "./routes/xp.js";
 import { registerShopRoutes } from "./routes/shop.js";
@@ -45,6 +51,15 @@ async function start() {
   registerSiblingRoutes(app, db);
 
   await bootstrapOpsAlerts({ service: "engagement-svc", app, beforeExit: () => app.close() });
+
+  startSafeCron({
+    jobName: "engagement.weekly-rollup",
+    periodMs: 7 * 24 * 60 * 60 * 1000,
+    lock: createDrizzleAdvisoryLock(db as any),
+    ledger: createDrizzleLedger(db as any),
+    log: logger,
+    run: () => runWeeklyRollupOnce(db),
+  });
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Engagement service listening on port ${PORT}`);

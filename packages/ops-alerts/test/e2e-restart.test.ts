@@ -1,6 +1,6 @@
 import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
 import http from "node:http";
 import { tmpdir } from "node:os";
@@ -9,6 +9,28 @@ import { fileURLToPath } from "node:url";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const workerPath = join(here, "e2e-restart-worker.ts");
+
+interface RunResult {
+  status: number | null;
+  stdout: string;
+  stderr: string;
+}
+
+function runWorker(action: "queue" | "drain", env: Record<string, string>): Promise<RunResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      "node",
+      ["--import", "tsx", workerPath, action],
+      { env: { ...process.env, ...env } },
+    );
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (c) => (stdout += c.toString("utf8")));
+    child.stderr.on("data", (c) => (stderr += c.toString("utf8")));
+    child.on("error", reject);
+    child.on("close", (status) => resolve({ status, stdout, stderr }));
+  });
+}
 
 interface Recorder {
   server: http.Server;
@@ -77,38 +99,28 @@ describe("e2e: alert survives container restart (#208)", () => {
     // Phase 1: proxy is down — queue should land on disk.
     recorder.setShouldAccept(() => false);
 
-    const queueResult = spawnSync(
-      "node",
-      ["--import", "tsx", workerPath, "queue"],
-      {
-        env: {
-          ...process.env,
-          OUTBOX_PATH: outboxPath,
-          PROXY_URL: `http://127.0.0.1:${recorder.port}`,
-        },
-        encoding: "utf8",
-      },
-    );
+    const queueResult = await runWorker("queue", {
+      OUTBOX_PATH: outboxPath,
+      PROXY_URL: `http://127.0.0.1:${recorder.port}`,
+    });
     assert.equal(queueResult.status, 0, `queue worker failed: ${queueResult.stderr}`);
     const queuedFile = await fs.readFile(outboxPath, "utf8");
     assert.ok(queuedFile.length > 0, "outbox file should not be empty after queue phase");
 
     // Phase 2: proxy comes back, fresh process drains the outbox (mimics restart).
     recorder.setShouldAccept(() => true);
-    const drainResult = spawnSync(
-      "node",
-      ["--import", "tsx", workerPath, "drain"],
-      {
-        env: {
-          ...process.env,
-          OUTBOX_PATH: outboxPath,
-          PROXY_URL: `http://127.0.0.1:${recorder.port}`,
-        },
-        encoding: "utf8",
-      },
-    );
+    const drainResult = await runWorker("drain", {
+      OUTBOX_PATH: outboxPath,
+      PROXY_URL: `http://127.0.0.1:${recorder.port}`,
+    });
     assert.equal(drainResult.status, 0, `drain worker failed: ${drainResult.stderr}`);
-    const parsed = JSON.parse(drainResult.stdout.trim());
+    if (drainResult.stdout.trim() === "") {
+      throw new Error(`drain worker produced no stdout. stderr=${drainResult.stderr}`);
+    }
+    // The worker may emit multiple lines (e.g. logger output then result JSON).
+    // Pick the last non-empty line, which is the JSON result.
+    const lines = drainResult.stdout.trim().split("\n").filter((l) => l.length > 0);
+    const parsed = JSON.parse(lines[lines.length - 1]);
     assert.equal(parsed.drained, 1, "expected 1 envelope drained");
     assert.equal(parsed.remaining, 0);
     assert.equal(recorder.received.length, 1, "mock receiver should have one alert");

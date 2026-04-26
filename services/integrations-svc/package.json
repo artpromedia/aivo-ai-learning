@@ -12,6 +12,7 @@
     "@aivo/db": "workspace:*",
     "@aivo/observability": "workspace:*",
     "@aivo/ops-alerts": "workspace:*",
+    "@aivo/scheduling": "workspace:*",
     "@aivo/security": "workspace:*",
     "@fastify/cors": "^11.0.0",
     "@fastify/swagger": "^9.6.0",
