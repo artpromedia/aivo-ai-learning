@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 5000 --turbopack",
-    "build": "next build",
+    "build": "node ../../scripts/next-build-with-ca.mjs",
     "start": "next start",
     "lint": "eslint src/ --ext .ts,.tsx"
   },
