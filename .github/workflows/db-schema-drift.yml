@@ -1,0 +1,28 @@
+name: db schema drift
+
+on:
+  pull_request:
+    paths:
+      - "packages/db/**"
+      - ".github/workflows/db-schema-drift.yml"
+  push:
+    branches: [main]
+    paths:
+      - "packages/db/**"
+
+jobs:
+  check-schema-drift:
+    name: assert every pgTable has a CREATE TABLE migration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: check:schema-drift
+        run: pnpm --filter @aivo/db run check:schema-drift

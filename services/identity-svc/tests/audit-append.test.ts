@@ -28,43 +28,51 @@ test("hash chain links: changing prevHash changes hash", () => {
 
 const SKIP = !process.env.DATABASE_URL;
 test("audit_events trigger blocks UPDATE", { skip: SKIP }, async () => {
-  const { createDb, auditEvents, appendAudit } = await import("@aivo/db");
+  const { createDb, auditEvents, appendAudit, closeDb } = await import("@aivo/db");
   const { sql } = await import("drizzle-orm");
   const db = createDb(process.env.DATABASE_URL!);
-  const inserted = await appendAudit(db, "audit_events", auditEvents, {
-    tenantId: null,
-    userId: null,
-    eventType: "TEST_TRIGGER",
-    resourceType: "test",
-    resourceId: "trigger-test",
-    details: { ts: Date.now() },
-    ipAddress: null,
-    userAgent: null,
-  });
-  await assert.rejects(
-    () => db.execute(sql`UPDATE audit_events SET event_type = 'HACKED' WHERE id = ${inserted.id}`),
-    /append-only/i,
-    "trigger must reject UPDATE",
-  );
-  await assert.rejects(
-    () => db.execute(sql`DELETE FROM audit_events WHERE id = ${inserted.id}`),
-    /append-only/i,
-    "trigger must reject DELETE",
-  );
+  try {
+    const inserted = await appendAudit(db, "audit_events", auditEvents, {
+      tenantId: null,
+      userId: null,
+      eventType: "TEST_TRIGGER",
+      resourceType: "test",
+      resourceId: "trigger-test",
+      details: { ts: Date.now() },
+      ipAddress: null,
+      userAgent: null,
+    });
+    await assert.rejects(
+      () => db.execute(sql`UPDATE audit_events SET event_type = 'HACKED' WHERE id = ${inserted.id}`),
+      /append-only/i,
+      "trigger must reject UPDATE",
+    );
+    await assert.rejects(
+      () => db.execute(sql`DELETE FROM audit_events WHERE id = ${inserted.id}`),
+      /append-only/i,
+      "trigger must reject DELETE",
+    );
+  } finally {
+    await closeDb(db);
+  }
 });
 
 test("appendAudit links rows: row N+1 prevHash equals row N hash", { skip: SKIP }, async () => {
-  const { createDb, auditEvents, appendAudit } = await import("@aivo/db");
+  const { createDb, auditEvents, appendAudit, closeDb } = await import("@aivo/db");
   const db = createDb(process.env.DATABASE_URL!);
-  const r1 = await appendAudit(db, "audit_events", auditEvents, {
-    tenantId: null, userId: null,
-    eventType: "CHAIN_TEST_1", resourceType: "test", resourceId: String(Date.now()),
-    details: null, ipAddress: null, userAgent: null,
-  });
-  const r2 = await appendAudit(db, "audit_events", auditEvents, {
-    tenantId: null, userId: null,
-    eventType: "CHAIN_TEST_2", resourceType: "test", resourceId: String(Date.now() + 1),
-    details: null, ipAddress: null, userAgent: null,
-  });
-  assert.equal(r2.prevHash, r1.hash, "row 2 must link to row 1");
+  try {
+    const r1 = await appendAudit(db, "audit_events", auditEvents, {
+      tenantId: null, userId: null,
+      eventType: "CHAIN_TEST_1", resourceType: "test", resourceId: String(Date.now()),
+      details: null, ipAddress: null, userAgent: null,
+    });
+    const r2 = await appendAudit(db, "audit_events", auditEvents, {
+      tenantId: null, userId: null,
+      eventType: "CHAIN_TEST_2", resourceType: "test", resourceId: String(Date.now() + 1),
+      details: null, ipAddress: null, userAgent: null,
+    });
+    assert.equal(r2.prevHash, r1.hash, "row 2 must link to row 1");
+  } finally {
+    await closeDb(db);
+  }
 });

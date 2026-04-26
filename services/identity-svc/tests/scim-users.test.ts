@@ -20,6 +20,12 @@ async function bootstrap() {
   return { app, db };
 }
 
+async function teardown(app: any, db: any) {
+  const { closeDb } = await import("@aivo/db");
+  await app.close();
+  await closeDb(db);
+}
+
 async function issueToken(db: any, tenantId: string): Promise<string> {
   const { scimTokens } = await import("@aivo/db");
   const plain = `scim_${crypto.randomBytes(24).toString("base64url")}`;
@@ -35,22 +41,22 @@ async function issueToken(db: any, tenantId: string): Promise<string> {
 }
 
 test("SCIM Users: rejects missing bearer token", { skip: SKIP }, async () => {
-  const { app } = await bootstrap();
+  const { app, db } = await bootstrap();
   try {
     const res = await app.inject({ method: "GET", url: "/scim/v2/Users" });
     assert.equal(res.statusCode, 401);
-  } finally { await app.close(); }
+  } finally { await teardown(app, db); }
 });
 
 test("SCIM Users: rejects bogus bearer token", { skip: SKIP }, async () => {
-  const { app } = await bootstrap();
+  const { app, db } = await bootstrap();
   try {
     const res = await app.inject({
       method: "GET", url: "/scim/v2/Users",
       headers: { Authorization: "Bearer scim_does-not-exist" },
     });
     assert.equal(res.statusCode, 401);
-  } finally { await app.close(); }
+  } finally { await teardown(app, db); }
 });
 
 test("SCIM Users: list returns SCIM ListResponse with valid token", { skip: SKIP }, async () => {
@@ -76,7 +82,7 @@ test("SCIM Users: list returns SCIM ListResponse with valid token", { skip: SKIP
     const { scimTokens } = await import("@aivo/db");
     await db.delete(scimTokens).where(eq(scimTokens.tenantId, tenant.id));
     await db.delete(tenants).where(eq(tenants.id, tenant.id));
-  } finally { await app.close(); }
+  } finally { await teardown(app, db); }
 });
 
 test("SCIM Users: rejects PLATFORM_ADMIN provisioning attempts", { skip: SKIP }, async () => {
@@ -105,5 +111,5 @@ test("SCIM Users: rejects PLATFORM_ADMIN provisioning attempts", { skip: SKIP },
     const { scimTokens } = await import("@aivo/db");
     await db.delete(scimTokens).where(eq(scimTokens.tenantId, tenant.id));
     await db.delete(tenants).where(eq(tenants.id, tenant.id));
-  } finally { await app.close(); }
+  } finally { await teardown(app, db); }
 });

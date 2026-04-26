@@ -80,3 +80,28 @@ export const periodicJobRuns = pgTable(
 export type DailyJobRun = typeof dailyJobRuns.$inferSelect;
 export type BillingDailyJobRun = typeof billingDailyJobRuns.$inferSelect;
 export type PeriodicJobRun = typeof periodicJobRuns.$inferSelect;
+
+/**
+ * Sprint 9 — freshness watchdog discovery store (Task #100 / #189).
+ *
+ * The watchdog is normally driven by the static `JOB_REGISTRY`, but it
+ * also encounters job names at runtime — e.g. `daily_job_runs` rows
+ * whose `job_name` isn't in the registry. This table is the persisted
+ * record of those discoveries so the admin UI can show "first observed
+ * at <ts>" without recomputing it from history every page load.
+ *
+ * Invariants:
+ *   - `firstSeenAt` is set on insert and MUST NEVER be overwritten.
+ *   - `lastSeenAt` is bumped on every observation via
+ *     `onConflictDoUpdate({ target: jobName, set: { lastSeenAt: now } })`.
+ */
+export const freshnessWatchdogDiscoveries = pgTable(
+  "freshness_watchdog_discoveries",
+  {
+    jobName: varchar("job_name", { length: 100 }).primaryKey(),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).defaultNow().notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+);
+
+export type FreshnessWatchdogDiscovery = typeof freshnessWatchdogDiscoveries.$inferSelect;
