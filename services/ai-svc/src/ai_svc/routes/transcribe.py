@@ -12,8 +12,10 @@ import logging
 from typing import Optional
 
 import litellm
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+
+from ..auth import AuthClaims, require_auth
 
 logger = logging.getLogger("ai-svc.transcribe")
 
@@ -76,7 +78,11 @@ def _normalize_locale(locale: Optional[str]) -> Optional[str]:
 
 
 @router.post("/transcribe", response_model=TranscribeResponse)
-async def transcribe(req: TranscribeRequest) -> TranscribeResponse:
+async def transcribe(
+    req: TranscribeRequest,
+    user: AuthClaims = Depends(require_auth),
+) -> TranscribeResponse:
+    logger.info("transcribe called by sub=%s role=%s", user.sub, user.role)
     try:
         audio_bytes = base64.b64decode(req.audio_base64, validate=True)
     except Exception as exc:
