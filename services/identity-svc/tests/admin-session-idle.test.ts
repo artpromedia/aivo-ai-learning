@@ -30,40 +30,48 @@ test("deviceFingerprint is deterministic and changes with UA", () => {
 
 const SKIP = !process.env.DATABASE_URL;
 test("idle gate rejects after 241 minutes, accepts when fresh", { skip: SKIP }, async () => {
-  const { createDb, adminSessions, users } = await import("@aivo/db");
+  const { createDb, adminSessions, users, closeDb } = await import("@aivo/db");
   const { gateAdminRefresh, recordAdminLogin } = await import("../src/services/admin-session.js");
   const { eq } = await import("drizzle-orm");
   const db = createDb(process.env.DATABASE_URL!);
-  const headers = { "user-agent": "test/1", "accept-language": "en", "sec-ch-ua": "test" };
-  const sessionId = `test-${Date.now()}-${Math.random()}`;
-  const [u] = await db.select().from(users).limit(1);
-  if (!u) return;
-  await recordAdminLogin(db, u.id, sessionId, headers, "127.0.0.1");
+  try {
+    const headers = { "user-agent": "test/1", "accept-language": "en", "sec-ch-ua": "test" };
+    const sessionId = `test-${Date.now()}-${Math.random()}`;
+    const [u] = await db.select().from(users).limit(1);
+    if (!u) return;
+    await recordAdminLogin(db, u.id, sessionId, headers, "127.0.0.1");
 
-  const fresh = await gateAdminRefresh(db, sessionId, u.id, headers, "127.0.0.1");
-  assert.equal(fresh.ok, true, "fresh session must pass");
+    const fresh = await gateAdminRefresh(db, sessionId, u.id, headers, "127.0.0.1");
+    assert.equal(fresh.ok, true, "fresh session must pass");
 
-  await db.update(adminSessions)
-    .set({ lastActivityAt: new Date(Date.now() - 241 * 60_000) })
-    .where(eq(adminSessions.sessionId, sessionId));
-  const stale = await gateAdminRefresh(db, sessionId, u.id, headers, "127.0.0.1");
-  assert.equal(stale.ok, false, "stale session must reject");
-  if (!stale.ok) assert.equal(stale.body.reason, "idle");
+    await db.update(adminSessions)
+      .set({ lastActivityAt: new Date(Date.now() - 241 * 60_000) })
+      .where(eq(adminSessions.sessionId, sessionId));
+    const stale = await gateAdminRefresh(db, sessionId, u.id, headers, "127.0.0.1");
+    assert.equal(stale.ok, false, "stale session must reject");
+    if (!stale.ok) assert.equal(stale.body.reason, "idle");
+  } finally {
+    await closeDb(db);
+  }
 });
 
 test("fingerprint mismatch returns mfaPending", { skip: SKIP }, async () => {
-  const { createDb, users } = await import("@aivo/db");
+  const { createDb, users, closeDb } = await import("@aivo/db");
   const { gateAdminRefresh, recordAdminLogin } = await import("../src/services/admin-session.js");
   const db = createDb(process.env.DATABASE_URL!);
-  const sessionId = `test-fp-${Date.now()}`;
-  const [u] = await db.select().from(users).limit(1);
-  if (!u) return;
-  await recordAdminLogin(db, u.id, sessionId, { "user-agent": "browser-A" }, "127.0.0.1");
-  const result = await gateAdminRefresh(db, sessionId, u.id, { "user-agent": "browser-B" }, "127.0.0.1");
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.body.mfaPending, true);
-    assert.equal(result.body.reason, "device");
+  try {
+    const sessionId = `test-fp-${Date.now()}`;
+    const [u] = await db.select().from(users).limit(1);
+    if (!u) return;
+    await recordAdminLogin(db, u.id, sessionId, { "user-agent": "browser-A" }, "127.0.0.1");
+    const result = await gateAdminRefresh(db, sessionId, u.id, { "user-agent": "browser-B" }, "127.0.0.1");
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.body.mfaPending, true);
+      assert.equal(result.body.reason, "device");
+    }
+  } finally {
+    await closeDb(db);
   }
 });
 

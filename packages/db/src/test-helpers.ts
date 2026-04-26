@@ -3,6 +3,22 @@ import path from "node:path";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { createDb, type Database } from "./index.js";
 
+/**
+ * Close the underlying postgres client of a Database returned by
+ * `createDb` / `provisionTestDatabase`. Tests that omit this leave an
+ * open connection pool that prevents `node --test` / `tsx --test` from
+ * exiting (Task #190). Best-effort: never throws.
+ */
+export async function closeDb(db: Database | undefined | null): Promise<void> {
+  if (!db) return;
+  try {
+    await (db as unknown as { $client?: { end?: (opts?: unknown) => Promise<void> } })
+      .$client?.end?.({ timeout: 2 });
+  } catch {
+    /* ignore — teardown is best-effort */
+  }
+}
+
 export interface ProvisionedTestDatabase {
   db: Database;
   teardown: () => Promise<void>;
@@ -35,13 +51,6 @@ export async function provisionTestDatabase(
   await migrate(db, { migrationsFolder });
   return {
     db,
-    teardown: async () => {
-      try {
-        await (db as unknown as { $client?: { end?: (opts?: unknown) => Promise<void> } })
-          .$client?.end?.({ timeout: 2 });
-      } catch {
-        /* ignore — teardown is best-effort */
-      }
-    },
+    teardown: () => closeDb(db),
   };
 }

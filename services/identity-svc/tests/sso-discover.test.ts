@@ -21,8 +21,14 @@ async function bootstrap() {
   return { app, db };
 }
 
+async function teardown(app: any, db: any) {
+  const { closeDb } = await import("@aivo/db");
+  await app.close();
+  await closeDb(db);
+}
+
 test("discover: unknown email domain returns mode=password", { skip: SKIP }, async () => {
-  const { app } = await bootstrap();
+  const { app, db } = await bootstrap();
   try {
     const res = await app.inject({
       method: "POST", url: "/api/auth/discover",
@@ -30,18 +36,18 @@ test("discover: unknown email domain returns mode=password", { skip: SKIP }, asy
     });
     assert.equal(res.statusCode, 200);
     assert.equal((res.json() as any).mode, "password");
-  } finally { await app.close(); }
+  } finally { await teardown(app, db); }
 });
 
 test("discover: malformed email returns 400", { skip: SKIP }, async () => {
-  const { app } = await bootstrap();
+  const { app, db } = await bootstrap();
   try {
     const res = await app.inject({
       method: "POST", url: "/api/auth/discover",
       payload: { email: "not-an-email" },
     });
     assert.equal(res.statusCode, 400);
-  } finally { await app.close(); }
+  } finally { await teardown(app, db); }
 });
 
 test("discover: matching tenant ssoConfig returns mode=sso with login URL", { skip: SKIP }, async () => {
@@ -75,5 +81,5 @@ test("discover: matching tenant ssoConfig returns mode=sso with login URL", { sk
 
     await db.delete(districtSettings).where(eq(districtSettings.tenantId, tenant.id));
     await db.delete(tenants).where(eq(tenants.id, tenant.id));
-  } finally { await app.close(); }
+  } finally { await teardown(app, db); }
 });
