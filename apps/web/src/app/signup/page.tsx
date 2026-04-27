@@ -15,12 +15,13 @@ import {
   User,
   Loader2,
   AlertCircle,
+  ArrowRight,
+  ShieldCheck,
+  CheckCircle2,
   Sparkles,
   Brain,
   Users,
   Zap,
-  ShieldCheck,
-  CheckCircle2,
 } from "lucide-react";
 
 function SignupInner() {
@@ -38,7 +39,6 @@ function SignupInner() {
 
   useEffect(() => {
     if (invitedEmail && !email) setEmail(invitedEmail);
-    // intentionally only on mount/param change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invitedEmail]);
 
@@ -48,9 +48,6 @@ function SignupInner() {
     setLoading(true);
     try {
       await register(email, password, name, "PARENT");
-      // If they came via an invite link, send them through the
-      // accept-invite flow so the pending caregiver/teacher/therapist
-      // row gets linked to their new account.
       if (invitedEmail) {
         router.push(`/accept-invite?email=${encodeURIComponent(invitedEmail)}`);
       } else {
@@ -62,182 +59,75 @@ function SignupInner() {
     setLoading(false);
   };
 
-  const features = [
-    {
-      Icon: Brain,
-      title: t("signup_feature_brain_clone"),
-      desc: "Builds a unique AI model of how your child learns",
-      token: "--visual-math",
-    },
-    {
-      Icon: Users,
-      title: t("signup_feature_tutors"),
-      desc: "Each with specialized teaching personalities",
-      token: "--visual-reading",
-    },
-    {
-      Icon: Zap,
-      title: t("signup_feature_levels"),
-      desc: "Adapts to every child's pace automatically",
-      token: "--visual-sel",
-    },
-    {
-      Icon: ShieldCheck,
-      title: t("signup_feature_coppa"),
-      desc: "COPPA, FERPA & GDPR compliant platform",
-      token: "--visual-science",
-    },
+  const VALUE_PROPS = [
+    { Icon: Brain, key: "signup_feature_brain_clone" as const, color: "text-violet-600", bg: "bg-violet-100" },
+    { Icon: Users, key: "signup_feature_tutors" as const, color: "text-cyan-600", bg: "bg-cyan-100" },
+    { Icon: Zap, key: "signup_feature_levels" as const, color: "text-amber-600", bg: "bg-amber-100" },
+    { Icon: ShieldCheck, key: "signup_feature_coppa" as const, color: "text-emerald-600", bg: "bg-emerald-100" },
   ];
 
   return (
-    <div className="min-h-screen flex vi-bg">
+    <div className="min-h-screen bg-gradient-to-br from-violet-100 via-white to-amber-50 flex flex-col relative overflow-hidden">
       <SkipLink />
 
-      {/* Marketing Rail */}
-      <aside
-        className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-[hsl(var(--visual-primary))]"
-        aria-hidden="true"
-      >
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-32 -left-10 w-80 h-80 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-0 w-96 h-96 bg-[hsl(var(--visual-math))] rounded-full blur-3xl" />
-          <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-[hsl(var(--visual-reading))] rounded-full blur-3xl" />
-        </div>
+      <div aria-hidden="true" className="absolute inset-0 pointer-events-none -z-0">
+        <div className="absolute -top-20 -left-20 w-[45vw] h-[45vw] bg-violet-300/40 rounded-full blur-3xl animate-blob motion-reduce:animate-none" />
+        <div className="absolute -bottom-20 -right-20 w-[40vw] h-[40vw] bg-amber-200/50 rounded-full blur-3xl animate-blob motion-reduce:animate-none" style={{ animationDelay: "5s" }} />
+        <div className="absolute top-1/3 right-10 w-64 h-64 bg-cyan-200/40 rounded-full blur-3xl animate-blob motion-reduce:animate-none" style={{ animationDelay: "2s" }} />
+      </div>
 
-        <div className="absolute inset-0 flex flex-col justify-between p-12 z-10">
-          <Link href="/">
-            <Image
-              src="/images/aivo-logo-white.png"
-              alt="AIVO"
-              width={140}
-              height={44}
-              style={{ width: "auto", height: "auto" }}
-            />
-          </Link>
+      <header className="relative z-10 flex items-center justify-between p-6">
+        <Link href="/" aria-label="AIVO home">
+          <Image
+            src="/images/aivo-logo-purple.png"
+            alt="AIVO"
+            width={120}
+            height={36}
+            priority
+            style={{ width: "auto", height: "auto" }}
+          />
+        </Link>
+        <LanguageSwitcher compact />
+      </header>
 
-          <div className="space-y-8">
-            <div>
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur border-2 border-white/20 text-white text-xs font-black uppercase tracking-wider mb-6">
-                <Sparkles size={14} strokeWidth={3} aria-hidden="true" />
-                Start free today
-              </span>
-              <h2 className="text-4xl xl:text-5xl font-heading font-bold text-white leading-[1.05]">
-                {t("join_headline")}
-              </h2>
-              <p className="text-lg text-white/80 font-body mt-5 max-w-md leading-relaxed">
-                {t("join_message")}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {features.map(({ Icon, title, desc, token }) => (
-                <div
-                  key={title}
-                  className="flex items-start gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border-2 border-white/15 hover:bg-white/15 transition-colors"
-                >
-                  <div
-                    className="w-11 h-11 rounded-2xl text-white flex items-center justify-center shadow-lg flex-shrink-0"
-                    style={{ backgroundColor: `hsl(var(${token}))` }}
-                  >
-                    <Icon size={22} strokeWidth={2.5} aria-hidden="true" />
-                  </div>
-                  <div className="pt-0.5">
-                    <p className="text-white font-heading font-bold text-base leading-snug">
-                      {title}
-                    </p>
-                    <p className="text-white/70 text-xs font-body font-semibold mt-1 leading-relaxed">
-                      {desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 text-white/80 text-sm font-body font-semibold">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(var(--visual-science)/0.25)] border border-[hsl(var(--visual-science)/0.4)]">
-              <CheckCircle2
-                size={14}
-                strokeWidth={3}
-                className="text-white"
-                aria-hidden="true"
-              />
-              {t("signup_free_trial")}
-            </span>
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20">
-              <CheckCircle2
-                size={14}
-                strokeWidth={3}
-                className="text-white/80"
-                aria-hidden="true"
-              />
-              {t("signup_no_credit_card")}
-            </span>
-          </div>
-        </div>
-      </aside>
-
-      {/* Form Side */}
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 flex flex-col vi-bg min-h-screen"
+        className="relative z-10 flex-1 flex items-center justify-center px-6 pb-10"
       >
-        {/* Mobile-only brand color strip — keeps the AIVO palette present
-            when the marketing rail is hidden below lg. */}
-        <div
-          className="lg:hidden h-1.5 w-full bg-gradient-to-r from-[hsl(var(--visual-math))] via-[hsl(var(--visual-primary))] to-[hsl(var(--visual-science))]"
-          aria-hidden="true"
-        />
-        <div className="flex items-center justify-between p-6 lg:p-8">
-          <Link href="/" className="lg:hidden">
-            <Image
-              src="/images/aivo-logo-purple.png"
-              alt="AIVO"
-              width={110}
-              height={34}
-              style={{ width: "auto", height: "auto" }}
-            />
-          </Link>
-          <div className="lg:ml-auto" />
-          <LanguageSwitcher compact />
-        </div>
+        <div className="w-full max-w-[480px]">
+          <div className="bg-white/95 backdrop-blur p-8 rounded-[2rem] border border-white shadow-[0_24px_60px_-15px_rgba(124,58,237,0.25)]">
+            <div className="text-center mb-7">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-100 text-violet-700 font-bold text-xs uppercase tracking-wider mb-3">
+                <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+                {t("start_free_today") ?? "Start free today"}
+              </span>
+              <h1 className="text-3xl font-heading font-bold text-slate-900 leading-tight">
+                {t("create_account")}
+              </h1>
+              <p className="text-slate-500 font-body mt-1.5">
+                {t("signup_subtitle")}
+              </p>
+            </div>
 
-        <div className="flex-1 flex items-center justify-center px-6 pb-8">
-          <div className="w-full max-w-[440px] vi-card p-8 shadow-[0_24px_60px_-20px_rgba(124,58,237,0.22)]">
-            <div className="mb-8">
-              <div className="lg:hidden mb-6 flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(var(--visual-science)/0.12)] border border-[hsl(var(--visual-science)/0.3)] text-[hsl(var(--visual-science))] text-xs font-bold">
-                  <CheckCircle2 size={14} strokeWidth={3} aria-hidden="true" />
-                  {t("signup_free_trial")}
-                </span>
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full vi-surface-soft border vi-border vi-text-muted text-xs font-bold">
-                  <CheckCircle2 size={14} strokeWidth={3} aria-hidden="true" />
-                  {t("signup_no_credit_card")}
-                </span>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] flex items-center justify-center shrink-0">
-                  <Sparkles size={28} strokeWidth={2.5} aria-hidden="true" />
+            <div className="grid grid-cols-2 gap-3 mb-7">
+              {VALUE_PROPS.map(({ Icon, key, color, bg }) => (
+                <div key={key} className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div className={`w-9 h-9 rounded-xl ${bg} ${color} flex items-center justify-center shrink-0`}>
+                    <Icon className="w-4.5 h-4.5" size={18} strokeWidth={2.5} aria-hidden="true" />
+                  </div>
+                  <p className="text-xs font-bold text-slate-700 leading-snug">{t(key)}</p>
                 </div>
-                <div>
-                  <h1 className="text-3xl font-heading font-bold vi-text leading-tight">
-                    {t("create_account")}
-                  </h1>
-                  <p className="vi-text-muted font-body mt-1.5">
-                    {t("signup_subtitle")}
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
 
             {error && (
               <div
                 role="alert"
                 aria-live="assertive"
-                className="flex items-start gap-3 p-4 rounded-2xl bg-[hsl(var(--visual-math)/0.08)] border-2 border-[hsl(var(--visual-math)/0.3)] text-[hsl(var(--visual-math))] text-sm font-bold mb-6"
+                className="flex items-start gap-3 p-4 rounded-2xl bg-rose-50 border-2 border-rose-200 text-rose-700 text-sm font-bold mb-6"
               >
-                <span className="w-8 h-8 rounded-xl bg-white text-[hsl(var(--visual-math))] flex items-center justify-center shrink-0 shadow-sm">
+                <span className="w-8 h-8 rounded-xl bg-white text-rose-600 flex items-center justify-center shrink-0 shadow-sm">
                   <AlertCircle size={18} strokeWidth={2.5} aria-hidden="true" />
                 </span>
                 <span className="pt-1">{error}</span>
@@ -245,17 +135,12 @@ function SignupInner() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label
-                  htmlFor="signup-name"
-                  className="block text-sm font-bold vi-text mb-2"
-                >
+              <div className="space-y-2">
+                <label htmlFor="signup-name" className="block text-sm font-bold text-slate-700 ml-1">
                   {t("full_name")}
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[hsl(var(--visual-primary))] pointer-events-none">
-                    <User size={20} strokeWidth={2} aria-hidden="true" />
-                  </span>
+                  <User className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" aria-hidden="true" />
                   <input
                     id="signup-name"
                     type="text"
@@ -264,23 +149,18 @@ function SignupInner() {
                     required
                     autoComplete="name"
                     style={{ minHeight: 44 }}
-                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl vi-surface-soft border-2 vi-border vi-text placeholder-slate-400 focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
+                    className="w-full h-14 pl-12 pr-4 rounded-2xl bg-slate-50 border-2 border-slate-100 text-slate-900 font-body focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.15)] outline-none transition"
                     placeholder={t("name_placeholder")}
                   />
                 </div>
               </div>
 
-              <div>
-                <label
-                  htmlFor="signup-email"
-                  className="block text-sm font-bold vi-text mb-2"
-                >
+              <div className="space-y-2">
+                <label htmlFor="signup-email" className="block text-sm font-bold text-slate-700 ml-1">
                   {t("email")}
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[hsl(var(--visual-primary))] pointer-events-none">
-                    <Mail size={20} strokeWidth={2} aria-hidden="true" />
-                  </span>
+                  <Mail className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" aria-hidden="true" />
                   <input
                     id="signup-email"
                     type="email"
@@ -289,23 +169,18 @@ function SignupInner() {
                     required
                     autoComplete="email"
                     style={{ minHeight: 44 }}
-                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl vi-surface-soft border-2 vi-border vi-text placeholder-slate-400 focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
+                    className="w-full h-14 pl-12 pr-4 rounded-2xl bg-slate-50 border-2 border-slate-100 text-slate-900 font-body focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.15)] outline-none transition"
                     placeholder="parent@example.com"
                   />
                 </div>
               </div>
 
-              <div>
-                <label
-                  htmlFor="signup-password"
-                  className="block text-sm font-bold vi-text mb-2"
-                >
+              <div className="space-y-2">
+                <label htmlFor="signup-password" className="block text-sm font-bold text-slate-700 ml-1">
                   {t("password")}
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[hsl(var(--visual-primary))] pointer-events-none">
-                    <Lock size={20} strokeWidth={2} aria-hidden="true" />
-                  </span>
+                  <Lock className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" aria-hidden="true" />
                   <input
                     id="signup-password"
                     type={showPassword ? "text" : "password"}
@@ -315,23 +190,19 @@ function SignupInner() {
                     minLength={8}
                     autoComplete="new-password"
                     style={{ minHeight: 44 }}
-                    className="w-full pl-12 pr-12 py-3.5 rounded-2xl vi-surface-soft border-2 vi-border vi-text placeholder-slate-400 focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body"
+                    className="w-full h-14 pl-12 pr-12 rounded-2xl bg-slate-50 border-2 border-slate-100 text-slate-900 font-body focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.15)] outline-none transition"
                     placeholder="Min. 8 characters"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center vi-text-muted hover:text-[hsl(var(--visual-primary))] transition"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? (
-                      <EyeOff size={20} strokeWidth={2} aria-hidden="true" />
-                    ) : (
-                      <Eye size={20} strokeWidth={2} aria-hidden="true" />
-                    )}
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                <p className="text-xs vi-text-muted mt-2 font-body font-semibold">
+                <p className="text-xs text-slate-500 font-body mt-1.5 ml-1">
                   {t("password_hint")}
                 </p>
               </div>
@@ -341,78 +212,73 @@ function SignupInner() {
                 disabled={loading}
                 aria-busy={loading}
                 style={{ minHeight: 44 }}
-                className="w-full py-4 rounded-2xl bg-[hsl(var(--visual-primary))] text-white font-heading font-black text-base uppercase tracking-wider hover:bg-[hsl(var(--visual-primary)/0.9)] active:bg-[hsl(var(--visual-primary)/0.9)] transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-14 mt-2 rounded-2xl bg-gradient-to-r from-[hsl(var(--visual-primary))] to-[hsl(var(--visual-primary-dark,262_83%_46%))] hover:opacity-95 text-white font-bold text-lg shadow-xl shadow-purple-200 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
               >
                 {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2
-                      size={18}
-                      strokeWidth={2.5}
-                      className="motion-safe:animate-spin"
-                      aria-hidden="true"
-                    />
+                  <>
+                    <Loader2 size={20} strokeWidth={2.5} className="motion-safe:animate-spin" aria-hidden="true" />
                     {t("signing_up")}
-                  </span>
+                  </>
                 ) : (
-                  t("create_account")
+                  <>
+                    {t("create_account")}
+                    <ArrowRight className="w-5 h-5" aria-hidden="true" />
+                  </>
                 )}
               </button>
             </form>
 
-            <p className="text-xs vi-text-muted text-center mt-4 font-body font-semibold leading-relaxed">
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
+                <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                {t("signup_free_trial")}
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
+                <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                {t("signup_no_credit_card")}
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-500 text-center mt-4 font-body leading-relaxed">
               {t("agree_terms_prefix")}{" "}
-              <Link
-                href="/terms-of-service"
-                className="text-[hsl(var(--visual-primary))] hover:underline transition font-bold"
-              >
+              <Link href="/terms-of-service" className="text-[hsl(var(--visual-primary))] hover:underline font-bold">
                 {t("terms")}
               </Link>{" "}
               {t("and")}{" "}
-              <Link
-                href="/privacy-policy"
-                className="text-[hsl(var(--visual-primary))] hover:underline transition font-bold"
-              >
+              <Link href="/privacy-policy" className="text-[hsl(var(--visual-primary))] hover:underline font-bold">
                 {t("privacy")}
               </Link>
             </p>
+          </div>
 
-            <div className="mt-8 pt-6 border-t-2 vi-border text-center">
-              <p className="text-sm vi-text-muted font-body">
-                {t("have_account")}{" "}
-                <Link
-                  href="/login"
-                  className="text-[hsl(var(--visual-primary))] font-bold hover:underline transition"
-                >
-                  {t("sign_in")}
-                </Link>
-              </p>
+          <div className="text-center mt-7">
+            <div className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 bg-white/70 backdrop-blur px-4 py-2 rounded-full border border-slate-200">
+              <ShieldCheck className="w-4 h-4 text-[hsl(var(--visual-primary))]" aria-hidden="true" />
+              {t("compliance_badge") ?? "COPPA · FERPA · SOC 2 Compliant"}
             </div>
+            <p className="text-sm font-medium text-slate-500 mt-5">
+              {t("have_account")}{" "}
+              <Link href="/login" className="text-[hsl(var(--visual-primary))] font-bold hover:underline">
+                {t("sign_in")}
+              </Link>
+            </p>
           </div>
         </div>
-
-        <div className="flex items-center justify-center gap-6 pb-6 text-xs vi-text-muted font-body font-semibold">
-          <Link
-            href="/privacy-policy"
-            className="hover:text-[hsl(var(--visual-primary))] transition"
-          >
-            {t("privacy")}
-          </Link>
-          <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-          <Link
-            href="/terms-of-service"
-            className="hover:text-[hsl(var(--visual-primary))] transition"
-          >
-            {t("terms")}
-          </Link>
-          <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-          <Link
-            href="/coppa-compliance"
-            className="hover:text-[hsl(var(--visual-primary))] transition"
-          >
-            COPPA
-          </Link>
-        </div>
       </main>
+
+      <footer className="relative z-10 flex items-center justify-center gap-6 pb-6 text-xs text-slate-500 font-body font-semibold">
+        <Link href="/privacy-policy" className="hover:text-[hsl(var(--visual-primary))] transition">
+          {t("privacy")}
+        </Link>
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+        <Link href="/terms-of-service" className="hover:text-[hsl(var(--visual-primary))] transition">
+          {t("terms")}
+        </Link>
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+        <Link href="/coppa-compliance" className="hover:text-[hsl(var(--visual-primary))] transition">
+          COPPA
+        </Link>
+      </footer>
     </div>
   );
 }
@@ -424,4 +290,3 @@ export default function SignupPage() {
     </Suspense>
   );
 }
-

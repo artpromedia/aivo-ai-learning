@@ -911,10 +911,12 @@
     "header": {
       "features": "Features",
       "tutors": "Tutors",
+      "brain_clone": "Brain Clone",
       "pricing": "Pricing",
       "faq": "FAQ",
       "sign_in": "Sign In",
-      "get_started": "Get Started"
+      "get_started": "Get Started",
+      "compliance_banner": "COPPA · FERPA · SOC 2 — Built safe for every learner."
     },
     "hero": {
       "badge": "The adaptive learning platform",
@@ -947,7 +949,18 @@
       "feature_gamified": "Gamified quests, badges, and rewards",
       "feature_progress": "Real-time progress tracking for parents",
       "feature_safe": "FERPA & COPPA compliant, SOC 2 certified",
-      "trust_line": "Trusted by 150+ students in pilot programs across the country"
+      "trust_line": "Trusted by 150+ students in pilot programs across the country",
+      "headline_line1": "Learning adventures",
+      "headline_line2": "for every mind.",
+      "subheadline": "AIVO meets each learner where they are — from standard curriculum to pre-symbolic communication — with 14 AI tutors and a Brain Clone that grows with them.",
+      "trust_no_card": "No credit card",
+      "trust_coppa": "COPPA-safe",
+      "trust_iep": "IEP-aware",
+      "image_alt": "A child learning happily on a Chromebook with AIVO",
+      "badge_streak": "Streak",
+      "badge_streak_value": "12 days!",
+      "badge_now_learning": "Now learning",
+      "badge_now_learning_value": "Nova · Math"
     },
     "features": {
       "label": "Why AIVO",
@@ -1022,7 +1035,15 @@
       "f3_title": "Multi-Dimensional Mastery",
       "f3_desc": "Tracks progress across cognitive, behavioral, communication, and academic domains simultaneously.",
       "f4_title": "Cross-Tutor Intelligence",
-      "f4_desc": "What one tutor learns about your child, all tutors know, creating a unified learning experience."
+      "f4_desc": "What one tutor learns about your child, all tutors know, creating a unified learning experience.",
+      "demo_label": "Brain Clone",
+      "demo_name": "Leo, age 9",
+      "demo_live": "Live",
+      "demo_status": "Adapting in real time across 4 tutors",
+      "metric_math": "Math reasoning",
+      "metric_reading": "Reading fluency",
+      "metric_sensory": "Sensory regulation",
+      "metric_social": "Social-emotional"
     },
     "tutor_carousel": {
       "label": "Your Child's Team",
@@ -1125,11 +1146,12 @@
       "a8": "Yes! Our Free Trial plan gives you access to 1 tutor and 1 learner profile. Paid plans come with a 14-day free trial, no credit card required."
     },
     "cta": {
-      "title_line1": "Every child deserves a learning",
-      "title_line2": "experience built just for them",
-      "subtitle": "Join thousands of families discovering what personalized, adaptive learning can do. Start free, no credit card required.",
+      "title_line1": "Every child deserves a learning experience",
+      "title_line2": "built just for them.",
+      "subtitle": "Join thousands of families discovering what personalized, adaptive learning can do.",
       "cta_trial": "Start Your Free Trial",
-      "cta_pricing": "View Pricing"
+      "cta_pricing": "View Pricing",
+      "trust_line": "No credit card required · Cancel anytime"
     },
     "footer": {
       "tagline": "AI-powered adaptive learning for every child, every mind, every potential.",

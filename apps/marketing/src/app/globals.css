@@ -20,6 +20,8 @@
   --animate-glow: glow 2s ease-in-out infinite;
   --animate-bounce-gentle: bounce-gentle 2s ease-in-out infinite;
   --animate-ping-slow: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  --animate-blob: blob 18s ease-in-out infinite;
+  --animate-float-slow: float-slow 4s ease-in-out infinite;
 }
 
 @keyframes fade-in {
@@ -59,6 +61,15 @@
 @keyframes ping-slow {
   0% { transform: scale(1); opacity: 0.4; }
   100% { transform: scale(1.4); opacity: 0; }
+}
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -40px) scale(1.05); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
 }
 
 /* ============================================================

@@ -130,7 +130,19 @@
     "marketing_families_caption": "trust AIVO for learning",
     "stat_ai_tutors": "AI Tutors",
     "stat_levels": "Levels",
-    "stat_subjects": "Subjects"
+    "stat_subjects": "Subjects",
+    "compliance_badge": "COPPA · FERPA · SOC 2 Compliant",
+    "login_method_label": "Sign in method",
+    "streak_preview_title": "Leo is on a 12-day streak!",
+    "streak_preview_subtitle": "Nova is ready for today's math quest",
+    "whos_learning": "Who's learning today?",
+    "what_sounds_fun": "What sounds fun?",
+    "enter_secret_pin": "Enter your secret PIN",
+    "start_free_trial": "Start your free trial",
+    "start_free_today": "Start free today",
+    "go_to_staff_signin": "Go to staff sign-in",
+    "enter_password": "Enter your password",
+    "lets_go": "Let's Go!"
   },
   "onboarding": {
     "add_learner_title": "Add a New Learner",

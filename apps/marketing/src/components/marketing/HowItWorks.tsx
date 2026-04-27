@@ -2,54 +2,45 @@
 import { useTranslations } from "next-intl";
 
 const STEPS = [
-  { num: "01", icon: "📋", titleKey: "step1_title", descKey: "step1_desc", color: "from-purple-500 to-violet-600", glow: "shadow-purple-200" },
-  { num: "02", icon: "🧭", titleKey: "step2_title", descKey: "step2_desc", color: "from-cyan-500 to-teal-600", glow: "shadow-cyan-200" },
-  { num: "03", icon: "🧠", titleKey: "step3_title", descKey: "step3_desc", color: "from-amber-400 to-orange-500", glow: "shadow-amber-200" },
-  { num: "04", icon: "🚀", titleKey: "step4_title", descKey: "step4_desc", color: "from-emerald-500 to-green-600", glow: "shadow-emerald-200" },
-] as const;
+  { num: "1", titleKey: "step1_title" as const, descKey: "step1_desc" as const },
+  { num: "2", titleKey: "step2_title" as const, descKey: "step2_desc" as const },
+  { num: "3", titleKey: "step3_title" as const, descKey: "step3_desc" as const },
+  { num: "4", titleKey: "step4_title" as const, descKey: "step4_desc" as const },
+];
 
 export function HowItWorks() {
   const t = useTranslations("marketing.how_it_works");
 
   return (
-    <section className="py-24 bg-gradient-to-b from-slate-50/50 to-white relative overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-
+    <section className="py-24 bg-white">
       <div className="max-w-6xl mx-auto px-6 md:px-8">
-        <div className="text-center mb-20">
-          <p className="text-sm font-bold text-secondary uppercase tracking-widest mb-3">
+        <div className="text-center mb-16 max-w-2xl mx-auto">
+          <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-amber-100 text-amber-700 font-bold text-sm mb-4">
             {t("label")}
-          </p>
-          <h2 className="text-4xl md:text-5xl font-heading font-bold text-slate-900 mb-4">
+          </span>
+          <h2 className="text-4xl md:text-5xl font-heading font-bold text-slate-900 mb-4 leading-tight">
             {t("title")}
           </h2>
-          <p className="text-lg text-slate-500 max-w-2xl mx-auto font-body">
+          <p className="text-lg text-slate-600 font-body">
             {t("subtitle")}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {STEPS.map((step, i) => (
-            <div key={step.num} className="relative group">
-              {i < STEPS.length - 1 && (
-                <div className="hidden lg:block absolute top-12 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-slate-200 to-slate-100" />
-              )}
-              <div className="relative bg-white rounded-3xl p-8 border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full">
-                <div
-                  className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center text-3xl mb-6 shadow-lg ${step.glow} group-hover:scale-110 transition-transform`}
-                >
-                  {step.icon}
-                </div>
-                <div className="text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">
-                  {t("step", { num: step.num })}
-                </div>
-                <h3 className="text-xl font-heading font-bold text-slate-900 mb-3">
-                  {t(step.titleKey)}
-                </h3>
-                <p className="text-slate-500 leading-relaxed font-body text-sm">
-                  {t(step.descKey)}
-                </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {STEPS.map((step) => (
+            <div
+              key={step.num}
+              className="bg-white border-2 border-slate-100 rounded-3xl p-6 hover:border-primary hover:shadow-md transition-all duration-300 h-full"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark text-white font-heading font-bold flex items-center justify-center text-xl mb-4 shadow-lg shadow-purple-200">
+                {step.num}
               </div>
+              <h3 className="font-heading font-bold text-lg text-slate-900 mb-2">
+                {t(step.titleKey)}
+              </h3>
+              <p className="text-sm text-slate-600 font-body leading-relaxed">
+                {t(step.descKey)}
+              </p>
             </div>
           ))}
         </div>

@@ -3,9 +3,9 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { Lock, Eye, EyeOff, CheckCircle2, ArrowLeft, ArrowRight, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
 
-const STRENGTH_COLORS = ["bg-red-500", "bg-orange-500", "bg-amber-500", "bg-lime-500", "bg-emerald-500"];
+const STRENGTH_COLORS = ["bg-rose-500", "bg-orange-500", "bg-amber-500", "bg-lime-500", "bg-emerald-500"];
 const STRENGTH_LABELS = ["Very weak", "Weak", "Fair", "Strong", "Very strong"];
 
 function reasonText(r: string): string {
@@ -38,8 +38,6 @@ function ResetPasswordInner() {
     if (!token) setError("Missing reset token. Please request a new reset link.");
   }, [token]);
 
-  // Local strength estimate (no breach check) for instant UX. The server
-  // performs the authoritative check on submit.
   useEffect(() => {
     if (!password) { setPolicy(null); return; }
     const handle = setTimeout(() => {
@@ -97,98 +95,161 @@ function ResetPasswordInner() {
   const submitDisabled = loading || !token || password.length < 12 || password !== confirm;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-white to-cyan-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
-        <div className="flex justify-center mb-6">
-          <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={140} height={42} priority style={{ width: "auto", height: "auto" }} />
-        </div>
-        <h1 className="text-2xl font-heading font-bold text-slate-900 text-center">Reset your password</h1>
-        <p className="text-sm text-slate-500 text-center mt-2">Choose a new password for your account.</p>
+    <div className="min-h-screen bg-gradient-to-br from-violet-100 via-white to-amber-50 flex flex-col relative overflow-hidden">
+      <div aria-hidden="true" className="absolute inset-0 pointer-events-none -z-0">
+        <div className="absolute -top-20 -left-20 w-[45vw] h-[45vw] bg-violet-300/40 rounded-full blur-3xl animate-blob motion-reduce:animate-none" />
+        <div className="absolute -bottom-20 -right-20 w-[40vw] h-[40vw] bg-amber-200/50 rounded-full blur-3xl animate-blob motion-reduce:animate-none" style={{ animationDelay: "5s" }} />
+      </div>
 
-        {success ? (
-          <div className="mt-6 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3">
-              <CheckCircle2 size={28} strokeWidth={2.5} aria-hidden="true" />
+      <header className="relative z-10 flex items-center justify-between p-6">
+        <Link href="/" aria-label="AIVO home">
+          <Image
+            src="/images/aivo-logo-purple.png"
+            alt="AIVO"
+            width={120}
+            height={36}
+            priority
+            style={{ width: "auto", height: "auto" }}
+          />
+        </Link>
+      </header>
+
+      <main className="relative z-10 flex-1 flex items-center justify-center px-6 pb-10">
+        <div className="w-full max-w-[480px]">
+          <div className="bg-white/95 backdrop-blur p-8 rounded-[2rem] border border-white shadow-[0_24px_60px_-15px_rgba(124,58,237,0.25)]">
+            <div className="w-14 h-14 rounded-2xl bg-violet-100 text-[hsl(var(--visual-primary))] flex items-center justify-center mx-auto mb-4">
+              <Lock size={28} strokeWidth={2.5} aria-hidden="true" />
             </div>
-            <p className="text-slate-700 font-semibold">Password updated</p>
-            <p className="text-sm text-slate-500 mt-2">Redirecting you to sign in...</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div>
-              <label htmlFor="reset-password-new" className="block text-sm font-semibold text-slate-700 mb-2">New password</label>
-              <div className="relative">
-                <input
-                  id="reset-password-new"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={12}
-                  autoComplete="new-password"
-                  placeholder="At least 12 characters"
-                  className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 px-3 text-slate-400 hover:text-slate-600"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >{showPassword ? "Hide" : "Show"}</button>
-              </div>
-              {password && (
-                <div className="mt-3 space-y-2">
-                  <div className="flex gap-1">
-                    {[0, 1, 2, 3, 4].map((i) => (
-                      <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= score ? STRENGTH_COLORS[score] : "bg-slate-200"}`} />
-                    ))}
+            <h1 className="text-3xl font-heading font-bold text-slate-900 text-center leading-tight">
+              Reset your password
+            </h1>
+            <p className="text-slate-500 font-body text-center mt-2">
+              Choose a new password for your account.
+            </p>
+
+            {success ? (
+              <div className="mt-7 text-center">
+                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle2 size={24} strokeWidth={2.5} aria-hidden="true" />
                   </div>
-                  <p className={`text-xs font-medium ${score >= 3 ? "text-emerald-600" : "text-slate-500"}`}>
-                    {checking ? "Checking..." : STRENGTH_LABELS[score]}
-                  </p>
-                  {policy && policy.reasons.length > 0 && (
-                    <ul className="text-xs text-slate-500 list-disc pl-4 space-y-0.5">
-                      {policy.reasons.map((r) => <li key={r}>{reasonText(r)}</li>)}
-                    </ul>
+                  <p className="text-emerald-800 font-bold">Password updated</p>
+                  <p className="text-sm text-emerald-700 mt-1 font-body">Redirecting you to sign in...</p>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="mt-7 space-y-5">
+                <div className="space-y-2">
+                  <label htmlFor="reset-password-new" className="block text-sm font-bold text-slate-700 ml-1">New password</label>
+                  <div className="relative">
+                    <Lock className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                    <input
+                      id="reset-password-new"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={12}
+                      autoComplete="new-password"
+                      placeholder="At least 12 characters"
+                      style={{ minHeight: 44 }}
+                      className="w-full h-14 pl-12 pr-12 rounded-2xl bg-slate-50 border-2 border-slate-100 text-slate-900 font-body focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.15)] outline-none transition"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {password && (
+                    <div className="mt-3 space-y-2">
+                      <div className="flex gap-1">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                          <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= score ? STRENGTH_COLORS[score] : "bg-slate-200"}`} />
+                        ))}
+                      </div>
+                      <p className={`text-xs font-bold ${score >= 3 ? "text-emerald-600" : "text-slate-500"}`}>
+                        {checking ? "Checking..." : STRENGTH_LABELS[score]}
+                      </p>
+                      {policy && policy.reasons.length > 0 && (
+                        <ul className="text-xs text-slate-500 list-disc pl-4 space-y-0.5 font-body">
+                          {policy.reasons.map((r) => <li key={r}>{reasonText(r)}</li>)}
+                        </ul>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-            <div>
-              <label htmlFor="reset-password-confirm" className="block text-sm font-semibold text-slate-700 mb-2">Confirm new password</label>
-              <input
-                id="reset-password-confirm"
-                type={showPassword ? "text" : "password"}
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                required
-                minLength={12}
-                autoComplete="new-password"
-                placeholder="Re-enter your new password"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition"
-              />
-              {confirm && confirm !== password && (
-                <p className="mt-1 text-xs text-red-600">Passwords don&apos;t match yet</p>
-              )}
-            </div>
-            {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+
+                <div className="space-y-2">
+                  <label htmlFor="reset-password-confirm" className="block text-sm font-bold text-slate-700 ml-1">Confirm new password</label>
+                  <div className="relative">
+                    <Lock className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                    <input
+                      id="reset-password-confirm"
+                      type={showPassword ? "text" : "password"}
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                      required
+                      minLength={12}
+                      autoComplete="new-password"
+                      placeholder="Re-enter your new password"
+                      style={{ minHeight: 44 }}
+                      className="w-full h-14 pl-12 pr-4 rounded-2xl bg-slate-50 border-2 border-slate-100 text-slate-900 font-body focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.15)] outline-none transition"
+                    />
+                  </div>
+                  {confirm && confirm !== password && (
+                    <p className="text-xs text-rose-600 font-bold ml-1">Passwords don&apos;t match yet</p>
+                  )}
+                </div>
+
+                {error && (
+                  <div role="alert" className="flex items-start gap-3 p-4 rounded-2xl bg-rose-50 border-2 border-rose-200 text-rose-700 text-sm font-bold">
+                    <AlertCircle size={18} strokeWidth={2.5} className="shrink-0 mt-0.5" aria-hidden="true" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submitDisabled}
+                  aria-busy={loading}
+                  style={{ minHeight: 44 }}
+                  className="w-full h-14 rounded-2xl bg-gradient-to-r from-[hsl(var(--visual-primary))] to-[hsl(var(--visual-primary-dark,262_83%_46%))] hover:opacity-95 text-white font-bold text-lg shadow-xl shadow-purple-200 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={20} strokeWidth={2.5} className="motion-safe:animate-spin" aria-hidden="true" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      Update password
+                      <ArrowRight className="w-5 h-5" aria-hidden="true" />
+                    </>
+                  )}
+                </button>
+
+                <div className="text-center pt-2">
+                  <Link href="/login" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[hsl(var(--visual-primary))] transition">
+                    <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+                    Back to sign in
+                  </Link>
+                </div>
+              </form>
             )}
-            <button
-              type="submit"
-              disabled={submitDisabled}
-              className="w-full py-3 rounded-xl bg-violet-600 text-white font-bold hover:bg-violet-700 transition disabled:opacity-50"
-            >
-              {loading ? "Updating..." : "Update password"}
-            </button>
-            <div className="text-center">
-              <Link href="/login" className="text-sm font-semibold text-slate-500 hover:text-slate-700">
-                ← Back to sign in
-              </Link>
+          </div>
+
+          <div className="text-center mt-7">
+            <div className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 bg-white/70 backdrop-blur px-4 py-2 rounded-full border border-slate-200">
+              <ShieldCheck className="w-4 h-4 text-[hsl(var(--visual-primary))]" aria-hidden="true" />
+              COPPA · FERPA · SOC 2 Compliant
             </div>
-          </form>
-        )}
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
