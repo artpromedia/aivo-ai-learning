@@ -82,7 +82,7 @@ export function Marketing() {
               <span className="text-[hsl(var(--primary))]">for every mind.</span>
             </h1>
             <p className="text-xl text-slate-600 font-medium leading-relaxed max-w-xl mx-auto md:mx-0">
-              AIVO meets each learner where they are — from standard curriculum to pre-symbolic communication — with <span className="font-bold text-slate-800">14 AI tutors</span> and <span className="font-bold text-slate-800">Brain Clone</span> technology that truly adapts.
+              AIVO meets each learner where they are from standard curriculum to pre-symbolic communication with <span className="font-bold text-slate-800">14 AI tutors</span> and <span className="font-bold text-slate-800">Brain Clone</span> technology that truly adapts.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-2">
               <Button className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary-dark))] hover:opacity-90 text-white font-bold px-8 py-7 rounded-full text-lg shadow-xl shadow-purple-200 border-0 transition-transform hover:-translate-y-0.5">
@@ -154,14 +154,14 @@ export function Marketing() {
             </Badge>
             <h2 className="text-4xl md:text-5xl font-heading font-bold text-slate-900 leading-tight mb-4">Built different, on purpose.</h2>
             <p className="text-lg text-slate-600 font-medium">
-              Every feature is designed around the learner — not a one-size-fits-all curriculum.
+              Every feature is designed around the learner not a one-size-fits-all curriculum.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { icon: Layers,   title: "5 Functioning Levels",   desc: "From standard academics to pre-symbolic cause-and-effect, every child has a path designed just for them.", color: "bg-violet-100 text-violet-600" },
               { icon: Users,    title: "14 AI Tutors",           desc: "Seven core tutors plus seven specialists, each with a unique personality covering every learning domain.", color: "bg-cyan-100 text-cyan-600" },
-              { icon: Brain,    title: "Brain Clone",            desc: "An adaptive brain state that evolves with each learner — with snapshots, rollback, and continuous growth.", color: "bg-amber-100 text-amber-600" },
+              { icon: Brain,    title: "Brain Clone",            desc: "An adaptive brain state that evolves with each learner with snapshots, rollback, and continuous growth.", color: "bg-amber-100 text-amber-600" },
               { icon: MapPin,   title: "Region-Smart Curriculum",desc: "Dynamic curriculum aligned to your zip code and regional standards, automatically personalized to local requirements.", color: "bg-emerald-100 text-emerald-600" },
               { icon: Eye,      title: "Sensory Profiles",       desc: "Adapts visuals, audio, and interactions based on each learner's sensory preferences and needs.", color: "bg-pink-100 text-pink-600" },
               { icon: BarChart3,title: "Real-Time Analytics",    desc: "Parents, teachers, and therapists get live dashboards showing progress, mastery, and growth over time.", color: "bg-indigo-100 text-indigo-600" },
@@ -224,14 +224,14 @@ export function Marketing() {
             </Badge>
             <h2 className="text-4xl md:text-5xl font-heading font-bold leading-tight">The Brain Clone.<br/>A digital twin of how your child learns.</h2>
             <p className="text-lg text-white/85 font-medium leading-relaxed">
-              A living digital model of your child's learning mind. It grows, adapts, and remembers — so every lesson picks up exactly where they left off.
+              A living digital model of your child's learning mind. It grows, adapts, and remembers so every lesson picks up exactly where they left off.
             </p>
             <div className="grid sm:grid-cols-2 gap-4 pt-4">
               {[
-                { icon: RefreshCw, title: "Continuous Adaptation", desc: "Evolves with every interaction — adjusting difficulty, pace, and teaching style." },
+                { icon: RefreshCw, title: "Continuous Adaptation", desc: "Evolves with every interaction adjusting difficulty, pace, and teaching style." },
                 { icon: Zap,       title: "Snapshots & Rollback",  desc: "Save brain states at milestones. Roll back if something isn't working." },
                 { icon: Layers,    title: "Multi-Dimensional",     desc: "Tracks cognitive, behavioral, communication, and academic domains." },
-                { icon: Network,   title: "Cross-Tutor Memory",    desc: "What one tutor learns, all tutors know — one unified experience." },
+                { icon: Network,   title: "Cross-Tutor Memory",    desc: "What one tutor learns, all tutors know one unified experience." },
               ].map((f, i) => {
                 const Icon = f.icon;
                 return (
