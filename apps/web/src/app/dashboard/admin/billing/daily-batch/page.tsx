@@ -1,6 +1,12 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  readParamArray,
+  readParamString,
+  readWindowSearchParams,
+  useSyncFiltersToUrl,
+} from "@/hooks/use-url-filters";
 
 interface LatestRow {
   jobName: string;
@@ -35,6 +41,16 @@ const FILTER_KEY = "aivo:admin:billing-daily-batch:filters";
 const STATUS_OPTIONS = ["ok", "partial", "failed"] as const;
 
 function loadInitialFilters(): { statuses: string[]; since: string; until: string } {
+  // URL params win over localStorage so a deep link / refresh restores the
+  // operator's view even on a fresh tab.
+  const url = readWindowSearchParams();
+  if (url && (url.has("status") || url.has("since") || url.has("until"))) {
+    return {
+      statuses: readParamArray(url, "status"),
+      since: readParamString(url, "since"),
+      until: readParamString(url, "until"),
+    };
+  }
   if (typeof window === "undefined") return { statuses: [], since: "", until: "" };
   try {
     const raw = window.localStorage.getItem(FILTER_KEY);
@@ -69,6 +85,12 @@ export default function DailyBatchPage() {
   const [data, setData] = useState<StatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState(loadInitialFilters());
+
+  useSyncFiltersToUrl({
+    status: filters.statuses,
+    since: filters.since,
+    until: filters.until,
+  });
 
   // Persist filters to localStorage so they survive a refresh.
   useEffect(() => {

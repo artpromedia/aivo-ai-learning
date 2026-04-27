@@ -27,6 +27,7 @@ const ALLOWED_FILES = new Set([
   ".env.example",
   ".gitleaks.toml",
   "check-paging-url-leaks.mjs",
+  "check-paging-url-leaks.test.mjs",
   "ops-alerts-external-monitor.mjs",
   "ops-alerts-external-monitor.yaml",
 ]);

@@ -14,6 +14,7 @@
 import { sql } from "drizzle-orm";
 import { JOB_REGISTRY, computeFreshness } from "@aivo/scheduling";
 import { getOpsAlertClient } from "@aivo/ops-alert";
+import { makeFreshnessWatchdogDiscoveryStore } from "./freshness-discovery.js";
 
 export interface WatchdogOptions {
   intervalMs?: number;
@@ -25,7 +26,7 @@ const DEFAULT_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 export async function runWatchdogOnce(
   db: any,
   log?: WatchdogOptions["log"],
-): Promise<{ alerted: string[]; checked: number }> {
+): Promise<{ alerted: string[]; checked: number; discoveries: number }> {
   const alerts = getOpsAlertClient();
   const result = (await db.execute(sql`
     SELECT job_name, last_run_at, last_finished_at, last_status FROM daily_job_runs
@@ -33,6 +34,25 @@ export async function runWatchdogOnce(
   const rows = Array.isArray(result) ? result : (result.rows ?? []);
   const byName = new Map<string, Record<string, any>>();
   for (const r of rows) byName.set(r.job_name, r);
+
+  // Record a fresh observation against the discovery store for every job we
+  // walk (registered + unregistered). On-call uses these timestamps to tell
+  // "the watchdog is still running for this job" from "this row is stale
+  // because no replica has reported in days" (#187).
+  const discoveryStore = makeFreshnessWatchdogDiscoveryStore(db);
+  const seen = new Set<string>();
+  for (const entry of JOB_REGISTRY) seen.add(entry.jobName);
+  for (const r of rows) seen.add(r.job_name);
+  let discoveries = 0;
+  const tickAt = new Date();
+  for (const jobName of seen) {
+    try {
+      await discoveryStore.recordSeen(jobName, tickAt);
+      discoveries += 1;
+    } catch (e) {
+      log?.error({ err: e, jobName }, "watchdog discovery store recordSeen failed");
+    }
+  }
 
   const alerted: string[] = [];
 
@@ -76,7 +96,7 @@ export async function runWatchdogOnce(
     }
   }
 
-  return { alerted, checked: JOB_REGISTRY.length };
+  return { alerted, checked: JOB_REGISTRY.length, discoveries };
 }
 
 export function startWatchdog(db: any, opts: WatchdogOptions = {}) {

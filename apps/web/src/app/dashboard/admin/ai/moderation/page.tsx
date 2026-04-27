@@ -1,7 +1,12 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
+import {
+  readParamString,
+  readWindowSearchParams,
+  useSyncFiltersToUrl,
+} from "@/hooks/use-url-filters";
 
 interface ModerationItem {
   id: string;
@@ -36,10 +41,13 @@ const FILTERS = ["ALL", "PENDING", "APPROVED", "REJECTED", "ESCALATED", "LOW_CON
 
 export default function ContentModerationPage() {
   const { accessToken } = useAuth();
+  const initialParams = useMemo(() => readWindowSearchParams(), []);
   const [items, setItems] = useState<ModerationItem[]>([]);
   const [stats, setStats] = useState<StatsResponse | null>(null);
-  const [filter, setFilter] = useState("ALL");
+  const [filter, setFilter] = useState(() => readParamString(initialParams, "status", "ALL"));
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useSyncFiltersToUrl({ status: filter === "ALL" ? undefined : filter });
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

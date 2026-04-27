@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, sql, desc, and, isNull } from "drizzle-orm";
 import {
   xpEvents,
   streaks,
@@ -434,15 +434,61 @@ export function registerXpRoutes(
     return { awarded: true, badge };
   });
 
+  // Sprint 10 (#191) — scope-aware leaderboard. The daily rollup writes one
+  // row per (classroom, learner) and per (tenant, learner). Without
+  // filtering by `scopeId`, a learner asking for the class leaderboard
+  // sees entries from every classroom in the database mixed together.
+  //
+  // Contract:
+  //   - "global": no scopeId required; returns the global ranking.
+  //   - "class":  scopeId required; entries scoped to that classroom only.
+  //   - "tenant": scopeId optional. When omitted, defaults to the caller's
+  //     tenantId so a learner cannot accidentally see another tenant's
+  //     leaderboard. When supplied, must match the caller's tenantId
+  //     unless the caller is an admin.
   app.get("/api/engagement/leaderboard/:scope", async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
     const { scope } = request.params as { scope: string };
+    const { scopeId: rawScopeId } = (request.query as { scopeId?: string }) ?? {};
+    const role = (claims.role || "").toUpperCase();
+    const isAdmin = role === "PLATFORM_ADMIN" || role === "DISTRICT_ADMIN" || role === "ADMIN";
+
+    let scopeId: string | null = null;
+    if (scope === "class") {
+      if (!rawScopeId) {
+        return reply.status(400).send({ error: "scopeId (classroom id) is required for class scope" });
+      }
+      scopeId = rawScopeId;
+    } else if (scope === "tenant") {
+      const callerTenantId = claims.tenantId ?? null;
+      if (rawScopeId) {
+        if (!isAdmin && rawScopeId !== callerTenantId) {
+          return reply.status(403).send({ error: "Cannot read leaderboard for a different tenant" });
+        }
+        scopeId = rawScopeId;
+      } else if (callerTenantId) {
+        scopeId = callerTenantId;
+      } else {
+        return reply.status(400).send({ error: "scopeId is required for tenant scope when caller has no tenant" });
+      }
+    } else if (scope === "global") {
+      // Global is unscoped; ignore any scopeId the caller passed.
+      scopeId = null;
+    } else {
+      return reply.status(400).send({ error: `Unknown scope: ${scope}` });
+    }
+
+    const where =
+      scopeId === null
+        ? and(eq(leaderboardEntries.scope, scope), isNull(leaderboardEntries.scopeId))
+        : and(eq(leaderboardEntries.scope, scope), eq(leaderboardEntries.scopeId, scopeId));
+
     const entries = await db
       .select()
       .from(leaderboardEntries)
-      .where(eq(leaderboardEntries.scope, scope))
+      .where(where)
       .orderBy(desc(leaderboardEntries.totalXp))
       .limit(50);
 

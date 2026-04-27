@@ -68,7 +68,10 @@ export async function bootstrapOpsAlerts(opts: OpsAlertBootstrapOptions): Promis
       if (expectedToken && req.headers["x-service-token"] !== expectedToken) {
         return reply.code(401).send({ error: "missing or invalid x-service-token" });
       }
-      return await client.stats_();
+      const stats = await client.stats_();
+      // Surface the misconfig flag (#194) so a status-page scraper can
+      // alert on it without inspecting service logs.
+      return { ...stats, pgRequestedButUnwired };
     });
 
     // Prometheus-format exposition (#209). Same auth as JSON endpoint.
@@ -105,10 +108,32 @@ export async function bootstrapOpsAlerts(opts: OpsAlertBootstrapOptions): Promis
         `ops_alerts_last_auto_flush_seconds${labels} ${
           stats.lastAutoFlushAt ? Math.floor(new Date(stats.lastAutoFlushAt).getTime() / 1000) : 0
         }`,
+        // #194: gauge that flips to 1 when OPS_ALERTS_OUTBOX_PG_TABLE is set
+        // but no pgOutboxClient was wired — i.e. the operator expected
+        // Postgres durability but the service silently fell back. Wire a
+        // Prometheus alert on `> 0` to catch the misconfig.
+        `# HELP ops_alerts_outbox_pg_misconfigured Set to 1 when OPS_ALERTS_OUTBOX_PG_TABLE is set but no pgOutboxClient is wired.`,
+        `# TYPE ops_alerts_outbox_pg_misconfigured gauge`,
+        `ops_alerts_outbox_pg_misconfigured{service="${stats.service}"} ${pgRequestedButUnwired ? 1 : 0}`,
       ];
       reply.header("content-type", "text/plain; version=0.0.4; charset=utf-8");
       return lines.join("\n") + "\n";
     });
+  }
+
+  // Loud startup signal for #194. The factory already logs a warn, but
+  // operators searching log streams can miss it. Surface a single critical
+  // bootstrap event so deploy gates can fail on it. We can't page the
+  // on-call channel from here (the outbox is the very thing that's
+  // misconfigured); an explicit boot log line + the metric are the safe
+  // visibility lever.
+  if (pgRequestedButUnwired) {
+    // eslint-disable-next-line no-console -- explicit boot-time stderr
+    console.error(
+      `[ops-alerts] CRITICAL: service=${opts.service} OPS_ALERTS_OUTBOX_PG_TABLE is set but pgOutboxClient was not provided. ` +
+        `The service is running with a non-durable outbox; queued pages will be lost on restart. ` +
+        `Set OPS_ALERTS_OUTBOX_PG_STRICT=1 to fail the boot instead.`,
+    );
   }
 
   if (opts.installFatalHandler !== false) {

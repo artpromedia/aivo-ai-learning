@@ -1,10 +1,16 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
 import { IconWell } from "@/components/discovery/_vi";
 import { ScrollText } from "lucide-react";
+import {
+  readParamNumber,
+  readParamString,
+  readWindowSearchParams,
+  useSyncFiltersToUrl,
+} from "@/hooks/use-url-filters";
 
 interface AuditEntry {
   id: string;
@@ -42,13 +48,16 @@ export default function AuditLogPage() {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [chainStatus, setChainStatus] = useState<{ ok: boolean; chains: ChainSummary[] } | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [action, setAction] = useState("");
-  const [resourceType, setResourceType] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [page, setPage] = useState(1);
+  const initial = useMemo(() => readWindowSearchParams(), []);
+  const [search, setSearch] = useState(() => readParamString(initial, "search"));
+  const [action, setAction] = useState(() => readParamString(initial, "action"));
+  const [resourceType, setResourceType] = useState(() => readParamString(initial, "resourceType"));
+  const [from, setFrom] = useState(() => readParamString(initial, "from"));
+  const [to, setTo] = useState(() => readParamString(initial, "to"));
+  const [page, setPage] = useState(() => readParamNumber(initial, "page", 1));
   const pageSize = 50;
+
+  useSyncFiltersToUrl({ search, action, resourceType, from, to, page: page === 1 ? undefined : page });
 
   const fetchData = useCallback(() => {
     if (!accessToken) return;

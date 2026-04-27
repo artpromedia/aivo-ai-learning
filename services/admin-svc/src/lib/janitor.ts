@@ -14,10 +14,14 @@
  */
 import { sql } from "drizzle-orm";
 import { JOB_REGISTRY, type JobOutcome } from "@aivo/scheduling";
+import { sweepOrphanedDiscoveries } from "../routes/jobs.js";
 
 const PERIODIC_LIMIT = 50;
 const BILLING_LIMIT = 30;
 const ORPHAN_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
+// Discovery rows for jobs no longer in JOB_REGISTRY and last observed more
+// than this long ago are dropped automatically (#188).
+const DISCOVERY_STALE_MS = 30 * 24 * 60 * 60 * 1000;
 
 export async function runJanitorOnce(db: any): Promise<JobOutcome & { deletedRows: number }> {
   let deleted = 0;
@@ -94,6 +98,16 @@ export async function runJanitorOnce(db: any): Promise<JobOutcome & { deletedRow
   `)) as { rows?: Array<{ n: number }> } | Array<{ n: number }>;
   const orphan2Rows = Array.isArray(orphan2) ? orphan2 : (orphan2.rows ?? []);
   deleted += orphan2Rows[0]?.n ?? 0;
+
+  // Sweep orphan rows from the watchdog discovery registry — services that
+  // used to host a job but no longer report it (#188). This is the
+  // automated complement to the admin-only DELETE endpoint.
+  try {
+    const swept = await sweepOrphanedDiscoveries(db, { staleAfterMs: DISCOVERY_STALE_MS });
+    deleted += swept.deleted;
+  } catch {
+    /* best effort; the manual DELETE endpoint is the recovery path */
+  }
 
   // Touch JOB_REGISTRY so the import isn't tree-shaken by aggressive bundlers
   // — ensures this file participates in the registry-vs-ledger reconciliation.
