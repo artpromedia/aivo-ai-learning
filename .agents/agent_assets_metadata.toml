@@ -228,6 +228,72 @@ uri = "file://artifacts/mockup-sandbox/public/images/nd-visual-avatar.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "U1pQuitKXG69FgTVUhG5_"
+uri = "file://artifacts/mockup-sandbox/public/images/aivo-calm/hero.png"
+type = "image"
+title = "Soft watercolor hero illustration"
+
+[[generated]]
+id = "PDl06YaWjZPqmQIa3upl_"
+uri = "file://artifacts/mockup-sandbox/public/images/aivo-calm/brainclone.png"
+type = "image"
+title = "Brain clone companion illustration"
+
+[[generated]]
+id = "J6EqIdThNz5eW9rPCcP9K"
+uri = "file://artifacts/mockup-sandbox/public/images/aivo-calm/tutors.png"
+type = "image"
+title = "Friendly AI tutors illustration"
+
+[[generated]]
+id = "-vADcF0LwEZeDRYaKqu4b"
+uri = "file://artifacts/mockup-sandbox/public/images/aivo-calm/avatar-bear.png"
+type = "image"
+title = "Bear avatar for learner"
+
+[[generated]]
+id = "6QveQzyFDtZ2iaZ18YLD0"
+uri = "file://artifacts/mockup-sandbox/public/images/aivo-calm/avatar-owl.png"
+type = "image"
+title = "Owl avatar for learner"
+
+[[generated]]
+id = "kKjM7pkO1PlQiHAF411uH"
+uri = "file://artifacts/mockup-sandbox/public/images/aivo-trusted/hero-learner.png"
+type = "image"
+title = "Boy looking at tablet"
+
+[[generated]]
+id = "GpGIr10sRP0RYSCbXkwZB"
+uri = "file://artifacts/mockup-sandbox/public/images/aivo-trusted/auth-learner.png"
+type = "image"
+title = "Girl reading a book"
+
+[[generated]]
+id = "UkxsnbK0QUn6s04ubXZhh"
+uri = "file://artifacts/mockup-sandbox/public/images/aivo-trusted/parent-1.png"
+type = "image"
+title = "Friendly mother portrait"
+
+[[generated]]
+id = "mkLr5XKTjVPNXb5pX4XYV"
+uri = "file://artifacts/mockup-sandbox/public/images/aivo-friendly/hero-mascots.png"
+type = "image"
+title = "playful tutor mascots"
+
+[[generated]]
+id = "pT5tDFOggoEkMQ_P6ZTmU"
+uri = "file://artifacts/mockup-sandbox/public/images/aivo-friendly/brainclone.png"
+type = "image"
+title = "brainclone mascot"
+
+[[generated]]
+id = "LFpcYMideVKyI8pTVxv3R"
+uri = "file://artifacts/mockup-sandbox/public/images/aivo-friendly/auth-mascot.png"
+type = "image"
+title = "auth mascot peeking"
+
 [[outputs]]
 id = "0e7lRmti5tdoSwrX0-ySG"
 uri = "file://.local/preview/marketing-hero.jpg"
