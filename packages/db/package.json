@@ -6,6 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
+    "prepare": "tsc",
     "db:push": "drizzle-kit push",
     "db:migrate": "tsx src/migrate.ts",
     "db:seed": "tsx src/seed.ts",
