@@ -101,7 +101,7 @@ function ResetPasswordInner() {
         <div className="absolute -bottom-20 -right-20 w-[40vw] h-[40vw] bg-amber-200/50 rounded-full blur-3xl animate-blob motion-reduce:animate-none" style={{ animationDelay: "5s" }} />
       </div>
 
-      <header className="relative z-10 flex items-center justify-between p-6">
+      <header className="relative z-30 flex items-center justify-between p-6">
         <Link href="/" aria-label="AIVO home">
           <Image
             src="/images/aivo-logo-purple.png"

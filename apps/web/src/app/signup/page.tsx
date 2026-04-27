@@ -76,7 +76,7 @@ function SignupInner() {
         <div className="absolute top-1/3 right-10 w-64 h-64 bg-cyan-200/40 rounded-full blur-3xl animate-blob motion-reduce:animate-none" style={{ animationDelay: "2s" }} />
       </div>
 
-      <header className="relative z-10 flex items-center justify-between p-6">
+      <header className="relative z-30 flex items-center justify-between p-6">
         <Link href="/" aria-label="AIVO home">
           <Image
             src="/images/aivo-logo-purple.png"
