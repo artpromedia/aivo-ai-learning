@@ -130,7 +130,20 @@
     "marketing_families_caption": "がAIVOで学んでいます",
     "stat_ai_tutors": "AIチューター",
     "stat_levels": "レベル",
-    "stat_subjects": "教科"
+    "stat_subjects": "教科",
+    "compliance_badge": "COPPA · FERPA · SOC 2 準拠",
+    "enter_password": "パスワードを入力",
+    "enter_secret_pin": "シークレット PIN を入力",
+    "go_to_staff_signin": "スタッフサインインへ",
+    "lets_go": "はじめよう！",
+    "login_method_label": "サインイン方法",
+    "start_free_today": "今日から無料で始める",
+    "start_free_trial": "無料トライアルを開始",
+    "streak_preview_subtitle": "Nova は今日の算数クエストの準備ができました",
+    "streak_preview_title": "Leo は 12 日連続学習中！",
+    "what_sounds_fun": "何が楽しそう？",
+    "whos_learning": "今日は誰が学ぶ？",
+    "password_min_placeholder": "8文字以上"
   },
   "onboarding": {
     "add_learner_title": "新しい学習者を追加",

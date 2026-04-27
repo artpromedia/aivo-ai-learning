@@ -130,7 +130,20 @@
     "marketing_families_caption": "تثق بـ AIVO للتعلم",
     "stat_ai_tutors": "معلمو الذكاء الاصطناعي",
     "stat_levels": "المستويات",
-    "stat_subjects": "المواد"
+    "stat_subjects": "المواد",
+    "compliance_badge": "متوافق مع COPPA · FERPA · SOC 2",
+    "enter_password": "أدخل كلمة المرور",
+    "enter_secret_pin": "أدخل رمز PIN السري",
+    "go_to_staff_signin": "الانتقال إلى تسجيل دخول الموظفين",
+    "lets_go": "هيا بنا!",
+    "login_method_label": "طريقة تسجيل الدخول",
+    "start_free_today": "ابدأ مجانًا اليوم",
+    "start_free_trial": "ابدأ نسختك التجريبية المجانية",
+    "streak_preview_subtitle": "نوفا جاهزة لمهمة الرياضيات اليوم",
+    "streak_preview_title": "ليو في سلسلة من 12 يومًا!",
+    "what_sounds_fun": "ما الذي يبدو ممتعًا؟",
+    "whos_learning": "من يتعلم اليوم؟",
+    "password_min_placeholder": "8 أحرف على الأقل"
   },
   "onboarding": {
     "add_learner_title": "إضافة متعلم جديد",

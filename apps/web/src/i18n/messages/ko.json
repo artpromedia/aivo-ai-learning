@@ -130,7 +130,20 @@
     "marketing_families_caption": "이 AIVO와 함께 배웁니다",
     "stat_ai_tutors": "AI 튜터",
     "stat_levels": "단계",
-    "stat_subjects": "과목"
+    "stat_subjects": "과목",
+    "compliance_badge": "COPPA · FERPA · SOC 2 준수",
+    "enter_password": "비밀번호 입력",
+    "enter_secret_pin": "비밀 PIN 입력",
+    "go_to_staff_signin": "직원 로그인으로 이동",
+    "lets_go": "시작하자!",
+    "login_method_label": "로그인 방법",
+    "start_free_today": "오늘 무료로 시작",
+    "start_free_trial": "무료 체험 시작하기",
+    "streak_preview_subtitle": "Nova가 오늘의 수학 퀘스트를 준비했어요",
+    "streak_preview_title": "Leo는 12일 연속 학습 중!",
+    "what_sounds_fun": "뭐가 재미있을까?",
+    "whos_learning": "오늘은 누가 배우나요?",
+    "password_min_placeholder": "최소 8자"
   },
   "onboarding": {
     "add_learner_title": "새 학습자 추가",

@@ -191,7 +191,7 @@ function SignupInner() {
                     autoComplete="new-password"
                     style={{ minHeight: 44 }}
                     className="w-full h-14 pl-12 pr-12 rounded-2xl bg-slate-50 border-2 border-slate-100 text-slate-900 font-body focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.15)] outline-none transition"
-                    placeholder="Min. 8 characters"
+                    placeholder={t("password_min_placeholder")}
                   />
                   <button
                     type="button"

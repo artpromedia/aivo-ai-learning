@@ -130,7 +130,20 @@
     "marketing_families_caption": "confiam na AIVO para aprender",
     "stat_ai_tutors": "Tutores de IA",
     "stat_levels": "Níveis",
-    "stat_subjects": "Matérias"
+    "stat_subjects": "Matérias",
+    "compliance_badge": "Em conformidade com COPPA · FERPA · SOC 2",
+    "enter_password": "Digite sua senha",
+    "enter_secret_pin": "Digite seu PIN secreto",
+    "go_to_staff_signin": "Ir para o login da equipe",
+    "lets_go": "Vamos lá!",
+    "login_method_label": "Método de login",
+    "start_free_today": "Comece grátis hoje",
+    "start_free_trial": "Inicie seu teste gratuito",
+    "streak_preview_subtitle": "Nova está pronta para a missão de matemática de hoje",
+    "streak_preview_title": "Leo está em uma sequência de 12 dias!",
+    "what_sounds_fun": "O que parece divertido?",
+    "whos_learning": "Quem está aprendendo hoje?",
+    "password_min_placeholder": "Mín. 8 caracteres"
   },
   "onboarding": {
     "add_learner_title": "Adicionar um novo aluno",

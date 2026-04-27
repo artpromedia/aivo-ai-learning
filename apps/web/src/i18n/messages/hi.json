@@ -130,7 +130,20 @@
     "marketing_families_caption": "सीखने के लिए AIVO पर भरोसा करते हैं",
     "stat_ai_tutors": "AI ट्यूटर",
     "stat_levels": "स्तर",
-    "stat_subjects": "विषय"
+    "stat_subjects": "विषय",
+    "compliance_badge": "COPPA · FERPA · SOC 2 अनुरूप",
+    "enter_password": "अपना पासवर्ड दर्ज करें",
+    "enter_secret_pin": "अपना गुप्त PIN दर्ज करें",
+    "go_to_staff_signin": "स्टाफ साइन-इन पर जाएँ",
+    "lets_go": "चलो शुरू करें!",
+    "login_method_label": "साइन इन विधि",
+    "start_free_today": "आज मुफ्त शुरू करें",
+    "start_free_trial": "अपना मुफ्त ट्रायल शुरू करें",
+    "streak_preview_subtitle": "नोवा आज की मैथ क्वेस्ट के लिए तैयार है",
+    "streak_preview_title": "लियो की 12-दिन की लकीर चल रही है!",
+    "what_sounds_fun": "क्या मज़ेदार लगेगा?",
+    "whos_learning": "आज कौन सीख रहा है?",
+    "password_min_placeholder": "न्यूनतम 8 वर्ण"
   },
   "onboarding": {
     "add_learner_title": "नया शिक्षार्थी जोड़ें",

@@ -142,7 +142,8 @@
     "start_free_today": "Start free today",
     "go_to_staff_signin": "Go to staff sign-in",
     "enter_password": "Enter your password",
-    "lets_go": "Let's Go!"
+    "lets_go": "Let's Go!",
+    "password_min_placeholder": "Min. 8 characters"
   },
   "onboarding": {
     "add_learner_title": "Add a New Learner",

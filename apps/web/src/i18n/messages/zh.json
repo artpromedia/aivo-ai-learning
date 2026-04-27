@@ -130,7 +130,20 @@
     "marketing_families_caption": "信赖 AIVO 进行学习",
     "stat_ai_tutors": "AI 导师",
     "stat_levels": "级别",
-    "stat_subjects": "科目"
+    "stat_subjects": "科目",
+    "compliance_badge": "符合 COPPA · FERPA · SOC 2 标准",
+    "enter_password": "输入您的密码",
+    "enter_secret_pin": "输入您的密钥 PIN",
+    "go_to_staff_signin": "前往员工登录",
+    "lets_go": "出发吧！",
+    "login_method_label": "登录方式",
+    "start_free_today": "今天免费开始",
+    "start_free_trial": "开始免费试用",
+    "streak_preview_subtitle": "Nova 已为今天的数学挑战做好准备",
+    "streak_preview_title": "Leo 已经坚持学习 12 天了！",
+    "what_sounds_fun": "今天想学什么？",
+    "whos_learning": "今天谁来学习？",
+    "password_min_placeholder": "至少 8 个字符"
   },
   "onboarding": {
     "add_learner_title": "添加新学生",
