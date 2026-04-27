@@ -5,117 +5,130 @@ export default function PrivacyPolicyPage() {
   return (
     <LegalPageLayout
       badge="Legal"
-      title="Privacy Policy"
-      subtitle="AIVO is built for learners with diverse needs — including children. Protecting their privacy is one of our highest priorities. This policy explains, in plain language, what we collect, how we use it, and the choices you have."
+      title="AIVO Privacy Policy"
+      subtitle={
+        "AIVO's mission is to provide a free, world-class adaptive education for every neurodivergent learner, anywhere. We take privacy seriously, and we're committed to giving learners, parents, teachers, and schools the information and controls they need to feel confident about how we collect, use, and share information. This Privacy Policy describes the information we collect through the AIVO website, mobile applications, and other services we provide (collectively, the \"Services\"), how we use it, and the choices you have."
+      }
       icon="🔒"
       accentColor="#7c3aed"
       lastUpdated="December 15, 2026"
       contactEmail="privacy@aivo.education"
       sections={[
         {
-          title: "Our Privacy Principles",
-          content: "Before the legal detail, here is what we promise:",
+          title: "AIVO Privacy Principles",
+          content: "Our handling of personal information is guided by the following principles, which apply to all of our products and services:",
           list: [
-            "We never sell personal information to anyone, ever.",
-            "We do not show third-party advertising to learners or use learner data to target ads.",
-            "We do not use identifiable learner data to train third-party AI foundation models.",
-            "We collect only what we need to provide the Services and improve them for you.",
-            "We give you meaningful access to and control over your information, and the same for your child's information.",
-            "We apply extra protections to data about children, students, and learners on IEPs.",
+            "We will be transparent about what data we collect and why.",
+            "We will not sell or rent personal information about our learners or their families to anyone, and we will not show third-party advertisements on pages directed to learners.",
+            "We will not use any personally identifiable information about learners — including chat transcripts, Brain-Clone interactions, or assessment results — to train any third-party AI foundation model.",
+            "We will provide reasonable security to protect the information we collect and store.",
+            "We will give learners, parents, and schools meaningful choices and clear ways to access, correct, export, or delete the information we hold.",
           ],
         },
         {
-          title: "Who This Policy Applies To",
+          title: "Overview",
           content: [
-            "AIVO Learning, Inc. (\"AIVO\", \"we\", \"us\", \"our\") is a U.S. company that operates the AIVO Learning Platform — our website, mobile apps, and online services (the \"Services\"). This Privacy Policy explains how we collect, use, and disclose personal information when you use the Services.",
-            "Different rules can apply depending on who you are. Where the Services are used in a school setting, our COPPA Compliance Notice and FERPA Compliance Notice supplement this Policy. If a separate agreement exists between AIVO and a school or district, that agreement controls in case of conflict for student data.",
+            "This Privacy Policy applies to information collected through the Services. By using the Services, you acknowledge that you have read this Privacy Policy and that you understand the practices described.",
+            "Use by Children and Students. AIVO is designed to be safe for learners of all ages, including children under 13. If you are a child under the age of 13 in the United States (or under the age of digital consent in your country), you may not create an AIVO account by yourself. A parent, legal guardian, or, in the school context, an authorized teacher or school administrator (\"School Personnel\") must create the account and provide verifiable consent on your behalf, in accordance with the Children's Online Privacy Protection Act (\"COPPA\") and our Children's Privacy Notice (set out below) and FERPA Compliance Notice.",
           ],
         },
         {
-          title: "Information We Collect",
-          content: "We collect information in three main ways:",
+          title: "Contact AIVO",
+          content: "If you have any questions about this Privacy Policy or our handling of your information, please contact us at privacy@aivo.education. For questions specifically about COPPA, FERPA, or other student-data matters, you can also reach our compliance team at compliance@aivo.education. For security reports, please write to security@aivo.education.",
+        },
+        {
+          title: "Collection of Information",
+          content: [
+            "We collect information from you directly, automatically when you use the Services, and (where applicable) from your school or another third party that you have authorized to share information with us.",
+            "Information you give us. When you register for an account or use our Services, you may provide us with information such as your name, email address, date of birth (or, for Child Users, an age band), grade level, password, parent contact email, and language preference. If you subscribe to a paid plan, our payment processor collects payment-card and billing information; we do not store full card numbers on our servers. If you communicate with us by email, complete a survey, or submit a support request, we will receive the contents of those communications.",
+            "Information we collect automatically. When you use the Services, we automatically collect information about your device and your interactions with the Services, including IP address, device identifiers, browser type, operating system, referring and exit pages, time stamps, content viewed, exercises and lessons attempted, answers submitted, hints requested, and Brain-Clone session metadata. This information helps us deliver the adaptive learning experience, secure the Services, and improve features.",
+            "Information from your school. If you access AIVO through a school account or under a District Agreement, your school may provide us with roster information (name, grade level, class assignment, teacher of record, school identifier) and, where applicable, individualized education program (\"IEP\") indicators selected by School Personnel for the purpose of personalizing the learner's experience. The school remains the data controller for education records under FERPA.",
+            "Information from third-party sign-in. If you sign in to AIVO using Google, Clever, ClassLink, or another \"Integrated Service,\" we will receive certain account information from that service consistent with the permissions you (or your school) granted. You can review the data shared in your Integrated Service's settings.",
+          ],
+        },
+        {
+          title: "Use of Information",
+          content: "We use the information we collect to:",
           list: [
-            "Information you give us directly — for example when you register, set up a learner profile, complete an IEP intake, contact support, or pay for a subscription. This may include names, email addresses, parent/guardian relationship, learner age, grade level, learning preferences, and (for paid plans) billing information processed by our payment processor.",
-            "Information generated by use of the Services — for example lesson responses, time on task, mastery signals, AI-tutor conversations, voice or audio recordings (where features like read-aloud or speech are enabled), Brain-Clone learning model attributes, and progress events used to power personalization and reports.",
-            "Information collected automatically — for example device type, operating system, browser, IP address, approximate location derived from IP, language settings, crash logs, and similar technical telemetry. We use cookies and similar technologies as described in our Cookie Policy.",
+            "operate, maintain, and provide the features and functionality of the Services, including delivering personalized learning paths through Brain-Clone and our AI tutors;",
+            "create and manage your account, authenticate you, and communicate with you about your account, security, and changes to the Services;",
+            "personalize your learning experience and progressively tune the difficulty, pacing, and modality of content to your needs;",
+            "process payments, manage subscriptions, and send transactional notices for paid plans;",
+            "comply with our legal and regulatory obligations, including COPPA, FERPA, GDPR, the UK GDPR, the California Consumer Privacy Act/California Privacy Rights Act (\"CCPA/CPRA\"), and other Applicable Privacy Law;",
+            "detect, investigate, and prevent fraud, abuse, security incidents, and conduct that violates our Terms of Service or Community Guidelines;",
+            "evaluate, debug, and improve the Services, including by conducting privacy-preserving research and analytics on aggregated, de-identified data;",
+            "with your (or your school's) consent, send communications about new features, learning resources, or program opportunities you may be interested in.",
           ],
         },
         {
-          title: "How We Use Information",
-          content: "We use personal information only for legitimate, education-focused purposes:",
+          title: "Disclosure of Information",
+          content: "AIVO does not sell or rent personal information about our learners or their families. We do, however, share information in limited circumstances:",
           list: [
-            "To provide and operate the Services, including authenticating users and personalizing each learner's experience.",
-            "To power Brain-Clone and our AI tutors so that lessons adapt to a learner's strengths, preferences, and IEP goals.",
-            "To generate progress reports, parent dashboards, and (for District Plans) educator and admin reports.",
-            "To communicate with parents, educators, and account holders about their account, support requests, and important Service updates.",
-            "To keep the Services secure, prevent fraud and abuse, and comply with our legal obligations.",
-            "To research and improve the Services, using de-identified or aggregated data wherever possible.",
-            "To send marketing or product update emails to adults only — never to learners — and only where the recipient has opted in or has an existing relationship with us. You can unsubscribe at any time.",
+            "Service providers. We share information with vendors who help us operate the Services — for example, cloud hosting, error monitoring, analytics, transactional email delivery, customer-support tooling, and payment processing — under contracts that limit their use of the data to providing services to us.",
+            "AI model providers. Our AI-Enabled Features (including Brain-Clone) may rely on large-language-model APIs operated by third-party model providers. These providers are contractually prohibited from using our learners' inputs or outputs to train, fine-tune, or otherwise improve their public foundation models. We do not include unnecessary personally identifiable information in prompts.",
+            "Schools and parents. If you are a learner with a School Account, AIVO will make your learning activity, assessment results, and Brain-Clone progress available to your authorized teacher, school administrators, and (for Child Users) the parent associated with your account.",
+            "Legal and safety. We may disclose information if we believe in good faith that disclosure is necessary to comply with a law, regulation, legal process, or governmental request; to enforce our Terms; to protect the rights, property, or safety of AIVO, our users, or the public; or to detect, prevent, or address fraud, security, or technical issues.",
+            "Corporate transactions. If AIVO is involved in a merger, acquisition, financing, reorganization, bankruptcy, or sale of all or a portion of its assets, your information may be transferred as part of that transaction, subject to the commitments made in this Privacy Policy.",
+            "With your consent. We may share information for other purposes with your (or your parent's or school's) consent.",
           ],
         },
         {
-          title: "How We Share Information",
-          content: "We do not sell personal information. We share it only in these limited circumstances:",
-          list: [
-            "With service providers acting on our behalf — for example cloud hosting, email delivery, error monitoring, and payment processing — under contracts that require them to protect your information and use it only for the services we ask them to perform.",
-            "With AI model providers solely to generate tutor responses for the Services. We use enterprise contracts that prohibit providers from using inputs or outputs to train their underlying models, and we instruct users not to include unnecessary personal information in AI prompts.",
-            "With parents, guardians, or schools that legitimately oversee a learner's account.",
-            "With other users when you explicitly choose to share something — for example sending a progress report.",
-            "For legal reasons — to comply with a valid legal request, to protect the rights, safety, or security of AIVO, our users, or the public, or in the context of a merger, acquisition, or sale of assets, in which case we will require the recipient to honor commitments at least as protective as this Policy.",
-          ],
+          title: "Retention of Personal Information",
+          content: "We retain personal information for as long as your account is active, as needed to provide you with the Services, and as necessary to comply with our legal obligations, resolve disputes, and enforce our agreements. When personal information is no longer needed, we will delete or de-identify it. Schools and parents can request deletion of a learner's personal information at any time by contacting compliance@aivo.education; we honor verified requests in accordance with COPPA, FERPA, and other Applicable Privacy Law.",
         },
         {
-          title: "Children's Privacy (COPPA)",
+          title: "Sponsorship and Advertising",
+          content: "AIVO does not show third-party advertisements on pages or features directed to learners, and we do not allow third-party ad-tracking technologies on Child-directed pages. On pages directed to general adult audiences (for example, our marketing site), we may show limited promotional content for AIVO's own programs and partnerships, and we may use privacy-respecting analytics to measure the effectiveness of those efforts. We do not build advertising profiles of learners.",
+        },
+        {
+          title: "Transparency and Your Choice",
+          content: "We believe you should be able to make informed choices about the information you share with us. You can choose not to provide certain information, although doing so may limit your ability to use particular features. You can review and edit much of the information in your account at any time, and you can ask us to access, correct, export, or delete your information by writing to privacy@aivo.education. If you are a parent of a Child User, you may exercise these rights on behalf of your child by contacting compliance@aivo.education.",
+        },
+        {
+          title: "Your Account Settings",
+          content: "Within your account, you can update your contact information, change your password, manage notification preferences, view and download your learning records, and (subject to applicable retention requirements) delete your account. Parent Users can manage these settings on behalf of linked Child Users. School Personnel can manage classroom rosters and student-level settings within their teacher dashboard, subject to district policies.",
+        },
+        {
+          title: "Security of Your Personal Information",
+          content: "We use commercially reasonable administrative, technical, and physical safeguards to protect personal information against unauthorized access, use, alteration, or disclosure. These safeguards include encryption in transit, encryption at rest for sensitive data stores, role-based access controls for AIVO personnel, regular security testing, and incident-response procedures. No method of transmission over the internet or electronic storage is fully secure, however, and we cannot guarantee absolute security. If you believe your account has been compromised, please contact us at security@aivo.education.",
+        },
+        {
+          title: "Links to Third Parties",
+          content: "The Services may contain links to third-party websites, services, or tools that are not operated by AIVO. We are not responsible for the privacy practices of those third parties. We encourage you to read the privacy policies of any third-party site or service you visit.",
+        },
+        {
+          title: "Changes to this Privacy Policy",
+          content: "We may update this Privacy Policy from time to time. If we make material changes, we will notify you by posting a notice on the Services or by sending an email to the address associated with your account. The \"Last updated\" date at the top of this policy indicates when it was last revised. Your continued use of the Services after changes take effect constitutes your acceptance of the revised Privacy Policy.",
+        },
+        {
+          title: "Schools and Student Use",
           content: [
-            "AIVO is intended for use by children with the involvement of a parent, guardian, or school. We comply with the Children's Online Privacy Protection Act (\"COPPA\") and similar laws.",
-            "When a child under 13 uses the Services in a personal account, we obtain verifiable parental consent before collecting personal information. When the Services are used in a school under a District Plan, the school may provide consent on behalf of parents to the extent permitted by COPPA's school-authorization exception, and the institution is responsible for any additional notices or consents required by state law.",
-            "Parents and schools can review, modify, or delete a child's information at any time. See our COPPA Compliance Notice for full detail.",
+            "When AIVO is used in a school setting in the United States, the school is the controller of student education records under FERPA, and AIVO acts as a school official with a legitimate educational interest under 34 CFR § 99.31(a)(1) of the FERPA regulations. Schools that use the Services are responsible for providing appropriate notices to parents and, where required, for obtaining parental consent.",
+            "AI-Enabled Features in schools. School Personnel control whether AIVO's AI-Enabled Features (including Brain-Clone Teacher Tools) are turned on for their classrooms. We design AI-Enabled Features so that learner inputs are not used to train third-party foundation models, and we apply additional safeguards (including content filtering, prompt scoping, and abuse detection) on Child-directed surfaces.",
+            "Research and analytics. AIVO may conduct research to evaluate the educational impact of the Services. Wherever feasible, this research is conducted on aggregated, de-identified data. AIVO will not publish identifying information about any individual learner without express written consent of the learner's parent or, where applicable, the learner.",
           ],
         },
         {
-          title: "Schools, Students, and Education Records (FERPA)",
+          title: "Children's Privacy Notice",
           content: [
-            "When AIVO is used in a U.S. school under a District Plan, student information may constitute an education record under the Family Educational Rights and Privacy Act (\"FERPA\"). In that role, AIVO acts as a school official with a legitimate educational interest, under the direction and control of the school.",
-            "Education records remain owned and controlled by the school or district. We use student personal data only to provide the Services to the school, never for advertising, never for sale, and never to train external AI models. See our FERPA Compliance Notice for full detail.",
+            "AIVO complies with the Children's Online Privacy Protection Act of 1998, as amended (\"COPPA\"). This Children's Privacy Notice supplements the rest of our Privacy Policy with respect to learners under 13 in the United States.",
+            "Information we collect from children. We collect from Child Users only the information reasonably necessary to operate the Services: a username or first name, an age band, a parent contact email (or, in the school context, a school identifier), authentication credentials, learning activity, exercise responses, and Brain-Clone session data. We do not require Child Users to disclose more information than is reasonably necessary to participate in the Services.",
+            "Parental consent. Before we collect personal information from a child under 13, we obtain verifiable parental consent — either directly from the parent (for personal accounts) or through the child's school as permitted by COPPA's school-authorization exception (for School Accounts). Parents can review their child's information, ask us to correct or delete it, refuse further collection, or revoke consent at any time by writing to compliance@aivo.education.",
+            "Disclosure restrictions. We never sell or rent information about Child Users, we never show third-party advertisements to Child Users, and we never use Child User information to train third-party AI foundation models. We share Child User information only with service providers acting on our behalf under contractual restrictions, with the parent or school that authorized the account, and as required by law.",
           ],
         },
         {
-          title: "Your Choices and Rights",
-          content: "You have meaningful control over your information:",
-          list: [
-            "Access and correction — review and update profile, learner, and billing information from your account dashboard.",
-            "Deletion — delete your account, or your child's learner profile, from the dashboard or by emailing privacy@aivo.education. We will delete or de-identify the associated data unless we are required to retain it for legal or security reasons.",
-            "Data export — request a portable copy of your account and learner data.",
-            "Communication preferences — opt out of marketing emails using the unsubscribe link in any message; transactional emails about your account or subscription are not optional.",
-            "Cookie controls — manage cookie preferences through our Cookie Policy and your browser settings.",
-            "Regional rights — depending on where you live, you may have additional rights under laws such as the GDPR (EU/UK), the CCPA/CPRA (California), and similar state and national laws. To exercise those rights, contact privacy@aivo.education and identify the right you wish to exercise.",
-          ],
+          title: "Paid Products",
+          content: "If you purchase a Single Learner Plan ($24.99 per month per learner), a Family Plan ($19.99 per month per learner), or another paid offering, our payment processor (Stripe) collects payment-card and billing information directly from you, subject to its own privacy policy. AIVO receives only a tokenized reference, the last four digits of the card, the card brand, and the billing ZIP code, which we use to manage your subscription, send receipts, prevent fraud, and comply with tax and accounting obligations.",
         },
         {
-          title: "Data Security",
+          title: "Regional Information",
           content: [
-            "We use reasonable administrative, technical, and physical safeguards designed to protect personal information against loss, misuse, and unauthorized access. Personal information is encrypted in transit (TLS) and at rest, access is limited to staff who need it to perform their roles, and we monitor for security events.",
-            "No system is perfectly secure, so we also encourage strong, unique passwords for every account and prompt reporting of any suspicious activity to security@aivo.education.",
+            "Users outside the United States. AIVO operates the Services in the United States. If you access the Services from outside the United States, your information will be transferred to and processed in the United States, where data-protection laws may differ from those in your jurisdiction.",
+            "EEA, UK, and Switzerland. If you are located in the European Economic Area, the United Kingdom, or Switzerland, you have the right under the EU GDPR or the UK GDPR (as applicable) to access, correct, or delete your personal data; to restrict or object to certain processing; to data portability; and to withdraw consent at any time without affecting the lawfulness of prior processing. AIVO relies on Standard Contractual Clauses (and, where applicable, the UK International Data Transfer Addendum) for international transfers, supplemented by appropriate technical and organizational safeguards. You may lodge a complaint with your supervisory authority.",
+            "California. If you are a California resident, the California Consumer Privacy Act, as amended by the California Privacy Rights Act (\"CCPA/CPRA\"), gives you rights to know what personal information we collect, to access and delete that information, to correct inaccuracies, and to limit certain uses of sensitive personal information. AIVO does not \"sell\" or \"share\" personal information for cross-context behavioral advertising as those terms are defined under the CCPA/CPRA. You may exercise these rights at privacy@aivo.education; we will not discriminate against you for doing so.",
+            "Other jurisdictions. Residents of other jurisdictions (including, for example, Australia, Brazil, Canada, and various U.S. states with comprehensive privacy laws) may have additional rights under local law. Please contact privacy@aivo.education to exercise any such rights.",
           ],
-        },
-        {
-          title: "Data Retention",
-          content: "We keep personal information only for as long as needed to provide the Services and to comply with our legal obligations. When a learner profile or account is deleted, we delete or de-identify the associated personal information within a reasonable period, except where retention is required for legal, accounting, security, or fraud-prevention purposes. De-identified or aggregated data, which cannot reasonably be linked back to a person, may be kept longer for research, analytics, and Service improvement.",
-        },
-        {
-          title: "International Users",
-          content: [
-            "AIVO is operated from the United States, and our hosting infrastructure is primarily located in the United States. If you access the Services from outside the U.S., you understand that your information will be processed in the U.S. and other countries that may have data-protection laws different from those in your jurisdiction.",
-            "Where required by law (for example for users in the European Economic Area or the United Kingdom), we rely on appropriate transfer mechanisms such as the Standard Contractual Clauses to protect personal information when it leaves your region.",
-          ],
-        },
-        {
-          title: "Changes to This Privacy Policy",
-          content: "We may update this Privacy Policy from time to time. If we make material changes, we will let you know — for example by emailing the address on file or posting a prominent notice on the Services — before the changes take effect. We will not make material changes to how student personal data is collected or used without first giving the school notice and a meaningful choice.",
-        },
-        {
-          title: "How to Contact Us",
-          content: "Questions, requests, or concerns about this Privacy Policy or your personal information are welcome. Email our privacy team at privacy@aivo.education. For school and district matters, email compliance@aivo.education. For security reports, email security@aivo.education.",
         },
       ]}
     />
