@@ -72,9 +72,11 @@ export function createDrizzleLedger(
     },
 
     async markStarted({ jobName, runAt, replicaId }) {
+      // postgres-js 3.4.5 rejects Date params; pass ISO strings (#190).
+      const runAtIso = runAt instanceof Date ? runAt.toISOString() : runAt;
       await db.execute(sql`
         INSERT INTO daily_job_runs (job_name, last_run_at, last_replica_id, last_status, updated_at)
-        VALUES (${jobName}, ${runAt}, ${replicaId}, 'running', NOW())
+        VALUES (${jobName}, ${runAtIso}, ${replicaId}, 'running', NOW())
         ON CONFLICT (job_name) DO UPDATE SET
           last_run_at = EXCLUDED.last_run_at,
           last_replica_id = EXCLUDED.last_replica_id,
@@ -88,9 +90,10 @@ export function createDrizzleLedger(
     },
 
     async markFinished({ jobName, finishedAt, status, sent, failed, error }) {
+      const finishedAtIso = finishedAt instanceof Date ? finishedAt.toISOString() : finishedAt;
       await db.execute(sql`
         UPDATE daily_job_runs
-        SET last_finished_at = ${finishedAt},
+        SET last_finished_at = ${finishedAtIso},
             last_status = ${status},
             last_sent = ${sent ?? null},
             last_failed = ${failed ?? null},
@@ -101,9 +104,11 @@ export function createDrizzleLedger(
     },
 
     async appendHistory({ jobName, runAt, finishedAt, replicaId, status, durationMs, error }) {
+      const runAtIso = runAt instanceof Date ? runAt.toISOString() : runAt;
+      const finishedAtIso = finishedAt instanceof Date ? finishedAt.toISOString() : finishedAt;
       await db.execute(sql`
         INSERT INTO periodic_job_runs (job_name, run_at, finished_at, replica_id, status, duration_ms, error)
-        VALUES (${jobName}, ${runAt}, ${finishedAt}, ${replicaId}, ${status}, ${durationMs}, ${error ?? null})
+        VALUES (${jobName}, ${runAtIso}, ${finishedAtIso}, ${replicaId}, ${status}, ${durationMs}, ${error ?? null})
       `);
       // Best-effort prune so the history table stays bounded.
       try {

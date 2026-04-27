@@ -9,7 +9,7 @@ const SKIP = !process.env.DATABASE_URL;
 async function bootstrap() {
   const Fastify = (await import("fastify")).default;
   const { sql } = await import("drizzle-orm");
-  const { createDb, users } = await import("@aivo/db");
+  const { createDb, closeDb, users } = await import("@aivo/db");
   const { signJWT } = await import("@aivo/security");
   const { registerJobsRoutes } = await import("../src/routes/jobs.js");
 
@@ -74,18 +74,20 @@ async function bootstrap() {
     resetRunNowCalls: () => {
       runNowCalls = [];
     },
+    closeDb,
   };
 }
 
 test("GET /api/admin-svc/jobs requires PLATFORM_ADMIN", { skip: SKIP }, async () => {
-  const { app } = await bootstrap();
+  const { app, db, closeDb } = await bootstrap();
   const res = await app.inject({ method: "GET", url: "/api/admin-svc/jobs" });
   assert.equal(res.statusCode, 401);
   await app.close();
+  await closeDb(db);
 });
 
 test("GET /api/admin-svc/jobs returns the registry merged with the ledger", { skip: SKIP }, async () => {
-  const { app, db, sql, auth } = await bootstrap();
+  const { app, db, sql, auth, closeDb } = await bootstrap();
   await db.execute(sql`DELETE FROM daily_job_runs`);
   await db.execute(sql`
     INSERT INTO daily_job_runs (job_name, last_run_at, last_finished_at, last_status)
@@ -110,10 +112,11 @@ test("GET /api/admin-svc/jobs returns the registry merged with the ledger", { sk
   assert.ok(legacy);
   assert.equal(legacy.unregistered, true);
   await app.close();
+  await closeDb(db);
 });
 
 test("GET /api/admin-svc/jobs/:name/runs limits to 200", { skip: SKIP }, async () => {
-  const { app, db, sql, auth } = await bootstrap();
+  const { app, db, sql, auth, closeDb } = await bootstrap();
   await db.execute(sql`DELETE FROM periodic_job_runs WHERE job_name = 'limit-test'`);
   await db.execute(sql`
     INSERT INTO periodic_job_runs (job_name, run_at, status)
@@ -129,10 +132,11 @@ test("GET /api/admin-svc/jobs/:name/runs limits to 200", { skip: SKIP }, async (
   const body = res.json();
   assert.equal(body.limit, 200);
   await app.close();
+  await closeDb(db);
 });
 
 test("POST /api/admin-svc/jobs/:name/run-now 404s for an unregistered job", { skip: SKIP }, async () => {
-  const { app, auth } = await bootstrap();
+  const { app, db, auth, closeDb } = await bootstrap();
   const res = await app.inject({
     method: "POST",
     url: "/api/admin-svc/jobs/totally.fake/run-now",
@@ -140,10 +144,11 @@ test("POST /api/admin-svc/jobs/:name/run-now 404s for an unregistered job", { sk
   });
   assert.equal(res.statusCode, 404);
   await app.close();
+  await closeDb(db);
 });
 
 test("POST /api/admin-svc/jobs/:name/run-now forwards to the owning service", { skip: SKIP }, async () => {
-  const { app, auth, runNowCalls } = await bootstrap();
+  const { app, db, auth, runNowCalls, closeDb } = await bootstrap();
   const res = await app.inject({
     method: "POST",
     url: "/api/admin-svc/jobs/billing.daily-expiry-reminders/run-now",
@@ -152,10 +157,11 @@ test("POST /api/admin-svc/jobs/:name/run-now forwards to the owning service", { 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(runNowCalls(), ["billing.daily-expiry-reminders"]);
   await app.close();
+  await closeDb(db);
 });
 
 test("GET /api/admin-svc/jobs/freshness aggregates counts", { skip: SKIP }, async () => {
-  const { app, auth } = await bootstrap();
+  const { app, db, auth, closeDb } = await bootstrap();
   const res = await app.inject({
     method: "GET",
     url: "/api/admin-svc/jobs/freshness",
@@ -166,4 +172,5 @@ test("GET /api/admin-svc/jobs/freshness aggregates counts", { skip: SKIP }, asyn
   assert.ok(body.counts);
   assert.ok(Array.isArray(body.reports));
   await app.close();
+  await closeDb(db);
 });

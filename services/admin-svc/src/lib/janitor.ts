@@ -80,7 +80,8 @@ export async function runJanitorOnce(db: any): Promise<JobOutcome & { deletedRow
   }
 
   // Orphan sweep — anything older than the retention window is dropped, full stop.
-  const orphanCutoff = new Date(Date.now() - ORPHAN_WINDOW_MS);
+  // postgres-js 3.4.5 requires ISO strings, not Date objects, for prepared-stmt params (#190).
+  const orphanCutoff = new Date(Date.now() - ORPHAN_WINDOW_MS).toISOString();
   const orphan1 = (await db.execute(sql`
     WITH deleted AS (
       DELETE FROM periodic_job_runs WHERE run_at < ${orphanCutoff} RETURNING 1

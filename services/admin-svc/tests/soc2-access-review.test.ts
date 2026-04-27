@@ -12,7 +12,7 @@ import assert from "node:assert";
 const SKIP = !process.env.DATABASE_URL;
 
 test("generateEvidenceBundle does not throw on the access-review query", { skip: SKIP }, async () => {
-  const { createDb } = await import("@aivo/db");
+  const { createDb, closeDb } = await import("@aivo/db");
   const { generateEvidenceBundle } = await import("../src/lib/soc2-evidence.js");
   const db = createDb(process.env.DATABASE_URL!);
   // We can't fully run the bundle in CI without the file system, but the
@@ -29,5 +29,7 @@ test("generateEvidenceBundle does not throw on the access-review query", { skip:
       /op ANY\/ALL.*requires array/,
       "access-review query still binds JS array as tuple",
     );
+  } finally {
+    await closeDb(db);
   }
 });

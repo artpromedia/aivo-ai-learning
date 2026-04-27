@@ -14,7 +14,8 @@ const DEFAULT_RETENTION_DAYS = 730;
 export async function runAuditRetentionOnce(db: any): Promise<JobOutcome> {
   const days = Number.parseInt(process.env.AUDIT_RETENTION_DAYS ?? "", 10);
   const retentionDays = Number.isFinite(days) && days > 0 ? days : DEFAULT_RETENTION_DAYS;
-  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+  // postgres-js 3.4.5 requires ISO strings, not Date objects, for prepared-stmt params (#190).
+  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
   const result = (await db.execute(sql`
     WITH deleted AS (
       DELETE FROM admin_audit_log WHERE created_at < ${cutoff} RETURNING 1

@@ -13,7 +13,7 @@ const SKIP = !process.env.DATABASE_URL;
 
 async function bootstrap() {
   const Fastify = (await import("fastify")).default;
-  const { createDb, users } = await import("@aivo/db");
+  const { createDb, closeDb, users } = await import("@aivo/db");
   const { signJWT } = await import("@aivo/security");
   const { registerApiKeyRoutes, validateApiKey } = await import("../src/routes/api-keys");
   const db = createDb(process.env.DATABASE_URL!);
@@ -37,7 +37,7 @@ async function bootstrap() {
     name: "Test Admin",
   } as any);
   const auth = { Authorization: `Bearer ${token}` };
-  return { app, db, auth, adminId: admin.id, validateApiKey };
+  return { app, db, auth, adminId: admin.id, validateApiKey, closeDb };
 }
 
 async function cleanupAdmin(db: any, adminId: string) {
@@ -47,7 +47,7 @@ async function cleanupAdmin(db: any, adminId: string) {
 }
 
 test("API keys: create returns plaintext exactly once and stores argon2 hash", { skip: SKIP }, async () => {
-  const { app, db, auth, adminId, validateApiKey } = await bootstrap();
+  const { app, db, auth, adminId, validateApiKey, closeDb } = await bootstrap();
   try {
     const res = await app.inject({
       method: "POST",
@@ -72,11 +72,12 @@ test("API keys: create returns plaintext exactly once and stores argon2 hash", {
   } finally {
     await cleanupAdmin(db, adminId);
     await app.close();
+    await closeDb(db);
   }
 });
 
 test("API keys: rotate keeps old key working through grace, then revoke kills it", { skip: SKIP }, async () => {
-  const { app, db, auth, adminId, validateApiKey } = await bootstrap();
+  const { app, db, auth, adminId, validateApiKey, closeDb } = await bootstrap();
   try {
     const create = await app.inject({
       method: "POST", url: "/api/admin-svc/api-keys", headers: auth,
@@ -112,11 +113,12 @@ test("API keys: rotate keeps old key working through grace, then revoke kills it
   } finally {
     await cleanupAdmin(db, adminId);
     await app.close();
+    await closeDb(db);
   }
 });
 
 test("API keys: rotate refuses when already revoked", { skip: SKIP }, async () => {
-  const { app, db, auth, adminId } = await bootstrap();
+  const { app, db, auth, adminId, closeDb } = await bootstrap();
   try {
     const create = await app.inject({
       method: "POST", url: "/api/admin-svc/api-keys", headers: auth,
@@ -135,11 +137,12 @@ test("API keys: rotate refuses when already revoked", { skip: SKIP }, async () =
   } finally {
     await cleanupAdmin(db, adminId);
     await app.close();
+    await closeDb(db);
   }
 });
 
 test("API keys: rejects requests without PLATFORM_ADMIN role", { skip: SKIP }, async () => {
-  const { app, db, adminId } = await bootstrap();
+  const { app, db, adminId, closeDb } = await bootstrap();
   try {
     const { signJWT } = await import("@aivo/security");
     const teacherToken = await signJWT({
@@ -153,5 +156,6 @@ test("API keys: rejects requests without PLATFORM_ADMIN role", { skip: SKIP }, a
   } finally {
     await cleanupAdmin(db, adminId);
     await app.close();
+    await closeDb(db);
   }
 });
