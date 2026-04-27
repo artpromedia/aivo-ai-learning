@@ -6,83 +6,126 @@ export default function TermsOfServicePage() {
     <LegalPageLayout
       badge="Legal"
       title="Terms of Service"
-      subtitle="The terms and conditions governing your use of the AIVO Learning Platform. Please read these terms carefully before using our services."
+      subtitle="Welcome to AIVO Learning. These Terms describe the rules for using our adaptive learning platform. Please read them carefully — by using AIVO, you agree to them."
       icon="📜"
       accentColor="#2563eb"
-      lastUpdated="April 1, 2026"
+      lastUpdated="December 15, 2026"
       contactEmail="legal@aivo.education"
       sections={[
         {
-          title: "Acceptance of Terms",
-          content: "By accessing or using the AIVO Learning Platform, you agree to be bound by these Terms of Service. If you are a parent or guardian creating an account for a child, you agree to these terms on behalf of your child. If you are a school or district administrator, you agree to these terms on behalf of your institution.",
-        },
-        {
-          title: "Description of Service",
-          content: "AIVO Learning provides an AI-powered adaptive learning platform designed for learners with diverse needs, including those with autism and other developmental differences. Our platform includes:",
-          list: [
-            "Personalized AI tutors that adapt to each learner's style and pace",
-            "Brain-Clone technology that builds a cognitive model of each learner",
-            "Curriculum aligned to state and national standards, localized by region",
-            "Progress tracking, reporting, and IEP integration tools",
-            "Gamified learning experiences with rewards and achievements",
-          ],
-        },
-        {
-          title: "Account Registration",
+          title: "Welcome",
           content: [
-            "To use AIVO Learning, you must create an account with accurate and complete information. You are responsible for maintaining the confidentiality of your account credentials.",
-            "Parents/guardians must be at least 18 years old to create an account. Learner accounts can only be created by a parent, guardian, or authorized educational institution. You are responsible for all activities that occur under your account.",
+            "AIVO Learning, Inc. (\"AIVO\", \"we\", \"us\", or \"our\") operates the website at aivolearning.com, our mobile applications, and a set of online services that include our Brain-Clone adaptive learning engine, AI tutors, IEP tools, and progress reporting (together, the \"Services\").",
+            "When you use the Services, you are entering into a legal agreement with AIVO. We refer to anyone who uses the Services as a \"User.\" If you are a parent or legal guardian creating an account for a child, you are agreeing to these Terms on behalf of your child. If you are school personnel or a district administrator, you are agreeing on behalf of your institution.",
+            "These Terms of Service, together with our Privacy Policy, Cookie Policy, COPPA Compliance Notice, and FERPA Compliance Notice (collectively, the \"Terms\"), set the rules for using our Services. Please note that these Terms include limitations on liability and a binding arbitration clause that affects how disputes are resolved.",
           ],
         },
         {
-          title: "Subscription Plans and Billing",
-          content: "AIVO Learning offers several subscription tiers:",
-          list: [
-            "Free Plan: Limited access for one learner with ELA content only",
-            "Single Learner Plan ($24.99/month): Full access for one learner across all subjects",
-            "Family Plan ($19.99/month per learner): Discounted multi-learner access for families",
-            "District Plan: Custom pricing for schools and districts with volume licensing",
-          ],
-        },
-        {
-          title: "Billing and Cancellation",
+          title: "Eligibility",
           content: [
-            "Subscriptions are billed monthly or annually. You may cancel your subscription at any time through your account dashboard. Upon cancellation, you retain access until the end of your current billing period.",
-            "Refunds may be issued within 14 days of initial purchase if the service has not been substantially used. District contracts have separate terms as specified in their service agreements.",
+            "AIVO is built for learners of all ages, with a particular focus on children with autism, ADHD, dyslexia, and other neurodivergent profiles. Because we serve children, eligibility rules apply.",
+            "By using the Services, you represent that one of the following is true: (i) you are at least 18 years old (or the age of majority in your jurisdiction) and are creating an account for yourself; (ii) you are a parent or legal guardian creating and approving an account for your child; or (iii) you are authorized school personnel registering a student under your institution's policies.",
+            "Children under 13 in the United States, and children under the equivalent age of digital consent in other jurisdictions, may only use the Services with verifiable parental consent or under a school-based exception, as described in our COPPA Compliance Notice.",
+          ],
+        },
+        {
+          title: "Your Account",
+          content: [
+            "To use most features of AIVO you must create an account. You agree to provide accurate, current, and complete information during registration and to keep that information up to date.",
+            "You are responsible for keeping your password and account credentials confidential, and you accept responsibility for all activity that occurs under your account. If you believe your account has been compromised, please email us at security@aivo.education immediately.",
+            "Parents and guardians may create and manage learner accounts for their children. School personnel may create and manage student accounts under a District Plan or institutional agreement. Sharing of accounts between learners is not permitted.",
+          ],
+        },
+        {
+          title: "Subscription Plans, Billing, and Cancellation",
+          content: "AIVO offers several subscription tiers so that families, schools, and districts can choose the option that fits them best:",
+          list: [
+            "Free Plan — limited access for one learner, English Language Arts content only.",
+            "Single Learner Plan — $24.99 per month for one learner with full access to every subject and AI tutor.",
+            "Family Plan — $19.99 per month per learner, with discounted multi-learner access for the same household.",
+            "District Plan — custom pricing for schools and districts, with volume licensing, rostering, and admin tools governed by a separate written agreement.",
+            "Subscriptions renew automatically each billing cycle. You may cancel any time from your account dashboard and will retain access through the end of the current period.",
+            "Refunds may be granted within 14 days of initial purchase if the Service has not been substantially used. District contracts follow the refund and termination terms in the underlying agreement.",
+          ],
+        },
+        {
+          title: "School and District Use",
+          content: [
+            "Where AIVO is used as part of a school's educational program, the institution is responsible for obtaining any parental consents and providing any notices required by FERPA, COPPA, and other applicable laws.",
+            "Schools may roster students using SSO providers such as Google Classroom, Clever, or ClassLink, in accordance with the institution's written agreement with AIVO. Student data created under a District Plan is treated as an education record under FERPA, and access controls reflect that.",
+            "Educators should treat AIVO as an educational aid and not as a substitute for professional judgment. AI-generated guidance is meant to support — not replace — the IEP team, therapists, and qualified teachers.",
           ],
         },
         {
           title: "Acceptable Use",
-          content: "You agree not to use the platform in any way that:",
+          content: "You agree not to use the Services in any way that:",
           list: [
-            "Violates any applicable laws or regulations",
-            "Infringes on the intellectual property rights of others",
-            "Attempts to gain unauthorized access to other accounts or systems",
-            "Transmits malicious software or harmful content",
-            "Harasses, threatens, or harms other users",
-            "Uses automated systems to scrape content or data from the platform",
-            "Shares account credentials with unauthorized individuals",
+            "Violates any applicable law or regulation, including export controls and sanctions.",
+            "Infringes any third party's intellectual property, privacy, or publicity rights.",
+            "Attempts to gain unauthorized access to other accounts, systems, or data, or to bypass our security or rate limits.",
+            "Transmits malicious code, spam, or content designed to harm or disrupt the Services.",
+            "Harasses, threatens, exploits, or endangers any learner or other user, especially a child.",
+            "Scrapes, copies, or uses Service content to train, fine-tune, or evaluate any third-party machine learning model.",
+            "Shares account credentials, resells access, or uses the Services for commercial purposes outside of an authorized District Plan.",
           ],
         },
         {
-          title: "Intellectual Property",
-          content: "All content, software, AI models, curriculum materials, and branding on the AIVO Learning Platform are the property of AIVO Learning Inc. and are protected by copyright, trademark, and other intellectual property laws. Users may not reproduce, distribute, or create derivative works from our content without written permission.",
+          title: "Your Content",
+          content: [
+            "Learners and educators may submit content to the Services — for example, written responses, journal entries, voice recordings, IEP goals, and chat messages with AI tutors (\"User Content\"). You retain ownership of your User Content.",
+            "By submitting User Content, you grant AIVO a worldwide, non-exclusive, royalty-free license to host, display, and process that content solely to operate, secure, and improve the Services for you and other authorized users. Where User Content is part of an education record, that record is owned and controlled by the school or district as required by FERPA.",
+            "We never sell User Content, and we never use identifiable learner data to train third-party AI models. See our Privacy Policy for full detail on how data is handled.",
+          ],
         },
         {
-          title: "User-Generated Content",
-          content: "Any content submitted by users (such as learner responses, feedback, or communications) remains the property of the user. By submitting content, you grant AIVO Learning a limited license to use it solely for providing and improving our services. We will never use identifiable learner data for purposes outside of education.",
+          title: "AI-Powered Features and Brain-Clone",
+          content: [
+            "AIVO uses artificial intelligence to personalize learning. Our Brain-Clone technology builds a private cognitive model of each learner so that lessons, examples, and tutor responses adapt over time to that learner's strengths and needs.",
+            "AI features can occasionally produce inaccurate, incomplete, or unexpected output. Adults supervising a learner should review important AI-generated content, especially anything used for academic decisions or IEP planning. AIVO is not a medical, diagnostic, or therapeutic service.",
+            "We may update, add, or remove specific AI features as the underlying models and our research evolve. Where AI features depend on a third-party model provider, the availability of those features may change if the provider's service changes.",
+          ],
+        },
+        {
+          title: "AIVO Content and Intellectual Property",
+          content: [
+            "All software, AI models, curriculum, lesson designs, illustrations, audio, code, trademarks, and the AIVO brand are owned by AIVO Learning, Inc. or our licensors and are protected by copyright, trademark, and other intellectual property laws.",
+            "We grant you a limited, non-exclusive, non-transferable, revocable license to access and use the Services for personal, non-commercial educational purposes (or, for District Plans, for the institution's educational use). You may not copy, modify, distribute, sell, lease, or create derivative works from any part of the Services without our written permission.",
+          ],
+        },
+        {
+          title: "Third-Party Services",
+          content: "The Services may include or link to third-party tools, content, or platforms — for example, payment processors, identity providers, classroom roster providers, or AI model APIs. Your use of those services is governed by the third party's own terms and privacy policy. AIVO is not responsible for third-party services or for content we link to as a convenience.",
+        },
+        {
+          title: "Disclaimers",
+          content: "The Services are provided \"as is\" and \"as available.\" To the fullest extent permitted by law, AIVO disclaims all warranties, express or implied, including warranties of merchantability, fitness for a particular purpose, accuracy, and non-infringement. We do not warrant that the Services will be uninterrupted, error-free, or that AI output will always be accurate. AIVO is an educational tool and is not a substitute for professional medical, therapeutic, special education, or legal advice.",
         },
         {
           title: "Limitation of Liability",
-          content: "AIVO Learning provides educational technology tools and is not a substitute for professional medical, therapeutic, or special education services. While our platform is designed to support learners with diverse needs, it does not replace IEP teams, therapists, or qualified educators. AIVO Learning shall not be liable for indirect, incidental, or consequential damages arising from use of the platform.",
+          content: "To the fullest extent permitted by law, AIVO and its directors, employees, contractors, and partners will not be liable for any indirect, incidental, consequential, special, or punitive damages, or any loss of profits, data, or goodwill, arising out of or related to the Services or these Terms. Our total aggregate liability to you for any claim related to the Services will not exceed the greater of (a) the amount you paid AIVO in the twelve months before the event giving rise to the claim or (b) one hundred U.S. dollars (US$100).",
         },
         {
           title: "Termination",
-          content: "We reserve the right to suspend or terminate accounts that violate these terms. In cases of termination, we will provide reasonable notice and an opportunity to export your data, except in cases of severe violations that pose a risk to other users or our platform.",
+          content: [
+            "You may stop using the Services at any time by canceling your subscription and deleting your account from your dashboard. We will delete or de-identify your data in accordance with our retention policy described in the Privacy Policy.",
+            "We may suspend or terminate your access if we reasonably believe you have violated these Terms, if required by law, or if continued access would create a safety, security, or legal risk. Where it is reasonable and appropriate, we will provide notice and an opportunity to export your data first.",
+          ],
         },
         {
-          title: "Governing Law",
-          content: "These terms are governed by the laws of the State of Delaware, United States, without regard to conflict of law principles. Any disputes shall be resolved through binding arbitration in accordance with the American Arbitration Association rules.",
+          title: "Changes to These Terms",
+          content: "We may update these Terms from time to time. If we make material changes, we will give you reasonable notice — for example, by email to the address on file or by posting a notice on the Services — at least thirty days before the changes take effect, except for changes required for legal or security reasons, which may take effect immediately. Your continued use of the Services after the effective date means you accept the updated Terms.",
+        },
+        {
+          title: "Governing Law and Dispute Resolution",
+          content: [
+            "These Terms are governed by the laws of the State of Delaware, United States, without regard to its conflict-of-laws rules.",
+            "Any dispute arising out of or relating to these Terms or the Services that cannot be resolved through good-faith discussion will be resolved by binding individual arbitration administered by the American Arbitration Association under its Consumer Arbitration Rules. You and AIVO each waive the right to a jury trial and the right to bring or participate in a class action, to the fullest extent permitted by law.",
+            "Nothing in this section prevents either party from seeking injunctive or other equitable relief in a court of competent jurisdiction to protect intellectual property rights, account security, or learner safety.",
+          ],
+        },
+        {
+          title: "Contact Us",
+          content: "If you have questions about these Terms, please contact our legal team at legal@aivo.education. For privacy questions, write to privacy@aivo.education. For questions about school or district use, write to compliance@aivo.education.",
         },
       ]}
     />

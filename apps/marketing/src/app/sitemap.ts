@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/press-kit", priority: 0.5, changeFrequency: "monthly" as const },
     { path: "/privacy-policy", priority: 0.3, changeFrequency: "yearly" as const },
     { path: "/terms-of-service", priority: 0.3, changeFrequency: "yearly" as const },
+    { path: "/cookie-policy", priority: 0.3, changeFrequency: "yearly" as const },
     { path: "/coppa-compliance", priority: 0.3, changeFrequency: "yearly" as const },
     { path: "/ferpa-compliance", priority: 0.3, changeFrequency: "yearly" as const },
     { path: "/accessibility", priority: 0.3, changeFrequency: "yearly" as const },

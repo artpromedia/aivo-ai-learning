@@ -101,6 +101,7 @@ export function Footer() {
       links: [
         { labelKey: "privacy_policy" as const, href: "/privacy-policy" },
         { labelKey: "terms_of_service" as const, href: "/terms-of-service" },
+        { labelKey: "cookie_policy" as const, href: "/cookie-policy" },
         { labelKey: "coppa_compliance" as const, href: "/coppa-compliance" },
         { labelKey: "ferpa_compliance" as const, href: "/ferpa-compliance" },
         { labelKey: "accessibility" as const, href: "/accessibility" },
