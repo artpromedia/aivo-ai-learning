@@ -15,8 +15,8 @@
  */
 import type { ChannelConfig, ChannelId } from "./channels.js";
 
-const PAGERDUTY_URL = "https://events.pagerduty.com/v2/enqueue";
-const OPSGENIE_URL = "https://api.opsgenie.com/v2/alerts";
+const PAGERDUTY_URL = "https://events.pagerduty.com/v2/enqueue"; // paging-url-leaks: ignore
+const OPSGENIE_URL = "https://api.opsgenie.com/v2/alerts"; // paging-url-leaks: ignore
 
 export interface OpsAlertEnvelope {
   id: string;

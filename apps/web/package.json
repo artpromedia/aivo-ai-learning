@@ -6,7 +6,8 @@
     "dev": "next dev --port 5000 --turbopack",
     "build": "node ../../scripts/next-build-with-ca.mjs",
     "start": "next start",
-    "lint": "eslint src/ --ext .ts,.tsx"
+    "lint": "eslint src/ --ext .ts,.tsx",
+    "test": "tsx --test tests/unit/*.test.ts"
   },
   "dependencies": {
     "@aivo/brand": "workspace:*",
@@ -31,6 +32,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "postcss": "^8.5.9",
     "tailwindcss": "^4.1.8",
+    "tsx": "^4.19.4",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.58.2"
   }
