@@ -113,7 +113,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               },
               contactPoint: {
                 "@type": "ContactPoint",
-                email: "hello@aivo.education",
+                email: "hello@aivolearning.com",
                 contactType: "customer service",
               },
               sameAs: [],

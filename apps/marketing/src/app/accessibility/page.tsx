@@ -10,7 +10,7 @@ export default function AccessibilityPage() {
       icon="♿"
       accentColor="#8b5cf6"
       lastUpdated="April 1, 2026"
-      contactEmail="accessibility@aivo.education"
+      contactEmail="accessibility@aivolearning.com"
       sections={[
         {
           title: "Our Commitment",

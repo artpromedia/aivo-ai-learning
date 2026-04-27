@@ -58,7 +58,7 @@ export default function BillingScreen() {
 
   const handleSwitchPlan = useCallback(async (planId: string, planName: string) => {
     if (planId === 'district') {
-      Alert.alert('Contact Sales', 'District plans require a custom agreement. Please contact sales@aivo.com for more information.');
+      Alert.alert('Contact Sales', 'District plans require a custom agreement. Please contact sales@aivolearning.com for more information.');
       return;
     }
     Alert.alert(

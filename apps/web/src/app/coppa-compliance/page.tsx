@@ -11,7 +11,7 @@ export default function CoppaCompliancePage() {
       icon={<ShieldCheck size={22} strokeWidth={2.5} aria-hidden="true" />}
       accentColor="#059669"
       lastUpdated="April 1, 2026"
-      contactEmail="privacy@aivo.education"
+      contactEmail="privacy@aivolearning.com"
       sections={[
         {
           title: "Our Commitment to Children's Privacy",

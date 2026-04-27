@@ -10,14 +10,14 @@ export default function CookiePolicyPage() {
       icon="🍪"
       accentColor="#ea580c"
       lastUpdated="April 1, 2026"
-      contactEmail="privacy@aivo.education"
+      contactEmail="privacy@aivolearning.com"
       sections={[
         {
           title: "1. About This Policy",
           content: [
             "This Cookie Policy is a supplement to our Privacy Policy and applies to all visitors and users of the Services. It is intended to be read together with the Privacy Policy and our COPPA Compliance Statement, which describes how we treat children's information differently from adult users.",
             "Where this policy uses the word \"cookie\", we mean any technology that stores or reads information on your device for the purposes described below — including HTTP cookies, HTML5 local and session storage, IndexedDB, web beacons, tracking pixels, software development kits in our mobile apps, and similar identifiers. We use the single word \"cookie\" throughout for readability.",
-            "If anything in this Cookie Policy is unclear, or if you would like a copy in an alternative format (large print, plain language, or translated), please email privacy@aivo.education and we will help.",
+            "If anything in this Cookie Policy is unclear, or if you would like a copy in an alternative format (large print, plain language, or translated), please email privacy@aivolearning.com and we will help.",
           ],
         },
         {
@@ -40,7 +40,7 @@ export default function CookiePolicyPage() {
         },
         {
           title: "4. Specific Cookies We Set",
-          content: "The following are representative examples of the cookies and similar technologies we currently use. The list is reviewed and updated regularly; you can request the current full list at any time from privacy@aivo.education.",
+          content: "The following are representative examples of the cookies and similar technologies we currently use. The list is reviewed and updated regularly; you can request the current full list at any time from privacy@aivolearning.com.",
           list: [
             "aivo_session — Strictly necessary, first-party. Authenticates your session and protects your account from cross-site request forgery. Expires when you sign out or after 24 hours of inactivity.",
             "aivo_csrf — Strictly necessary, first-party. Cross-site request forgery token used on form submissions. Session cookie; deleted when the browser tab closes.",
@@ -121,7 +121,7 @@ export default function CookiePolicyPage() {
           title: "11. Region-Specific Information: California, Colorado, Connecticut, Virginia, and Other U.S. State Privacy Laws",
           content: [
             "If you are a resident of California, you have specific rights under the California Consumer Privacy Act (CCPA), as amended by the California Privacy Rights Act (CPRA). AIVO does not sell personal information for monetary value. We do not share personal information for cross-context behavioral advertising on learner pages or on pages directed to anyone under 16. On adult marketing pages we honor the Global Privacy Control browser signal as a valid opt-out of sharing.",
-            "California residents can also use the \"Do Not Sell or Share My Personal Information\" link in the footer or email privacy@aivo.education to submit a request. We will respond within 45 days.",
+            "California residents can also use the \"Do Not Sell or Share My Personal Information\" link in the footer or email privacy@aivolearning.com to submit a request. We will respond within 45 days.",
             "Residents of Colorado, Connecticut, Delaware, Indiana, Iowa, Kentucky, Maryland, Minnesota, Montana, Nebraska, New Hampshire, New Jersey, Oregon, Rhode Island, Tennessee, Texas, Utah, and Virginia have similar opt-out rights under their respective state privacy laws. The same Cookie Preferences and email channels can be used to exercise those rights.",
           ],
         },
@@ -129,7 +129,7 @@ export default function CookiePolicyPage() {
           title: "12. Region-Specific Information: Canada, Brazil, Australia, and Other Jurisdictions",
           content: [
             "Canada — under the Personal Information Protection and Electronic Documents Act (PIPEDA) and provincial laws such as Quebec's Law 25, AIVO seeks meaningful consent for non-essential cookies and offers a clear, accessible way to withdraw it.",
-            "Brazil — under the Lei Geral de Proteção de Dados (LGPD), the legal bases used for cookies are consent (for non-essential cookies) and legitimate interest or legal obligation (for strictly necessary cookies). Brazilian users can contact our Data Protection Officer at dpo@aivo.education.",
+            "Brazil — under the Lei Geral de Proteção de Dados (LGPD), the legal bases used for cookies are consent (for non-essential cookies) and legitimate interest or legal obligation (for strictly necessary cookies). Brazilian users can contact our Data Protection Officer at dpo@aivolearning.com.",
             "Australia — AIVO follows the Australian Privacy Principles under the Privacy Act 1988. Cookies that involve personal information are described in our Privacy Policy.",
             "Other jurisdictions — if you are using AIVO from a country we have not listed, the same Cookie Preferences and contact channels are available to you, and we will respond to verifiable requests under applicable local law.",
           ],
@@ -149,8 +149,8 @@ export default function CookiePolicyPage() {
         {
           title: "15. Contact Us",
           content: [
-            "If you have questions about how AIVO uses cookies, or if you would like to exercise any of the rights described above, please email privacy@aivo.education.",
-            "For questions about cookies in a school or district deployment of AIVO, please write to compliance@aivo.education and copy your district's privacy officer.",
+            "If you have questions about how AIVO uses cookies, or if you would like to exercise any of the rights described above, please email privacy@aivolearning.com.",
+            "For questions about cookies in a school or district deployment of AIVO, please write to compliance@aivolearning.com and copy your district's privacy officer.",
             "Postal mail can be sent to: AIVO Learning, Inc., Attention: Privacy Office, 1 Learning Way, Suite 200, Washington, DC 20001, United States.",
           ],
         },

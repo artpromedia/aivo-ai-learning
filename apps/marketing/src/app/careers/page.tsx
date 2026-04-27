@@ -83,7 +83,7 @@ export default function CareersPage() {
                       </div>
                     </div>
                     <a
-                      href={`mailto:careers@aivo.education?subject=Application: ${role.title}`}
+                      href={`mailto:careers@aivolearning.com?subject=Application: ${role.title}`}
                       className="inline-flex items-center px-5 py-2 rounded-full text-sm font-bold text-white transition hover:opacity-90 flex-shrink-0"
                       style={{ backgroundColor: dept.color }}
                     >
@@ -101,7 +101,7 @@ export default function CareersPage() {
         <h3 className="text-xl font-heading font-bold text-slate-900 mb-2">Don't see your role?</h3>
         <p className="text-slate-600 font-body mb-6">We are always interested in hearing from talented people passionate about education and technology.</p>
         <a
-          href="mailto:careers@aivo.education?subject=General Application"
+          href="mailto:careers@aivolearning.com?subject=General Application"
           className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition shadow-lg"
         >
           Send General Application

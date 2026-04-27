@@ -11,7 +11,7 @@ export default function PrivacyPolicyPage() {
       icon={<Lock size={22} strokeWidth={2.5} aria-hidden="true" />}
       accentColor="#7c3aed"
       lastUpdated="April 1, 2026"
-      contactEmail="privacy@aivo.education"
+      contactEmail="privacy@aivolearning.com"
       sections={[
         {
           title: "Information We Collect",

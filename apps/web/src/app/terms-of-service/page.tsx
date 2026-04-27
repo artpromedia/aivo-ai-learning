@@ -11,7 +11,7 @@ export default function TermsOfServicePage() {
       icon={<ScrollText size={22} strokeWidth={2.5} aria-hidden="true" />}
       accentColor="#2563eb"
       lastUpdated="April 1, 2026"
-      contactEmail="legal@aivo.education"
+      contactEmail="legal@aivolearning.com"
       sections={[
         {
           title: "Acceptance of Terms",

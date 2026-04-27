@@ -10,13 +10,13 @@ export default function CoppaCompliancePage() {
       icon="🛡️"
       accentColor="#059669"
       lastUpdated="April 1, 2026"
-      contactEmail="privacy@aivo.education"
+      contactEmail="privacy@aivolearning.com"
       sections={[
         {
           title: "1. Operator Information",
           content: [
             "The operator of the Services for purposes of COPPA is AIVO Learning, Inc., a Delaware corporation with its principal place of business at 1 Learning Way, Suite 200, Washington, DC 20001, United States.",
-            "Our Privacy Office is responsible for compliance with COPPA. You can reach the Privacy Office by email at privacy@aivo.education, by phone at +1 (202) 555-0102 between 9:00 a.m. and 6:00 p.m. Eastern Time on business days, or by postal mail at the address above marked \"Attention: Privacy Office\".",
+            "Our Privacy Office is responsible for compliance with COPPA. You can reach the Privacy Office by email at privacy@aivolearning.com, by phone at +1 (202) 555-0102 between 9:00 a.m. and 6:00 p.m. Eastern Time on business days, or by postal mail at the address above marked \"Attention: Privacy Office\".",
             "Our agent for service of process for privacy matters is the Corporation Service Company, 251 Little Falls Drive, Wilmington, DE 19808, United States.",
           ],
         },
@@ -109,7 +109,7 @@ export default function CoppaCompliancePage() {
           content: [
             "When a school or district authorizes AIVO for classroom use, the school acts as the parent's agent for purposes of COPPA, as described in the FTC's 2014 COPPA FAQs (Section M). In that role the school authorizes the collection of personal information from students for educational purposes only, and AIVO uses the information only for the educational purposes authorized by the school.",
             "Every school authorization is documented in a Data Privacy Agreement that mirrors the requirements of California's Student Online Personal Information Protection Act (SOPIPA), the Student Data Privacy Consortium's National Data Privacy Agreement, and the New York Education Law § 2-d Parents' Bill of Rights.",
-            "Parents of students enrolled through a school may, at any time and without affecting the school's authorization for other students, ask the school to remove their child or contact AIVO directly at privacy@aivo.education to delete the child's profile. We will honor a verified parent request within 30 days regardless of the school's preference.",
+            "Parents of students enrolled through a school may, at any time and without affecting the school's authorization for other students, ask the school to remove their child or contact AIVO directly at privacy@aivolearning.com to delete the child's profile. We will honor a verified parent request within 30 days regardless of the school's preference.",
           ],
         },
         {
@@ -136,7 +136,7 @@ export default function CoppaCompliancePage() {
         {
           title: "13. How to Exercise Parental Rights",
           content: [
-            "Parents can exercise any of the rights above directly from their parent dashboard at app.aivolearning.com/parent/privacy, by emailing privacy@aivo.education, or by writing to the postal address in Section 1.",
+            "Parents can exercise any of the rights above directly from their parent dashboard at app.aivolearning.com/parent/privacy, by emailing privacy@aivolearning.com, or by writing to the postal address in Section 1.",
             "To protect children, we will verify the identity of the requesting parent before responding. Verification typically uses the same method we used to obtain the original consent (for example, email-plus, payment-method check, or signed form). For school-authorized accounts we will coordinate verification with the school.",
             "We respond to verified parental requests within 30 days. If we need additional time we will let you know within that period and will not extend the response window beyond 60 days. There is no charge to exercise these rights.",
           ],
@@ -168,7 +168,7 @@ export default function CoppaCompliancePage() {
         {
           title: "18. FTC Reporting and Complaints",
           content: [
-            "If you believe AIVO is not complying with COPPA, please contact us first at privacy@aivo.education so we can investigate and respond.",
+            "If you believe AIVO is not complying with COPPA, please contact us first at privacy@aivolearning.com so we can investigate and respond.",
             "You also have the right to report concerns directly to the Federal Trade Commission at reportfraud.ftc.gov, by phone at 1-877-FTC-HELP, or by mail at: Federal Trade Commission, Consumer Response Center, 600 Pennsylvania Avenue NW, Washington, DC 20580.",
             "School-authorized users may also contact their school district's data privacy officer or their state education agency.",
           ],
@@ -180,9 +180,9 @@ export default function CoppaCompliancePage() {
         {
           title: "20. Contact the Privacy Office",
           content: [
-            "Email: privacy@aivo.education (children's privacy and parental requests).",
-            "Email: compliance@aivo.education (school and district inquiries).",
-            "Email: dpo@aivo.education (international privacy inquiries, including LGPD and GDPR).",
+            "Email: privacy@aivolearning.com (children's privacy and parental requests).",
+            "Email: compliance@aivolearning.com (school and district inquiries).",
+            "Email: dpo@aivolearning.com (international privacy inquiries, including LGPD and GDPR).",
             "Phone: +1 (202) 555-0102, Monday through Friday, 9:00 a.m. – 6:00 p.m. Eastern Time.",
             "Postal mail: AIVO Learning, Inc., Attention: Privacy Office, 1 Learning Way, Suite 200, Washington, DC 20001, United States.",
           ],

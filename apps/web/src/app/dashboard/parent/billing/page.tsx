@@ -290,7 +290,7 @@ export default function ParentBillingPage() {
                 <h3 className="font-heading font-bold text-lg vi-text">{districtPlan.name}</h3>
                 <p className="text-sm vi-text-muted mt-1">{t("district_plan_desc")}</p>
               </div>
-              <a href="mailto:sales@aivo.com" className="px-6 py-2.5 rounded-xl bg-[hsl(var(--visual-text))] text-white font-bold text-sm hover:opacity-90 transition flex-shrink-0" style={{ minHeight: 44 }}>
+              <a href="mailto:sales@aivolearning.com" className="px-6 py-2.5 rounded-xl bg-[hsl(var(--visual-text))] text-white font-bold text-sm hover:opacity-90 transition flex-shrink-0" style={{ minHeight: 44 }}>
                 {t("contact_sales")}
               </a>
             </div>

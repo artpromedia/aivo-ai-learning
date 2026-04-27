@@ -163,7 +163,7 @@ export default function AdminLoginPage() {
                     required
                     autoComplete="email"
                     className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 outline-none transition font-body"
-                    placeholder="admin@aivo.ai"
+                    placeholder="admin@aivolearning.com"
                   />
                 </div>
               </div>

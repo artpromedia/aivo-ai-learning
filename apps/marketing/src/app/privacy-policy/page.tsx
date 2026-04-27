@@ -12,7 +12,7 @@ export default function PrivacyPolicyPage() {
       icon="🔒"
       accentColor="#7c3aed"
       lastUpdated="December 15, 2026"
-      contactEmail="privacy@aivo.education"
+      contactEmail="privacy@aivolearning.com"
       sections={[
         {
           title: "AIVO Privacy Principles",
@@ -34,7 +34,7 @@ export default function PrivacyPolicyPage() {
         },
         {
           title: "Contact AIVO",
-          content: "If you have any questions about this Privacy Policy or our handling of your information, please contact us at privacy@aivo.education. For questions specifically about COPPA, FERPA, or other student-data matters, you can also reach our compliance team at compliance@aivo.education. For security reports, please write to security@aivo.education.",
+          content: "If you have any questions about this Privacy Policy or our handling of your information, please contact us at privacy@aivolearning.com. For questions specifically about COPPA, FERPA, or other student-data matters, you can also reach our compliance team at compliance@aivolearning.com. For security reports, please write to security@aivolearning.com.",
         },
         {
           title: "Collection of Information",
@@ -74,7 +74,7 @@ export default function PrivacyPolicyPage() {
         },
         {
           title: "Retention of Personal Information",
-          content: "We retain personal information for as long as your account is active, as needed to provide you with the Services, and as necessary to comply with our legal obligations, resolve disputes, and enforce our agreements. When personal information is no longer needed, we will delete or de-identify it. Schools and parents can request deletion of a learner's personal information at any time by contacting compliance@aivo.education; we honor verified requests in accordance with COPPA, FERPA, and other Applicable Privacy Law.",
+          content: "We retain personal information for as long as your account is active, as needed to provide you with the Services, and as necessary to comply with our legal obligations, resolve disputes, and enforce our agreements. When personal information is no longer needed, we will delete or de-identify it. Schools and parents can request deletion of a learner's personal information at any time by contacting compliance@aivolearning.com; we honor verified requests in accordance with COPPA, FERPA, and other Applicable Privacy Law.",
         },
         {
           title: "Sponsorship and Advertising",
@@ -82,7 +82,7 @@ export default function PrivacyPolicyPage() {
         },
         {
           title: "Transparency and Your Choice",
-          content: "We believe you should be able to make informed choices about the information you share with us. You can choose not to provide certain information, although doing so may limit your ability to use particular features. You can review and edit much of the information in your account at any time, and you can ask us to access, correct, export, or delete your information by writing to privacy@aivo.education. If you are a parent of a Child User, you may exercise these rights on behalf of your child by contacting compliance@aivo.education.",
+          content: "We believe you should be able to make informed choices about the information you share with us. You can choose not to provide certain information, although doing so may limit your ability to use particular features. You can review and edit much of the information in your account at any time, and you can ask us to access, correct, export, or delete your information by writing to privacy@aivolearning.com. If you are a parent of a Child User, you may exercise these rights on behalf of your child by contacting compliance@aivolearning.com.",
         },
         {
           title: "Your Account Settings",
@@ -90,7 +90,7 @@ export default function PrivacyPolicyPage() {
         },
         {
           title: "Security of Your Personal Information",
-          content: "We use commercially reasonable administrative, technical, and physical safeguards to protect personal information against unauthorized access, use, alteration, or disclosure. These safeguards include encryption in transit, encryption at rest for sensitive data stores, role-based access controls for AIVO personnel, regular security testing, and incident-response procedures. No method of transmission over the internet or electronic storage is fully secure, however, and we cannot guarantee absolute security. If you believe your account has been compromised, please contact us at security@aivo.education.",
+          content: "We use commercially reasonable administrative, technical, and physical safeguards to protect personal information against unauthorized access, use, alteration, or disclosure. These safeguards include encryption in transit, encryption at rest for sensitive data stores, role-based access controls for AIVO personnel, regular security testing, and incident-response procedures. No method of transmission over the internet or electronic storage is fully secure, however, and we cannot guarantee absolute security. If you believe your account has been compromised, please contact us at security@aivolearning.com.",
         },
         {
           title: "Links to Third Parties",
@@ -113,7 +113,7 @@ export default function PrivacyPolicyPage() {
           content: [
             "AIVO complies with the Children's Online Privacy Protection Act of 1998, as amended (\"COPPA\"). This Children's Privacy Notice supplements the rest of our Privacy Policy with respect to learners under 13 in the United States.",
             "Information we collect from children. We collect from Child Users only the information reasonably necessary to operate the Services: a username or first name, an age band, a parent contact email (or, in the school context, a school identifier), authentication credentials, learning activity, exercise responses, and Brain-Clone session data. We do not require Child Users to disclose more information than is reasonably necessary to participate in the Services.",
-            "Parental consent. Before we collect personal information from a child under 13, we obtain verifiable parental consent — either directly from the parent (for personal accounts) or through the child's school as permitted by COPPA's school-authorization exception (for School Accounts). Parents can review their child's information, ask us to correct or delete it, refuse further collection, or revoke consent at any time by writing to compliance@aivo.education.",
+            "Parental consent. Before we collect personal information from a child under 13, we obtain verifiable parental consent — either directly from the parent (for personal accounts) or through the child's school as permitted by COPPA's school-authorization exception (for School Accounts). Parents can review their child's information, ask us to correct or delete it, refuse further collection, or revoke consent at any time by writing to compliance@aivolearning.com.",
             "Disclosure restrictions. We never sell or rent information about Child Users, we never show third-party advertisements to Child Users, and we never use Child User information to train third-party AI foundation models. We share Child User information only with service providers acting on our behalf under contractual restrictions, with the parent or school that authorized the account, and as required by law.",
           ],
         },
@@ -126,8 +126,8 @@ export default function PrivacyPolicyPage() {
           content: [
             "Users outside the United States. AIVO operates the Services in the United States. If you access the Services from outside the United States, your information will be transferred to and processed in the United States, where data-protection laws may differ from those in your jurisdiction.",
             "EEA, UK, and Switzerland. If you are located in the European Economic Area, the United Kingdom, or Switzerland, you have the right under the EU GDPR or the UK GDPR (as applicable) to access, correct, or delete your personal data; to restrict or object to certain processing; to data portability; and to withdraw consent at any time without affecting the lawfulness of prior processing. AIVO relies on Standard Contractual Clauses (and, where applicable, the UK International Data Transfer Addendum) for international transfers, supplemented by appropriate technical and organizational safeguards. You may lodge a complaint with your supervisory authority.",
-            "California. If you are a California resident, the California Consumer Privacy Act, as amended by the California Privacy Rights Act (\"CCPA/CPRA\"), gives you rights to know what personal information we collect, to access and delete that information, to correct inaccuracies, and to limit certain uses of sensitive personal information. AIVO does not \"sell\" or \"share\" personal information for cross-context behavioral advertising as those terms are defined under the CCPA/CPRA. You may exercise these rights at privacy@aivo.education; we will not discriminate against you for doing so.",
-            "Other jurisdictions. Residents of other jurisdictions (including, for example, Australia, Brazil, Canada, and various U.S. states with comprehensive privacy laws) may have additional rights under local law. Please contact privacy@aivo.education to exercise any such rights.",
+            "California. If you are a California resident, the California Consumer Privacy Act, as amended by the California Privacy Rights Act (\"CCPA/CPRA\"), gives you rights to know what personal information we collect, to access and delete that information, to correct inaccuracies, and to limit certain uses of sensitive personal information. AIVO does not \"sell\" or \"share\" personal information for cross-context behavioral advertising as those terms are defined under the CCPA/CPRA. You may exercise these rights at privacy@aivolearning.com; we will not discriminate against you for doing so.",
+            "Other jurisdictions. Residents of other jurisdictions (including, for example, Australia, Brazil, Canada, and various U.S. states with comprehensive privacy laws) may have additional rights under local law. Please contact privacy@aivolearning.com to exercise any such rights.",
           ],
         },
       ]}

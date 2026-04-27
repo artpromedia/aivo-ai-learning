@@ -90,13 +90,13 @@ export default function PressKitPage() {
             For press inquiries, interview requests, or media resources, please reach out to our communications team.
           </p>
           <a
-            href="mailto:press@aivo.education"
+            href="mailto:press@aivolearning.com"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-amber-600 text-white font-bold hover:bg-amber-700 transition shadow-lg"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
-            press@aivo.education
+            press@aivolearning.com
           </a>
         </div>
       </section>

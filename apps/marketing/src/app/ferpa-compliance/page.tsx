@@ -10,7 +10,7 @@ export default function FerpaCompliancePage() {
       icon="🎓"
       accentColor="#2563eb"
       lastUpdated="April 1, 2026"
-      contactEmail="compliance@aivo.education"
+      contactEmail="compliance@aivolearning.com"
       sections={[
         {
           title: "Our Commitment to Education Privacy",

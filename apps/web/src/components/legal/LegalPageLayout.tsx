@@ -28,7 +28,7 @@ export function LegalPageLayout({
   accentColor,
   lastUpdated,
   sections,
-  contactEmail = "legal@aivo.education",
+  contactEmail = "legal@aivolearning.com",
 }: LegalPageLayoutProps) {
   return (
     <div className="min-h-screen bg-white">
