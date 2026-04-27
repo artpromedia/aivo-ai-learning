@@ -67,9 +67,6 @@ async function start() {
 
   await bootstrapOpsAlerts({ service: "admin-svc", app, beforeExit: () => app.close() });
 
-  await app.listen({ port: PORT, host: "0.0.0.0" });
-  logger.info(`AIVO Admin Service listening on port ${PORT}`);
-
   // Schedulers — these run regardless of which replica is leader; the
   // shared scheduler picks one via the advisory lock.
   const evidenceHandle = startEvidenceCron(db, logger);
@@ -94,6 +91,10 @@ async function start() {
     "admin.run-history-janitor": janitorHandle,
     "admin.audit-retention": retentionHandle,
   });
+
+  await app.listen({ port: PORT, host: "0.0.0.0" });
+  logger.info(`AIVO Admin Service listening on port ${PORT}`);
+
   startWatchdog(db, { log: logger });
 }
 

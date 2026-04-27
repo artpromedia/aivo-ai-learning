@@ -1,6 +1,7 @@
 modules = ["nodejs-20", "python-3.12", "web", "bash"]
 [agent]
 expertMode = true
+stack = "BEST_EFFORT_FALLBACK"
 
 [nix]
 channel = "stable-25_05"
@@ -58,13 +59,13 @@ outputType = "console"
 name = "Web App"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd apps/web && npx next dev --port 5000 --turbopack --hostname 0.0.0.0"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd apps/web && exec ./node_modules/.bin/next dev --port 5000 --turbopack --hostname 0.0.0.0"
+waitForPort = 5000
 
 [[workflows.workflow]]
 name = "Marketing Site"
@@ -75,7 +76,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd apps/marketing && npx next dev --port 5173 --turbopack --hostname 0.0.0.0"
+args = "cd apps/marketing && exec ./node_modules/.bin/next dev --port 5173 --turbopack --hostname 0.0.0.0"
 waitForPort = 5173
 
 [[ports]]

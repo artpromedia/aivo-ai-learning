@@ -166,6 +166,13 @@ export async function buildApp() {
   await registerAvatarRoutes(app);
   registerTestHelperRoutes(app);
 
+  void REQUIRE_DISTRICT_ADMIN_FLAG;
+  return app;
+}
+
+async function start() {
+  const app = await buildApp();
+  await bootstrapOpsAlerts({ service: "identity-svc", app, beforeExit: () => app.close() });
   await app.ready();
   // Boot-time fail-closed coverage: walk the registered route tree
   // and verify every /api/district/* path is reachable through the
@@ -178,13 +185,6 @@ export async function buildApp() {
   if (districtRoutes.length === 0) {
     throw new Error("[boot-check] No /api/district/* routes registered — tenant-scope hook would silently no-op.");
   }
-  void REQUIRE_DISTRICT_ADMIN_FLAG;
-  return app;
-}
-
-async function start() {
-  const app = await buildApp();
-  await bootstrapOpsAlerts({ service: "identity-svc", app, beforeExit: () => app.close() });
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Identity service listening on port ${PORT}`);
   // Sprint 7: fleet-wide daily housekeeping via the shared scheduler.
