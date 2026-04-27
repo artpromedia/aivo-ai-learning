@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const IS_PROD = process.env.NODE_ENV === "production";
-function requireUrl(name: string, devDefault: string): string {
-  const v = process.env[name];
+// Resolved at request time (not module-load time) so `next build` can
+// collect page data without service URLs being injected.
+function resolveAdminSvcUrl(): string {
+  const v = process.env.ADMIN_SVC_URL;
   if (v) return v;
-  if (IS_PROD) throw new Error(`marketing: ${name} must be set in production`);
-  return devDefault;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(`marketing: ADMIN_SVC_URL must be set in production`);
+  }
+  return "http://localhost:3013";
 }
-const ADMIN_SVC_URL = requireUrl("ADMIN_SVC_URL", "http://localhost:3013");
 
 export async function POST(req: NextRequest) {
   try {
+    const ADMIN_SVC_URL = resolveAdminSvcUrl();
     const body = await req.json();
     const { type, name, email, company, role, message, schoolSize } = body;
 
