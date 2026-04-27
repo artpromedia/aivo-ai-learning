@@ -34,7 +34,9 @@ if (!opts.includes("--use-openssl-ca")) opts.push("--use-openssl-ca");
 env.NODE_OPTIONS = opts.join(" ");
 
 const args = process.argv.slice(2);
-const child = spawn("next", ["build", ...args], { env, stdio: "inherit" });
+// `shell: true` lets Windows resolve the `next.cmd` shim from node_modules/.bin
+// without us hard-coding an extension; it's a no-op on POSIX.
+const child = spawn("next", ["build", ...args], { env, stdio: "inherit", shell: true });
 child.on("exit", (code, signal) => {
   if (signal) process.kill(process.pid, signal);
   else process.exit(code ?? 0);
