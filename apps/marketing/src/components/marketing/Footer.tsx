@@ -3,6 +3,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { WEB_APP_URL } from "@/lib/constants";
 import { trackFormSubmission } from "@/lib/analytics";
 
@@ -12,6 +13,7 @@ function NewsletterSignup() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (status === "submitting") return;
     setStatus("submitting");
     try {
       const res = await fetch("/api/newsletter", {
@@ -28,36 +30,51 @@ function NewsletterSignup() {
     }
   }
 
-  if (status === "success") {
-    return (
-      <p className="text-sm text-emerald-400 font-body mt-3">You&apos;re subscribed! We&apos;ll keep you updated.</p>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="mt-4">
-      <p className="text-sm text-slate-400 font-body mb-2">Stay updated with AIVO news</p>
-      <div className="flex gap-2">
+    <form onSubmit={handleSubmit} className="mt-5" aria-label="Subscribe to AIVO newsletter">
+      <p className="text-sm text-slate-300 font-body mb-2.5">Stay updated with AIVO news</p>
+      <div className="flex items-center w-full max-w-sm rounded-full bg-slate-800/80 border border-slate-700 focus-within:border-purple-400 focus-within:ring-2 focus-within:ring-purple-400/30 transition overflow-hidden">
         <input
           type="email"
           required
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
-          className="flex-1 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm font-body placeholder:text-slate-500 focus:border-purple-400 focus:ring-1 focus:ring-purple-400 outline-none transition min-h-[44px]"
-          aria-label="Email address for newsletter"
+          disabled={status === "submitting" || status === "success"}
+          className="flex-1 min-w-0 bg-transparent px-4 py-3 text-white text-sm font-body placeholder:text-slate-500 focus:outline-none disabled:opacity-60"
+          aria-label="Email address"
         />
         <button
           type="submit"
-          disabled={status === "submitting"}
-          className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition disabled:opacity-60 min-h-[44px] min-w-[44px]"
+          disabled={status === "submitting" || status === "success"}
+          className="m-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-primary-dark px-5 py-2.5 text-sm font-bold text-white hover:opacity-95 transition disabled:opacity-70 shrink-0 min-h-[40px]"
         >
-          {status === "submitting" ? "..." : "Subscribe"}
+          {status === "submitting" ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              <span className="sr-only">Submitting</span>
+            </>
+          ) : status === "success" ? (
+            <>
+              <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+              Subscribed
+            </>
+          ) : (
+            <>
+              Subscribe
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </>
+          )}
         </button>
       </div>
       {status === "error" && (
-        <p className="text-xs text-red-400 font-body mt-1">Something went wrong. Try again.</p>
+        <p className="text-xs text-red-400 font-body mt-2">Something went wrong. Please try again.</p>
       )}
+      {status === "success" && (
+        <p className="text-xs text-emerald-400 font-body mt-2">You&apos;re subscribed — thanks!</p>
+      )}
+      <p className="text-[11px] text-slate-500 font-body mt-2">No spam. Unsubscribe any time.</p>
     </form>
   );
 }

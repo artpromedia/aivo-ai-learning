@@ -294,6 +294,24 @@ uri = "file://artifacts/mockup-sandbox/public/images/aivo-friendly/auth-mascot.p
 type = "image"
 title = "auth mascot peeking"
 
+[[generated]]
+id = "dXvdoJifvJZfTbj7GNx03"
+uri = "file://apps/marketing/public/images/hero/girl-laptop.png"
+type = "image"
+title = "girl_laptop_hero"
+
+[[generated]]
+id = "jBS3MfFoNr8jSlqd-B_IU"
+uri = "file://apps/marketing/public/images/hero/boy-tablet.png"
+type = "image"
+title = "boy_tablet_hero"
+
+[[generated]]
+id = "8aBDdjM079CGwCu-eaiIN"
+uri = "file://apps/marketing/public/images/hero/girl-reading.png"
+type = "image"
+title = "girl_reading_hero"
+
 [[outputs]]
 id = "0e7lRmti5tdoSwrX0-ySG"
 uri = "file://.local/preview/marketing-hero.jpg"

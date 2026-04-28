@@ -8,14 +8,70 @@ import { WEB_APP_URL } from "@/lib/constants";
 
 const TRUST_CITIES = ["Washington DC", "Chicago", "Minneapolis", "Dallas", "Atlanta", "Denver"];
 
+type Slide = {
+  src: string;
+  alt: string;
+  tutor: { name: string; subject: string; avatar: string };
+};
+
+const SLIDES: Slide[] = [
+  {
+    src: "/images/hero/arab-boy-chromebook.webp",
+    alt: "A boy learning happily on a Chromebook with AIVO",
+    tutor: { name: "Nova", subject: "Math", avatar: "/images/tutors/nova.png" },
+  },
+  {
+    src: "/images/hero/girl-laptop.png",
+    alt: "A focused young girl using AIVO on her laptop at home",
+    tutor: { name: "Sage", subject: "Reading", avatar: "/images/tutors/sage.png" },
+  },
+  {
+    src: "/images/hero/mother-son-sofa.webp",
+    alt: "A mother and son learning together with AIVO on the sofa",
+    tutor: { name: "Harmony", subject: "Speech", avatar: "/images/tutors/harmony.png" },
+  },
+  {
+    src: "/images/hero/boy-tablet.png",
+    alt: "A young boy with headphones working on a tablet with AIVO",
+    tutor: { name: "Lingua", subject: "Spanish", avatar: "/images/tutors/lingua.png" },
+  },
+  {
+    src: "/images/hero/girl-reading.png",
+    alt: "A young girl reading and learning with AIVO at home",
+    tutor: { name: "Muse", subject: "Writing", avatar: "/images/tutors/muse.png" },
+  },
+];
+
+const SLIDE_INTERVAL_MS = 5000;
+
 export function Hero({ scrollY }: { scrollY: number }) {
   const t = useTranslations("marketing.hero");
   const [visible, setVisible] = useState(false);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 100);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setPrefersReducedMotion(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (paused || prefersReducedMotion) return;
+    const id = window.setInterval(() => {
+      setActiveSlide((i) => (i + 1) % SLIDES.length);
+    }, SLIDE_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [paused, prefersReducedMotion]);
 
   const STATS = [
     { value: "14", label: t("stat_tutors"), icon: "👨‍🏫" },
@@ -23,6 +79,8 @@ export function Hero({ scrollY }: { scrollY: number }) {
     { value: "10", label: t("stat_languages"), icon: "🌍" },
     { value: "24/7", label: t("stat_adaptive"), icon: "🧠" },
   ];
+
+  const current = SLIDES[activeSlide];
 
   return (
     <section className="relative bg-white overflow-hidden">
@@ -87,7 +145,13 @@ export function Hero({ scrollY }: { scrollY: number }) {
             </div>
           </div>
 
-          <div className="relative w-full max-w-lg mx-auto md:max-w-none">
+          <div
+            className="relative w-full max-w-lg mx-auto md:max-w-none"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocus={() => setPaused(true)}
+            onBlur={() => setPaused(false)}
+          >
             <div
               className="absolute -top-4 -right-4 z-20 bg-white p-4 rounded-2xl shadow-2xl border border-slate-100 rotate-3 animate-float-slow motion-reduce:animate-none"
               style={{ animationDelay: "0.5s" }}
@@ -102,9 +166,12 @@ export function Hero({ scrollY }: { scrollY: number }) {
                 </div>
               </div>
             </div>
-            <div className="absolute -bottom-4 -left-4 z-20 bg-white p-3 pr-5 rounded-2xl shadow-2xl border border-slate-100 -rotate-3 animate-float-slow motion-reduce:animate-none flex items-center gap-3">
+            <div
+              key={current.tutor.name}
+              className="absolute -bottom-4 -left-4 z-20 bg-white p-3 pr-5 rounded-2xl shadow-2xl border border-slate-100 -rotate-3 animate-float-slow motion-reduce:animate-none flex items-center gap-3 transition-all duration-500"
+            >
               <Image
-                src="/images/tutors/nova.png"
+                src={current.tutor.avatar}
                 alt=""
                 width={40}
                 height={40}
@@ -112,18 +179,47 @@ export function Hero({ scrollY }: { scrollY: number }) {
               />
               <div>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">{t("badge_now_learning")}</p>
-                <p className="text-sm font-heading font-bold text-slate-800">{t("badge_now_learning_value")}</p>
+                <p className="text-sm font-heading font-bold text-slate-800">
+                  {current.tutor.name} · {current.tutor.subject}
+                </p>
               </div>
             </div>
-            <div className="rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white aspect-[4/5] md:aspect-[4/5] relative">
-              <Image
-                src="/images/hero/arab-boy-chromebook.webp"
-                alt={t("image_alt")}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority
-              />
+
+            <div
+              className="rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white aspect-[4/5] md:aspect-[4/5] relative bg-slate-100"
+              role="region"
+              aria-roledescription="carousel"
+              aria-label="Learners using AIVO"
+            >
+              {SLIDES.map((slide, i) => (
+                <div
+                  key={slide.src}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out motion-reduce:transition-none ${i === activeSlide ? "opacity-100" : "opacity-0"}`}
+                  aria-hidden={i !== activeSlide}
+                >
+                  <Image
+                    src={slide.src}
+                    alt={slide.alt}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority={i === 0}
+                  />
+                </div>
+              ))}
+
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-2">
+                {SLIDES.map((slide, i) => (
+                  <button
+                    key={slide.src}
+                    type="button"
+                    onClick={() => setActiveSlide(i)}
+                    aria-label={`Show slide ${i + 1} of ${SLIDES.length}`}
+                    aria-current={i === activeSlide}
+                    className={`h-2 rounded-full transition-all ${i === activeSlide ? "w-6 bg-white" : "w-2 bg-white/60 hover:bg-white/80"}`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
