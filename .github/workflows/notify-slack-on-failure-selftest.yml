@@ -1,0 +1,49 @@
+name: notify-slack-on-failure self-test
+
+# Six (and growing) workflows depend on
+# `.github/actions/notify-slack-on-failure` to actually deliver the
+# on-call page when an unattended check goes red. If a future edit breaks
+# the JSON payload — a stray quote in the heredoc, a typo in the jq
+# filter for the previous-run lookup — nothing catches it until a real
+# outage happens, at which point the page silently fails to send.
+#
+# This workflow runs `scripts/check-notify-slack-on-failure.test.mjs`
+# whenever the action (or its self-test) changes, so a regression to the
+# notifier fails the PR instead of silently shipping.
+#
+# Modeled on `.github/workflows/paging-url-leaks.yml`'s "self-test the
+# guardrail itself" pattern.
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - ".github/actions/notify-slack-on-failure/**"
+      - "scripts/check-notify-slack-on-failure.test.mjs"
+      - ".github/workflows/notify-slack-on-failure-selftest.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - ".github/actions/notify-slack-on-failure/**"
+      - "scripts/check-notify-slack-on-failure.test.mjs"
+      - ".github/workflows/notify-slack-on-failure-selftest.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    name: self-test the shared Slack notifier
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      # python3 and jq are pre-installed on ubuntu-latest; the test asserts
+      # both the Python payload-building blocks AND the jq filter used by
+      # the previous-run lookup, so a failure here surfaces either kind of
+      # regression before it can silently shipped.
+      - name: run notifier self-test
+        run: node scripts/check-notify-slack-on-failure.test.mjs
