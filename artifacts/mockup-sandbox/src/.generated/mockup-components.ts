@@ -3,10 +3,10 @@ type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 export const modules: ModuleMap = {
   "./components/mockups/aivo-calm/Auth.tsx": () => import("../components/mockups/aivo-calm/Auth.tsx"),
   "./components/mockups/aivo-calm/Marketing.tsx": () => import("../components/mockups/aivo-calm/Marketing.tsx"),
-  "./components/mockups/aivo-friendly/Auth.tsx": () => import("../components/mockups/aivo-friendly/Auth.tsx"),
-  "./components/mockups/aivo-friendly/Marketing.tsx": () => import("../components/mockups/aivo-friendly/Marketing.tsx"),
   "./components/mockups/aivo-trusted/Auth.tsx": () => import("../components/mockups/aivo-trusted/Auth.tsx"),
   "./components/mockups/aivo-trusted/Marketing.tsx": () => import("../components/mockups/aivo-trusted/Marketing.tsx"),
+  "./components/mockups/aivo-friendly/Auth.tsx": () => import("../components/mockups/aivo-friendly/Auth.tsx"),
+  "./components/mockups/aivo-friendly/Marketing.tsx": () => import("../components/mockups/aivo-friendly/Marketing.tsx"),
   "./components/mockups/nd-calm/Dashboard.tsx": () => import("../components/mockups/nd-calm/Dashboard.tsx"),
   "./components/mockups/nd-calm/Landing.tsx": () => import("../components/mockups/nd-calm/Landing.tsx"),
   "./components/mockups/nd-visual/Dashboard.tsx": () => import("../components/mockups/nd-visual/Dashboard.tsx"),
