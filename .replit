@@ -80,7 +80,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd apps/marketing && exec ./node_modules/.bin/next dev --port 5173 --turbopack --hostname 0.0.0.0"
+args = "bash scripts/start-marketing.sh"
 waitForPort = 5173
 
 [[workflows.workflow]]
