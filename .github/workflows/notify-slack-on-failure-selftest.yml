@@ -20,12 +20,14 @@ on:
     paths:
       - ".github/actions/notify-slack-on-failure/**"
       - "scripts/check-notify-slack-on-failure.test.mjs"
+      - "scripts/check-notify-slack-on-failure-curl.test.mjs"
       - ".github/workflows/notify-slack-on-failure-selftest.yml"
   pull_request:
     branches: [main, develop]
     paths:
       - ".github/actions/notify-slack-on-failure/**"
       - "scripts/check-notify-slack-on-failure.test.mjs"
+      - "scripts/check-notify-slack-on-failure-curl.test.mjs"
       - ".github/workflows/notify-slack-on-failure-selftest.yml"
 
 permissions:
@@ -45,5 +47,14 @@ jobs:
       # both the Python payload-building blocks AND the jq filter used by
       # the previous-run lookup, so a failure here surfaces either kind of
       # regression before it can silently shipped.
-      - name: run notifier self-test
+      - name: run notifier self-test (JSON payload shape)
         run: node scripts/check-notify-slack-on-failure.test.mjs
+      # End-to-end self-test of the *transport* half of the contract:
+      # extracts the actual `run:` shell scripts out of action.yml and
+      # executes them with curl pointed at a local mock webhook server,
+      # so a regression to the curl invocation (dropping --data, wrong
+      # method, broken Content-Type, mishandled empty webhook URL) fails
+      # the PR instead of silently shipping a notifier that builds the
+      # right JSON but never delivers it.
+      - name: run notifier self-test (curl transport)
+        run: node scripts/check-notify-slack-on-failure-curl.test.mjs
