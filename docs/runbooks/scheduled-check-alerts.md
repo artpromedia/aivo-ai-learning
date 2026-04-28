@@ -56,6 +56,7 @@ action logs and exits 0 instead of failing the build.
 | `secret-scan.yml` | PR + push to `main`/`develop`/`master` + weekly Monday 03:00 UTC schedule + manual | Push, schedule, and manual — PR failures already block the PR |
 | `i18n-file-audit.yml` | PR + push to `main`/`develop` (paths-filtered to locale messages) + manual | Push and manual — PR failures already block the PR |
 | `backup-verify.yml` | Monthly schedule (1st of month, 03:00 UTC) + manual | Every run (no PR/push triggers exist) |
+| `health-check.yml` | Every 5 minutes + manual | Every non-PR run (no PR triggers exist) |
 
 The "PR runs are skipped" decision is consistent across the table:
 PR-triggered failures are already visible to the PR author in the merge
@@ -71,7 +72,6 @@ notifier; the reasoning is in each row.
 
 | Workflow | Why it doesn't page |
 | --- | --- |
-| `health-check.yml` | Already pings Slack via its own bespoke webhook step (predates the composite action). Migrating it is tracked separately so we don't silently change its alert payload format. |
 | `marketing-lighthouse.yml`, `marketing-a11y.yml`, `a11y-tests.yml`, `visual-regression.yml`, `zap-baseline.yml` | Quality / perf / a11y / security baselines that produce **reports**, not pass/fail health signals. Their failures are intentionally reviewed in the Actions UI as part of release prep, not paged in real time. |
 | `ci.yml`, `migrations.yml`, `e2e-module-gate.yml`, `smoke-tests.yml`, `marketing-deploy*.yml`, `deploy-staging.yml`, `deploy-production.yml`, `deploy-hetzner.yml`, `infra-deploy.yml`, `infra-plan.yml`, `rollback.yml`, `mobile-build.yml`, `mobile-release.yml`, `create-release.yml`, `train-brain.yml`, `load-test.yml`, `i18n-coverage.yml`, `alerts-proxy-deploy-gate.yml`, `security-scan.yml` | All driven by an active human action (PR, push, deploy click, release cut) or only run as part of a deploy. A failure has a person already looking at the screen, so a Slack page would be noise. |
 
