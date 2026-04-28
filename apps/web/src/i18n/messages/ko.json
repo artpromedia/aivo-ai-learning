@@ -139,11 +139,14 @@
     "login_method_label": "로그인 방법",
     "start_free_today": "오늘 무료로 시작",
     "start_free_trial": "무료 체험 시작하기",
-    "streak_preview_subtitle": "Nova가 오늘의 수학 퀘스트를 준비했어요",
-    "streak_preview_title": "Leo는 12일 연속 학습 중!",
+    "streak_preview_title": "{name}는 {days}일 연속 학습 중!",
     "what_sounds_fun": "뭐가 재미있을까?",
     "whos_learning": "오늘은 누가 배우나요?",
-    "password_min_placeholder": "최소 8자"
+    "password_min_placeholder": "최소 8자",
+    "streak_preview_subtitle_math": "Nova가 오늘의 수학 퀘스트를 준비했어요",
+    "streak_preview_subtitle_reading": "Sage가 오늘의 독서 모험을 준비했어요",
+    "streak_preview_subtitle_science": "Spark가 오늘의 과학 실험을 준비했어요",
+    "streak_preview_subtitle_sel": "Harmony가 오늘의 마음챙김 시간을 준비했어요"
   },
   "onboarding": {
     "add_learner_title": "새 학습자 추가",

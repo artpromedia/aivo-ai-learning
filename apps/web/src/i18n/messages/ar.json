@@ -139,11 +139,14 @@
     "login_method_label": "طريقة تسجيل الدخول",
     "start_free_today": "ابدأ مجانًا اليوم",
     "start_free_trial": "ابدأ نسختك التجريبية المجانية",
-    "streak_preview_subtitle": "نوفا جاهزة لمهمة الرياضيات اليوم",
-    "streak_preview_title": "ليو في سلسلة من 12 يومًا!",
+    "streak_preview_title": "{name} في سلسلة من {days} يومًا!",
     "what_sounds_fun": "ما الذي يبدو ممتعًا؟",
     "whos_learning": "من يتعلم اليوم؟",
-    "password_min_placeholder": "8 أحرف على الأقل"
+    "password_min_placeholder": "8 أحرف على الأقل",
+    "streak_preview_subtitle_math": "نوفا جاهزة لمهمة الرياضيات اليوم",
+    "streak_preview_subtitle_reading": "سيج جاهزة لمغامرة القراءة اليوم",
+    "streak_preview_subtitle_science": "سبارك جاهز لتجربة العلوم اليوم",
+    "streak_preview_subtitle_sel": "هارموني جاهزة للحظة التأمل اليوم"
   },
   "onboarding": {
     "add_learner_title": "إضافة متعلم جديد",

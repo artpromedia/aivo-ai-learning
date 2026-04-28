@@ -139,11 +139,14 @@
     "login_method_label": "サインイン方法",
     "start_free_today": "今日から無料で始める",
     "start_free_trial": "無料トライアルを開始",
-    "streak_preview_subtitle": "Nova は今日の算数クエストの準備ができました",
-    "streak_preview_title": "Leo は 12 日連続学習中！",
+    "streak_preview_title": "{name} は {days} 日連続学習中！",
     "what_sounds_fun": "何が楽しそう？",
     "whos_learning": "今日は誰が学ぶ？",
-    "password_min_placeholder": "8文字以上"
+    "password_min_placeholder": "8文字以上",
+    "streak_preview_subtitle_math": "Nova は今日の算数クエストの準備ができました",
+    "streak_preview_subtitle_reading": "Sage は今日の読書アドベンチャーの準備ができました",
+    "streak_preview_subtitle_science": "Spark は今日の科学実験の準備ができました",
+    "streak_preview_subtitle_sel": "Harmony は今日のマインドフルな時間の準備ができました"
   },
   "onboarding": {
     "add_learner_title": "新しい学習者を追加",

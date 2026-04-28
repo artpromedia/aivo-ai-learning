@@ -139,11 +139,14 @@
     "login_method_label": "Método de login",
     "start_free_today": "Comece grátis hoje",
     "start_free_trial": "Inicie seu teste gratuito",
-    "streak_preview_subtitle": "Nova está pronta para a missão de matemática de hoje",
-    "streak_preview_title": "Leo está em uma sequência de 12 dias!",
+    "streak_preview_title": "{name} está em uma sequência de {days} dias!",
     "what_sounds_fun": "O que parece divertido?",
     "whos_learning": "Quem está aprendendo hoje?",
-    "password_min_placeholder": "Mín. 8 caracteres"
+    "password_min_placeholder": "Mín. 8 caracteres",
+    "streak_preview_subtitle_math": "Nova está pronta para a missão de matemática de hoje",
+    "streak_preview_subtitle_reading": "Sage está pronta para a aventura de leitura de hoje",
+    "streak_preview_subtitle_science": "Spark está pronto para a experiência de ciências de hoje",
+    "streak_preview_subtitle_sel": "Harmony está pronta para o momento de atenção plena de hoje"
   },
   "onboarding": {
     "add_learner_title": "Adicionar um novo aluno",

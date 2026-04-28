@@ -139,11 +139,14 @@
     "login_method_label": "साइन इन विधि",
     "start_free_today": "आज मुफ्त शुरू करें",
     "start_free_trial": "अपना मुफ्त ट्रायल शुरू करें",
-    "streak_preview_subtitle": "नोवा आज की मैथ क्वेस्ट के लिए तैयार है",
-    "streak_preview_title": "लियो की 12-दिन की लकीर चल रही है!",
+    "streak_preview_title": "{name} की {days}-दिन की लकीर चल रही है!",
     "what_sounds_fun": "क्या मज़ेदार लगेगा?",
     "whos_learning": "आज कौन सीख रहा है?",
-    "password_min_placeholder": "न्यूनतम 8 वर्ण"
+    "password_min_placeholder": "न्यूनतम 8 वर्ण",
+    "streak_preview_subtitle_math": "नोवा आज की मैथ क्वेस्ट के लिए तैयार है",
+    "streak_preview_subtitle_reading": "सेज आज की रीडिंग एडवेंचर के लिए तैयार है",
+    "streak_preview_subtitle_science": "स्पार्क आज के साइंस एक्सपेरिमेंट के लिए तैयार है",
+    "streak_preview_subtitle_sel": "हार्मनी आज के माइंडफुल पल के लिए तैयार है"
   },
   "onboarding": {
     "add_learner_title": "नया शिक्षार्थी जोड़ें",

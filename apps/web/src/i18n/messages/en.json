@@ -133,8 +133,7 @@
     "stat_subjects": "Subjects",
     "compliance_badge": "COPPA · FERPA · SOC 2 Compliant",
     "login_method_label": "Sign in method",
-    "streak_preview_title": "Leo is on a 12-day streak!",
-    "streak_preview_subtitle": "Nova is ready for today's math quest",
+    "streak_preview_title": "{name} is on a {days}-day streak!",
     "whos_learning": "Who's learning today?",
     "what_sounds_fun": "What sounds fun?",
     "enter_secret_pin": "Enter your secret PIN",
@@ -143,7 +142,11 @@
     "go_to_staff_signin": "Go to staff sign-in",
     "enter_password": "Enter your password",
     "lets_go": "Let's Go!",
-    "password_min_placeholder": "Min. 8 characters"
+    "password_min_placeholder": "Min. 8 characters",
+    "streak_preview_subtitle_math": "Nova is ready for today's math quest",
+    "streak_preview_subtitle_reading": "Sage is ready for today's reading adventure",
+    "streak_preview_subtitle_science": "Spark is ready for today's science experiment",
+    "streak_preview_subtitle_sel": "Harmony is ready for today's mindful moment"
   },
   "onboarding": {
     "add_learner_title": "Add a New Learner",

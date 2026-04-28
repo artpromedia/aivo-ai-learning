@@ -139,11 +139,14 @@
     "login_method_label": "Anmeldemethode",
     "start_free_today": "Heute kostenlos starten",
     "start_free_trial": "Starte deine kostenlose Testphase",
-    "streak_preview_subtitle": "Nova ist bereit für die heutige Mathe-Quest",
-    "streak_preview_title": "Leo hat eine 12-Tage-Serie!",
+    "streak_preview_title": "{name} hat eine {days}-Tage-Serie!",
     "what_sounds_fun": "Worauf hast du Lust?",
     "whos_learning": "Wer lernt heute?",
-    "password_min_placeholder": "Min. 8 Zeichen"
+    "password_min_placeholder": "Min. 8 Zeichen",
+    "streak_preview_subtitle_math": "Nova ist bereit für die heutige Mathe-Quest",
+    "streak_preview_subtitle_reading": "Sage ist bereit für das heutige Lese-Abenteuer",
+    "streak_preview_subtitle_science": "Spark ist bereit für das heutige Wissenschafts-Experiment",
+    "streak_preview_subtitle_sel": "Harmony ist bereit für den heutigen Achtsamkeitsmoment"
   },
   "onboarding": {
     "add_learner_title": "Neuen Schüler hinzufügen",

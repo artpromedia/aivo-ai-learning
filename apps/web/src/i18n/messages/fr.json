@@ -139,11 +139,14 @@
     "login_method_label": "Méthode de connexion",
     "start_free_today": "Commencez gratuitement",
     "start_free_trial": "Démarrez votre essai gratuit",
-    "streak_preview_subtitle": "Nova est prête pour la quête maths du jour",
-    "streak_preview_title": "Léo enchaîne 12 jours d'affilée !",
+    "streak_preview_title": "{name} enchaîne {days} jours d'affilée !",
     "what_sounds_fun": "Qu'est-ce qui te plaît ?",
     "whos_learning": "Qui apprend aujourd'hui ?",
-    "password_min_placeholder": "Min. 8 caractères"
+    "password_min_placeholder": "Min. 8 caractères",
+    "streak_preview_subtitle_math": "Nova est prête pour la quête maths du jour",
+    "streak_preview_subtitle_reading": "Sage est prête pour l'aventure lecture du jour",
+    "streak_preview_subtitle_science": "Spark est prêt pour l'expérience sciences du jour",
+    "streak_preview_subtitle_sel": "Harmony est prête pour le moment de pleine conscience du jour"
   },
   "onboarding": {
     "add_learner_title": "Ajouter un nouvel élève",

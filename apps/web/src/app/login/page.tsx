@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -33,11 +33,16 @@ const SUBJECT_PILLS = [
 ] as const;
 
 const LEARNERS = [
-  { name: "Leo", tutor: "nova", bg: "bg-violet-100", border: "border-violet-400" },
-  { name: "Maya", tutor: "sage", bg: "bg-emerald-100", border: "border-emerald-400" },
-  { name: "Noah", tutor: "spark", bg: "bg-amber-100", border: "border-amber-400" },
-  { name: "Aria", tutor: "harmony", bg: "bg-pink-100", border: "border-pink-400" },
-];
+  { name: "Leo", tutor: "nova", subject: "math", days: 12, bg: "bg-violet-100", border: "border-violet-400", avatarBg: "bg-violet-50" },
+  { name: "Maya", tutor: "sage", subject: "reading", days: 8, bg: "bg-emerald-100", border: "border-emerald-400", avatarBg: "bg-emerald-50" },
+  { name: "Noah", tutor: "spark", subject: "science", days: 21, bg: "bg-amber-100", border: "border-amber-400", avatarBg: "bg-amber-50" },
+  { name: "Aria", tutor: "harmony", subject: "sel", days: 5, bg: "bg-pink-100", border: "border-pink-400", avatarBg: "bg-pink-50" },
+] as const;
+
+function getDailyLearnerIndex(): number {
+  const dayIndex = Math.floor(Date.now() / 86_400_000);
+  return ((dayIndex % LEARNERS.length) + LEARNERS.length) % LEARNERS.length;
+}
 
 export default function LoginPage() {
   const { login, pinLogin } = useAuth();
@@ -54,6 +59,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [selectedLearner, setSelectedLearner] = useState(0);
   const [activeSubject, setActiveSubject] = useState<string>("MATH");
+  const [streakIdx, setStreakIdx] = useState<number>(0);
+
+  useEffect(() => {
+    setStreakIdx(getDailyLearnerIndex());
+  }, []);
+
+  const previewLearner = LEARNERS[streakIdx];
+  const previewSubtitleKey = `streak_preview_subtitle_${previewLearner.subject}` as const;
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,15 +219,17 @@ export default function LoginPage() {
                     <Flame className="w-6 h-6 fill-current" aria-hidden="true" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-orange-800">{t("streak_preview_title") ?? "Leo is on a 12-day streak!"}</p>
-                    <p className="text-xs font-bold text-orange-600">{t("streak_preview_subtitle") ?? "Nova is ready for today's math quest"}</p>
+                    <p className="text-sm font-bold text-orange-800">
+                      {t("streak_preview_title", { name: previewLearner.name, days: previewLearner.days })}
+                    </p>
+                    <p className="text-xs font-bold text-orange-600">{t(previewSubtitleKey)}</p>
                   </div>
                   <Image
-                    src="/images/tutors/nova.png"
+                    src={`/images/tutors/${previewLearner.tutor}.png`}
                     alt=""
                     width={40}
                     height={40}
-                    className="rounded-xl bg-violet-50 object-contain"
+                    className={`rounded-xl ${previewLearner.avatarBg} object-contain`}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                   />
                 </div>

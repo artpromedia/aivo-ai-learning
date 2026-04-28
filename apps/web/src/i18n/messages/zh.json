@@ -139,11 +139,14 @@
     "login_method_label": "登录方式",
     "start_free_today": "今天免费开始",
     "start_free_trial": "开始免费试用",
-    "streak_preview_subtitle": "Nova 已为今天的数学挑战做好准备",
-    "streak_preview_title": "Leo 已经坚持学习 12 天了！",
+    "streak_preview_title": "{name} 已经坚持学习 {days} 天了！",
     "what_sounds_fun": "今天想学什么？",
     "whos_learning": "今天谁来学习？",
-    "password_min_placeholder": "至少 8 个字符"
+    "password_min_placeholder": "至少 8 个字符",
+    "streak_preview_subtitle_math": "Nova 已为今天的数学挑战做好准备",
+    "streak_preview_subtitle_reading": "Sage 已为今天的阅读冒险做好准备",
+    "streak_preview_subtitle_science": "Spark 已为今天的科学实验做好准备",
+    "streak_preview_subtitle_sel": "Harmony 已为今天的正念时刻做好准备"
   },
   "onboarding": {
     "add_learner_title": "添加新学生",
