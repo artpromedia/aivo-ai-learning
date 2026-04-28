@@ -2,8 +2,17 @@ name: Marketing Smoke Test (Production)
 
 # Smoke-checks https://aivolearning.com after every Replit publish (and on a
 # safety-net schedule) by running scripts/verify-marketing-deploy.sh, which
-# asserts HTTP 200 + the four "Friendly Universe" marker strings
-# ("Learning adventures", "COPPA", "FERPA", "SOC 2").
+# iterates every (path, markers) pair defined in scripts/marketing-markers.sh
+# and asserts HTTP 200 + every required substring on each page. Today that
+# covers the homepage Hero/Footer ("Learning adventures", "COPPA", "FERPA",
+# "SOC 2") AND the compliance pages /privacy-policy, /coppa-compliance,
+# /ferpa-compliance — so an i18n-key rename or section drop that silently
+# blanks a legal page pages the on-call human instead of shipping unnoticed
+# to real parents, schools, and FTC-compliance reviewers.
+#
+# New routes are picked up automatically: extending MARKETING_ROUTES (and
+# the per-route case in marketing_markers_for) in scripts/marketing-markers.sh
+# is enough — this workflow does not need to change.
 #
 # Triggers:
 #   - workflow_run on Marketing Deploy Production succeeding (post-publish)

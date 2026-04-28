@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # Build the marketing Next.js site, start it on a local port, and run the
-# same "Friendly Universe" marker assertions that production smoke-checks
+# same per-route marker assertions that production smoke-checks
 # (verify-marketing-deploy.sh) run against https://aivolearning.com.
 #
-# Goal: catch a Hero/Footer redesign that drops a marker (e.g. the "Learning
-# adventures" headline, or the COPPA/FERPA/SOC 2 trust lock) BEFORE it
-# merges, instead of after it has shipped to real visitors.
+# Goal: catch a redesign that drops a marker BEFORE it merges, instead of
+# after it has shipped to real visitors. Coverage today (defined in
+# scripts/marketing-markers.sh):
+#   /                  Hero "Learning adventures" + Footer COPPA/FERPA/SOC 2
+#   /privacy-policy    COPPA/FERPA + "Children's Online Privacy Protection"
+#   /coppa-compliance  compliance@aivolearning.com + verifiable parental consent
+#   /ferpa-compliance  "FERPA Compliance Statement" + "SOC 2 Type II"
 #
 # Usage:
 #   scripts/verify-marketing-build.sh
@@ -95,9 +99,9 @@ log "Starting marketing server on port ${PORT}..."
 server_pid=$!
 log "Server pid: ${server_pid}"
 
-URL="http://127.0.0.1:${PORT}/"
+BASE_URL="http://127.0.0.1:${PORT}"
 
-log "Waiting up to ${STARTUP_TIMEOUT}s for ${URL} to respond..."
+log "Waiting up to ${STARTUP_TIMEOUT}s for ${BASE_URL}/ to respond..."
 ready=0
 for i in $(seq 1 "$STARTUP_TIMEOUT"); do
   if ! kill -0 "$server_pid" 2>/dev/null; then
@@ -106,7 +110,7 @@ for i in $(seq 1 "$STARTUP_TIMEOUT"); do
     cat "$server_log" || true
     exit 1
   fi
-  if curl --silent --fail --show-error --max-time 3 --output /dev/null "$URL" 2>/dev/null; then
+  if curl --silent --fail --show-error --max-time 3 --output /dev/null "${BASE_URL}/" 2>/dev/null; then
     ready=1
     log "Server responsive after ${i}s"
     break
@@ -121,60 +125,71 @@ if [[ "$ready" != "1" ]]; then
   exit 1
 fi
 
-log "Running marker assertions against ${URL}"
+log "Running marker assertions across ${#MARKETING_ROUTES[@]} route(s)"
 tmp_body="$(mktemp)"
 trap 'cleanup; rm -f "$tmp_body"' EXIT
 
-http_code="$(
-  curl --silent \
-       --show-error \
-       --location \
-       --max-time "$TIMEOUT" \
-       --retry "$RETRIES" \
-       --retry-all-errors \
-       --retry-delay 2 \
-       --user-agent "aivo-marketing-build-check/1.0" \
-       --output "$tmp_body" \
-       --write-out "%{http_code}" \
-       "$URL"
-)" || {
-  log "FAIL: curl could not reach ${URL}"
-  log "----- server log -----"
-  cat "$server_log" || true
-  exit 1
-}
+failures=()
+total_markers=0
 
-if [[ "$http_code" != "200" ]]; then
-  log "FAIL: expected HTTP 200, got ${http_code}"
-  log "----- response body (truncated) -----"
-  head -c 2000 "$tmp_body" || true
-  echo
-  log "----- server log -----"
-  cat "$server_log" || true
-  exit 1
-fi
-log "OK: HTTP 200"
+for route in "${MARKETING_ROUTES[@]}"; do
+  target="${BASE_URL}${route}"
+  log "GET ${target}"
 
-missing=()
-for marker in "${MARKETING_MARKERS[@]}"; do
-  if grep -qiF -- "$marker" "$tmp_body"; then
-    log "OK: found marker \"${marker}\""
-  else
-    log "FAIL: missing marker \"${marker}\""
-    missing+=("$marker")
+  http_code="$(
+    curl --silent \
+         --show-error \
+         --location \
+         --max-time "$TIMEOUT" \
+         --retry "$RETRIES" \
+         --retry-all-errors \
+         --retry-delay 2 \
+         --user-agent "aivo-marketing-build-check/1.0" \
+         --output "$tmp_body" \
+         --write-out "%{http_code}" \
+         "$target"
+  )" || {
+    log "FAIL: curl could not reach ${target}"
+    log "----- server log -----"
+    cat "$server_log" || true
+    exit 1
+  }
+
+  if [[ "$http_code" != "200" ]]; then
+    log "FAIL: expected HTTP 200, got ${http_code} for ${target}"
+    log "----- response body (truncated) -----"
+    head -c 2000 "$tmp_body" || true
+    echo
+    log "----- server log -----"
+    cat "$server_log" || true
+    exit 1
   fi
+  log "OK: HTTP 200 for ${route}"
+
+  mapfile -t markers < <(marketing_markers_for "$route")
+  for marker in "${markers[@]}"; do
+    total_markers=$((total_markers + 1))
+    if grep -qiF -- "$marker" "$tmp_body"; then
+      log "OK: ${route} contains marker \"${marker}\""
+    else
+      log "FAIL: ${route} missing marker \"${marker}\""
+      failures+=("${route}: missing marker \"${marker}\"")
+    fi
+  done
 done
 
-if (( ${#missing[@]} > 0 )); then
+if (( ${#failures[@]} > 0 )); then
   echo
-  log "=== verify-marketing-build: FAILED (${#missing[@]} marker(s) missing) ==="
-  log "Missing: ${missing[*]}"
-  log "A homepage redesign in apps/marketing/** removed a marker that the"
-  log "production smoke check (verify-marketing-deploy.sh) requires. Either"
-  log "restore the marker text on the page, or — if the change is intentional"
-  log "— update scripts/marketing-markers.sh in the same PR."
+  log "=== verify-marketing-build: FAILED (${#failures[@]} marker(s) missing) ==="
+  for f in "${failures[@]}"; do
+    log "  - ${f}"
+  done
+  log "A redesign in apps/marketing/** removed a marker that the production"
+  log "smoke check (verify-marketing-deploy.sh) requires. Either restore the"
+  log "marker text on the page, or — if the change is intentional — update"
+  log "scripts/marketing-markers.sh in the same PR."
   exit 1
 fi
 
 echo
-log "=== verify-marketing-build: PASS — all ${#MARKETING_MARKERS[@]} markers present ==="
+log "=== verify-marketing-build: PASS — ${total_markers} marker(s) across ${#MARKETING_ROUTES[@]} route(s) ==="
