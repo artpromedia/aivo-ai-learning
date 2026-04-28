@@ -227,7 +227,7 @@ EXPO_ROUTER_APP_ROOT = "app"
 [deployment]
 deploymentTarget = "autoscale"
 run = ["bash", "start.sh"]
-build = ["bash", "-c", "pnpm install --frozen-lockfile --prefer-offline && pnpm --filter @aivo/brand run build && pnpm --filter @aivo/marketing run build"]
+build = ["bash", "-c", "rm -rf node_modules && pnpm install --frozen-lockfile --prefer-offline --filter \"@aivo/marketing...\" --reporter=append-only && pnpm --filter @aivo/brand run build && pnpm --filter @aivo/marketing run build && find apps -mindepth 1 -maxdepth 1 -type d ! -name marketing -exec rm -rf {} + && find packages -mindepth 1 -maxdepth 1 -type d ! -name brand -exec rm -rf {} + && rm -rf services artifacts infra e2e docs scripts .git .turbo"]
 
 [postMerge]
 path = "scripts/post-merge.sh"
