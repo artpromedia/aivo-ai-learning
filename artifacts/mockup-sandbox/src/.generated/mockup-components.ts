@@ -9,11 +9,11 @@ export const modules: ModuleMap = {
   "./components/mockups/aivo-trusted/Marketing.tsx": () => import("../components/mockups/aivo-trusted/Marketing.tsx"),
   "./components/mockups/nd-calm/Dashboard.tsx": () => import("../components/mockups/nd-calm/Dashboard.tsx"),
   "./components/mockups/nd-calm/Landing.tsx": () => import("../components/mockups/nd-calm/Landing.tsx"),
+  "./components/mockups/nd-focused/Dashboard.tsx": () => import("../components/mockups/nd-focused/Dashboard.tsx"),
+  "./components/mockups/nd-focused/Landing.tsx": () => import("../components/mockups/nd-focused/Landing.tsx"),
   "./components/mockups/nd-visual/Dashboard.tsx": () => import("../components/mockups/nd-visual/Dashboard.tsx"),
   "./components/mockups/nd-visual/DiscoveryAdventure.tsx": () => import("../components/mockups/nd-visual/DiscoveryAdventure.tsx"),
   "./components/mockups/nd-visual/Landing.tsx": () => import("../components/mockups/nd-visual/Landing.tsx"),
   "./components/mockups/nd-visual/LearnerHome.tsx": () => import("../components/mockups/nd-visual/LearnerHome.tsx"),
-  "./components/mockups/nd-visual/ParentAssessment.tsx": () => import("../components/mockups/nd-visual/ParentAssessment.tsx"),
-  "./components/mockups/nd-focused/Dashboard.tsx": () => import("../components/mockups/nd-focused/Dashboard.tsx"),
-  "./components/mockups/nd-focused/Landing.tsx": () => import("../components/mockups/nd-focused/Landing.tsx")
+  "./components/mockups/nd-visual/ParentAssessment.tsx": () => import("../components/mockups/nd-visual/ParentAssessment.tsx")
 };

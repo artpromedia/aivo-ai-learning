@@ -4,7 +4,14 @@ set -e
 echo "=== Post-merge setup ==="
 
 echo "Installing pnpm dependencies..."
-pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+# --prefer-offline reuses the local pnpm store on warm containers (huge speedup
+# on subsequent merges in the same repl). --reporter=append-only keeps the
+# stdout buffer small for the post-merge log so we don't waste time flushing
+# progress redraws to the captured stream. We deliberately do NOT pass
+# --ignore-scripts because workspace post-install hooks (Drizzle codegen,
+# package builds) are required for downstream services to start.
+pnpm install --frozen-lockfile --prefer-offline --reporter=append-only 2>/dev/null \
+  || pnpm install --prefer-offline --reporter=append-only
 
 echo "Installing brain-svc Python dependencies..."
 cd services/brain-svc && pip install -q -r requirements.txt 2>/dev/null; cd ../..

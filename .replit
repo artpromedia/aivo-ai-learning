@@ -231,4 +231,4 @@ build = ["bash", "-c", "pnpm install --frozen-lockfile --prefer-offline && pnpm 
 
 [postMerge]
 path = "scripts/post-merge.sh"
-timeoutMs = 900000
+timeoutMs = 1500000
