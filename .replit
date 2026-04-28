@@ -169,6 +169,10 @@ exposeLocalhost = true
 localPort = 8222
 externalPort = 3002
 
+[[ports]]
+localPort = 5173
+externalPort = 5173
+
 [userenv]
 
 [userenv.development]
@@ -223,7 +227,7 @@ EXPO_ROUTER_APP_ROOT = "app"
 [deployment]
 deploymentTarget = "autoscale"
 run = ["bash", "start.sh"]
-build = ["bash", "-c", "cd services/identity-svc && npx tsup --no-dts && cd ../.. && cd apps/web && pnpm run build"]
+build = ["bash", "-c", "pnpm install --frozen-lockfile --prefer-offline && pnpm --filter @aivo/brand run build && pnpm --filter @aivo/marketing run build"]
 
 [postMerge]
 path = "scripts/post-merge.sh"

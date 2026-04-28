@@ -41,6 +41,13 @@ The project utilizes a monorepo managed with Turborepo and pnpm, encompassing va
 ## Backend Boot Ordering
 The Identity Service workflow runs `scripts/start-services.sh`, which launches the ~14 Node and Python backend services. They are deliberately started in **five small groups with a brief pause between groups** rather than fanning out all at once — launching them in parallel exhausts the container's process / thread budget on a fresh boot (`EAGAIN` fork errors, `ERR_WORKER_INIT_FAILED` from tsx) and starves the Next.js workflows (`Web App`, `Marketing Site`) of CPU long enough that their port-readiness check times out. Groups: (1) identity / comms / i18n, (2) assessment / learning, (3) tutor / family / engagement, (4) billing / integrations / admin, (5) status-page / research / ai-svc. Adds ~8 seconds to cold-boot time but keeps every workflow card green. Do not collapse the groups back to a single fan-out without a corresponding bump in container resources.
 
+## Production Deployment (Replit Autoscale)
+The Replit autoscale deployment publishes the **marketing site** (Next.js, `apps/marketing`) to `aivolearning.com`. Configuration lives in `.replit`'s `[deployment]` block:
+
+- **Build**: `pnpm install --frozen-lockfile --prefer-offline && pnpm --filter @aivo/brand run build && pnpm --filter @aivo/marketing run build`
+- **Run**: `bash start.sh` — `start.sh` cd's into `apps/marketing` and `exec`s `next start --port "$PORT" --hostname 0.0.0.0`. Binding to `0.0.0.0` is mandatory; binding to `localhost` silently fails the autoscale health check.
+- **No root Python deps**: `pyproject.toml` and `uv.lock` are intentionally archived under `services/brain-svc/.workspace-extras/` rather than living at the repo root. If a root-level `pyproject.toml` is reintroduced, Replit's deploy pipeline auto-runs `uv sync` against the read-only Nix-store Python and the build dies with `Permission denied (os error 13)` on the first package install. The Python services (`brain-svc`, `ai-svc`) install their own deps from per-service `requirements.txt` and don't need a workspace-wide pyproject. See `services/brain-svc/.workspace-extras/README.md` for restoration instructions.
+
 ## Production Environment Checklist
 The following env vars are validated at service boot when `NODE_ENV=production`. Missing values throw immediately rather than silently falling back to localhost — see `.env.example` for the full list.
 
