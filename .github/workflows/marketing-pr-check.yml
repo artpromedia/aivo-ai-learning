@@ -1,0 +1,64 @@
+name: Marketing PR Check
+
+# Pre-merge guardrail for the marketing site.
+#
+# Runs on every PR that touches apps/marketing/** (or the shared marker
+# source / verification scripts) and asserts the rendered homepage still
+# contains every "Friendly Universe" marker that production smoke-checks
+# against (Hero "Learning adventures" headline, Footer COPPA/FERPA/SOC 2
+# trust lock).
+#
+# This catches a broken Hero/Footer redesign BEFORE it merges to main and
+# ships to https://aivolearning.com — instead of after, when the post-deploy
+# Marketing Smoke Test (Production) workflow would surface it but real
+# visitors are already seeing the broken page.
+#
+# The check fails the PR if any marker is missing.
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "apps/marketing/**"
+      - "scripts/marketing-markers.sh"
+      - "scripts/verify-marketing-build.sh"
+      - "scripts/verify-marketing-deploy.sh"
+      - ".github/workflows/marketing-pr-check.yml"
+      - ".github/workflows/marketing-deploy-staging.yml"
+      - ".github/workflows/marketing-smoke-test.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: marketing-pr-check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  build-and-verify:
+    name: Build marketing & verify homepage markers
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build marketing site, start it, and assert homepage markers
+        env:
+          PORT: "4173"
+          STARTUP_TIMEOUT: "120"
+        run: bash scripts/verify-marketing-build.sh

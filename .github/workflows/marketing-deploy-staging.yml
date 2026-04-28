@@ -42,3 +42,23 @@ jobs:
 
       - name: Deploy to staging
         run: echo "Add staging deployment steps for your hosting provider"
+
+      # Post-deploy smoke check against the staging URL. Reuses the same
+      # marker assertions as production (scripts/verify-marketing-deploy.sh
+      # sources scripts/marketing-markers.sh, the single source-of-truth
+      # shared with the PR-time build check). Fails the deploy if the
+      # staging site is missing any "Friendly Universe" marker, so a broken
+      # Hero/Footer redesign cannot be promoted to production.
+      #
+      # Skipped (with a warning) when MARKETING_STAGING_URL is not configured
+      # for the staging environment, so this job stays green for users who
+      # have not wired up a staging URL yet.
+      - name: Verify staging marketing markers
+        env:
+          MARKETING_STAGING_URL: ${{ vars.MARKETING_STAGING_URL }}
+        run: |
+          if [[ -z "${MARKETING_STAGING_URL:-}" ]]; then
+            echo "::warning::MARKETING_STAGING_URL not set for the staging environment; skipping post-deploy marker verification."
+            exit 0
+          fi
+          MARKETING_URL="$MARKETING_STAGING_URL" bash scripts/verify-marketing-deploy.sh

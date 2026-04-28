@@ -26,12 +26,12 @@ URL="${MARKETING_URL:-https://aivolearning.com/}"
 TIMEOUT="${CURL_TIMEOUT:-20}"
 RETRIES="${CURL_RETRIES:-3}"
 
-MARKERS=(
-  "Learning adventures"
-  "COPPA"
-  "FERPA"
-  "SOC 2"
-)
+# Marker list is defined in scripts/marketing-markers.sh so the production
+# smoke check and the PR-time build check assert the exact same strings.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/marketing-markers.sh
+source "${SCRIPT_DIR}/marketing-markers.sh"
+MARKERS=("${MARKETING_MARKERS[@]}")
 
 echo "=== verify-marketing-deploy: GET ${URL} ==="
 
