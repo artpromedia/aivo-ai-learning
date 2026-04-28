@@ -6,7 +6,7 @@ export default function CookiePolicyPage() {
     <LegalPageLayout
       badge="Legal"
       title="Cookie Policy"
-      subtitle={`This Cookie Policy explains how AIVO Learning, Inc. ("AIVO", "we", "us") uses cookies and similar technologies on aivolearning.com, app.aivolearning.com, and our mobile and tablet applications (together, the "Services"). It tells you what cookies we use, why we use them, how long they last, and the choices you have.`}
+      subtitle={`This Cookie Policy explains how Aivo AI Learning Technologies Inc. ("AIVO", "we", "us") uses cookies and similar technologies on aivolearning.com, app.aivolearning.com, and our mobile and tablet applications (together, the "Services"). It tells you what cookies we use, why we use them, how long they last, and the choices you have.`}
       icon="🍪"
       accentColor="#ea580c"
       lastUpdated="April 1, 2026"
@@ -151,7 +151,7 @@ export default function CookiePolicyPage() {
           content: [
             "If you have questions about how AIVO uses cookies, or if you would like to exercise any of the rights described above, please email privacy@aivolearning.com.",
             "For questions about cookies in a school or district deployment of AIVO, please write to compliance@aivolearning.com and copy your district's privacy officer.",
-            "Postal mail can be sent to: AIVO Learning, Inc., Attention: Privacy Office, 1 Learning Way, Suite 200, Washington, DC 20001, United States.",
+            "Postal mail can be sent to: Aivo AI Learning Technologies Inc., Attention: Privacy Office, 1400 Van Buren Street S, Suite 200, Minneapolis, MN, United States.",
           ],
         },
       ]}

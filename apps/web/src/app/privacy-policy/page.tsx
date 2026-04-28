@@ -123,6 +123,23 @@ export default function PrivacyPolicyPage() {
           content: "If you purchase a Single Learner Plan ($24.99 per month per learner), a Family Plan ($19.99 per month per learner), or another paid offering, our payment processor (Stripe) collects payment-card and billing information directly from you, subject to its own privacy policy. AIVO receives only a tokenized reference, the last four digits of the card, the card brand, and the billing ZIP code, which we use to manage your subscription, send receipts, prevent fraud, and comply with tax and accounting obligations.",
         },
         {
+          title: "Applicant Information",
+          content: [
+            "This Applicant Information notice supplements our Privacy Policy in connection with people who apply for jobs at AIVO. If you apply for a position with Aivo AI Learning Technologies Inc. via our online application portal, an external recruiting site (such as Greenhouse, Lever, or LinkedIn), an in-person event, or a referral, we will collect the information you choose to provide for the purpose of evaluating your application and considering you for current and future opportunities.",
+            "We typically collect: your full name and contact details (email, phone, mailing address); professional and employment history (resumes, CVs, cover letters, work samples, portfolio links); education information (degrees, institutions, transcripts, certifications); references and the contact information you provide for them; demographic information that you voluntarily disclose for our equal-employment-opportunity reporting (only where collection is permitted by law and never used in hiring decisions); and, where required for the role and permitted by law, background-check information collected by a vetted third-party screening provider after you have provided written authorization.",
+            "We use applicant information to assess your qualifications, conduct interviews, communicate with you about the role, perform background checks (where applicable and authorized), comply with employment, immigration, and equal-opportunity laws, and — if you join AIVO — onboard you as an employee or contractor. With your separate consent, we may also keep your application on file for a defined period to consider you for future openings. You may withdraw your application or ask us to delete your applicant record at any time by writing to careers@aivolearning.com.",
+            "We share applicant information only with: AIVO personnel involved in the hiring process; service providers that operate our applicant-tracking system, video-interview platform, and (where applicable) background-check vendor under written contracts that limit use of the data to providing the service; and as required by law or to defend our legal rights. We do not sell applicant information.",
+          ],
+        },
+        {
+          title: "Use of Cookies",
+          content: [
+            "AIVO uses cookies and similar technologies (such as local storage, pixels, and SDKs) on our adult-facing surfaces. We classify these technologies into four categories — Strictly Necessary, Functional, Performance, and limited Targeting (adult-only pages such as the marketing site, donor pages, and recruiter pages). On Child-directed surfaces, we use only Strictly Necessary cookies needed for the internal operations exception under COPPA.",
+            "Strictly Necessary cookies keep you signed in, remember accessibility preferences, and protect against cross-site request forgery; they cannot be disabled. Functional cookies remember language, theme, and other personalization choices. Performance cookies (such as our first-party analytics) help us understand which pages and features are working. Targeting cookies, where used, help us measure the effectiveness of our outreach to teachers and donors and are never combined with learner data.",
+            "You can manage your preferences through the cookie banner shown on first visit, through your browser controls, or through the privacy preference link in the footer of our marketing site. For a complete list of the cookies we set, the third parties involved, the purpose of each cookie, and the retention period, please read our Cookie Policy.",
+          ],
+        },
+        {
           title: "Regional Information",
           content: [
             "Users outside the United States. AIVO operates the Services in the United States. If you access the Services from outside the United States, your information will be transferred to and processed in the United States, where data-protection laws may differ from those in your jurisdiction.",

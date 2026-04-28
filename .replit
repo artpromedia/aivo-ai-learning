@@ -80,7 +80,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd apps/marketing && (sleep 5 && curl -sf --max-time 60 -H 'Host: localhost' http://127.0.0.1:5173/ -o /dev/null &) && exec ./node_modules/.bin/next dev --port 5173 --turbopack --hostname 0.0.0.0"
+args = "cd apps/marketing && exec ./node_modules/.bin/next dev --port 5173 --turbopack --hostname 0.0.0.0"
 waitForPort = 5173
 
 [[workflows.workflow]]

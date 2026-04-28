@@ -6,7 +6,7 @@ export default function CoppaCompliancePage() {
     <LegalPageLayout
       badge="Children's Privacy"
       title="COPPA Compliance Statement"
-      subtitle={`This statement describes how AIVO Learning, Inc. complies with the Children's Online Privacy Protection Act of 1998 ("COPPA") and the Federal Trade Commission's COPPA Rule (16 C.F.R. Part 312). It is the official Direct Notice to Parents required by the Rule and is intended to be read together with our Privacy Policy and Cookie Policy.`}
+      subtitle={`This statement describes how Aivo AI Learning Technologies Inc. complies with the Children's Online Privacy Protection Act of 1998 ("COPPA") and the Federal Trade Commission's COPPA Rule (16 C.F.R. Part 312). It is the official Direct Notice to Parents required by the Rule and is intended to be read together with our Privacy Policy and Cookie Policy.`}
       icon="🛡️"
       accentColor="#059669"
       lastUpdated="April 1, 2026"
@@ -15,8 +15,8 @@ export default function CoppaCompliancePage() {
         {
           title: "1. Operator Information",
           content: [
-            "The operator of the Services for purposes of COPPA is AIVO Learning, Inc., a Delaware corporation with its principal place of business at 1 Learning Way, Suite 200, Washington, DC 20001, United States.",
-            "Our Privacy Office is responsible for compliance with COPPA. You can reach the Privacy Office by email at privacy@aivolearning.com, by phone at +1 (202) 555-0102 between 9:00 a.m. and 6:00 p.m. Eastern Time on business days, or by postal mail at the address above marked \"Attention: Privacy Office\".",
+            "The operator of the Services for purposes of COPPA is Aivo AI Learning Technologies Inc., a Delaware corporation with its principal place of business at 1400 Van Buren Street S, Suite 200, Minneapolis, MN, United States.",
+            "Our Privacy Office is responsible for compliance with COPPA. You can reach the Privacy Office by email at privacy@aivolearning.com, by phone at +1 (612) 555-0102 between 9:00 a.m. and 6:00 p.m. Eastern Time on business days, or by postal mail at the address above marked \"Attention: Privacy Office\".",
             "Our agent for service of process for privacy matters is the Corporation Service Company, 251 Little Falls Drive, Wilmington, DE 19808, United States.",
           ],
         },
@@ -183,8 +183,8 @@ export default function CoppaCompliancePage() {
             "Email: privacy@aivolearning.com (children's privacy and parental requests).",
             "Email: compliance@aivolearning.com (school and district inquiries).",
             "Email: dpo@aivolearning.com (international privacy inquiries, including LGPD and GDPR).",
-            "Phone: +1 (202) 555-0102, Monday through Friday, 9:00 a.m. – 6:00 p.m. Eastern Time.",
-            "Postal mail: AIVO Learning, Inc., Attention: Privacy Office, 1 Learning Way, Suite 200, Washington, DC 20001, United States.",
+            "Phone: +1 (612) 555-0102, Monday through Friday, 9:00 a.m. – 6:00 p.m. Eastern Time.",
+            "Postal mail: Aivo AI Learning Technologies Inc., Attention: Privacy Office, 1400 Van Buren Street S, Suite 200, Minneapolis, MN, United States.",
           ],
         },
       ]}
