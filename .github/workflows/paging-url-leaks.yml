@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+  # Needed by .github/actions/notify-slack-on-failure for the previous-run
+  # lookup.
+  actions: read
+
 jobs:
   scan:
     name: scan source for hard-coded paging URLs
@@ -17,6 +23,28 @@ jobs:
         with:
           node-version: "22"
       - name: scan
-        run: node scripts/check-paging-url-leaks.mjs
+        id: scan
+        run: |
+          set -o pipefail
+          mkdir -p /tmp/paging
+          node scripts/check-paging-url-leaks.mjs 2>&1 | tee /tmp/paging/output.log
       - name: self-test the guardrail itself
-        run: node scripts/check-paging-url-leaks.test.mjs
+        id: selftest
+        run: |
+          set -o pipefail
+          node scripts/check-paging-url-leaks.test.mjs 2>&1 | tee -a /tmp/paging/output.log
+
+      # Page on-call when an unattended push to main/develop goes red. PR
+      # runs are already visible to the PR author and are intentionally
+      # skipped here.
+      - name: Notify Slack on failure / recovery
+        if: always() && github.event_name != 'pull_request'
+        uses: ./.github/actions/notify-slack-on-failure
+        with:
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          check-status: ${{ job.status }}
+          check-name: "Paging-URL leak guardrail"
+          workflow-filename: paging-url-leaks.yml
+          failure-reason-file: /tmp/paging/output.log
+          target: "source tree (hard-coded Slack/PagerDuty URLs)"
