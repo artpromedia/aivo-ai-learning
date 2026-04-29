@@ -29,22 +29,22 @@ export function installOpsAlertShutdown(opts: InstallShutdownOptions): () => voi
     if (triggered) return;
     triggered = true;
     opts.client.stopAutoFlush();
-    logger.info({ signal }, "ops_alert.shutdown.start");
+    logger.info("ops_alert.shutdown.start", { signal });
     let outcome: ShutdownDrainOutcome | null = null;
     try {
       outcome = await opts.client.drainForShutdown({ windowMs, durableStore: opts.durableStore });
     } catch (err: any) {
-      logger.error({ err: err?.message }, "ops_alert.shutdown.drain_threw");
+      logger.error("ops_alert.shutdown.drain_threw", { err: err?.message });
     }
     try {
       if (outcome && opts.onDrain) await opts.onDrain(outcome);
     } catch (err: any) {
-      logger.error({ err: err?.message }, "ops_alert.shutdown.onDrain_threw");
+      logger.error("ops_alert.shutdown.onDrain_threw", { err: err?.message });
     }
     try {
       if (opts.beforeExit) await opts.beforeExit();
     } catch (err: any) {
-      logger.error({ err: err?.message }, "ops_alert.shutdown.beforeExit_threw");
+      logger.error("ops_alert.shutdown.beforeExit_threw", { err: err?.message });
     }
     if (opts.exitOnComplete !== false) {
       process.exit(outcome && outcome.lost > 0 && !opts.durableStore ? 1 : 0);

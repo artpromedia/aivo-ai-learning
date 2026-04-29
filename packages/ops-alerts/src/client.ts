@@ -91,7 +91,7 @@ export class OpsAlertClient {
     } catch (err: any) {
       this.stats.autoFlushErrorsTotal++;
       error = err instanceof Error ? err : new Error(String(err));
-      this.opts.logger.warn({ err: error.message, service: this.opts.service }, "ops_alert.auto_flush_error");
+      this.opts.logger.warn("ops_alert.auto_flush_error", { err: error.message, service: this.opts.service });
     }
     this.opts.onAutoFlush?.({ drained, error });
   }
@@ -121,8 +121,8 @@ export class OpsAlertClient {
     this.stats.lastEnqueuedAt = envelope.occurredAt;
     if (!this.stats.firstNonZeroAt) this.stats.firstNonZeroAt = envelope.occurredAt;
     this.opts.logger.warn(
-      { service: this.opts.service, alertId: envelope.id, severity: envelope.severity },
       "ops_alert.queued",
+      { service: this.opts.service, alertId: envelope.id, severity: envelope.severity },
     );
     return { delivered: false, queued: true };
   }
@@ -204,8 +204,8 @@ export class OpsAlertClient {
       this.stats.droppedTotal += lost;
       this.stats.lastDropReason = "shutdown_timeout";
       this.opts.logger.error(
-        { service: this.opts.service, count: lost, reason: "shutdown_timeout" },
         "ops_alert.dropped",
+        { service: this.opts.service, count: lost, reason: "shutdown_timeout" },
       );
     }
 
@@ -219,7 +219,7 @@ export class OpsAlertClient {
       finishedAt: new Date().toISOString(),
     };
     this.stats.lastShutdown = outcome;
-    this.opts.logger.info(outcome, "ops_alert.shutdown_drain");
+    this.opts.logger.info("ops_alert.shutdown_drain", outcome as unknown as Record<string, unknown>);
     return outcome;
   }
 

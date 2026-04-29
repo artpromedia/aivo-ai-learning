@@ -42,8 +42,8 @@ export async function opsAlertOutboxStoreFromEnv(opts: OutboxFromEnvOptions): Pr
       );
     }
     logger.warn(
-      detail,
       "ops_alerts.outbox.pg_misconfigured: OPS_ALERTS_OUTBOX_PG_TABLE is set but pgOutboxClient is missing; falling back to non-durable store",
+      detail,
     );
   }
 

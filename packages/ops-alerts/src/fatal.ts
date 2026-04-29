@@ -28,7 +28,7 @@ export function installFatalErrorPager(opts: InstallFatalPagerOptions): () => vo
     firing = true;
     const message = err instanceof Error ? err.message : String(err);
     const stack = err instanceof Error ? err.stack : undefined;
-    logger.fatal({ kind, err: message }, "ops_alert.fatal.caught");
+    logger.error("ops_alert.fatal.caught", { kind, err: message });
     try {
       await opts.client.page({
         severity: "critical",
@@ -41,7 +41,7 @@ export function installFatalErrorPager(opts: InstallFatalPagerOptions): () => vo
         new Promise((resolve) => setTimeout(resolve, flushWindowMs)),
       ]);
     } catch (pageErr: any) {
-      logger.error({ err: pageErr?.message }, "ops_alert.fatal.page_failed");
+      logger.error("ops_alert.fatal.page_failed", { err: pageErr?.message });
     }
     exit(1);
   };
