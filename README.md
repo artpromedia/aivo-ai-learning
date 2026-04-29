@@ -14,6 +14,7 @@
 ## Table of Contents
 
 - [Overview](#overview)
+- [Neurodiverse-First Corrections (v2.1)](#neurodiverse-first-corrections-v21)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Repository Layout](#repository-layout)
@@ -44,6 +45,17 @@ AIVO is an adaptive learning platform built around five core ideas:
 5. **The Stage** — a full-screen, beat-based learner experience with sensory adaptations and multiple response types.
 
 The platform serves parents, learners, teachers, caregivers, therapists, and district admins, plus internal dashboards for sales, marketing, customer care, support, finance, and DevOps.
+
+## Neurodiverse-First Corrections (v2.1)
+
+A set of strategic corrections turn AIVO from "adaptive content" into a partner that meets neurodiverse learners where they actually are. Each correction is implemented end-to-end (DB schema → service routes → UI surface):
+
+1. **Adaptive multimodal baseline.** The baseline no longer asks "what grade is this kid at?" — it builds a `LearningProfile` (preferred modality, logit θ ability, frustration tolerance, attention-run-length, median latency). The Discovery Adventure now derives + persists this profile, and a fully adaptive run-loop (`/api/assessments/adaptive-baseline/:learnerId/{start,respond,finalize}`) backed by `@aivo/adaptive-baseline` chooses each next item by SE-stop on a 1-PL model. Tables: `learner_profiles`, `adaptive_baseline_sessions`.
+2. **Special interests as the curriculum engine.** Parents log a learner's deep interests through `family-svc/routes/interests.ts`; signals score directly via `@aivo/special-interest-engine`. The assessment service pipes the top scored theme into both `generate-discovery-chapter` and `generate-baseline` ai-svc calls, and `ai-svc/baseline_generator.py` rewrites the prompt rule when a primary theme is present: *"Build the activity AROUND `<theme>` as the primary theme — the engine, not a sprinkle."* Word problems live in Minecraft, reading passages live in volcanoes, science questions live in dinosaurs. Table: `learner_interest_signals`.
+3. **Executive-function partner.** ADHD is fundamentally an EF challenge, so the agent quietly carries the planning load. `tutor-svc/routes/ef.ts` exposes `POST /api/ef/breakdown` (a 4-step micro-plan with optional modality narrowing), `GET /api/ef/breakdown/:learnerId/:taskId` (returns next-step prompt + progress), step-complete endpoints (idempotent via unique index), session-outcome ledger, and `GET /api/ef/best-window/:learnerId` (best learning window endorsed only with ≥2 observations). Tables: `ef_task_breakdowns`, `ef_task_step_progress`, `ef_session_outcomes`.
+4. **"What's working" parent dashboard.** The dashboard no longer just reports "12 lessons completed." `family-svc/routes/whats-working.ts` (`GET /api/family/whats-working/:learnerId?windowDays=N`) reads the `ef_session_outcomes` ledger and runs the rows through a pure analytics module, and the new `WhatsWorkingPanel` on the parent dashboard surfaces three IEP-meeting-ready signals per learner: best learning window, modality that clicks, where frustration spikes — patterns parents can take to a meeting, not numbers they can't act on.
+
+All four routes inherit the platform auth contract (parent-on-own-kid / learner-on-self / TEACHER / ADMIN / service-token), are covered by a 120-rpm `@fastify/rate-limit` global cap on top of per-route token buckets, and ship with unit tests for the pure helpers (assessment-svc 9 cases, ai-svc 7 cases).
 
 ## Architecture
 
