@@ -24,8 +24,8 @@ export function ResponseZone({ choices, onAnswer, disabled = false }: ResponseZo
   const [selected, setSelected] = useState<string | null>(null);
 
   useEffect(() => {
-    AccessibilityInfo.isTouchExplorationEnabled().then(setTouchExploring);
-    const sub = AccessibilityInfo.addEventListener("touchExplorationDidChange", (enabled) => {
+    AccessibilityInfo.isScreenReaderEnabled().then(setTouchExploring);
+    const sub = AccessibilityInfo.addEventListener("screenReaderChanged", (enabled: boolean) => {
       setTouchExploring(enabled);
     });
     return () => sub.remove();
