@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useLearners } from '@/hooks/useLearners';
 import { useAuth } from '@/hooks/useAuth';
 import { TierThemeProvider, useTierTheme } from '@aivo/mobile-ui';
+import { SwitchScanOverlay } from '@/src/components/SwitchScanOverlay';
 
 /**
  * Resolve the active learner's gradeLevel.
@@ -24,11 +25,27 @@ function useActiveLearnerGrade(): string | null {
   return learners[0].gradeLevel ?? null;
 }
 
+/** Returns true when the learner's active_accommodations includes "switch_scanning". */
+function useSwitchScanningEnabled(): boolean {
+  const { user } = useAuth();
+  const { data: learners } = useLearners();
+  const accommodations: string[] = (() => {
+    if (user?.role === 'LEARNER') {
+      return (user as any).activeAccommodations ?? [];
+    }
+    return (learners?.[0] as any)?.activeAccommodations ?? [];
+  })();
+  return accommodations.includes('switch_scanning');
+}
+
 export default function LearnerLayout() {
   const gradeLevel = useActiveLearnerGrade();
+  const switchScanEnabled = useSwitchScanningEnabled();
   return (
     <TierThemeProvider gradeLevel={gradeLevel}>
       <ThemedLearnerTabs />
+      {/* Global switch scanning overlay — only mounted for eligible learners */}
+      <SwitchScanOverlay active={switchScanEnabled} items={[]} />
     </TierThemeProvider>
   );
 }
