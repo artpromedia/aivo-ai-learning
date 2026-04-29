@@ -21,8 +21,10 @@ export { ResponseZone } from "./ResponseZone.js";
 export { ProgressPath } from "./ProgressPath.js";
 export { CelebrationOverlay } from "./CelebrationOverlay.js";
 export { TutorCharacter } from "./TutorCharacter.js";
+export { StageBreakCloud } from "./StageBreakCloud.js";
 
 export type { StageLayoutProps } from "./StageLayout.js";
+export type { StageBreakCloudProps } from "./StageBreakCloud.js";
 export type { StageContentProps } from "./StageContent.js";
 export type { BeatPreviewProps } from "./BeatPreview.js";
 export type { ResponseZoneProps } from "./ResponseZone.js";
