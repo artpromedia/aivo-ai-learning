@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+:root {
+  /* Mirrors apps/web --visual-primary so the auth pages here render
+     identical gradients and accents to the production app. */
+  --visual-primary: 262 83% 58%;
+  --visual-primary-dark: 262 83% 46%;
+}
+
 @theme {
   --color-primary: #7C3AED;
   --color-primary-light: #A78BFA;
