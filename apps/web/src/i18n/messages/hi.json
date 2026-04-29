@@ -1935,8 +1935,8 @@
     "section_signatures": "हस्ताक्षर",
     "section_history": "इतिहास",
     "section_updates": "अपडेट",
-    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
-    "view_source_evaluation": "View source evaluation"
+    "seeded_from_evaluation": "यह मसौदा एक पूर्ण पात्रता मूल्यांकन से पहले से भरा गया था। समीक्षा के लिए भेजने से पहले भरे गए अनुभागों की समीक्षा करें और उन्हें अपडेट करें।",
+    "view_source_evaluation": "स्रोत मूल्यांकन देखें"
   },
   "iep_collab": {
     "team_title": "IEP टीम",

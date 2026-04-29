@@ -1935,8 +1935,8 @@
     "section_signatures": "署名",
     "section_history": "履歴",
     "section_updates": "最新情報",
-    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
-    "view_source_evaluation": "View source evaluation"
+    "seeded_from_evaluation": "この下書きは、完了した適格性評価から事前入力されました。レビューに送る前に、入力済みのセクションを確認して更新してください。",
+    "view_source_evaluation": "ソース評価を表示"
   },
   "iep_collab": {
     "team_title": "IEPチーム",

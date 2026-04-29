@@ -1935,8 +1935,8 @@
     "section_signatures": "서명",
     "section_history": "기록",
     "section_updates": "업데이트",
-    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
-    "view_source_evaluation": "View source evaluation"
+    "seeded_from_evaluation": "이 초안은 완료된 자격 평가에서 미리 채워졌습니다. 검토를 위해 보내기 전에 채워진 섹션을 확인하고 업데이트하세요.",
+    "view_source_evaluation": "원본 평가 보기"
   },
   "iep_collab": {
     "team_title": "IEP 팀",

@@ -1935,8 +1935,8 @@
     "section_signatures": "Signatures",
     "section_history": "Historique",
     "section_updates": "Actualités",
-    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
-    "view_source_evaluation": "View source evaluation"
+    "seeded_from_evaluation": "Ce brouillon a été pré-rempli à partir d'une évaluation d'éligibilité terminée. Vérifiez les sections pré-remplies et mettez-les à jour avant de les envoyer pour révision.",
+    "view_source_evaluation": "Voir l'évaluation source"
   },
   "iep_collab": {
     "team_title": "Équipe du PEI",

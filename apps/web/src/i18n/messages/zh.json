@@ -1935,8 +1935,8 @@
     "section_signatures": "签名",
     "section_history": "历史",
     "section_updates": "动态",
-    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
-    "view_source_evaluation": "View source evaluation"
+    "seeded_from_evaluation": "本草稿由已完成的资格评估预先填写。在提交审核之前，请检查已填充的部分并进行更新。",
+    "view_source_evaluation": "查看源评估"
   },
   "iep_collab": {
     "team_title": "IEP 团队",

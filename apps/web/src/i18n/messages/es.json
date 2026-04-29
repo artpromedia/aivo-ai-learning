@@ -1935,8 +1935,8 @@
     "section_signatures": "Firmas",
     "section_history": "Historial",
     "section_updates": "Novedades",
-    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
-    "view_source_evaluation": "View source evaluation"
+    "seeded_from_evaluation": "Este borrador se rellenó previamente a partir de una evaluación de elegibilidad completada. Revise las secciones precargadas y actualícelas antes de enviarlas para revisión.",
+    "view_source_evaluation": "Ver evaluación de origen"
   },
   "iep_collab": {
     "team_title": "Equipo del IEP",

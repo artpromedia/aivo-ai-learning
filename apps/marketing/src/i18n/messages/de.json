@@ -915,7 +915,7 @@
       "faq": "FAQ",
       "sign_in": "Anmelden",
       "get_started": "Loslegen",
-      "brain_clone": "Brain Clone",
+      "brain_clone": "Gehirn-Klon",
       "compliance_banner": "COPPA · FERPA · SOC 2 — Sicher für jeden Lernenden entwickelt."
     },
     "hero": {
@@ -1036,9 +1036,9 @@
       "f3_desc": "Verfolgt Fortschritte ueber kognitive, verhaltensbezogene, kommunikative und akademische Bereiche gleichzeitig.",
       "f4_title": "Tutor-uebergreifende Intelligenz",
       "f4_desc": "Was ein Tutor ueber Ihr Kind lernt, wissen alle Tutoren, fuer ein einheitliches Lernerlebnis.",
-      "demo_label": "Brain Clone",
+      "demo_label": "Gehirn-Klon",
       "demo_name": "Leo, 9 Jahre",
-      "demo_live": "Live",
+      "demo_live": "Live-Demo",
       "demo_status": "Passt sich in Echtzeit über 4 Tutoren an",
       "metric_math": "Mathematisches Denken",
       "metric_reading": "Leseflüssigkeit",

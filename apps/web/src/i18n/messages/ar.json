@@ -1935,8 +1935,8 @@
     "section_signatures": "التوقيعات",
     "section_history": "السجل",
     "section_updates": "المستجدّات",
-    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
-    "view_source_evaluation": "View source evaluation"
+    "seeded_from_evaluation": "تم تعبئة هذه المسودة مسبقًا من تقييم أهلية مكتمل. راجع الأقسام المعبأة وحدّثها قبل إرسالها للمراجعة.",
+    "view_source_evaluation": "عرض التقييم المصدر"
   },
   "iep_collab": {
     "team_title": "فريق IEP",

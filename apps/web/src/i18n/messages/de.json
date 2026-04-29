@@ -1935,8 +1935,8 @@
     "section_signatures": "Unterschriften",
     "section_history": "Verlauf",
     "section_updates": "Aktuelles",
-    "seeded_from_evaluation": "This draft was pre-filled from a completed eligibility evaluation. Review the seeded sections and update them before sending for review.",
-    "view_source_evaluation": "View source evaluation"
+    "seeded_from_evaluation": "Dieser Entwurf wurde aus einer abgeschlossenen Anspruchsprüfung vorausgefüllt. Überprüfen Sie die übernommenen Abschnitte und aktualisieren Sie sie, bevor Sie sie zur Prüfung senden.",
+    "view_source_evaluation": "Quell-Evaluation anzeigen"
   },
   "iep_collab": {
     "team_title": "IEP-Team",
