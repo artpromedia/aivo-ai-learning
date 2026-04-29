@@ -19,7 +19,7 @@ let _dbUrl: string | null = null;
 let _container: { stop(): Promise<void> } | null = null;
 
 export function getDbUrl(): string {
-  if (!_dbUrl) throw new Error("DB not initialised — call setup() first");
+  if (!_dbUrl) throw new Error("DB not initialized — call setup() first");
   return _dbUrl;
 }
 

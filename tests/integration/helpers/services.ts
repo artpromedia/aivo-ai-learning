@@ -39,8 +39,8 @@ export async function startAllServices(): Promise<void> {
     DATABASE_URL: dbUrl,
     NODE_ENV: "test",
     LOG_LEVEL: "warn",
-    JWT_PRIVATE_KEY: process.env.TEST_JWT_PRIVATE_KEY ?? "",
-    JWT_PUBLIC_KEY: process.env.TEST_JWT_PUBLIC_KEY ?? "",
+    JWT_PRIVATE_KEY: process.env.JWT_PRIVATE_KEY ?? "",
+    JWT_PUBLIC_KEY: process.env.JWT_PUBLIC_KEY ?? "",
   };
 
   const starts: Promise<void>[] = [];

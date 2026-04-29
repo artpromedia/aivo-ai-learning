@@ -8,8 +8,8 @@
  * These are logic-level tests (no DOM rendering required).
  */
 import { describe, it, expect, vi } from "vitest";
-import { SwitchScanController } from "@aivo/aac-bridge/dist/SwitchScanController.js";
-import type { SymbolItem } from "@aivo/aac-bridge";
+import { SwitchScanController } from "../SwitchScanController.js";
+import type { SymbolItem } from "../types.js";
 
 const makeItems = (count: number): SymbolItem[] =>
   Array.from({ length: count }, (_, i) => ({

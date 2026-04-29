@@ -23,7 +23,7 @@ describe("Journey 3: Weekly progress report", () => {
     const learner = await createLearner(tenantId, parent.id, adminToken);
     learnerId = learner.id;
 
-    // Seed a brain state so there's data for the report to summarise.
+    // Seed a brain state so there's data for the report to summarize.
     await createBrainState(learnerId, tenantId, adminToken);
   });
 
