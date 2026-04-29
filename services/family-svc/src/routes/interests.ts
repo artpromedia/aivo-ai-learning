@@ -93,7 +93,7 @@ export async function registerInterestRoutes(app: FastifyInstance) {
         note: r.note,
       })),
       scored,
-      topTheme: topTheme ? { slug: topTheme.slug, name: topTheme.name } : null,
+      topTheme: topTheme ? { slug: topTheme.slug, label: topTheme.label } : null,
     };
   });
 
