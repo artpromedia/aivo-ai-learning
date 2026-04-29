@@ -3,6 +3,7 @@ import json
 import logging
 from typing import Optional
 import litellm
+from .budget_caps import get_ledger, BudgetExceeded
 
 logger = logging.getLogger("ai-svc.llm_gateway")
 
@@ -119,7 +120,15 @@ async def generate_completion(
     max_tokens: int = 2000,
     preferred_model: Optional[str] = None,
     model_chain: Optional[list] = None,
+    tenant_id: Optional[str] = None,
 ) -> dict:
+    # Per-tenant daily budget cap (§5 ai-svc cost/reliability). Pre-flight
+    # check: if the tenant has already burned through their daily cap, fail
+    # fast with a structured error rather than spending more money on the
+    # outbound LLM call.
+    if tenant_id:
+        await get_ledger().check(tenant_id)
+
     if model_chain:
         models_to_try = model_chain
     elif preferred_model:
@@ -168,6 +177,8 @@ async def generate_completion(
                 cache_hit=cache_hit,
                 cache_read_tokens=cache_read_tokens,
             )
+            if tenant_id and cost_cents > 0:
+                await get_ledger().record(tenant_id, cost_cents)
 
             return {
                 "content": content,
@@ -193,7 +204,12 @@ async def generate_chat_completion(
     max_tokens: int = 2000,
     preferred_model: Optional[str] = None,
     stream: bool = False,
+    tenant_id: Optional[str] = None,
 ):
+    # Per-tenant daily budget cap (§5 ai-svc cost/reliability).
+    if tenant_id:
+        await get_ledger().check(tenant_id)
+
     models_to_try = [preferred_model] + MODEL_PRIORITY if preferred_model else MODEL_PRIORITY
 
     try:
@@ -242,6 +258,8 @@ async def generate_chat_completion(
                     cache_hit=cache_hit,
                     cache_read_tokens=cache_read_tokens,
                 )
+                if tenant_id and cost_cents > 0:
+                    await get_ledger().record(tenant_id, cost_cents)
                 return {
                     "content": content,
                     "model": model,

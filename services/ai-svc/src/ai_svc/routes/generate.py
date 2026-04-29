@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from ..services.llm_gateway import generate_completion
+from ..services.budget_caps import BudgetExceeded
 from ..services.prompt_builder import build_content_generation_prompt, build_tutor_system_prompt
 from ..services.quality_gate import run_quality_gate
 from ..services.baseline_generator import build_baseline_generation_prompt
@@ -67,7 +68,10 @@ async def generate_content(req: ContentRequest):
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             max_tokens=req.max_tokens,
+            tenant_id=req.brain_context.get("tenant_id"),
         )
+    except BudgetExceeded as e:
+        raise HTTPException(status_code=429, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"LLM generation failed: {str(e)}")
 
@@ -110,7 +114,10 @@ async def tutor_chat(req: TutorChatRequest):
             system_prompt=system_prompt,
             user_prompt=req.messages[-1]["content"] if req.messages else "Hello! What shall we learn today?",
             max_tokens=req.max_tokens,
+            tenant_id=req.brain_context.get("tenant_id"),
         )
+    except BudgetExceeded as e:
+        raise HTTPException(status_code=429, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"LLM chat failed: {str(e)}")
 
