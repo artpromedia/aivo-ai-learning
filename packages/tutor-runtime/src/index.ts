@@ -25,6 +25,12 @@ import { assertValidTutorDefinition } from "@aivo/tutor-sdk";
 import type { MasteryRecord, AnswerOutcome } from "@aivo/pedagogy";
 import { retrieve, scaffold, schedule } from "@aivo/pedagogy";
 import { transformActivity } from "@aivo/level-transforms";
+import {
+  applyTheme,
+  pickTheme,
+  type InterestTheme,
+  type LearnerInterestProfile,
+} from "@aivo/special-interest-engine";
 
 export interface LearnerContext {
   learnerId: string;
@@ -33,6 +39,13 @@ export interface LearnerContext {
   recentOutcomes: AnswerOutcome[];
   /** Skills covered earlier today — excluded from retrieval candidates. */
   recentlyCovered?: readonly string[];
+  /**
+   * Optional learner special-interest profile. When supplied, the
+   * runtime themes activities around the highest-scoring safe interest
+   * (Minecraft, dinosaurs, trains, …) — special interests are the
+   * engine, not a distraction.
+   */
+  interestProfile?: LearnerInterestProfile;
 }
 
 export interface PlanSessionOptions {
@@ -162,6 +175,12 @@ export function planSession(
     recent: ctx.recentOutcomes,
   });
 
+  // Pick a special-interest theme once per session — keeps activity
+  // theming consistent and predictable for the learner.
+  const theme: InterestTheme | null = ctx.interestProfile
+    ? pickTheme(ctx.interestProfile)
+    : null;
+
   const activities: Activity[] = [];
   for (const sc of skillsToCover.slice(0, max)) {
     const candidates = pack.activities.filter((a) => a.skillId === sc.skillId);
@@ -175,7 +194,8 @@ export function planSession(
     const matches = candidates.filter((a) => a.difficulty === preferredDifficulty);
     const pool = matches.length > 0 ? matches : candidates;
     const pick = pool[Math.floor(rng() * pool.length)];
-    const transformed = transformActivity(pick, ctx.functioningLevel, {
+    const themed = theme ? applyInterestTheme(pick, theme, rng) : pick;
+    const transformed = transformActivity(themed, ctx.functioningLevel, {
       defaultAdaptations: pack.defaultAdaptations,
     });
     activities.push(transformed);
@@ -193,6 +213,38 @@ export function planSession(
 export type { Activity, ContentPack } from "@aivo/content-pack";
 export type { TutorDefinition, TutorFunctioningLevel } from "@aivo/tutor-sdk";
 export { schedule, scaffold, retrieve } from "@aivo/pedagogy";
+
+/**
+ * Apply a learner-interest theme to an activity — re-themes title +
+ * prompt + textual choices via the engine's `{{noun}}` / `{{verb}}`
+ * placeholders. Activities without placeholders are returned unchanged
+ * (no garbling of unauthored content). The themed activity preserves
+ * the original id, skillId, difficulty, and choice ids; only display
+ * strings are rewritten so analytics keep working.
+ */
+function applyInterestTheme(
+  activity: Activity,
+  theme: InterestTheme,
+  rng: () => number,
+): Activity {
+  const themePlaceholderRe = /\{\{(?:noun|verb)\}\}/;
+  const titleHas = themePlaceholderRe.test(activity.title);
+  const promptHas = themePlaceholderRe.test(activity.prompt);
+  const choicesHas = activity.choices?.some((c) => themePlaceholderRe.test(c.label));
+  if (!titleHas && !promptHas && !choicesHas) return activity;
+  return {
+    ...activity,
+    title: titleHas ? applyTheme(activity.title, theme, rng) : activity.title,
+    prompt: promptHas ? applyTheme(activity.prompt, theme, rng) : activity.prompt,
+    choices: activity.choices?.map((c) => ({
+      ...c,
+      label: themePlaceholderRe.test(c.label)
+        ? applyTheme(c.label, theme, rng)
+        : c.label,
+    })),
+    tags: [...(activity.tags ?? []), `themed:${theme.slug}`],
+  };
+}
 
 /**
  * Convenience — apply an answer outcome to the learner's mastery record
