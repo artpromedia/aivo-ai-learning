@@ -199,6 +199,36 @@ jobs:
             pytest tests/ -v || true
           fi
 
+  curriculum-svc:
+    name: Curriculum Service (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: services/curriculum-svc/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r services/curriculum-svc/requirements.txt
+
+      - name: Compile check
+        run: cd services/curriculum-svc && python -m py_compile src/curriculum_svc/main.py
+
+      - name: Run tests
+        working-directory: services/curriculum-svc
+        env:
+          ENVIRONMENT: test
+        run: |
+          pip install pytest pytest-asyncio httpx 2>/dev/null || true
+          if [ -d tests ]; then
+            pytest tests/ -v || true
+          fi
+
   mobile-expo-check:
     name: Mobile App (Expo)
     runs-on: ubuntu-latest

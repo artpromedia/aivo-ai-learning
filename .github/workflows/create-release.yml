@@ -26,7 +26,7 @@ env:
   ALL_SERVICES: >-
     identity-svc,billing-svc,family-svc,integrations-svc,admin-svc,
     learning-svc,engagement-svc,comms-svc,i18n-svc,tutor-svc,
-    status-page-svc,research-svc,assessment-svc,ai-svc,brain-svc,web,marketing
+    status-page-svc,research-svc,assessment-svc,ai-svc,brain-svc,curriculum-svc,web,marketing
 
 jobs:
   # ─────────────────────────────────────────────
@@ -104,7 +104,7 @@ jobs:
 
           SERVICES="identity-svc billing-svc family-svc integrations-svc admin-svc \
             learning-svc engagement-svc comms-svc i18n-svc tutor-svc \
-            status-page-svc research-svc assessment-svc ai-svc brain-svc web marketing"
+            status-page-svc research-svc assessment-svc ai-svc brain-svc curriculum-svc web marketing"
 
           MISSING=0
           for svc in $SERVICES; do
@@ -152,6 +152,7 @@ jobs:
           - assessment-svc
           - ai-svc
           - brain-svc
+          - curriculum-svc
           - web
           - marketing
 
@@ -248,6 +249,7 @@ jobs:
           | assessment-svc | \`${{ env.IMAGE_PREFIX }}/assessment-svc:${VERSION}\` |
           | ai-svc | \`${{ env.IMAGE_PREFIX }}/ai-svc:${VERSION}\` |
           | brain-svc | \`${{ env.IMAGE_PREFIX }}/brain-svc:${VERSION}\` |
+          | curriculum-svc | \`${{ env.IMAGE_PREFIX }}/curriculum-svc:${VERSION}\` |
           | web | \`${{ env.IMAGE_PREFIX }}/web:${VERSION}\` |
           | marketing | \`${{ env.IMAGE_PREFIX }}/marketing:${VERSION}\` |
           EOMD

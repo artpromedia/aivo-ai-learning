@@ -66,28 +66,29 @@ jobs:
           - marketing-site      # 10
           - brain-svc           # 11 (python)
           - ai-svc              # 12 (python)
+          - curriculum-svc      # 13 (python)
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup pnpm
-        if: matrix.target != 'brain-svc' && matrix.target != 'ai-svc'
+        if: matrix.target != 'brain-svc' && matrix.target != 'ai-svc' && matrix.target != 'curriculum-svc'
         uses: pnpm/action-setup@v4
 
       - name: Setup Node
-        if: matrix.target != 'brain-svc' && matrix.target != 'ai-svc'
+        if: matrix.target != 'brain-svc' && matrix.target != 'ai-svc' && matrix.target != 'curriculum-svc'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
       - name: Setup Python
-        if: matrix.target == 'brain-svc' || matrix.target == 'ai-svc'
+        if: matrix.target == 'brain-svc' || matrix.target == 'ai-svc' || matrix.target == 'curriculum-svc'
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install (node)
-        if: matrix.target != 'brain-svc' && matrix.target != 'ai-svc'
+        if: matrix.target != 'brain-svc' && matrix.target != 'ai-svc' && matrix.target != 'curriculum-svc'
         run: pnpm install --frozen-lockfile
 
       - name: Run target
@@ -114,6 +115,10 @@ jobs:
               if [ -f services/ai-svc/src/main.py ]; then
                 cd services/ai-svc && python -m py_compile src/main.py
               fi
+              ;;
+            curriculum-svc)
+              pip install -r services/curriculum-svc/requirements.txt
+              cd services/curriculum-svc && python -m py_compile src/curriculum_svc/main.py
               ;;
             *)
               # Generic node service build — `...` suffix includes workspace
@@ -199,6 +204,7 @@ jobs:
             identity-svc assessment-svc brain-svc ai-svc learning-svc
             tutor-svc family-svc engagement-svc billing-svc comms-svc
             i18n-svc integrations-svc admin-svc status-page-svc research-svc
+            curriculum-svc
           )
           adopt() {
             local kind="$1" name="$2" svc="$3"
@@ -255,6 +261,7 @@ jobs:
               i18n-svc)         EXTRA_SETS=(--set env.I18N_SVC_PORT=3000) ;;
               integrations-svc) EXTRA_SETS=(--set env.INTEGRATIONS_SVC_PORT=3000) ;;
               research-svc)     EXTRA_SETS=(--set env.RESEARCH_SVC_PORT=3000) ;;
+              curriculum-svc)   EXTRA_SETS=(--set env.CURRICULUM_SVC_PORT=3000) ;;
               status-page-svc)
                 EXTRA_SETS=(
                   --set env.STATUS_PAGE_SVC_PORT=3000
@@ -510,8 +517,9 @@ jobs:
             identity-svc assessment-svc brain-svc ai-svc learning-svc
             tutor-svc family-svc engagement-svc billing-svc comms-svc
             i18n-svc integrations-svc admin-svc status-page-svc research-svc
+            curriculum-svc
           )
-          PYTHON_SERVICES=(brain-svc ai-svc)
+          PYTHON_SERVICES=(brain-svc ai-svc curriculum-svc)
 
           adopt() {
             local kind="$1" name="$2" svc="$3"
@@ -562,6 +570,7 @@ jobs:
               i18n-svc)         EXTRA_SETS=(--set env.I18N_SVC_PORT=3000) ;;
               integrations-svc) EXTRA_SETS=(--set env.INTEGRATIONS_SVC_PORT=3000) ;;
               research-svc)     EXTRA_SETS=(--set env.RESEARCH_SVC_PORT=3000) ;;
+              curriculum-svc)   EXTRA_SETS=(--set env.CURRICULUM_SVC_PORT=3000) ;;
               status-page-svc)
                 # status-page-svc requires cluster-local URLs for all 14
                 # downstream services to boot in production.
