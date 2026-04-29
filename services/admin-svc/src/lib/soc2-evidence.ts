@@ -245,7 +245,7 @@ export function startEvidenceCron(
     jobName: "admin.soc2-evidence",
     ledger,
     lock,
-    log: log as { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void },
+    log: log as never,
     run: async () => {
       const result = await generateEvidenceBundle(db);
       log.info(

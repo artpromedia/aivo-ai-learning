@@ -28,10 +28,17 @@ export function sanitize<T>(data: T, depth = 0): T {
 // ── Logger factory ─────────────────────────────────────────────────────────
 
 export interface Logger {
+  // Preferred (new) signature: message first, optional structured data.
   info(message: string, data?: Record<string, unknown>): void;
   warn(message: string, data?: Record<string, unknown>): void;
   error(message: string, data?: Record<string, unknown>): void;
   debug(message: string, data?: Record<string, unknown>): void;
+  // Backwards-compat overloads for pino-style callers (data first, optional msg)
+  // and `logger.error(err, "msg")` shorthand. Internally normalised.
+  info(data: Record<string, unknown>, message?: string): void;
+  warn(data: Record<string, unknown>, message?: string): void;
+  error(data: Record<string, unknown> | Error | unknown, message?: string): void;
+  debug(data: Record<string, unknown>, message?: string): void;
 }
 
 export function createLogger(serviceName: string, context?: Record<string, unknown>): Logger {
@@ -45,16 +52,34 @@ export function createLogger(serviceName: string, context?: Record<string, unkno
     base: context ? sanitize({ service: serviceName, ...context }) : { service: serviceName },
   });
 
-  function log(level: "info" | "warn" | "error" | "debug", message: string, data?: Record<string, unknown>) {
-    const safeData = data ? sanitize(data) : {};
-    base[level](safeData, message);
+  function normalise(a: unknown, b: unknown): { message: string; data: Record<string, unknown> } {
+    if (typeof a === "string") {
+      const data = b && typeof b === "object" ? (b as Record<string, unknown>) : {};
+      return { message: a, data };
+    }
+    // Legacy pino-style: first arg is the structured payload (or an Error).
+    const message = typeof b === "string" ? b : "";
+    let data: Record<string, unknown> = {};
+    if (a instanceof Error) {
+      data = { err: a.message, stack: a.stack, name: a.name };
+    } else if (a && typeof a === "object") {
+      data = a as Record<string, unknown>;
+    } else if (a !== undefined) {
+      data = { value: a };
+    }
+    return { message, data };
+  }
+
+  function log(level: "info" | "warn" | "error" | "debug", a: unknown, b: unknown) {
+    const { message, data } = normalise(a, b);
+    base[level](sanitize(data), message);
   }
 
   return {
-    info: (msg, data) => log("info", msg, data),
-    warn: (msg, data) => log("warn", msg, data),
-    error: (msg, data) => log("error", msg, data),
-    debug: (msg, data) => log("debug", msg, data),
+    info: ((a: unknown, b?: unknown) => log("info", a, b)) as Logger["info"],
+    warn: ((a: unknown, b?: unknown) => log("warn", a, b)) as Logger["warn"],
+    error: ((a: unknown, b?: unknown) => log("error", a, b)) as Logger["error"],
+    debug: ((a: unknown, b?: unknown) => log("debug", a, b)) as Logger["debug"],
   };
 }
 

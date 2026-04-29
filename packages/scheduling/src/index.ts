@@ -80,7 +80,16 @@ export interface SafeCronOptions {
    * record sent/failed counts. Throwing is caught and recorded as `failed`.
    */
   run: () => Promise<JobOutcome>;
-  log?: { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void };
+  log?: {
+    info: {
+      (msg: string, data?: Record<string, unknown>): void;
+      (data: Record<string, unknown>, msg?: string): void;
+    };
+    error: {
+      (msg: string, data?: Record<string, unknown>): void;
+      (data: Record<string, unknown> | Error | unknown, msg?: string): void;
+    };
+  };
 }
 
 export interface JobOutcome {
@@ -151,7 +160,7 @@ export function startSafeCron(opts: SafeCronOptions): SafeCronHandle {
       } catch (e) {
         error = e instanceof Error ? e.message : String(e);
         outcome = { status: "failed" };
-        log?.error({ err: error, jobName: opts.jobName }, "scheduled job threw");
+        log?.error("scheduled job threw", { err: error, jobName: opts.jobName });
       }
       const finishedAt = new Date();
       await opts.ledger.markFinished({
@@ -171,13 +180,13 @@ export function startSafeCron(opts: SafeCronOptions): SafeCronHandle {
         durationMs: finishedAt.getTime() - start,
         error,
       });
-      log?.info({ jobName: opts.jobName, status: outcome.status, replicaId }, "scheduled job finished");
+      log?.info("scheduled job finished", { jobName: opts.jobName, status: outcome.status, replicaId });
       return { ran: true, outcome };
     } finally {
       try {
         await release();
       } catch (e) {
-        log?.error({ err: e, jobName: opts.jobName }, "failed to release advisory lock");
+        log?.error("failed to release advisory lock", { err: e instanceof Error ? e.message : String(e), jobName: opts.jobName });
       }
     }
   }
@@ -186,7 +195,7 @@ export function startSafeCron(opts: SafeCronOptions): SafeCronHandle {
     if (stopped) return;
     timer = setTimeout(async () => {
       inFlight = singleTick().catch((e) => {
-        log?.error({ err: e, jobName: opts.jobName }, "scheduled tick crashed");
+        log?.error("scheduled tick crashed", { err: e instanceof Error ? e.message : String(e), jobName: opts.jobName });
       });
       await inFlight;
       inFlight = null;
@@ -202,7 +211,7 @@ export function startSafeCron(opts: SafeCronOptions): SafeCronHandle {
     inFlight = singleTick()
       .then(() => {})
       .catch((e) => {
-        log?.error({ err: e, jobName: opts.jobName }, "first tick crashed");
+        log?.error("first tick crashed", { err: e instanceof Error ? e.message : String(e), jobName: opts.jobName });
       });
     scheduleNext();
   }, Math.min(5_000, tickIntervalMs));

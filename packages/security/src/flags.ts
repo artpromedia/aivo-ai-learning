@@ -145,7 +145,10 @@ export function isSpeechBuddyEnabled(
 }
 
 interface BootstrapLogger {
-  info: (obj: Record<string, unknown>, msg?: string) => void;
+  info: {
+    (message: string, data?: Record<string, unknown>): void;
+    (data: Record<string, unknown>, message?: string): void;
+  };
 }
 
 /**
@@ -156,5 +159,5 @@ export function logAdminEnterpriseFlags(
   logger: BootstrapLogger,
   flags: AdminEnterpriseFlags = ADMIN_ENTERPRISE,
 ): void {
-  logger.info({ adminEnterpriseFlags: flags }, "admin enterprise feature flags");
+  logger.info("admin enterprise feature flags", { adminEnterpriseFlags: flags });
 }

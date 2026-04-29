@@ -77,9 +77,18 @@ export const HTTP_5XX_RATE_WARNING = 0.02;
 export interface WatchdogOptions {
   intervalMs?: number;
   log?: {
-    info: (...args: unknown[]) => void;
-    warn: (...args: unknown[]) => void;
-    error: (...args: unknown[]) => void;
+    info: {
+      (msg: string, data?: Record<string, unknown>): void;
+      (data: Record<string, unknown>, msg?: string): void;
+    };
+    warn: {
+      (msg: string, data?: Record<string, unknown>): void;
+      (data: Record<string, unknown>, msg?: string): void;
+    };
+    error: {
+      (msg: string, data?: Record<string, unknown>): void;
+      (data: Record<string, unknown> | Error | unknown, msg?: string): void;
+    };
   };
 }
 
