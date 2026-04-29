@@ -14,7 +14,7 @@
 ## Table of Contents
 
 - [Overview](#overview)
-- [Neurodiverse-First Corrections (v2.1)](#neurodiverse-first-corrections-v21)
+- [What's New in v2.1](#whats-new-in-v21)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Repository Layout](#repository-layout)
@@ -46,16 +46,62 @@ AIVO is an adaptive learning platform built around five core ideas:
 
 The platform serves parents, learners, teachers, caregivers, therapists, and district admins, plus internal dashboards for sales, marketing, customer care, support, finance, and DevOps.
 
-## Neurodiverse-First Corrections (v2.1)
+## What's New in v2.1
 
-A set of strategic corrections turn AIVO from "adaptive content" into a partner that meets neurodiverse learners where they actually are. Each correction is implemented end-to-end (DB schema → service routes → UI surface):
+The v2.1 release lands a wide sweep of platform fixes — from the four neurodiverse-first corrections that change *how* the agent meets a learner, through new content/curriculum services, observability and budget guardrails, and infrastructure cleanup. Everything below is implemented end-to-end (DB schema → service routes → tests / UI), not scaffolding.
 
-1. **Adaptive multimodal baseline.** The baseline no longer asks "what grade is this kid at?" — it builds a `LearningProfile` (preferred modality, logit θ ability, frustration tolerance, attention-run-length, median latency). The Discovery Adventure now derives + persists this profile, and a fully adaptive run-loop (`/api/assessments/adaptive-baseline/:learnerId/{start,respond,finalize}`) backed by `@aivo/adaptive-baseline` chooses each next item by SE-stop on a 1-PL model. Tables: `learner_profiles`, `adaptive_baseline_sessions`.
-2. **Special interests as the curriculum engine.** Parents log a learner's deep interests through `family-svc/routes/interests.ts`; signals score directly via `@aivo/special-interest-engine`. The assessment service pipes the top scored theme into both `generate-discovery-chapter` and `generate-baseline` ai-svc calls, and `ai-svc/baseline_generator.py` rewrites the prompt rule when a primary theme is present: *"Build the activity AROUND `<theme>` as the primary theme — the engine, not a sprinkle."* Word problems live in Minecraft, reading passages live in volcanoes, science questions live in dinosaurs. Table: `learner_interest_signals`.
-3. **Executive-function partner.** ADHD is fundamentally an EF challenge, so the agent quietly carries the planning load. `tutor-svc/routes/ef.ts` exposes `POST /api/ef/breakdown` (a 4-step micro-plan with optional modality narrowing), `GET /api/ef/breakdown/:learnerId/:taskId` (returns next-step prompt + progress), step-complete endpoints (idempotent via unique index), session-outcome ledger, and `GET /api/ef/best-window/:learnerId` (best learning window endorsed only with ≥2 observations). Tables: `ef_task_breakdowns`, `ef_task_step_progress`, `ef_session_outcomes`.
-4. **"What's working" parent dashboard.** The dashboard no longer just reports "12 lessons completed." `family-svc/routes/whats-working.ts` (`GET /api/family/whats-working/:learnerId?windowDays=N`) reads the `ef_session_outcomes` ledger and runs the rows through a pure analytics module, and the new `WhatsWorkingPanel` on the parent dashboard surfaces three IEP-meeting-ready signals per learner: best learning window, modality that clicks, where frustration spikes — patterns parents can take to a meeting, not numbers they can't act on.
+### Neurodiverse-first corrections (the headline four)
 
-All four routes inherit the platform auth contract (parent-on-own-kid / learner-on-self / TEACHER / ADMIN / service-token), are covered by a 120-rpm `@fastify/rate-limit` global cap on top of per-route token buckets, and ship with unit tests for the pure helpers (assessment-svc 9 cases, ai-svc 7 cases).
+1. **Adaptive multimodal baseline.** The baseline no longer asks "what grade is this kid at?" — it builds a `LearningProfile` (preferred modality, logit θ ability, frustration tolerance, attention-run-length, median latency). The Discovery Adventure derives + persists this profile via `assessment-svc/services/learning-profile.ts`, and a fully adaptive run-loop (`/api/assessments/adaptive-baseline/:learnerId/{start,respond,finalize}`) backed by `@aivo/adaptive-baseline` chooses each next item by SE-stop on a 1-PL model. Tables: `learner_profiles`, `adaptive_baseline_sessions`.
+2. **Special interests as the curriculum engine.** Parents log a learner's deep interests through `family-svc/routes/interests.ts`; signals score directly via `@aivo/special-interest-engine`. The assessment service pipes the top scored theme into both `generate-discovery-chapter` and `generate-baseline` ai-svc calls, and `ai-svc/baseline_generator.py` rewrites the prompt rule when a primary theme is present: *"Build the activity AROUND `<theme>` as the primary theme — the engine, not a sprinkle."* Word problems live in Minecraft, reading passages live in volcanoes. Table: `learner_interest_signals`.
+3. **Executive-function partner.** ADHD is fundamentally an EF challenge, so the agent quietly carries the planning load. `tutor-svc/routes/ef.ts` exposes `POST /api/ef/breakdown` (a 4-step micro-plan with optional modality narrowing), `GET /api/ef/breakdown/:learnerId/:taskId` (next-step prompt + progress), step-complete endpoints (idempotent via unique index), session-outcome ledger, and `GET /api/ef/best-window/:learnerId` (best learning window endorsed only with ≥2 observations). Tables: `ef_task_breakdowns`, `ef_task_step_progress`, `ef_session_outcomes`.
+4. **"What's working" parent dashboard.** `family-svc/routes/whats-working.ts` (`GET /api/family/whats-working/:learnerId?windowDays=N`) reads the real `ef_session_outcomes` ledger (capped at 5,000 rows / 365 days) through a pure analytics module, and the new `WhatsWorkingPanel` on the parent dashboard surfaces three IEP-meeting-ready signals per learner: best learning window, modality that clicks, where frustration spikes. Per-subject rate limit + payload cap address the CodeQL `js/missing-rate-limiting` finding.
+
+### Pedagogy & content engine
+
+- **`@aivo/pedagogy`, `@aivo/tutor-sdk`, `@aivo/tutor-runtime`.** New tutor stack scaffolded as workspace packages; tutor-runtime now consumes the special-interest engine to theme generated activities.
+- **`@aivo/level-transforms` and `@aivo/special-interest-engine`.** Pure-function packages for functioning-level content reshaping and interest scoring (`scoreInterests` / `pickTheme`).
+- **`@aivo/skill-graphs` and `@aivo/content-pack`.** Seed data, validators, and tests for skill-graph traversal and content-pack manifests.
+- **`@aivo/item-bank` + IEP packet generator route.** Calibrated item bank package; IEP packet generator with a module-level `SIGNATURE_ROLES` constant (review nit) and a fastify route for parent/teacher exports.
+- **`curriculum-svc` + `admin-svc` content-cms first cut.** New curriculum microservice plus admin-svc CMS surface; curriculum-svc wired into the CI/CD pipeline.
+
+### Stage & learner experience
+
+- **Stage hooks ported into packages.** `useTTS`, `useSpeechInput`, `useSensoryAdapter`, `voiceMatch`, and `StageBreakCloud` extracted from the web app into shared packages so mobile + web share one source of truth.
+- **Phase 2 stage-ui.** Web stage-ui DOM components and `stage-runtime` `SessionMachine` shipped; native a11y typing fixed; RN type fix for stage-ui.
+- **AAC bridge.** Vendor-certification suite plus an end-to-end eye-gaze pipeline.
+- **Auth pages redesign.** Login / signup pages updated to the new design system.
+
+### AI runtime guardrails
+
+- **Per-tenant LLM budget caps** in `ai-svc`, with admin `status`/`reset` routes.
+- **Phase 1 platform wiring:** prompt caching, budget auto-cap, and observability hooks integrated end-to-end.
+
+### Observability & ops
+
+- **Logger API unification.** `refactor(logging)` makes the shared logger accept both message-first and pino-style signatures; `alerts-proxy-svc`, `admin-svc` watchdog, and `ops-alerts` migrated to the new `(msg, data)` order via a legacy adapter, deprecating `@aivo/ops-alert`.
+- **Mobile + ops-alerts lint cleanup.** Resolves mobile eslint import errors; marks ops-alerts stats `readonly`.
+
+### Identity & storage
+
+- **S3-backed avatar storage in `identity-svc`** with a proxied `GET` so clients never touch S3 directly; pnpm-lock updated for `@aws-sdk/client-s3`.
+
+### Database & dependency hygiene
+
+- **DB migration backfill** — `fix(db)` adds `CREATE TABLE` migrations for tables that were previously only added via `db:push`, so a fresh environment can be brought up purely from migrations.
+- **Workspace dep fix** — `assessment-svc` now declares `@aivo/special-interest-engine` as a workspace dependency (was an implicit hoisted resolution).
+
+### Internationalization
+
+- **22 missing marketing keys** added across all non-English locales, and the remaining **21 untranslated strings** translated — bringing the i18n coverage report back to 100%.
+
+### CI / release
+
+- **Sprint 20 Phase 2 + Supplemental A/B/C** implementation merged.
+- **Slack notification cleanup** — unused integration removed; remaining secret/job expressions in the `notify-slack-on-failure` action description are now properly escaped.
+- **Code-review feedback** addressed: spelling fixes and env-var naming consistency across services.
+
+All new HTTP routes inherit the platform auth contract (parent-on-own-kid / learner-on-self / TEACHER / ADMIN / service-token), are covered by a 120-rpm `@fastify/rate-limit` global cap on top of per-route token buckets, and ship with unit tests for the pure helpers.
 
 ## Architecture
 
