@@ -12,9 +12,7 @@ on:
 
 permissions:
   contents: read
-  # Needed by .github/actions/notify-slack-on-failure for the previous-run
-  # lookup that decides whether a current success is a recovery worth
-  # telling Slack about.
+  # actions: read is kept for any future previous-run lookup tooling we add.
   actions: read
 
 jobs:
@@ -35,17 +33,3 @@ jobs:
           set -o pipefail
           mkdir -p /tmp/drift
           pnpm --filter @aivo/db run check:schema-drift 2>&1 | tee /tmp/drift/output.log
-
-      # Page on-call when an unattended push to main goes red. PR runs are
-      # already visible to the PR author and are intentionally skipped here.
-      - name: Notify Slack on failure / recovery
-        if: always() && github.event_name != 'pull_request'
-        uses: ./.github/actions/notify-slack-on-failure
-        with:
-          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          check-status: ${{ job.status }}
-          check-name: "DB schema drift check"
-          workflow-filename: db-schema-drift.yml
-          failure-reason-file: /tmp/drift/output.log
-          target: "packages/db (Drizzle pgTable ↔ migrations)"

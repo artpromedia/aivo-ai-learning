@@ -20,15 +20,9 @@ name: Marketing Smoke Test (Production)
 #     even when nobody publishes)
 #   - workflow_dispatch for on-demand re-verification
 #
-# Slack notifications:
-#   - On failure: posts a :rotating_light: alert to SLACK_WEBHOOK_URL (the same
-#     ops/deploys channel used by health-check.yml and mobile-release.yml) with
-#     the tail of the script output (HTTP code or missing markers) and a link
-#     to the GitHub Actions run.
-#   - On recovery: posts a :white_check_mark: notice ONLY when the immediately
-#     preceding completed run of this workflow ended in failure. This keeps
-#     steady-state successes silent (no alarm fatigue) while still announcing
-#     that the site is healthy again.
+# On failure the workflow run is marked failed in GitHub Actions and the
+# tail of scripts/verify-marketing-deploy.sh is captured in /tmp/smoke/
+# for inspection in the run logs.
 
 on:
   workflow_run:
@@ -72,117 +66,3 @@ jobs:
           set -o pipefail
           mkdir -p /tmp/smoke
           bash scripts/verify-marketing-deploy.sh 2>&1 | tee /tmp/smoke/output.log
-
-      # Look up the previous completed run of THIS workflow (excluding this
-      # run) to decide whether a current success is a recovery worth telling
-      # Slack about. Only needed when the smoke check itself succeeded, and
-      # `continue-on-error: true` ensures a transient GitHub API blip can't
-      # turn this into a false outage alert (the failure-notify step is
-      # gated on `steps.smoke.outcome`, not on this step's outcome).
-      - name: Look up previous run conclusion
-        id: prev
-        if: steps.smoke.outcome == 'success'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          # Find the previous run that actually exercised the smoke check —
-          # i.e., concluded `success` or `failure`. Filter out `skipped` and
-          # `cancelled` (which can happen when the upstream Marketing Deploy
-          # workflow fails and this workflow_run job is auto-skipped) so a
-          # legitimate first-green-after-red still triggers a recovery ping.
-          PREV=$(gh run list \
-            --workflow marketing-smoke-test.yml \
-            --status completed \
-            --limit 25 \
-            --repo "${{ github.repository }}" \
-            --json databaseId,conclusion \
-            --jq "map(select(.databaseId != ${{ github.run_id }} and (.conclusion == \"success\" or .conclusion == \"failure\"))) | .[0].conclusion // \"\"")
-          echo "Previous health-determining run conclusion: '${PREV}'"
-          echo "conclusion=${PREV}" >> "$GITHUB_OUTPUT"
-
-      - name: Notify Slack on failure
-        # Gate strictly on the smoke step's outcome — NOT on the job-wide
-        # failure() context — so a transient `gh` CLI / GitHub API hiccup in
-        # the previous-run lookup can never trigger a false outage page.
-        if: always() && steps.smoke.outcome == 'failure'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          MARKETING_URL: ${{ inputs.url || 'https://aivolearning.com/' }}
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
-            echo "SLACK_WEBHOOK_URL not configured, skipping Slack notification"
-            exit 0
-          fi
-          # Capture the tail of the script output (HTTP code / missing markers)
-          # so the on-call human gets the failure reason in Slack without
-          # having to click through to the run.
-          if [ -f /tmp/smoke/output.log ]; then
-            REASON_RAW="$(tail -n 30 /tmp/smoke/output.log)"
-          else
-            REASON_RAW="(no script output captured — step failed before script ran)"
-          fi
-          REASON_JSON="$(printf '%s' "$REASON_RAW" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')"
-          PAYLOAD=$(cat <<EOF
-          {
-            "text": ":rotating_light: Marketing smoke test FAILED — ${MARKETING_URL} may be down",
-            "attachments": [{
-              "color": "danger",
-              "fields": [
-                {"title": "Target", "value": "${MARKETING_URL}", "short": true},
-                {"title": "Trigger", "value": "${EVENT_NAME}", "short": true},
-                {"title": "Failure reason (tail of verify-marketing-deploy.sh)", "value": ${REASON_JSON}, "short": false},
-                {"title": "Run", "value": "<${GITHUB_RUN_URL}|View in GitHub Actions>", "short": false}
-              ]
-            }]
-          }
-          EOF
-          )
-          curl -sS -X POST "$SLACK_WEBHOOK_URL" \
-            -H 'Content-Type: application/json' \
-            --data "$PAYLOAD" \
-            --retry 3 --retry-delay 2 --max-time 15 || \
-            echo "Slack POST failed (non-fatal)"
-
-      - name: Notify Slack on recovery
-        # Only fire when:
-        #   (a) the smoke check itself succeeded (not just the job — gating
-        #       on `steps.smoke.outcome` keeps the decision tied to the real
-        #       site health, not to whether the prev-lookup step happened
-        #       to error out), AND
-        #   (b) the previous completed run of this workflow was a failure.
-        # Steady-state green runs stay silent. If the prev-lookup step
-        # itself failed, `steps.prev.outputs.conclusion` is empty and the
-        # comparison is false — we'd rather skip a recovery ping than send
-        # a noisy one based on bad data.
-        if: always() && steps.smoke.outcome == 'success' && steps.prev.outputs.conclusion == 'failure'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          MARKETING_URL: ${{ inputs.url || 'https://aivolearning.com/' }}
-        run: |
-          if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
-            echo "SLACK_WEBHOOK_URL not configured, skipping Slack notification"
-            exit 0
-          fi
-          PAYLOAD=$(cat <<EOF
-          {
-            "text": ":white_check_mark: Marketing smoke test RECOVERED — ${MARKETING_URL} is healthy again",
-            "attachments": [{
-              "color": "good",
-              "fields": [
-                {"title": "Target", "value": "${MARKETING_URL}", "short": true},
-                {"title": "Run", "value": "<${GITHUB_RUN_URL}|View in GitHub Actions>", "short": false}
-              ]
-            }]
-          }
-          EOF
-          )
-          curl -sS -X POST "$SLACK_WEBHOOK_URL" \
-            -H 'Content-Type: application/json' \
-            --data "$PAYLOAD" \
-            --retry 3 --retry-delay 2 --max-time 15 || \
-            echo "Slack POST failed (non-fatal)"

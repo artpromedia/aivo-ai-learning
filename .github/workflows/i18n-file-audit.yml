@@ -21,8 +21,7 @@ on:
 
 permissions:
   contents: read
-  # Needed by .github/actions/notify-slack-on-failure for the previous-run
-  # lookup.
+  # actions: read is kept for any future previous-run lookup tooling we add.
   actions: read
 
 jobs:
@@ -68,18 +67,3 @@ jobs:
         run: |
           echo "::error::i18n audit found missing or orphan keys. See the report above."
           exit 1
-
-      # Page on-call when an unattended push to main/develop (or a manual
-      # dispatch) goes red. PR runs are already visible to the PR author
-      # and are intentionally skipped here.
-      - name: Notify Slack on failure / recovery
-        if: always() && github.event_name != 'pull_request'
-        uses: ./.github/actions/notify-slack-on-failure
-        with:
-          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          check-status: ${{ job.status }}
-          check-name: "i18n locale file audit"
-          workflow-filename: i18n-file-audit.yml
-          failure-reason-file: audit.log
-          target: "apps/{web,marketing,mobile} locale messages"

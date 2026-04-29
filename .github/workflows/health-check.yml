@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: read
-  # Needed by .github/actions/notify-slack-on-failure for the previous-run
+  # actions: read is kept for any future previous-run lookup tooling we add.
   # lookup that decides whether a current success is a recovery worth
   # announcing.
   actions: read
@@ -73,22 +73,6 @@ jobs:
           else
             echo "API_BASE_URL not configured, skipping"
           fi
-
-      # Page on-call when a scheduled production health check goes red, and
-      # announce the first recovery once it goes green again. Uses the same
-      # shared notifier as marketing-smoke-test.yml et al. so every
-      # unattended check produces an identically-formatted Slack payload.
-      - name: Notify Slack on failure / recovery
-        if: always() && github.event_name != 'pull_request'
-        uses: ./.github/actions/notify-slack-on-failure
-        with:
-          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          check-status: ${{ job.status }}
-          check-name: "AIVO production health check"
-          workflow-filename: health-check.yml
-          failure-reason-file: /tmp/healthcheck/reason.txt
-          target: "Brain + Identity + API health endpoints"
 
       - name: Create incident issue
         if: failure()

@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: read
-  # Needed by .github/actions/notify-slack-on-failure for the previous-run
+  # actions: read is kept for any future previous-run lookup tooling we add.
   # lookup.
   actions: read
 
@@ -129,18 +129,3 @@ jobs:
           echo "**Backup:** \`${{ env.backup_file }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
-
-      # Page on-call on the monthly schedule (and on manual dispatch). This
-      # workflow has no PR/push triggers, so every run is "unattended" and
-      # eligible to alert.
-      - name: Notify Slack on failure / recovery
-        if: always() && github.event_name != 'pull_request'
-        uses: ./.github/actions/notify-slack-on-failure
-        with:
-          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          check-status: ${{ job.status }}
-          check-name: "Backup restore verification"
-          workflow-filename: backup-verify.yml
-          failure-reason-file: /tmp/backup/reason.txt
-          target: "S3 prod backups → Postgres restore"
