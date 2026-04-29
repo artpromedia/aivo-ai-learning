@@ -39,19 +39,19 @@ interface FrustrationHotspot {
   sessions: number;
   meanFrustration: number;
 }
-interface ModalityFitInsight {
+interface ModalityFitCell {
+  subject: string;
   modality: Modality;
   sessions: number;
   meanAccuracy: number;
-  meanAttentionMinutes: number;
 }
 interface WhatsWorkingInsights {
   totalSessions: number;
   windowDays: number;
   bestWindow: TimeOfDayInsight | null;
   timeOfDay: TimeOfDayInsight[];
-  hotspots: FrustrationHotspot[];
-  modalityFit: ModalityFitInsight[];
+  frustrationHotspots: FrustrationHotspot[];
+  modalityFit: ModalityFitCell[];
 }
 
 const TIME_LABEL: Record<TimeOfDay, string> = {
@@ -144,7 +144,28 @@ export function WhatsWorkingPanel({
     );
   }
 
-  const topModality = data.modalityFit[0];
+  // The analytics module returns subject × modality cells. For the
+  // headline "modality that clicks" tile we collapse cells to a per-
+  // modality average accuracy weighted by sessions and pick the best.
+  const modalityAgg = new Map<
+    Modality,
+    { sessions: number; weightedAcc: number }
+  >();
+  for (const c of data.modalityFit) {
+    const cur = modalityAgg.get(c.modality) ?? { sessions: 0, weightedAcc: 0 };
+    cur.sessions += c.sessions;
+    cur.weightedAcc += c.meanAccuracy * c.sessions;
+    modalityAgg.set(c.modality, cur);
+  }
+  const topModality = [...modalityAgg.entries()]
+    .map(([modality, v]) => ({
+      modality,
+      sessions: v.sessions,
+      meanAccuracy: v.sessions > 0 ? v.weightedAcc / v.sessions : 0,
+    }))
+    .sort((a, b) => b.meanAccuracy - a.meanAccuracy)[0];
+
+  const topHotspot = data.frustrationHotspots[0];
 
   return (
     <section
@@ -214,18 +235,18 @@ export function WhatsWorkingPanel({
             <TrendingUp size={14} aria-hidden="true" />
             <span>Where frustration spikes</span>
           </div>
-          {data.hotspots.length > 0 ? (
+          {data.frustrationHotspots.length > 0 && topHotspot ? (
             <div className="mt-1">
               <div className="text-lg font-bold capitalize">
-                {data.hotspots[0].subject} ·{" "}
-                {data.hotspots[0].modality === "unknown"
+                {topHotspot.subject} ·{" "}
+                {topHotspot.modality === "unknown"
                   ? "mixed"
-                  : MODALITY_LABEL[data.hotspots[0].modality]}
+                  : MODALITY_LABEL[topHotspot.modality]}
               </div>
               <div className="text-xs vi-text-muted">
-                {Math.round(data.hotspots[0].meanFrustration * 100)}% frustration
-                across {data.hotspots[0].sessions} session
-                {data.hotspots[0].sessions === 1 ? "" : "s"}
+                {Math.round(topHotspot.meanFrustration * 100)}% frustration
+                across {topHotspot.sessions} session
+                {topHotspot.sessions === 1 ? "" : "s"}
               </div>
             </div>
           ) : (

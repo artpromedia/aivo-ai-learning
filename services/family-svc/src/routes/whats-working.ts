@@ -145,4 +145,3 @@ export async function registerWhatsWorkingRoutes(app: FastifyInstance) {
     return computeWhatsWorking(rows, { windowDays });
   });
 }
-

@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import { createLogger, registerObservabilityPlugin } from "@aivo/observability";
@@ -26,6 +27,16 @@ async function start() {
   registerObservabilityPlugin(app, "tutor-svc");
 
   await app.register(cors, { origin: true, credentials: true });
+
+  // Global rate limit: 120 req / minute per IP. Defends every route
+  // (including the new EF partner endpoints) against amplification by
+  // an authenticated caller. Individual routes still apply tighter
+  // caps via their per-subject token buckets.
+  await app.register(rateLimit, {
+    max: 120,
+    timeWindow: "1 minute",
+  });
+
   await app.register(swagger, {
     openapi: {
       info: { title: "AIVO Tutor Service", version: "1.0.0" },
