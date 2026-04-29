@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from brain_svc.routes import health, brain, snapshots, recommendations, analysis, curriculum
 from brain_svc.models.database import engine, Base
+from brain_svc._observability import add_observability
 
 
 _EXPECTED_404_RE = re.compile(
@@ -35,6 +36,9 @@ app = FastAPI(
     description="Brain clone pipeline, state management, and versioned snapshots",
     lifespan=lifespan,
 )
+
+# Structured request logging + /metrics for Prometheus scrape (Supp A).
+add_observability(app, "brain-svc")
 
 app.add_middleware(
     CORSMiddleware,

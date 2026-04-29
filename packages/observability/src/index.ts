@@ -229,3 +229,6 @@ export function propagateHeaders(req: any, extra: Record<string, string> = {}): 
   if (req?.requestId) out[REQUEST_ID_HEADER] = req.requestId;
   return out;
 }
+
+// ── Re-export Fastify plugin for convenience ───────────────────────────────
+export { registerObservabilityPlugin } from "./fastify-plugin.js";

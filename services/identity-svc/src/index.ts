@@ -7,7 +7,7 @@ import swaggerUI from "@fastify/swagger-ui";
 import multipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
 import { promises as fsp } from "node:fs";
-import { createLogger } from "@aivo/observability";
+import { createLogger, registerObservabilityPlugin } from "@aivo/observability";
 import { createDb } from "@aivo/db";
 import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
 import { initKeys, logAdminEnterpriseFlags, assertMfaKeyConfigured, registerAdminIpAllowlist } from "@aivo/security";
@@ -69,6 +69,9 @@ export async function buildApp() {
   const app = Fastify({
     logger: false,
   });
+
+  // Structured request logging + /metrics for Prometheus scrape (Supp A).
+  registerObservabilityPlugin(app, "identity-svc");
 
   const isDev = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
   let corsOrigin: boolean | string[];

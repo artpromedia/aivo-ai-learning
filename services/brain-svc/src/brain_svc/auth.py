@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 import httpx
@@ -6,6 +7,7 @@ from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+logger = logging.getLogger("brain-svc.auth")
 security = HTTPBearer()
 
 IDENTITY_SVC_URL = os.environ.get("IDENTITY_SVC_URL", "http://localhost:3001")
@@ -34,7 +36,7 @@ def _fetch_public_key():
             _cached_at = now
             return _cached_public_key
     except Exception as e:
-        print(f"[brain-svc] Failed to fetch public key: {e}")
+        logger.warning("Failed to fetch public key: %s", e)
         if _cached_public_key:
             return _cached_public_key
     return None

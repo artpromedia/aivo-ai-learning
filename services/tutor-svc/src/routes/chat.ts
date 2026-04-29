@@ -2,10 +2,13 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { eq, and, desc } from "drizzle-orm";
 import { TUTORS } from "@aivo/brand";
 import { tutorSessions } from "@aivo/db";
+import { createLogger } from "@aivo/observability";
 import { resolveTenantIdForLearner } from "../lib/tenant.js";
 import { computeTutorXp, computeTutorQuality, type TutorSignals } from "../services/scoring.js";
 import { getActiveCurriculumFocus } from "./curriculum.js";
 import { loadDapeProfile } from "../lib/dape.js";
+
+const logger = createLogger("tutor-svc.chat");
 
 const TUTOR_SKU_TO_SUBJECT: Record<string, string> = {
   ADDON_TUTOR_MATH: "math",
@@ -98,7 +101,7 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
         const focus = await getActiveCurriculumFocus(db, learnerId, subject);
         if (focus) (brainContext as any).curriculum_focus = focus;
       } catch (err) {
-        console.error("Failed to load curriculum focus (non-blocking):", err);
+        logger.error("Failed to load curriculum focus (non-blocking)", { err: String(err) });
       }
     }
 
@@ -109,7 +112,7 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
         const dapeProfile = await loadDapeProfile(db, learnerId);
         if (dapeProfile.active) (brainContext as any).dape_profile = dapeProfile;
       } catch (err) {
-        console.error("Failed to load DAPE profile (non-blocking):", err);
+        logger.error("Failed to load DAPE profile (non-blocking)", { err: String(err) });
       }
     }
 
@@ -152,7 +155,7 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
         const focus = await getActiveCurriculumFocus(db, session.learnerId, liveSubject);
         if (focus) liveBrainContext.curriculum_focus = focus;
       } catch (err) {
-        console.error("Failed to refresh curriculum focus (non-blocking):", err);
+        logger.error("Failed to refresh curriculum focus (non-blocking)", { err: String(err) });
       }
     }
 

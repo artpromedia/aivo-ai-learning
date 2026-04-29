@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 from typing import Optional
 import litellm
@@ -25,6 +26,90 @@ VISION_MODEL_PRIORITY = [
     "openai/gpt-4o",
     "openai/gpt-4o-mini",
 ]
+
+
+def _build_system_message(model: str, system_prompt: str) -> dict:
+    """Build the system message, attaching Anthropic prompt-cache markers when
+    the chosen model is an Anthropic Claude variant. LiteLLM passes the
+    `cache_control` field through to Anthropic's API for 5-minute ephemeral
+    prompt caching, which materially reduces cost on repeated system prompts.
+    Other providers do not understand the field and would error on the list
+    form, so we keep their payload as plain strings.
+    """
+    if model.startswith("anthropic/"):
+        return {
+            "role": "system",
+            "content": [
+                {
+                    "type": "text",
+                    "text": system_prompt,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+        }
+    return {"role": "system", "content": system_prompt}
+
+
+def _mark_first_system_message_cached(messages: list[dict], model: str) -> list[dict]:
+    """For chat completion: convert the first system message into the cached
+    block form when targeting Anthropic. Returns a *new* list — the caller's
+    messages aren't mutated.
+    """
+    if not model.startswith("anthropic/"):
+        return messages
+    out: list[dict] = []
+    cached = False
+    for m in messages:
+        if not cached and m.get("role") == "system" and isinstance(m.get("content"), str):
+            out.append(_build_system_message(model, m["content"]))
+            cached = True
+        else:
+            out.append(m)
+    return out
+
+
+def _extract_cache_metrics(usage) -> tuple[int, bool]:
+    """Pull cache_read_input_tokens off the LiteLLM usage object when the
+    provider returned it (Anthropic does, others don't). Returns
+    (cache_read_tokens, cache_hit).
+    """
+    if usage is None:
+        return 0, False
+    cache_read = (
+        getattr(usage, "cache_read_input_tokens", None)
+        or getattr(usage, "cache_read_tokens", None)
+        or 0
+    )
+    try:
+        cache_read = int(cache_read or 0)
+    except (TypeError, ValueError):
+        cache_read = 0
+    return cache_read, cache_read > 0
+
+
+def _log_completion(
+    *,
+    model: str,
+    prompt_tokens: int,
+    completion_tokens: int,
+    cost_cents: int,
+    cache_hit: bool,
+    cache_read_tokens: int,
+) -> None:
+    """Single-line structured JSON log for every completion. Downstream
+    aggregation (and the per-tenant LLM cost watchdog) parses these lines.
+    """
+    payload = {
+        "event": "llm_completion",
+        "model": model,
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": prompt_tokens + completion_tokens,
+        "cost_cents": cost_cents,
+        "cache_hit": cache_hit,
+        "cache_read_tokens": cache_read_tokens,
+    }
+    logger.info(json.dumps(payload))
 
 
 async def generate_completion(
@@ -59,7 +144,7 @@ async def generate_completion(
             response = await litellm.acompletion(
                 model=model,
                 messages=[
-                    {"role": "system", "content": system_prompt},
+                    _build_system_message(model, system_prompt),
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=temperature,
@@ -69,13 +154,30 @@ async def generate_completion(
             content = response.choices[0].message.content
             usage = response.usage
 
+            prompt_tokens = usage.prompt_tokens if usage else 0
+            completion_tokens = usage.completion_tokens if usage else 0
+            cost_cents = (
+                _calculate_cost(model, prompt_tokens, completion_tokens) if usage else 0
+            )
+            cache_read_tokens, cache_hit = _extract_cache_metrics(usage)
+            _log_completion(
+                model=model,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                cost_cents=cost_cents,
+                cache_hit=cache_hit,
+                cache_read_tokens=cache_read_tokens,
+            )
+
             return {
                 "content": content,
                 "model": model,
-                "prompt_tokens": usage.prompt_tokens if usage else 0,
-                "completion_tokens": usage.completion_tokens if usage else 0,
-                "total_tokens": (usage.prompt_tokens + usage.completion_tokens) if usage else 0,
-                "cost_cents": _calculate_cost(model, usage.prompt_tokens, usage.completion_tokens) if usage else 0,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+                "cost_cents": cost_cents,
+                "cache_hit": cache_hit,
+                "cache_read_tokens": cache_read_tokens,
             }
         except Exception as e:
             logger.warning(f"Model {model} failed: {e}")
@@ -108,10 +210,11 @@ async def generate_chat_completion(
             logger.warning("Skipping model %s (disabled by safety circuit breaker)", model)
             continue
         try:
+            shaped_messages = _mark_first_system_message_cached(messages, model)
             if stream:
                 return litellm.acompletion(
                     model=model,
-                    messages=messages,
+                    messages=shaped_messages,
                     temperature=temperature,
                     max_tokens=max_tokens,
                     stream=True,
@@ -119,18 +222,35 @@ async def generate_chat_completion(
             else:
                 response = await litellm.acompletion(
                     model=model,
-                    messages=messages,
+                    messages=shaped_messages,
                     temperature=temperature,
                     max_tokens=max_tokens,
                 )
                 content = response.choices[0].message.content
                 usage = response.usage
+                prompt_tokens = usage.prompt_tokens if usage else 0
+                completion_tokens = usage.completion_tokens if usage else 0
+                cost_cents = (
+                    _calculate_cost(model, prompt_tokens, completion_tokens) if usage else 0
+                )
+                cache_read_tokens, cache_hit = _extract_cache_metrics(usage)
+                _log_completion(
+                    model=model,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    cost_cents=cost_cents,
+                    cache_hit=cache_hit,
+                    cache_read_tokens=cache_read_tokens,
+                )
                 return {
                     "content": content,
                     "model": model,
-                    "prompt_tokens": usage.prompt_tokens if usage else 0,
-                    "completion_tokens": usage.completion_tokens if usage else 0,
-                    "total_tokens": (usage.prompt_tokens + usage.completion_tokens) if usage else 0,
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "total_tokens": prompt_tokens + completion_tokens,
+                    "cost_cents": cost_cents,
+                    "cache_hit": cache_hit,
+                    "cache_read_tokens": cache_read_tokens,
                 }, model
         except Exception as e:
             logger.warning(f"Model {model} failed: {e}")
