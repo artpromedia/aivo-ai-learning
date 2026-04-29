@@ -134,6 +134,7 @@ class BaselineRequest(BaseModel):
     functioning_level: str = "STANDARD"
     iep: Optional[dict] = None
     district: Optional[dict] = None
+    interest_profile: Optional[dict] = None
 
 
 class BaselineResponse(BaseModel):
@@ -149,7 +150,10 @@ async def generate_baseline(req: BaselineRequest):
     from ..services.baseline_generator import SUBJECTS
 
     system_prompt, user_prompt = build_baseline_generation_prompt(
-        req.parent_assessment, iep=req.iep, district=req.district
+        req.parent_assessment,
+        iep=req.iep,
+        district=req.district,
+        interest_profile=req.interest_profile,
     )
 
     try:
@@ -211,6 +215,7 @@ class DiscoveryChapterRequest(BaseModel):
     functioning_level: str = "STANDARD"
     iep: Optional[dict] = None
     district: Optional[dict] = None
+    interest_profile: Optional[dict] = None
 
 
 class DiscoveryChapterResponse(BaseModel):
@@ -226,7 +231,11 @@ async def generate_discovery_chapter(req: DiscoveryChapterRequest):
     from ..services.baseline_generator import build_discovery_adventure_prompt
 
     system_prompt, user_prompt = build_discovery_adventure_prompt(
-        req.parent_assessment, req.chapter, iep=req.iep, district=req.district
+        req.parent_assessment,
+        req.chapter,
+        iep=req.iep,
+        district=req.district,
+        interest_profile=req.interest_profile,
     )
 
     try:

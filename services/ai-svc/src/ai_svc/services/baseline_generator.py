@@ -189,6 +189,7 @@ def build_discovery_adventure_prompt(
     chapter: dict,
     iep: Optional[dict] = None,
     district: Optional[dict] = None,
+    interest_profile: Optional[dict] = None,
 ) -> tuple[str, str]:
     responses = parent_assessment.get("responses", {})
     communication_mode = parent_assessment.get("communicationMode", "verbal")
@@ -207,6 +208,28 @@ def build_discovery_adventure_prompt(
     dev_level = responses.get("fl-7", "")
     interests_raw = responses.get("pref-1", [])
     interests = interests_raw if isinstance(interests_raw, list) else []
+    # Merge in *scored* deep interests from the special-interest engine
+    # (caregiver intake / engagement / IEP signals). The persisted top
+    # interest is treated as a primary theme, not a distraction.
+    deep_interests: list[str] = []
+    primary_theme: Optional[str] = None
+    if isinstance(interest_profile, dict):
+        scored = interest_profile.get("topInterests") or []
+        if isinstance(scored, list):
+            for s in scored:
+                if isinstance(s, dict) and isinstance(s.get("slug"), str):
+                    deep_interests.append(s["slug"])
+            if deep_interests:
+                primary_theme = deep_interests[0]
+    # Promote scored interests to the front so prompts foreground them.
+    if deep_interests:
+        seen: set[str] = set()
+        merged: list[str] = []
+        for x in [*deep_interests, *interests]:
+            if isinstance(x, str) and x and x not in seen:
+                seen.add(x)
+                merged.append(x)
+        interests = merged
     frustrations = responses.get("ch-5", "")
     focus_rating = responses.get("ls-3", 3)
     confidence = responses.get("se-1", 3)
@@ -258,7 +281,7 @@ def build_discovery_adventure_prompt(
 ## Activity Design Rules
 1. Each activity must feel like part of an ADVENTURE, not a test
 2. The tutor character speaks in first person, warmly and encouragingly
-3. Activities should incorporate the learner's interests when possible
+3. {('Build the activity AROUND "' + primary_theme + '" as the primary theme — the engine, not a sprinkle. Set scenes, characters, and word problems in this world.') if primary_theme else "Activities should incorporate the learner's interests when possible"}
 4. Getting something wrong should feel like the adventure taking an interesting turn, never punishing
 5. Generate activities at 3 difficulty tiers: easy, medium, hard (the adaptive engine selects which to use)
 6. Each tier should have {fl['activities']} activities
@@ -323,6 +346,7 @@ def build_baseline_generation_prompt(
     parent_assessment: dict,
     iep: Optional[dict] = None,
     district: Optional[dict] = None,
+    interest_profile: Optional[dict] = None,
 ) -> tuple[str, str]:
     responses = parent_assessment.get("responses", {})
     communication_mode = parent_assessment.get("communicationMode", "verbal")
@@ -341,6 +365,26 @@ def build_baseline_generation_prompt(
     dev_level = responses.get("fl-7", "")
     interests_raw = responses.get("pref-1", [])
     interests = interests_raw if isinstance(interests_raw, list) else []
+    # Same scored-interest merge as the discovery prompt: surface the
+    # learner's deep interests as the *engine* for question themes.
+    deep_interests: list[str] = []
+    primary_theme: Optional[str] = None
+    if isinstance(interest_profile, dict):
+        scored = interest_profile.get("topInterests") or []
+        if isinstance(scored, list):
+            for s in scored:
+                if isinstance(s, dict) and isinstance(s.get("slug"), str):
+                    deep_interests.append(s["slug"])
+            if deep_interests:
+                primary_theme = deep_interests[0]
+    if deep_interests:
+        seen: set[str] = set()
+        merged: list[str] = []
+        for x in [*deep_interests, *interests]:
+            if isinstance(x, str) and x and x not in seen:
+                seen.add(x)
+                merged.append(x)
+        interests = merged
     frustrations = responses.get("ch-5", "")
     engagement_type = responses.get("pref-3", "")
     focus_rating = responses.get("ls-3", 3)
@@ -379,7 +423,7 @@ def build_baseline_generation_prompt(
    - LOW_VERBAL: Simple vocabulary, concrete concepts, visual cues in text
    - NON_VERBAL: Picture-describable choices, very simple language
    - PRE_SYMBOLIC: Object-level choices, cause-and-effect, basic matching
-4. Incorporate the learner's INTERESTS into question themes when possible (e.g., if they like animals, use animal-themed math problems)
+4. {('Build questions AROUND "' + primary_theme + '" as a primary recurring theme — math word problems, reading passages, and science prompts should be set in this world the learner already loves. Treat the interest as the engine, not as a sprinkle.') if primary_theme else "Incorporate the learner's INTERESTS into question themes when possible (e.g., if they like animals, use animal-themed math problems)"}
 5. Avoid content related to their CHALLENGES in early questions to build confidence first, then gently assess those areas
 6. For learners with LOW confidence, start each subject with an easier question
 7. For learners with SHORT attention span, keep questions concise (under 15 words)

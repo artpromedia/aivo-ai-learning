@@ -372,3 +372,33 @@ export const iepSignatures = pgTable("iep_signatures", {
     .on(t.iepProfileId, t.signerUserId, t.signerRole),
 }));
 
+
+/**
+ * Learner special-interest signals — caregiver intake, IEP signals, self-
+ * report, passive engagement, and system inference. Strategic backdrop:
+ * autistic kids often have deep, focused interests (Minecraft, trains,
+ * dinosaurs, weather). Treating these as the engine instead of a
+ * distraction is a category-shifting move; the agent generates math
+ * word problems set in Minecraft, reading passages about volcanoes,
+ * etc. The schema here matches `LearnerInterestSignal` in
+ * `@aivo/special-interest-engine` so the engine can score directly.
+ */
+export const learnerInterestSignals = pgTable("learner_interest_signals", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  learnerId: uuid("learner_id").references(() => learners.id, { onDelete: "cascade" }).notNull(),
+  /** Slug from the engine's catalog (e.g. "minecraft", "dinosaurs"). */
+  slug: varchar("slug", { length: 64 }).notNull(),
+  /** caregiver_intake | iep_signal | self_report | engagement | system. */
+  source: varchar("source", { length: 32 }).notNull(),
+  /** +1 = like / -1 = avoid. */
+  polarity: integer("polarity").notNull(),
+  /** 0…1 confidence in the signal. */
+  confidence: real("confidence").notNull().default(1),
+  observedAt: timestamp("observed_at").defaultNow().notNull(),
+  /** Optional free-text note (e.g. "talks about minecraft for hours"). */
+  note: text("note"),
+  /** Optional caregiver/clinician/system actor that supplied the signal. */
+  recordedBy: uuid("recorded_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
