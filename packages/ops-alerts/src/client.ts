@@ -32,7 +32,7 @@ export class OpsAlertClient {
     logger: ReturnType<typeof createLogger>;
   };
   private timer: ReturnType<typeof setInterval> | null = null;
-  private stats = {
+  private readonly stats = {
     enqueuedTotal: 0,
     drainedTotal: 0,
     droppedTotal: 0,

@@ -78,6 +78,9 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@aivo/aac-bridge':
+        specifier: workspace:*
+        version: link:../../packages/aac-bridge
       '@aivo/brand':
         specifier: workspace:*
         version: link:../../packages/brand
