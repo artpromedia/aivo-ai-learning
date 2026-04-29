@@ -1,7 +1,13 @@
 import { FastifyInstance } from "fastify";
-import { parentAssessments, learners, assessmentAttempts, iepProfiles, iepGoals } from "@aivo/db";
+import { parentAssessments, learners, assessmentAttempts, iepProfiles, iepGoals, learnerProfiles, learnerInterestSignals } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { eq, desc } from "drizzle-orm";
+import {
+  scoreInterests,
+  type LearnerInterestProfile,
+  type LearnerInterestSignal,
+} from "@aivo/special-interest-engine";
+import { deriveLearningProfile } from "../services/learning-profile.js";
 
 async function loadIepContext(db: any, learnerDbId: string) {
   const [profile] = await db
@@ -79,6 +85,45 @@ function buildParentAssessmentPayload(parentAssessment: any, learner: any) {
     responses: parentAssessment.responses,
     functioningLevel: learner.functioningLevel || "STANDARD",
   };
+}
+
+/**
+ * Load the learner's top special interests (slug + score) and the raw
+ * signal stream so the ai-svc prompt can build math word problems
+ * about Minecraft, reading passages about volcanoes, etc. Failure to
+ * load is non-fatal — the pipeline degrades to "general themes".
+ */
+async function loadInterestProfile(db: any, learnerId: string) {
+  try {
+    const rows = await db
+      .select()
+      .from(learnerInterestSignals)
+      .where(eq(learnerInterestSignals.learnerId, learnerId))
+      .orderBy(desc(learnerInterestSignals.observedAt))
+      .limit(200);
+    if (!rows || rows.length === 0) return null;
+    const signals: LearnerInterestSignal[] = rows.map((r: any) => ({
+      slug: r.slug,
+      source: r.source,
+      polarity: r.polarity as 1 | 0 | -1,
+      confidence: r.confidence,
+      observedAt: (r.observedAt instanceof Date
+        ? r.observedAt.toISOString()
+        : r.observedAt) as string,
+    }));
+    const profile: LearnerInterestProfile = { learnerId, signals };
+    const scored = scoreInterests(profile).slice(0, 5);
+    if (scored.length === 0) return null;
+    return {
+      topInterests: scored.map((s) => ({ slug: s.slug, score: s.score })),
+      // Hand the prompt a comma-separated string it can drop straight
+      // into the system prompt; the existing prompt already reads an
+      // `interests` list, so we keep the contract minimal.
+      interestSlugs: scored.map((s) => s.slug),
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
@@ -202,6 +247,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
     const parentPayload = buildParentAssessmentPayload(parentAssessment, learner);
     const iepContext = await loadIepContext(db, learner.id);
     const districtContext = buildDistrictContext(learner);
+    const interestProfile = await loadInterestProfile(db, learner.id);
 
     try {
       const aiRes = await fetch(`${AI_SVC_URL}/api/ai/generate-discovery-chapter`, {
@@ -213,6 +259,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
           functioning_level: learner.functioningLevel || "STANDARD",
           iep: iepContext,
           district: districtContext,
+          interest_profile: interestProfile,
         }),
       });
 
@@ -323,6 +370,61 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
 
       app.log.info({ learnerId, attemptId: attempt.id }, "[discovery/complete] attempt inserted");
 
+      // ----------------------------------------------------------------
+      // Derive + persist a LearningProfile artifact. The grade-level
+      // placement (theta) is one output; the profile (modality fit,
+      // processing speed, frustration tolerance, attention pattern) is
+      // the more valuable one and is what the tutor-runtime + parent
+      // dashboard will consume going forward.
+      // ----------------------------------------------------------------
+      let learningProfile: ReturnType<typeof deriveLearningProfile> | null = null;
+      try {
+        learningProfile = deriveLearningProfile(
+          body.chapterResults || [],
+          body.responseLatencies || [],
+        );
+        await db
+          .insert(learnerProfiles)
+          .values({
+            tenantId: learner.tenantId,
+            learnerId: learner.id,
+            attemptId: attempt.id,
+            thetaPlacement: learningProfile.thetaPlacement,
+            modalityFit: learningProfile.modalityFit,
+            processingSpeedMs: learningProfile.processingSpeedMs,
+            frustrationRate: learningProfile.frustrationRate,
+            attentionRunLength: learningProfile.attentionRunLength,
+            frustrationTolerance: learningProfile.frustrationTolerance,
+            itemsAdministered: learningProfile.itemsAdministered,
+            baselineCompletedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: learnerProfiles.learnerId,
+            set: {
+              attemptId: attempt.id,
+              thetaPlacement: learningProfile.thetaPlacement,
+              modalityFit: learningProfile.modalityFit,
+              processingSpeedMs: learningProfile.processingSpeedMs,
+              frustrationRate: learningProfile.frustrationRate,
+              attentionRunLength: learningProfile.attentionRunLength,
+              frustrationTolerance: learningProfile.frustrationTolerance,
+              itemsAdministered: learningProfile.itemsAdministered,
+              baselineCompletedAt: new Date(),
+              updatedAt: new Date(),
+            },
+          });
+        app.log.info(
+          { learnerId, attemptId: attempt.id, theta: learningProfile.thetaPlacement },
+          "[discovery/complete] learner_profile upserted",
+        );
+      } catch (profileErr: any) {
+        app.log.error(
+          { learnerId, attemptId: attempt.id, err: profileErr?.message },
+          "[discovery/complete] learner_profile upsert failed (non-fatal)",
+        );
+      }
+
       let brainCloneStatus: string = "pending";
       let brainCloneError: string | null = null;
       let brainStateId: string | null = null;
@@ -373,6 +475,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
         brainCloneStatus,
         brainStateId,
         brainCloneError,
+        learningProfile,
       });
     } catch (err: any) {
       app.log.error({ err: err?.message, stack: err?.stack, learnerId }, "[discovery/complete] FAILED");
@@ -427,6 +530,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
 
     const iepContext = await loadIepContext(db, learner.id);
     const districtContext = buildDistrictContext(learner);
+    const interestProfile = await loadInterestProfile(db, learner.id);
 
     try {
       const aiRes = await fetch(`${AI_SVC_URL}/api/ai/generate-baseline`, {
@@ -445,6 +549,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
           functioning_level: learner.functioningLevel || "STANDARD",
           iep: iepContext,
           district: districtContext,
+          interest_profile: interestProfile,
         }),
       });
 

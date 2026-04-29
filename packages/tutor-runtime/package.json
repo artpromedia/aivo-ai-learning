@@ -24,6 +24,7 @@
     "@aivo/level-transforms": "workspace:*",
     "@aivo/pedagogy": "workspace:*",
     "@aivo/skill-graphs": "workspace:*",
+    "@aivo/special-interest-engine": "workspace:*",
     "@aivo/tutor-sdk": "workspace:*"
   },
   "devDependencies": {

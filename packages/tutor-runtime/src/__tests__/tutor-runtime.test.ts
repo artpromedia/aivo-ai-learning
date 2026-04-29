@@ -193,3 +193,71 @@ describe("applyOutcome", () => {
     expect(r.streak).toBe(1);
   });
 });
+
+describe("special-interest theming", () => {
+  it("rewrites {{noun}} placeholders using the learner's top interest", () => {
+    const themedPack: ContentPack = {
+      ...pack,
+      activities: [
+        {
+          id: "a-themed",
+          title: "Counting {{noun}}",
+          skillId: "ccss.math.k.cc.a.1",
+          type: "tap",
+          prompt: "How many {{noun}} do you see?",
+          difficulty: "core",
+          choices: [{ id: "ok", label: "OK", correct: true }],
+        },
+      ],
+    };
+    const plan = planSession(
+      tutor,
+      {
+        ...baseCtx,
+        interestProfile: {
+          learnerId: "l-1",
+          signals: [
+            {
+              slug: "dinosaurs",
+              source: "caregiver_intake",
+              polarity: 1,
+              confidence: 1,
+              observedAt: new Date().toISOString(),
+            },
+          ],
+        },
+      },
+      themedPack,
+      { maxActivities: 1, rng: () => 0 },
+    );
+    expect(plan.activities[0].prompt).not.toContain("{{noun}}");
+    expect(plan.activities[0].title).not.toContain("{{noun}}");
+    expect(plan.activities[0].tags).toContain("themed:dinosaurs");
+  });
+
+  it("leaves activities unchanged when no placeholders are authored", () => {
+    const plan = planSession(
+      tutor,
+      {
+        ...baseCtx,
+        interestProfile: {
+          learnerId: "l-1",
+          signals: [
+            {
+              slug: "trains",
+              source: "caregiver_intake",
+              polarity: 1,
+              confidence: 1,
+              observedAt: new Date().toISOString(),
+            },
+          ],
+        },
+      },
+      pack,
+      { maxActivities: 2, rng: () => 0 },
+    );
+    for (const a of plan.activities) {
+      expect(a.tags ?? []).not.toContain("themed:trains");
+    }
+  });
+});

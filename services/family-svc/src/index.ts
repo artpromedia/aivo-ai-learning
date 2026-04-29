@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import { createLogger, registerObservabilityPlugin } from "@aivo/observability";
 import { createDb } from "@aivo/db";
 import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
@@ -14,6 +15,8 @@ import { registerDataExportRoutes } from "./routes/data-export.js";
 import { registerParentDashboardRoutes } from "./routes/parent-dashboard.js";
 import { registerObservationRoutes } from "./routes/observations.js";
 import { registerSpeechBuddyConsentRoutes } from "./routes/speech-buddy-consent.js";
+import { registerWhatsWorkingRoutes } from "./routes/whats-working.js";
+import { registerInterestRoutes } from "./routes/interests.js";
 
 const logger = createLogger("family-svc");
 const PORT = parseInt(process.env.FAMILY_PORT || "3007", 10);
@@ -30,6 +33,15 @@ async function start() {
 
   await app.register(cors, { origin: true, credentials: true });
 
+  // Global rate limit: 120 req / minute per IP. Defends every route
+  // (including the parent-dashboard "what's working", interests CRUD,
+  // and the IEP / collaboration paths) against amplification by an
+  // authenticated caller. Individual routes still apply tighter caps.
+  await app.register(rateLimit, {
+    max: 120,
+    timeWindow: "1 minute",
+  });
+
   app.decorate("db", db);
 
   await registerHealthRoutes(app);
@@ -42,6 +54,8 @@ async function start() {
   await registerParentDashboardRoutes(app);
   await registerObservationRoutes(app);
   await registerSpeechBuddyConsentRoutes(app);
+  await registerWhatsWorkingRoutes(app);
+  await registerInterestRoutes(app);
 
   await bootstrapOpsAlerts({ service: "family-svc", app, beforeExit: () => app.close() });
 

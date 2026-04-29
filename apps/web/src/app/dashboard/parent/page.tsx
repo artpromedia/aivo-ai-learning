@@ -10,6 +10,7 @@ import { WelcomeHero } from "./components/WelcomeHero";
 import { LearnerSummaryCard } from "./components/LearnerSummaryCard";
 import { QuickActions } from "./components/QuickActions";
 import { WhileYouWereAway } from "./components/WhileYouWereAway";
+import { WhatsWorkingPanel } from "./components/WhatsWorkingPanel";
 import { StatIconWell } from "@/components/discovery/_vi";
 import {
   Users,
@@ -452,6 +453,21 @@ export default function ParentDashboard() {
               />
             );
           })}
+        </div>
+      )}
+
+      {/* Patterns parents can take to an IEP meeting — DB-backed,
+          no synthetic data. One panel per learner. */}
+      {learners.length > 0 && accessToken && (
+        <div className="space-y-3">
+          {learners.map((l) => (
+            <WhatsWorkingPanel
+              key={`ww-${l.id}`}
+              learnerId={l.id}
+              learnerName={l.name ?? "your learner"}
+              accessToken={accessToken}
+            />
+          ))}
         </div>
       )}
 

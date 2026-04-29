@@ -12,6 +12,7 @@
   "dependencies": {
     "@aivo/db": "workspace:*",
     "drizzle-orm": "^0.44.2",
+    "@aivo/adaptive-baseline": "workspace:*",
     "@aivo/brand": "workspace:*",
     "@aivo/events": "workspace:*",
     "@aivo/observability": "workspace:*",

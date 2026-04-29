@@ -372,3 +372,96 @@ export const iepSignatures = pgTable("iep_signatures", {
     .on(t.iepProfileId, t.signerUserId, t.signerRole),
 }));
 
+
+/**
+ * Learner special-interest signals — caregiver intake, IEP signals, self-
+ * report, passive engagement, and system inference. Strategic backdrop:
+ * autistic kids often have deep, focused interests (Minecraft, trains,
+ * dinosaurs, weather). Treating these as the engine instead of a
+ * distraction is a category-shifting move; the agent generates math
+ * word problems set in Minecraft, reading passages about volcanoes,
+ * etc. The schema here matches `LearnerInterestSignal` in
+ * `@aivo/special-interest-engine` so the engine can score directly.
+ */
+export const learnerInterestSignals = pgTable("learner_interest_signals", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  learnerId: uuid("learner_id").references(() => learners.id, { onDelete: "cascade" }).notNull(),
+  /** Slug from the engine's catalog (e.g. "minecraft", "dinosaurs"). */
+  slug: varchar("slug", { length: 64 }).notNull(),
+  /** caregiver_intake | iep_signal | self_report | engagement | system. */
+  source: varchar("source", { length: 32 }).notNull(),
+  /** +1 = like / -1 = avoid. */
+  polarity: integer("polarity").notNull(),
+  /** 0…1 confidence in the signal. */
+  confidence: real("confidence").notNull().default(1),
+  observedAt: timestamp("observed_at").defaultNow().notNull(),
+  /** Optional free-text note (e.g. "talks about minecraft for hours"). */
+  note: text("note"),
+  /** Optional caregiver/clinician/system actor that supplied the signal. */
+  recordedBy: uuid("recorded_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
+ * Executive-function partner: persisted task breakdowns. Each row is a
+ * weighted micro-step plan (read → restate → do → check) emitted by
+ * `@aivo/executive-function::breakDownTask`. ADHD is fundamentally an
+ * EF challenge; the agent quietly carries the planning load that
+ * crushes ADHD kids.
+ */
+export const efTaskBreakdowns = pgTable("ef_task_breakdowns", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  learnerId: uuid("learner_id").references(() => learners.id, { onDelete: "cascade" }).notNull(),
+  /** Free-form id of the parent task (lesson id, homework id, etc.). */
+  taskId: varchar("task_id", { length: 128 }).notNull(),
+  /** Human-readable task title. */
+  title: varchar("title", { length: 255 }).notNull(),
+  /** Sum of step weights (computed at write time for fast reads). */
+  totalWeight: integer("total_weight").notNull(),
+  /** Ordered MicroStep[] from the EF package. */
+  steps: jsonb("steps").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * Per-step completion record. Append-only — completion timestamps
+ * carry the data the parent dashboard's "what's working" panel needs
+ * (which steps clicked vs. which tripped the learner).
+ */
+export const efTaskStepProgress = pgTable("ef_task_step_progress", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  breakdownId: uuid("breakdown_id").references(() => efTaskBreakdowns.id, { onDelete: "cascade" }).notNull(),
+  stepId: varchar("step_id", { length: 64 }).notNull(),
+  completedAt: timestamp("completed_at").defaultNow().notNull(),
+  /** Optional ms the learner spent on this step before completing. */
+  dwellMs: integer("dwell_ms"),
+});
+
+/**
+ * Time-of-day session outcome ledger. Powers `TimeOfDayMemory` — the
+ * agent remembers what worked yesterday morning vs. afternoon — and
+ * also feeds the parent-dashboard "what's working" view directly. The
+ * row carries everything the EF + analytics modules need without
+ * either having to crawl the full session log.
+ */
+export const efSessionOutcomes = pgTable("ef_session_outcomes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  learnerId: uuid("learner_id").references(() => learners.id, { onDelete: "cascade" }).notNull(),
+  /** Wall-clock start of the session (TZ-aware ISO from the host). */
+  startedAt: timestamp("started_at").notNull(),
+  /** "early-morning" | "morning" | "midday" | "afternoon" | "evening". */
+  timeOfDay: varchar("time_of_day", { length: 16 }).notNull(),
+  subject: varchar("subject", { length: 64 }),
+  modality: varchar("modality", { length: 16 }),
+  /** 0…1 accuracy in the session. */
+  accuracy: real("accuracy").notNull(),
+  /** 0…1 frustration rate in the session. */
+  frustrationRate: real("frustration_rate").notNull().default(0),
+  /** Minutes the learner sustained engagement before disengaging. */
+  attentionMinutes: integer("attention_minutes").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
