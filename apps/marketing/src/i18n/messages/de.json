@@ -914,7 +914,9 @@
       "pricing": "Preise",
       "faq": "FAQ",
       "sign_in": "Anmelden",
-      "get_started": "Loslegen"
+      "get_started": "Loslegen",
+      "brain_clone": "Brain Clone",
+      "compliance_banner": "COPPA · FERPA · SOC 2 — Sicher für jeden Lernenden entwickelt."
     },
     "hero": {
       "badge": "Die adaptive Lernplattform",
@@ -947,7 +949,18 @@
       "feature_gamified": "Gamifizierte Quests, Abzeichen und Belohnungen",
       "feature_progress": "Echtzeit-Fortschrittsverfolgung für Eltern",
       "feature_safe": "FERPA- und COPPA-konform, SOC 2-zertifiziert",
-      "trust_line": "Vertraut von über 150 Schülern in Pilotprogrammen im ganzen Land"
+      "trust_line": "Vertraut von über 150 Schülern in Pilotprogrammen im ganzen Land",
+      "headline_line1": "Lernabenteuer",
+      "headline_line2": "für jeden Kopf.",
+      "subheadline": "AIVO holt jeden Lernenden dort ab, wo er steht — vom Standardlehrplan bis zur vorsymbolischen Kommunikation — mit 14 KI-Tutoren und einem Brain Clone, der mitwächst.",
+      "trust_no_card": "Keine Kreditkarte",
+      "trust_coppa": "COPPA-konform",
+      "trust_iep": "IEP-fähig",
+      "image_alt": "Ein Kind lernt fröhlich mit AIVO auf einem Chromebook",
+      "badge_streak": "Serie",
+      "badge_streak_value": "12 Tage!",
+      "badge_now_learning": "Lernt gerade",
+      "badge_now_learning_value": "Nova · Mathe"
     },
     "features": {
       "label": "Warum AIVO",
@@ -1022,7 +1035,15 @@
       "f3_title": "Mehrdimensionale Meisterschaft",
       "f3_desc": "Verfolgt Fortschritte ueber kognitive, verhaltensbezogene, kommunikative und akademische Bereiche gleichzeitig.",
       "f4_title": "Tutor-uebergreifende Intelligenz",
-      "f4_desc": "Was ein Tutor ueber Ihr Kind lernt, wissen alle Tutoren, fuer ein einheitliches Lernerlebnis."
+      "f4_desc": "Was ein Tutor ueber Ihr Kind lernt, wissen alle Tutoren, fuer ein einheitliches Lernerlebnis.",
+      "demo_label": "Brain Clone",
+      "demo_name": "Leo, 9 Jahre",
+      "demo_live": "Live",
+      "demo_status": "Passt sich in Echtzeit über 4 Tutoren an",
+      "metric_math": "Mathematisches Denken",
+      "metric_reading": "Leseflüssigkeit",
+      "metric_sensory": "Sensorische Regulation",
+      "metric_social": "Sozial-emotional"
     },
     "tutor_carousel": {
       "label": "Das Team Ihres Kindes",
@@ -1129,7 +1150,8 @@
       "title_line2": "die genau fuer es gemacht ist",
       "subtitle": "Schliessen Sie sich Tausenden von Familien an. Starten Sie kostenlos, keine Kreditkarte erforderlich.",
       "cta_trial": "Starten Sie Ihren Kostenlosen Test",
-      "cta_pricing": "Preise Ansehen"
+      "cta_pricing": "Preise Ansehen",
+      "trust_line": "Keine Kreditkarte erforderlich · Jederzeit kündbar"
     },
     "footer": {
       "tagline": "KI-gestuetztes adaptives Lernen fuer jedes Kind, jeden Kopf, jedes Potenzial.",

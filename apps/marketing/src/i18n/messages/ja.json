@@ -914,7 +914,9 @@
       "pricing": "料金",
       "faq": "よくある質問",
       "sign_in": "サインイン",
-      "get_started": "始める"
+      "get_started": "始める",
+      "brain_clone": "ブレインクローン",
+      "compliance_banner": "COPPA · FERPA · SOC 2 — すべての学習者のために安全に設計。"
     },
     "hero": {
       "badge": "適応型学習プラットフォーム",
@@ -947,7 +949,18 @@
       "feature_gamified": "ゲーム化されたクエスト、バッジ、報酬",
       "feature_progress": "保護者向けリアルタイム進捗追跡",
       "feature_safe": "FERPAおよびCOPPA準拠、SOC 2認証",
-      "trust_line": "全国のパイロットプログラムで150人以上の生徒に信頼されています"
+      "trust_line": "全国のパイロットプログラムで150人以上の生徒に信頼されています",
+      "headline_line1": "学びの冒険を",
+      "headline_line2": "すべての心に。",
+      "subheadline": "AIVOは標準カリキュラムから前象徴的コミュニケーションまで、14のAIチューターと共に成長するブレインクローンで、一人ひとりの学習者に寄り添います。",
+      "trust_no_card": "クレジットカード不要",
+      "trust_coppa": "COPPA対応",
+      "trust_iep": "IEP対応",
+      "image_alt": "AIVOを使ってChromebookで楽しく学ぶ子ども",
+      "badge_streak": "連続記録",
+      "badge_streak_value": "12日!",
+      "badge_now_learning": "学習中",
+      "badge_now_learning_value": "ノヴァ · 算数"
     },
     "features": {
       "label": "AIVOを選ぶ理由",
@@ -1022,7 +1035,15 @@
       "f3_title": "多次元マスタリー",
       "f3_desc": "認知、行動、コミュニケーション、学術領域にわたる進捗を同時に追跡。",
       "f4_title": "クロスチューターインテリジェンス",
-      "f4_desc": "1人のチューターがお子様について学んだことを全チューターが共有し、統一された学習体験を創出。"
+      "f4_desc": "1人のチューターがお子様について学んだことを全チューターが共有し、統一された学習体験を創出。",
+      "demo_label": "ブレインクローン",
+      "demo_name": "レオ、9歳",
+      "demo_live": "ライブ",
+      "demo_status": "4人のチューターでリアルタイム適応中",
+      "metric_math": "数学的推論",
+      "metric_reading": "読みの流暢さ",
+      "metric_sensory": "感覚調整",
+      "metric_social": "社会的・情緒的"
     },
     "tutor_carousel": {
       "label": "お子様のチーム",
@@ -1129,7 +1150,8 @@
       "title_line2": "学習体験を受ける権利があります",
       "subtitle": "個別適応学習の可能性を発見する数千の家族に参加。無料で開始、クレジットカード不要。",
       "cta_trial": "無料トライアルを開始",
-      "cta_pricing": "料金を見る"
+      "cta_pricing": "料金を見る",
+      "trust_line": "クレジットカード不要 · いつでもキャンセル可能"
     },
     "footer": {
       "tagline": "すべての子供、すべての心、すべての可能性のためのAI駆動型適応学習。",

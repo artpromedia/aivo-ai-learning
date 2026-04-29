@@ -914,7 +914,9 @@
       "pricing": "价格",
       "faq": "常见问题",
       "sign_in": "登录",
-      "get_started": "开始使用"
+      "get_started": "开始使用",
+      "brain_clone": "大脑克隆",
+      "compliance_banner": "COPPA · FERPA · SOC 2 — 为每位学习者安全打造。"
     },
     "hero": {
       "badge": "自适应学习平台",
@@ -947,7 +949,18 @@
       "feature_gamified": "游戏化任务、徽章和奖励",
       "feature_progress": "为家长提供实时进度跟踪",
       "feature_safe": "符合FERPA和COPPA标准，SOC 2认证",
-      "trust_line": "全国试点项目中已有150多名学生信赖使用"
+      "trust_line": "全国试点项目中已有150多名学生信赖使用",
+      "headline_line1": "学习冒险",
+      "headline_line2": "献给每一颗心灵。",
+      "subheadline": "AIVO 在每位学习者所处的位置与他们相遇——从标准课程到前符号沟通——通过 14 位 AI 导师和一个与他们一同成长的大脑克隆。",
+      "trust_no_card": "无需信用卡",
+      "trust_coppa": "符合 COPPA",
+      "trust_iep": "兼容 IEP",
+      "image_alt": "一个孩子在 Chromebook 上用 AIVO 快乐地学习",
+      "badge_streak": "连续天数",
+      "badge_streak_value": "12 天！",
+      "badge_now_learning": "正在学习",
+      "badge_now_learning_value": "Nova · 数学"
     },
     "features": {
       "label": "为什么选择AIVO",
@@ -1022,7 +1035,15 @@
       "f3_title": "多维掌握",
       "f3_desc": "同时跟踪认知、行为、沟通和学术领域的进展。",
       "f4_title": "跨导师智能",
-      "f4_desc": "一个导师了解到的关于孩子的信息，所有导师都知道，创造统一的学习体验。"
+      "f4_desc": "一个导师了解到的关于孩子的信息，所有导师都知道，创造统一的学习体验。",
+      "demo_label": "大脑克隆",
+      "demo_name": "Leo，9 岁",
+      "demo_live": "直播",
+      "demo_status": "在 4 位导师之间实时调整",
+      "metric_math": "数学推理",
+      "metric_reading": "阅读流畅度",
+      "metric_sensory": "感官调节",
+      "metric_social": "社交情感"
     },
     "tutor_carousel": {
       "label": "您孩子的团队",
@@ -1129,7 +1150,8 @@
       "title_line2": "为他们量身打造的学习体验",
       "subtitle": "加入数千个发现个性化自适应学习力量的家庭。免费开始，无需信用卡。",
       "cta_trial": "开始免费试用",
-      "cta_pricing": "查看价格"
+      "cta_pricing": "查看价格",
+      "trust_line": "无需信用卡 · 随时取消"
     },
     "footer": {
       "tagline": "AI驱动的自适应学习，为每个孩子、每个心灵、每种潜能。",

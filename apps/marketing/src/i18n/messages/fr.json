@@ -914,7 +914,9 @@
       "pricing": "Tarifs",
       "faq": "FAQ",
       "sign_in": "Connexion",
-      "get_started": "Commencer"
+      "get_started": "Commencer",
+      "brain_clone": "Clone Cérébral",
+      "compliance_banner": "COPPA · FERPA · SOC 2 — Conçu en toute sécurité pour chaque apprenant."
     },
     "hero": {
       "badge": "La plateforme d'apprentissage adaptatif",
@@ -947,7 +949,18 @@
       "feature_gamified": "Quêtes ludiques, badges et récompenses",
       "feature_progress": "Suivi des progrès en temps réel pour les parents",
       "feature_safe": "Conforme FERPA et COPPA, certifié SOC 2",
-      "trust_line": "Adopté par plus de 150 élèves dans des programmes pilotes à travers le pays"
+      "trust_line": "Adopté par plus de 150 élèves dans des programmes pilotes à travers le pays",
+      "headline_line1": "Aventures d'apprentissage",
+      "headline_line2": "pour chaque esprit.",
+      "subheadline": "AIVO rencontre chaque apprenant là où il est — du programme standard à la communication pré-symbolique — avec 14 tuteurs IA et un Clone Cérébral qui grandit avec lui.",
+      "trust_no_card": "Sans carte bancaire",
+      "trust_coppa": "Conforme COPPA",
+      "trust_iep": "Compatible PEI",
+      "image_alt": "Un enfant apprend joyeusement sur un Chromebook avec AIVO",
+      "badge_streak": "Série",
+      "badge_streak_value": "12 jours !",
+      "badge_now_learning": "Apprend maintenant",
+      "badge_now_learning_value": "Nova · Maths"
     },
     "features": {
       "label": "Pourquoi AIVO",
@@ -1022,7 +1035,15 @@
       "f3_title": "Maitrise Multidimensionnelle",
       "f3_desc": "Suit les progres a travers les domaines cognitifs, comportementaux, de communication et academiques simultanement.",
       "f4_title": "Intelligence Inter-Tuteurs",
-      "f4_desc": "Ce qu'un tuteur apprend sur votre enfant, tous les tuteurs le savent, creant une experience d'apprentissage unifiee."
+      "f4_desc": "Ce qu'un tuteur apprend sur votre enfant, tous les tuteurs le savent, creant une experience d'apprentissage unifiee.",
+      "demo_label": "Clone Cérébral",
+      "demo_name": "Léo, 9 ans",
+      "demo_live": "En direct",
+      "demo_status": "S'adapte en temps réel sur 4 tuteurs",
+      "metric_math": "Raisonnement mathématique",
+      "metric_reading": "Fluidité de lecture",
+      "metric_sensory": "Régulation sensorielle",
+      "metric_social": "Socio-émotionnel"
     },
     "tutor_carousel": {
       "label": "L'Equipe de Votre Enfant",
@@ -1129,7 +1150,8 @@
       "title_line2": "d'apprentissage faite pour lui",
       "subtitle": "Rejoignez des milliers de familles decouvrant ce que l'apprentissage personnalise peut accomplir. Commencez gratuitement, sans carte de credit.",
       "cta_trial": "Commencez Votre Essai Gratuit",
-      "cta_pricing": "Voir les Tarifs"
+      "cta_pricing": "Voir les Tarifs",
+      "trust_line": "Aucune carte bancaire requise · Annulable à tout moment"
     },
     "footer": {
       "tagline": "Apprentissage adaptatif alimente par l'IA pour chaque enfant, chaque esprit, chaque potentiel.",
