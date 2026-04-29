@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import multipart from "@fastify/multipart";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import { createLogger, registerObservabilityPlugin } from "@aivo/observability";
@@ -29,6 +30,14 @@ async function start() {
   registerObservabilityPlugin(app, "assessment-svc");
 
   await app.register(cors, { origin: true, credentials: true });
+
+  // IEP PDF intake — bound the request size to 10 MB so an oversized
+  // upload is rejected at the framework boundary rather than buffered
+  // into memory by the route handler.
+  await app.register(multipart, {
+    limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+  });
+
   await app.register(swagger, {
     openapi: {
       info: { title: "AIVO Assessment Service", version: "1.0.0" },

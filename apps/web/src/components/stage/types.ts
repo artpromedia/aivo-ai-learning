@@ -1,33 +1,44 @@
+/**
+ * Stage types — split between the shared subset (canonical in
+ * `@aivo/stage-ui`) and the web-only richer extensions kept here.
+ *
+ * The shared subset (`FunctioningLevel`, `SensoryLevel`, `SensoryProfile`,
+ * `SensoryAdaptations`, `TutorState`, `InteractionType`, `SessionPhase`,
+ * `ChoiceOption`) is re-exported below so existing
+ * `@/components/stage/types` imports continue to work, but the *definition*
+ * lives in `@aivo/stage-ui/types` — a single source of truth shared with
+ * the mobile app and `@aivo/stage-runtime`.
+ *
+ * The richer extensions (`VisualElement`, `DragItem`, `DragZone`,
+ * `Beat`-with-`visuals`, `StageTheme`, `TUTOR_THEMES`, `SESSION_DURATIONS`,
+ * `CHOICE_COUNTS`, the richer `SessionState` with `tutorKey` / `beats`)
+ * remain local because the package versions of the stage components do
+ * not yet have feature parity with these DOM-only fields. Once the
+ * package gains parity, the local stage components and this file can be
+ * deleted in favour of pure re-exports from `@aivo/stage-ui`.
+ */
 import type { TutorKey } from "@aivo/brand";
+import type {
+  FunctioningLevel,
+  SensoryLevel,
+  SensoryProfile,
+  SensoryAdaptations,
+  TutorState,
+  InteractionType,
+  SessionPhase,
+  ChoiceOption,
+} from "@aivo/stage-ui";
 
-export type FunctioningLevel = "STANDARD" | "SUPPORTED" | "LOW_VERBAL" | "NON_VERBAL" | "PRE_SYMBOLIC";
-
-export type SensoryLevel = "hyper" | "hypo" | "typical";
-
-export interface SensoryProfile {
-  visual: SensoryLevel;
-  auditory: SensoryLevel;
-  tactile: SensoryLevel;
-  vestibular: SensoryLevel;
-  proprioceptive: SensoryLevel;
-}
-
-export interface SensoryAdaptations {
-  colorSaturation: number;
-  animationSpeed: number;
-  volumeLevel: number;
-  maxOnScreenElements: number;
-  useSubtitles: boolean;
-  hapticIntensity: "off" | "light" | "standard";
-  motionReduced: boolean;
-  contrastBoost: boolean;
-  boldOutlines: boolean;
-  pulseAttention: boolean;
-}
-
-export type TutorState = "idle" | "speaking" | "celebrating" | "thinking" | "encouraging" | "pointing";
-
-export type InteractionType = "multiple_choice" | "drag_drop" | "voice" | "draw" | "tap" | "match";
+export type {
+  FunctioningLevel,
+  SensoryLevel,
+  SensoryProfile,
+  SensoryAdaptations,
+  TutorState,
+  InteractionType,
+  SessionPhase,
+  ChoiceOption,
+};
 
 export interface VisualElement {
   id: string;
@@ -38,14 +49,6 @@ export interface VisualElement {
   animation?: "fade_in" | "slide_in" | "bounce" | "pulse" | "float" | "glow";
   emoji?: string;
   color?: string;
-}
-
-export interface ChoiceOption {
-  id: string;
-  label: string;
-  emoji?: string;
-  image?: string;
-  isCorrect: boolean;
 }
 
 export interface DragItem {
@@ -77,8 +80,6 @@ export interface Beat {
   durationMs?: number;
   transition?: "fade" | "slide" | "zoom";
 }
-
-export type SessionPhase = "loading" | "opening" | "warmup" | "core" | "check" | "celebration" | "complete";
 
 export interface SessionState {
   phase: SessionPhase;
