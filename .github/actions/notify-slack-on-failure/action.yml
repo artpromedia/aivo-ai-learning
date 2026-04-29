@@ -31,16 +31,16 @@ description: |
 inputs:
   slack-webhook-url:
     description: |
-      Slack incoming-webhook URL (typically `${{ secrets.SLACK_WEBHOOK_URL }}`).
-      If empty, the action logs and exits 0 without posting — same graceful
-      degradation as marketing-smoke-test.yml.
+      Slack incoming-webhook URL (typically secrets.SLACK_WEBHOOK_URL passed
+      from the calling workflow). If empty, the action logs and exits 0
+      without posting — same graceful degradation as marketing-smoke-test.yml.
     required: true
   check-status:
     description: |
       Outcome of the check this notifier is reporting on. Pass either
-      `${{ job.status }}` or a specific `steps.<id>.outcome`. Recognized
-      values: `success`, `failure`. Other values (`cancelled`, `skipped`)
-      are treated as "do nothing".
+      job.status or a specific steps.<id>.outcome from the calling workflow.
+      Recognized values: `success`, `failure`. Other values (`cancelled`,
+      `skipped`) are treated as "do nothing".
     required: true
   check-name:
     description: |
@@ -55,8 +55,8 @@ inputs:
     required: true
   github-token:
     description: |
-      Token with `actions: read` on this repo, typically
-      `${{ secrets.GITHUB_TOKEN }}`. Used by the previous-run lookup.
+      Token with `actions: read` on this repo, typically secrets.GITHUB_TOKEN
+      passed from the calling workflow. Used by the previous-run lookup.
     required: true
   failure-reason-file:
     description: |
