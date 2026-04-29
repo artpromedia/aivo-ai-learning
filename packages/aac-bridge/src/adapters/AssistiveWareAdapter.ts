@@ -68,4 +68,9 @@ export class AssistiveWareAdapter implements AACInputAdapter {
     this.listeners = [];
     this._config = null;
   }
+
+  /** Test/harness hook used by the conformance suite. */
+  _emitForTest(evt: AACEvent): void {
+    for (const cb of this.listeners) cb(evt);
+  }
 }

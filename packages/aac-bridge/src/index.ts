@@ -30,3 +30,35 @@ export {
 // CoughDrop sync
 export { CoughDropSync } from "./coughdrop/CoughDropSync.js";
 export type { SyncStatus, SyncState } from "./coughdrop/CoughDropSync.js";
+
+// Eye-gaze pipeline (§9.3)
+export {
+  CalibrationState,
+  GazeTargetMapper,
+  DwellClickController,
+} from "./eye-gaze/pipeline.js";
+export type {
+  GazeFrame,
+  GazeTarget,
+  GazeClickEvent,
+  CalibrationPoint,
+  DwellClickConfig,
+} from "./eye-gaze/pipeline.js";
+
+// Vendor-certification harness (§9.3)
+export {
+  CONFORMANCE_CHECKS,
+  DEFAULT_CONFORMANCE_CONFIG,
+  SUITE_VERSION,
+  runConformanceSuite,
+} from "./certification/conformance.js";
+export type {
+  CertifiedVendor,
+  ConformanceCheck,
+  ConformanceResult,
+} from "./certification/conformance.js";
+export {
+  CERTIFIED_VENDORS,
+  isCertified,
+  certificationsFor,
+} from "./certification/registry.js";

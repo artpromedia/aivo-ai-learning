@@ -76,4 +76,9 @@ export class PRCSaltilloAdapter implements AACInputAdapter {
     this.listeners = [];
     this._initialized = false;
   }
+
+  /** Test/harness hook used by the conformance suite. */
+  _emitForTest(evt: AACEvent): void {
+    for (const cb of this.listeners) cb(evt);
+  }
 }
