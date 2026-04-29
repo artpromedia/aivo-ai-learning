@@ -488,6 +488,18 @@ importers:
         specifier: ^5.7.3
         version: 5.8.3
 
+  packages/pedagogy:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.3
+        version: 5.8.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)(terser@5.46.1)
+
   packages/scheduling:
     dependencies:
       '@aivo/db':
@@ -609,6 +621,50 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.8.3
+
+  packages/tutor-runtime:
+    dependencies:
+      '@aivo/content-pack':
+        specifier: workspace:*
+        version: link:../content-pack
+      '@aivo/level-transforms':
+        specifier: workspace:*
+        version: link:../level-transforms
+      '@aivo/pedagogy':
+        specifier: workspace:*
+        version: link:../pedagogy
+      '@aivo/skill-graphs':
+        specifier: workspace:*
+        version: link:../skill-graphs
+      '@aivo/tutor-sdk':
+        specifier: workspace:*
+        version: link:../tutor-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.3
+        version: 5.8.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)(terser@5.46.1)
+
+  packages/tutor-sdk:
+    dependencies:
+      '@aivo/skill-graphs':
+        specifier: workspace:*
+        version: link:../skill-graphs
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.3
+        version: 5.8.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)(terser@5.46.1)
 
   services/admin-svc:
     dependencies:
