@@ -20,24 +20,56 @@ interface WhatsWorkingBody {
   windowDays?: number;
 }
 
+/**
+ * Cap on rows accepted per request. >30 days of sessions for any
+ * realistic learner; bounds compute and memory per call so an
+ * authenticated caller cannot trigger amplified analytics work.
+ */
+const MAX_ROWS_PER_REQUEST = 5_000;
+
+/** Simple per-subject token bucket: ≤ BURST requests / WINDOW_MS. */
+const RATE_BURST = 30;
+const RATE_WINDOW_MS = 60_000;
+const buckets = new Map<string, { count: number; resetAt: number }>();
+
+function rateLimit(subject: string, now: number): boolean {
+  const b = buckets.get(subject);
+  if (!b || b.resetAt <= now) {
+    buckets.set(subject, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (b.count >= RATE_BURST) return false;
+  b.count += 1;
+  return true;
+}
+
 export async function registerWhatsWorkingRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
   app.post("/api/family/whats-working/:learnerId", async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
+    if (!rateLimit(auth.sub, Date.now())) {
+      return reply.code(429).send({ error: "Too many requests" });
+    }
     const { learnerId } = req.params as { learnerId: string };
     const owns = await verifyParentOwnership(db, auth.sub, learnerId);
     if (!owns) return reply.code(403).send({ error: "Forbidden" });
 
     const body = (req.body ?? {}) as WhatsWorkingBody;
-    const rows = Array.isArray(body.rows) ? body.rows : [];
+    const rawRows = Array.isArray(body.rows) ? body.rows : [];
+    if (rawRows.length > MAX_ROWS_PER_REQUEST) {
+      return reply
+        .code(413)
+        .send({ error: `rows exceeds maximum of ${MAX_ROWS_PER_REQUEST}` });
+    }
     const windowDays =
       typeof body.windowDays === "number" && body.windowDays > 0
         ? Math.floor(body.windowDays)
         : 30;
 
-    const insights = computeWhatsWorking(rows, { windowDays });
+    const insights = computeWhatsWorking(rawRows, { windowDays });
     return insights;
   });
 }
+
