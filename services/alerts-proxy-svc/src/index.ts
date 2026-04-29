@@ -47,10 +47,10 @@ export async function buildServer(opts: BuildServerOptions | ChannelConfig[] = {
     const enabled = channels.filter((c) => c.configured);
     if (enabled.length === 0) {
       if (IS_PROD) {
-        logger.error({}, "ops_alert.proxy.no_channels_in_prod");
+        logger.error("ops_alert.proxy.no_channels_in_prod");
         return reply.code(503).send({ error: "no channels configured" });
       }
-      logger.warn({ service: body.service }, "ops_alert.proxy.no_channels_dev");
+      logger.warn("ops_alert.proxy.no_channels_dev", { service: body.service });
       return { delivered: [], accepted: 0, results: [] };
     }
 
@@ -69,6 +69,7 @@ export async function buildServer(opts: BuildServerOptions | ChannelConfig[] = {
     const deliveredChannels = results.filter((r) => r.delivered).map((r) => r.channel);
 
     logger.info(
+      "ops_alert.proxy.page",
       {
         service: envelope.service,
         severity: envelope.severity,
@@ -82,7 +83,6 @@ export async function buildServer(opts: BuildServerOptions | ChannelConfig[] = {
           skipped,
         })),
       },
-      "ops_alert.proxy.page",
     );
 
     const allFailed = deliveredChannels.length === 0 && results.some((r) => !r.skipped);
@@ -104,15 +104,15 @@ async function start() {
     const missing = REQUIRED_CHANNELS_IN_PROD.filter((id) => !channels.find((c) => c.id === id && c.configured));
     if (missing.length > 0) {
       logger.warn(
-        { missing },
         "alerts-proxy starting in production with missing channels — deploy smoke test should fail",
+        { missing },
       );
     }
   }
 
   const app = await buildServer(channels);
   await app.listen({ port: PORT, host: "0.0.0.0" });
-  logger.info({ port: PORT, channels: channels.filter((c) => c.configured).map((c) => c.id) }, "alerts-proxy listening");
+  logger.info("alerts-proxy listening", { port: PORT, channels: channels.filter((c) => c.configured).map((c) => c.id) });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
