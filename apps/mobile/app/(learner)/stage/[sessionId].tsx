@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, AppState } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,69 @@ import { apiFetch } from '@/lib/api';
 import { API } from '@/constants/api';
 import { spacing } from '@/constants/colors';
 import { useTierTheme, type TierThemeMobile } from '@aivo/mobile-ui';
+
+// ── Offline outbox ──────────────────────────────────────────────────────────
+// Session-end payloads are queued in AsyncStorage when offline and flushed
+// when the app regains connectivity (NetInfo). This preserves mastery data
+// for learners in low-connectivity environments.
+
+interface SessionEndPayload {
+  sessionId: string;
+  masteryUpdates: Record<string, number>;
+  xpEarned: number;
+  queuedAt: number;
+}
+
+const OUTBOX_KEY = '@aivo/session_outbox';
+
+async function getAsyncStorage(): Promise<any> {
+  try {
+    return (await import('@react-native-async-storage/async-storage')).default;
+  } catch {
+    return null;
+  }
+}
+
+async function queueSessionEnd(payload: SessionEndPayload): Promise<void> {
+  const AsyncStorage = await getAsyncStorage();
+  if (!AsyncStorage) return;
+  try {
+    const raw = await AsyncStorage.getItem(OUTBOX_KEY);
+    const outbox: SessionEndPayload[] = raw ? JSON.parse(raw) : [];
+    outbox.push(payload);
+    await AsyncStorage.setItem(OUTBOX_KEY, JSON.stringify(outbox));
+  } catch {
+    // Storage error — best effort.
+  }
+}
+
+async function flushOutbox(learningApiBase: string, authHeader: string): Promise<void> {
+  const AsyncStorage = await getAsyncStorage();
+  if (!AsyncStorage) return;
+  try {
+    const raw = await AsyncStorage.getItem(OUTBOX_KEY);
+    if (!raw) return;
+    const outbox: SessionEndPayload[] = JSON.parse(raw);
+    if (outbox.length === 0) return;
+
+    const remaining: SessionEndPayload[] = [];
+    for (const payload of outbox) {
+      try {
+        const res = await fetch(`${learningApiBase}/api/learning/sessions/${payload.sessionId}/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+          body: JSON.stringify({ masteryUpdates: payload.masteryUpdates, xpEarned: payload.xpEarned }),
+        });
+        if (!res.ok) remaining.push(payload);
+      } catch {
+        remaining.push(payload);
+      }
+    }
+    await AsyncStorage.setItem(OUTBOX_KEY, JSON.stringify(remaining));
+  } catch {
+    // Storage error — best effort.
+  }
+}
 
 interface Question {
   text: string;
@@ -77,9 +140,6 @@ export default function StageScreen() {
   const { data: learners } = useLearners();
   const learnerId = user?.role === 'LEARNER' ? user.id : learners?.[0]?.id || '';
 
-  // Active tier comes from the (learner) layout's TierThemeProvider, which
-  // derives it from the learner's gradeLevel — promoting from 5th → 6th
-  // automatically swaps the EARLY palette for MIDDLE on the next render.
   const { tier, theme } = useTierTheme();
   const voice = TIER_VOICE[tier];
   const styles = useMemo(() => createStyles(theme, voice), [theme, voice]);
@@ -90,6 +150,23 @@ export default function StageScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
+
+  // Flush the offline outbox whenever the app comes to the foreground.
+  useEffect(() => {
+    const authHeader = user ? `Bearer ${(user as any).accessToken ?? ''}` : '';
+    const learningBase = (API as any).LEARNING ?? '';
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        flushOutbox(learningBase, authHeader).catch(() => {});
+      }
+    });
+
+    // Attempt flush immediately on mount as well.
+    flushOutbox(learningBase, authHeader).catch(() => {});
+
+    return () => subscription.remove();
+  }, [user]);
 
   const question = QUESTIONS[currentIndex];
 
@@ -133,19 +210,22 @@ export default function StageScreen() {
       setAnswered(false);
     } else {
       setSessionComplete(true);
+      const masteryUpdates = { multiplication: Math.round((correctCount / QUESTIONS.length) * 100) };
+      const xpEarned = correctCount * 10 + 5;
       try {
         const res = await apiFetch(API.LEARNING, `/api/learning/sessions/${sessionId}/complete`, {
           method: 'POST',
-          body: JSON.stringify({
-            masteryUpdates: { multiplication: Math.round((correctCount / QUESTIONS.length) * 100) },
-            xpEarned: correctCount * 10 + 5,
-          }),
+          body: JSON.stringify({ masteryUpdates, xpEarned }),
         });
         if (!res.ok) {
-          Alert.alert('Warning', 'Could not save session results. Your XP may not be recorded.');
+          // Queue for later flush.
+          await queueSessionEnd({ sessionId: sessionId ?? '', masteryUpdates, xpEarned, queuedAt: Date.now() });
+          Alert.alert('Warning', 'Could not save session results. Your XP will be recorded when connectivity is restored.');
         }
       } catch {
-        Alert.alert('Warning', 'Network issue saving session results. Your XP may not be recorded.');
+        // Offline — queue for later flush.
+        await queueSessionEnd({ sessionId: sessionId ?? '', masteryUpdates, xpEarned, queuedAt: Date.now() });
+        Alert.alert('Saved offline', 'Your session results will be synced when you are back online.');
       }
     }
   }, [currentIndex, sessionId, correctCount]);

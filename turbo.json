@@ -15,6 +15,11 @@
     "test": {
       "dependsOn": ["^build"],
       "env": ["DATABASE_URL", "OPS_ALERT_WEBHOOK_URL"]
+    },
+    "test:integration": {
+      "dependsOn": ["^build", "build"],
+      "cache": false,
+      "env": ["DATABASE_URL", "TEST_DATABASE_URL", "JWT_PRIVATE_KEY", "JWT_PUBLIC_KEY"]
     }
   }
 }

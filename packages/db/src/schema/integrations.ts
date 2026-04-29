@@ -1,5 +1,7 @@
-import { pgTable, uuid, varchar, timestamp, jsonb, integer, pgEnum, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, jsonb, integer, text, pgEnum, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { tenants } from "./tenants.js";
+import { learners } from "./learners.js";
+import { users } from "./users.js";
 
 export const connectorTypeEnum = pgEnum("connector_type", [
   "lms",
@@ -81,4 +83,46 @@ export const integrationRosterMappings = pgTable("integration_roster_mappings", 
 }, (table) => [
   uniqueIndex("idx_irm_unique_mapping").on(table.connectionId, table.externalId, table.externalType),
   index("idx_irm_connection").on(table.connectionId),
+]);
+
+// ── AAC Sync State (Sprint 20) ─────────────────────────────────────────────
+
+export const aacVendorEnum = pgEnum("aac_vendor", [
+  "coughdrop",
+  "proloquo2go",
+  "snap_core",
+  "lamp",
+]);
+
+export const aacSyncStatusEnum = pgEnum("aac_sync_status", [
+  "synced",
+  "pending",
+  "error",
+  "never",
+]);
+
+export const aacSyncState = pgTable("aac_sync_state", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  learnerId: uuid("learner_id").notNull().references(() => learners.id, { onDelete: "cascade" }),
+  vendor: aacVendorEnum("vendor").notNull(),
+  externalBoardId: varchar("external_board_id", { length: 255 }),
+  lastSyncAt: timestamp("last_sync_at"),
+  syncStatus: aacSyncStatusEnum("sync_status").notNull().default("never"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("idx_aac_sync_learner_vendor").on(table.learnerId, table.vendor),
+  index("idx_aac_sync_learner").on(table.learnerId),
+]);
+
+export const familySettings = pgTable("family_settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  coughdropApiKeyEncrypted: text("coughdrop_api_key_encrypted"),
+  coughdropUserId: varchar("coughdrop_user_id", { length: 128 }),
+  aacVendorPreference: varchar("aac_vendor_preference", { length: 32 }),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_family_settings_user").on(table.userId),
 ]);
