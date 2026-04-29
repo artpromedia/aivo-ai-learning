@@ -3,7 +3,7 @@ FastAPI observability middleware — Python equivalent of fastify-plugin.ts.
 
 Usage in a FastAPI main.py:
     from observability_middleware import add_observability
-    add_observability(app, service_name="brain-svc")
+    add_observability(app, service_name="my-svc")
 """
 from __future__ import annotations
 

@@ -24,8 +24,20 @@ export function ResponseZone({ choices, onAnswer, disabled = false }: ResponseZo
   const [selected, setSelected] = useState<string | null>(null);
 
   useEffect(() => {
-    AccessibilityInfo.isTouchExplorationEnabled().then(setTouchExploring);
-    const sub = AccessibilityInfo.addEventListener("touchExplorationDidChange", (enabled) => {
+    // Use the cross-platform `screenReaderChanged` event (VoiceOver on iOS,
+    // TalkBack on Android) instead of Android-only `touchExplorationDidChange`,
+    // which isn't typed on AccessibilityInfoStatic. Same UX intent: when an
+    // assistive screen reader is active we add the "Double tap to select"
+    // hint to each choice's accessibility label.
+    AccessibilityInfo.isScreenReaderEnabled()
+      .then(setTouchExploring)
+      .catch(() => {
+        // If the platform refuses to report screen-reader state we fall
+        // back to the conservative default (`false`) — the choices remain
+        // tappable, only the verbose hint suffix is suppressed.
+        setTouchExploring(false);
+      });
+    const sub = AccessibilityInfo.addEventListener("screenReaderChanged", (enabled: boolean) => {
       setTouchExploring(enabled);
     });
     return () => sub.remove();
