@@ -1,7 +1,8 @@
 import { FastifyInstance } from "fastify";
-import { parentAssessments, learners, assessmentAttempts, iepProfiles, iepGoals } from "@aivo/db";
+import { parentAssessments, learners, assessmentAttempts, iepProfiles, iepGoals, learnerProfiles } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { eq, desc } from "drizzle-orm";
+import { deriveLearningProfile } from "../services/learning-profile.js";
 
 async function loadIepContext(db: any, learnerDbId: string) {
   const [profile] = await db
@@ -323,6 +324,61 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
 
       app.log.info({ learnerId, attemptId: attempt.id }, "[discovery/complete] attempt inserted");
 
+      // ----------------------------------------------------------------
+      // Derive + persist a LearningProfile artifact. The grade-level
+      // placement (theta) is one output; the profile (modality fit,
+      // processing speed, frustration tolerance, attention pattern) is
+      // the more valuable one and is what the tutor-runtime + parent
+      // dashboard will consume going forward.
+      // ----------------------------------------------------------------
+      let learningProfile: ReturnType<typeof deriveLearningProfile> | null = null;
+      try {
+        learningProfile = deriveLearningProfile(
+          body.chapterResults || [],
+          body.responseLatencies || [],
+        );
+        await db
+          .insert(learnerProfiles)
+          .values({
+            tenantId: learner.tenantId,
+            learnerId: learner.id,
+            attemptId: attempt.id,
+            thetaPlacement: learningProfile.thetaPlacement,
+            modalityFit: learningProfile.modalityFit,
+            processingSpeedMs: learningProfile.processingSpeedMs,
+            frustrationRate: learningProfile.frustrationRate,
+            attentionRunLength: learningProfile.attentionRunLength,
+            frustrationTolerance: learningProfile.frustrationTolerance,
+            itemsAdministered: learningProfile.itemsAdministered,
+            baselineCompletedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: learnerProfiles.learnerId,
+            set: {
+              attemptId: attempt.id,
+              thetaPlacement: learningProfile.thetaPlacement,
+              modalityFit: learningProfile.modalityFit,
+              processingSpeedMs: learningProfile.processingSpeedMs,
+              frustrationRate: learningProfile.frustrationRate,
+              attentionRunLength: learningProfile.attentionRunLength,
+              frustrationTolerance: learningProfile.frustrationTolerance,
+              itemsAdministered: learningProfile.itemsAdministered,
+              baselineCompletedAt: new Date(),
+              updatedAt: new Date(),
+            },
+          });
+        app.log.info(
+          { learnerId, attemptId: attempt.id, theta: learningProfile.thetaPlacement },
+          "[discovery/complete] learner_profile upserted",
+        );
+      } catch (profileErr: any) {
+        app.log.error(
+          { learnerId, attemptId: attempt.id, err: profileErr?.message },
+          "[discovery/complete] learner_profile upsert failed (non-fatal)",
+        );
+      }
+
       let brainCloneStatus: string = "pending";
       let brainCloneError: string | null = null;
       let brainStateId: string | null = null;
@@ -373,6 +429,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
         brainCloneStatus,
         brainStateId,
         brainCloneError,
+        learningProfile,
       });
     } catch (err: any) {
       app.log.error({ err: err?.message, stack: err?.stack, learnerId }, "[discovery/complete] FAILED");

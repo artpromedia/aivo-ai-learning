@@ -778,6 +778,9 @@ importers:
 
   services/assessment-svc:
     dependencies:
+      '@aivo/adaptive-baseline':
+        specifier: workspace:*
+        version: link:../../packages/adaptive-baseline
       '@aivo/brand':
         specifier: workspace:*
         version: link:../../packages/brand

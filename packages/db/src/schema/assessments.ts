@@ -51,3 +51,60 @@ export const observationalAssessments = pgTable("observational_assessments", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+/**
+ * Per-learner *learning profile* artifact emitted by the adaptive
+ * baseline. The grade-level placement (theta) is stored alongside the
+ * more important fields — modality fit, processing speed, frustration
+ * tolerance, attention pattern — that the tutor-runtime + parent
+ * dashboard consume.
+ *
+ * One row per learner; the latest baseline replaces the previous one.
+ */
+export const learnerProfiles = pgTable("learner_profiles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  learnerId: uuid("learner_id").references(() => learners.id).notNull().unique(),
+  /** Source attempt that produced this profile. */
+  attemptId: uuid("attempt_id").references(() => assessmentAttempts.id),
+  /** Final θ on the same logit scale as item difficulty. */
+  thetaPlacement: real("theta_placement").notNull().default(0),
+  /**
+   * Ordered modality fit, e.g.
+   *   [{ modality: "visual",   accuracy: 0.92, n: 6 },
+   *    { modality: "auditory", accuracy: 0.71, n: 5 }, ...]
+   */
+  modalityFit: jsonb("modality_fit").notNull().default([]),
+  /** Median time-to-respond on correct items, ms. */
+  processingSpeedMs: integer("processing_speed_ms").notNull().default(0),
+  /** 0…1 share of items where frustration / disengagement fired. */
+  frustrationRate: real("frustration_rate").notNull().default(0),
+  /** Items the learner sustained before the first frustration signal. */
+  attentionRunLength: integer("attention_run_length").notNull().default(0),
+  /** "low" / "moderate" / "high" — derived from frustrationRate. */
+  frustrationTolerance: varchar("frustration_tolerance", { length: 16 }).notNull().default("moderate"),
+  /** Items administered to produce this profile. */
+  itemsAdministered: integer("items_administered").notNull().default(0),
+  baselineCompletedAt: timestamp("baseline_completed_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
+ * In-flight adaptive baseline session state. One row per session; the
+ * row is updated after every item until the session finalises into a
+ * `learner_profiles` write.
+ */
+export const adaptiveBaselineSessions = pgTable("adaptive_baseline_sessions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  learnerId: uuid("learner_id").references(() => learners.id).notNull(),
+  /** "in_progress" | "completed" | "abandoned". */
+  status: varchar("status", { length: 16 }).notNull().default("in_progress"),
+  /** Serialized BaselineState (theta, infoSum, administered[], coveredSkills[]). */
+  state: jsonb("state").notNull(),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

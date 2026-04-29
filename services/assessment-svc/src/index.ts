@@ -15,6 +15,7 @@ import { registerIepCollabRoutes } from "./routes/iep-collab.js";
 import { registerIepUpdatesRoutes, checkReviewReminders } from "./routes/iep-updates.js";
 import { registerIepParentShareRoutes } from "./routes/iep-parent-share.js";
 import { registerLearnerBaselineRoutes } from "./routes/learner-baseline.js";
+import { registerLearnerProfileRoutes } from "./routes/learner-profile.js";
 import { registerSensoryProfileRoutes } from "./routes/sensory-profile.js";
 
 const logger = createLogger("assessment-svc");
@@ -53,6 +54,7 @@ async function start() {
   await registerIepUpdatesRoutes(app);
   await registerIepParentShareRoutes(app);
   await registerLearnerBaselineRoutes(app);
+  await registerLearnerProfileRoutes(app);
   await registerSensoryProfileRoutes(app);
 
   await bootstrapOpsAlerts({ service: "assessment-svc", app, beforeExit: () => app.close() });
