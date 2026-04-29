@@ -213,4 +213,95 @@ export async function registerIepRoutes(app: FastifyInstance) {
 
     return { profiles, goals, documents };
   });
+
+  /**
+   * IEP packet generation (§9.3 Greenfield 6–8w).
+   *
+   * GET /api/iep/learner/:learnerId/packet[?format=md|html|json]
+   *
+   * Loads the learner, the most recent IEP profile, and all goals for the
+   * learner; assembles them into a 7-section IEP packet via the pure
+   * `buildIepPacket` builder; and returns the requested format.
+   *
+   * `format=json` is the default — it returns `{ markdown, html, sections }`
+   * so the admin UI can render either side-by-side. `format=md` returns
+   * raw markdown with `Content-Type: text/markdown`. `format=html` returns
+   * a standalone html document for printing / PDF export.
+   */
+  app.get("/api/iep/learner/:learnerId/packet", {
+    schema: {
+      tags: ["IEP"],
+      security: [{ bearerAuth: [] }],
+      querystring: {
+        type: "object",
+        properties: {
+          format: { type: "string", enum: ["json", "md", "html"], default: "json" },
+        },
+      },
+    },
+    preHandler: authenticate,
+  }, async (req, reply) => {
+    const db = (app as any).db;
+    const { learnerId } = req.params as { learnerId: string };
+    const { format = "json" } = (req.query as { format?: "json" | "md" | "html" }) ?? {};
+
+    const [learner] = await db.select().from(learners).where(eq(learners.id, learnerId));
+    if (!learner) return reply.status(404).send({ error: "Learner not found" });
+
+    const profilesRows = await db.select().from(iepProfiles)
+      .where(eq(iepProfiles.learnerId, learnerId));
+    // Use the most recent profile.
+    const profile = profilesRows.sort((a: any, b: any) =>
+      String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")),
+    )[0] ?? {};
+
+    const goals = await db.select().from(iepGoals).where(eq(iepGoals.learnerId, learnerId));
+
+    const [fl] = await db.select().from(learnerFunctioningLevels)
+      .where(eq(learnerFunctioningLevels.learnerId, learnerId));
+
+    const { buildIepPacket } = await import("../services/iep-packet.js");
+    const packet = buildIepPacket({
+      learner: {
+        id: learner.id,
+        fullName: (learner as any).fullName ?? (`${(learner as any).firstName ?? ""} ${(learner as any).lastName ?? ""}`.trim() || learner.id),
+        dateOfBirth: (learner as any).dateOfBirth ?? undefined,
+        gradeBand: (learner as any).gradeBand ?? undefined,
+        studentId: (learner as any).studentId ?? undefined,
+        schoolName: (learner as any).schoolName ?? undefined,
+        functioningLevel: fl ? (fl as any).level : undefined,
+      },
+      profile: {
+        presentLevels: (profile as any).presentLevels ?? undefined,
+        accommodations: (profile as any).accommodations ?? undefined,
+        modifications: (profile as any).modifications ?? undefined,
+        assessmentAccommodations: (profile as any).assessmentAccommodations ?? undefined,
+        services: (profile as any).services ?? undefined,
+        participation: (profile as any).participation ?? undefined,
+        effectiveAt: (profile as any).effectiveAt ?? undefined,
+        nextReviewAt: (profile as any).nextReviewAt ?? undefined,
+      },
+      goals: goals.map((g: any) => ({
+        id: String(g.id),
+        statement: g.statement ?? g.text ?? "",
+        alignment: g.alignment ?? g.skillId ?? undefined,
+        benchmarks: g.benchmarks ?? undefined,
+        progressNote: g.progressNote ?? undefined,
+        domain: g.domain ?? undefined,
+      })),
+      meta: {
+        preparedAt: new Date().toISOString(),
+      },
+    });
+
+    if (format === "md") {
+      reply.type("text/markdown; charset=utf-8");
+      return packet.markdown;
+    }
+    if (format === "html") {
+      reply.type("text/html; charset=utf-8");
+      return packet.html;
+    }
+    return { learnerId, packet };
+  });
 }
