@@ -107,6 +107,19 @@ function fmtDate(iso: string | undefined): string {
   return iso.length >= 10 ? iso.slice(0, 10) : iso;
 }
 
+/**
+ * Roles that appear in the IEP packet's signature block. Extracted to a
+ * module-level constant so a future change to the required signatories
+ * (e.g. adding "Related-services provider") is a one-line edit.
+ */
+const SIGNATURE_ROLES = [
+  "Parent / Guardian",
+  "General-education teacher",
+  "Special-education teacher",
+  "Case manager",
+  "School administrator",
+] as const;
+
 function bulletList(items: readonly string[] | undefined): string {
   if (!items || items.length === 0) return "_None on file._";
   return items.map((i) => `- ${i}`).join("\n");
@@ -206,7 +219,7 @@ function buildMarkdown(input: IepPacketInput): string {
   // 7. Signature blocks
   lines.push("## 7. Signatures");
   lines.push("");
-  for (const role of ["Parent / Guardian", "General-education teacher", "Special-education teacher", "Case manager", "School administrator"]) {
+  for (const role of SIGNATURE_ROLES) {
     lines.push(`- **${role}:** ____________________________  Date: __________`);
   }
   lines.push("");
