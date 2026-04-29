@@ -24,6 +24,7 @@ import { registerScimTokenRoutes } from "./routes/scim-tokens.js";
 import { registerEvidenceRoutes } from "./routes/evidence.js";
 import { registerJobsRoutes } from "./routes/jobs.js";
 import { registerAdminInternalJobRoutes } from "./routes/internal-jobs.js";
+import { registerContentCmsRoutes } from "./routes/content-cms.js";
 import { startEvidenceCron } from "./lib/soc2-evidence.js";
 import { startWatchdog, configureWatchdogAlerts } from "./lib/watchdog.js";
 import { runJanitorOnce } from "./lib/janitor.js";
@@ -67,6 +68,7 @@ async function start() {
   registerScimTokenRoutes(app, db);
   registerEvidenceRoutes(app, db);
   registerJobsRoutes(app, db);
+  registerContentCmsRoutes(app);
 
   await bootstrapOpsAlerts({ service: "admin-svc", app, beforeExit: () => app.close() }).then(
     (boot) => {
