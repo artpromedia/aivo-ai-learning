@@ -400,6 +400,22 @@ importers:
         specifier: ^5.7.3
         version: 5.8.3
 
+  packages/level-transforms:
+    dependencies:
+      '@aivo/content-pack':
+        specifier: workspace:*
+        version: link:../content-pack
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.3
+        version: 5.8.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)(terser@5.46.1)
+
   packages/mobile-ui:
     dependencies:
       '@aivo/brand':
@@ -514,6 +530,18 @@ importers:
         version: 5.7.3
 
   packages/skill-graphs:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.3
+        version: 5.8.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)(terser@5.46.1)
+
+  packages/special-interest-engine:
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
