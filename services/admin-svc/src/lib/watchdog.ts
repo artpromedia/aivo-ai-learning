@@ -13,8 +13,55 @@
  */
 import { sql } from "drizzle-orm";
 import { JOB_REGISTRY, computeFreshness } from "@aivo/scheduling";
-import { getOpsAlertClient } from "@aivo/ops-alert";
+import {
+  LegacyOpsAlertClient,
+  type OpsAlertClient,
+  type LegacyOpsAlert,
+  type LegacyOpsAlertSendResult,
+} from "@aivo/ops-alerts";
 import { makeFreshnessWatchdogDiscoveryStore } from "./freshness-discovery.js";
+
+// ── Alerts client wiring ──────────────────────────────────────────────────
+//
+// v2.1 §9.1 dedup: we used to import `getOpsAlertClient` from the legacy
+// `@aivo/ops-alert` package. Now we wrap the new durable `OpsAlertClient`
+// (created by `bootstrapOpsAlerts` in admin-svc/index.ts) in
+// `LegacyOpsAlertClient` so this file's `alerts.send({title, body, dedupKey,
+// fields})` payloads keep working and we still get per-key TTL dedup.
+
+interface MinimalAlertsClient {
+  send(alert: LegacyOpsAlert): Promise<LegacyOpsAlertSendResult>;
+}
+
+let injectedAlerts: MinimalAlertsClient | null = null;
+
+/**
+ * Wires the watchdog to the process-wide `OpsAlertClient` produced by
+ * `bootstrapOpsAlerts`. Should be called once at admin-svc start.
+ */
+export function configureWatchdogAlerts(client: OpsAlertClient): void {
+  injectedAlerts = new LegacyOpsAlertClient({ client });
+}
+
+/** Test-only: inject a stubbed alerts client. */
+export function _setWatchdogAlertsForTest(client: MinimalAlertsClient | null): void {
+  injectedAlerts = client;
+}
+
+function getAlerts(): MinimalAlertsClient {
+  if (!injectedAlerts) {
+    // Defensive: if someone forgot to call configureWatchdogAlerts() the
+    // watchdog tick would otherwise crash. Return a no-op so on-call
+    // visibility degrades gracefully (the tick logs the alerts it would
+    // have sent via the `log?.warn` calls already in this file).
+    return {
+      async send(): Promise<LegacyOpsAlertSendResult> {
+        return { delivered: false, deduped: false };
+      },
+    };
+  }
+  return injectedAlerts;
+}
 
 // ── Alert threshold constants (Supplemental A) ────────────────────────────
 
@@ -42,7 +89,7 @@ export async function runWatchdogOnce(
   db: any,
   log?: WatchdogOptions["log"],
 ): Promise<{ alerted: string[]; checked: number; discoveries: number }> {
-  const alerts = getOpsAlertClient();
+  const alerts = getAlerts();
   const result = (await db.execute(sql`
     SELECT job_name, last_run_at, last_finished_at, last_status FROM daily_job_runs
   `)) as { rows?: Array<Record<string, any>> } | Array<Record<string, any>>;
@@ -173,7 +220,7 @@ export async function checkLlmCostAlerts(
   tenantSpend: Map<string, number>,
   log?: WatchdogOptions["log"],
 ): Promise<void> {
-  const alerts = getOpsAlertClient();
+  const alerts = getAlerts();
   for (const [tenantId, costUsd] of tenantSpend) {
     if (costUsd >= LLM_COST_CRITICAL_USD) {
       log?.warn({ tenantId, costUsd }, "LLM cost CRITICAL threshold reached");
@@ -214,7 +261,7 @@ export async function checkIepParseFailureRate(
   if (total === 0) return;
   const rate = failed / total;
   if (rate > IEP_PARSE_FAILURE_RATE_WARNING) {
-    const alerts = getOpsAlertClient();
+    const alerts = getAlerts();
     log?.warn({ rate, failed, total }, "IEP parse failure rate WARNING");
     await alerts.send({
       severity: "warning",
@@ -235,7 +282,7 @@ export async function alertBrainCloneFailure(
   reason: string,
   log?: WatchdogOptions["log"],
 ): Promise<void> {
-  const alerts = getOpsAlertClient();
+  const alerts = getAlerts();
   log?.error({ learnerId, reason }, "Brain clone CRITICAL failure");
   await alerts.send({
     severity: "critical",
@@ -259,7 +306,7 @@ export async function checkHttp5xxRate(
   if (totalRequests === 0) return;
   const rate = errorCount / totalRequests;
   if (rate > HTTP_5XX_RATE_WARNING) {
-    const alerts = getOpsAlertClient();
+    const alerts = getAlerts();
     log?.warn({ service, rate, errorCount, totalRequests }, "HTTP 5xx rate WARNING");
     await alerts.send({
       severity: "warning",

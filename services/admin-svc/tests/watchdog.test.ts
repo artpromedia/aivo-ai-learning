@@ -1,14 +1,25 @@
 /**
  * Sprint 7 — watchdog tests. (Tasks #59, #68)
  *
- * The watchdog walks the registry, asks the ledger for each job's last finish
- * time, and pages on-call when a job is stale. Verifies the alert payloads via
- * a fake fetch.
+ * v2.1 §9.1 dedup: the watchdog now uses `@aivo/ops-alerts` (durable outbox
+ * + alerts-proxy-svc) wrapped in `LegacyOpsAlertClient`. Tests inject a stub
+ * `send()` directly via `_setWatchdogAlertsForTest` instead of patching the
+ * global `fetch`.
  */
 import { test } from "node:test";
 import assert from "node:assert";
-import { runWatchdogOnce } from "../src/lib/watchdog.js";
-import { _resetOpsAlertClient, createOpsAlertClient } from "@aivo/ops-alert";
+import {
+  runWatchdogOnce,
+  _setWatchdogAlertsForTest,
+} from "../src/lib/watchdog.js";
+
+interface CapturedAlert {
+  severity: string;
+  title: string;
+  body: string;
+  dedupKey?: string;
+  fields?: Record<string, unknown>;
+}
 
 function makeFakeDb(rows: any[]) {
   return {
@@ -16,38 +27,37 @@ function makeFakeDb(rows: any[]) {
   };
 }
 
+function makeStubAlerts() {
+  const calls: CapturedAlert[] = [];
+  const client = {
+    async send(alert: CapturedAlert) {
+      calls.push(alert);
+      return { delivered: true, deduped: false };
+    },
+  };
+  return { client, calls };
+}
+
 test("alerts when a registered job has never run", async () => {
-  const calls: any[] = [];
-  process.env.OPS_ALERT_WEBHOOK_URL = "https://example.test/webhook";
-  // Force a fresh singleton with a fake fetch for the test.
-  _resetOpsAlertClient();
-  // Replace the singleton's implementation by monkey-patching globalThis.fetch.
-  const original = globalThis.fetch;
-  globalThis.fetch = (async (_url: any, init: any) => {
-    calls.push(JSON.parse(String(init.body)));
-    return { ok: true, status: 204, json: async () => ({}) } as any;
-  }) as typeof fetch;
+  const { client, calls } = makeStubAlerts();
+  _setWatchdogAlertsForTest(client);
   try {
     const db = makeFakeDb([]);
     const result = await runWatchdogOnce(db);
-    assert.ok(result.alerted.length > 0);
-    assert.ok(calls.length > 0);
+    assert.ok(result.alerted.length > 0, "expected at least one job to be alerted");
+    assert.ok(calls.length > 0, "expected at least one alert send");
+    for (const c of calls) {
+      assert.ok(c.dedupKey, `alert ${c.title} missing dedupKey`);
+      assert.ok((c.dedupKey ?? "").startsWith("job-stale:"), "dedupKey shape preserved");
+    }
   } finally {
-    globalThis.fetch = original;
-    delete process.env.OPS_ALERT_WEBHOOK_URL;
-    _resetOpsAlertClient();
+    _setWatchdogAlertsForTest(null);
   }
 });
 
 test("does not alert when every job is fresh", async () => {
-  const calls: any[] = [];
-  process.env.OPS_ALERT_WEBHOOK_URL = "https://example.test/webhook";
-  _resetOpsAlertClient();
-  const original = globalThis.fetch;
-  globalThis.fetch = (async (_url: any, init: any) => {
-    calls.push(JSON.parse(String(init.body)));
-    return { ok: true, status: 204, json: async () => ({}) } as any;
-  }) as typeof fetch;
+  const { client, calls } = makeStubAlerts();
+  _setWatchdogAlertsForTest(client);
   try {
     const now = new Date();
     const { JOB_REGISTRY } = await import("@aivo/scheduling");
@@ -62,14 +72,15 @@ test("does not alert when every job is fresh", async () => {
     assert.equal(result.alerted.length, 0);
     assert.equal(calls.length, 0);
   } finally {
-    globalThis.fetch = original;
-    delete process.env.OPS_ALERT_WEBHOOK_URL;
-    _resetOpsAlertClient();
+    _setWatchdogAlertsForTest(null);
   }
 });
 
-test("opsAlert client survives missing webhook gracefully", async () => {
-  const client = createOpsAlertClient({});
-  const r = await client.send({ severity: "info", title: "x", body: "y" });
-  assert.equal(r.delivered, false);
+test("watchdog tick does not crash when no alerts client is configured", async () => {
+  // Defensive default: an unconfigured admin-svc must still complete a tick.
+  _setWatchdogAlertsForTest(null);
+  const db = makeFakeDb([]);
+  const result = await runWatchdogOnce(db);
+  // Stale jobs are still reported in the return value; we just don't page.
+  assert.ok(Array.isArray(result.alerted));
 });

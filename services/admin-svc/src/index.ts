@@ -25,7 +25,7 @@ import { registerEvidenceRoutes } from "./routes/evidence.js";
 import { registerJobsRoutes } from "./routes/jobs.js";
 import { registerAdminInternalJobRoutes } from "./routes/internal-jobs.js";
 import { startEvidenceCron } from "./lib/soc2-evidence.js";
-import { startWatchdog } from "./lib/watchdog.js";
+import { startWatchdog, configureWatchdogAlerts } from "./lib/watchdog.js";
 import { runJanitorOnce } from "./lib/janitor.js";
 import { runAuditRetentionOnce } from "./lib/audit-retention.js";
 
@@ -68,7 +68,13 @@ async function start() {
   registerEvidenceRoutes(app, db);
   registerJobsRoutes(app, db);
 
-  await bootstrapOpsAlerts({ service: "admin-svc", app, beforeExit: () => app.close() });
+  await bootstrapOpsAlerts({ service: "admin-svc", app, beforeExit: () => app.close() }).then(
+    (boot) => {
+      // v2.1 §9.1 dedup: feed the watchdog the durable OpsAlertClient
+      // instead of the legacy in-process @aivo/ops-alert client.
+      configureWatchdogAlerts(boot.client);
+    },
+  );
 
   // Schedulers — these run regardless of which replica is leader; the
   // shared scheduler picks one via the advisory lock.

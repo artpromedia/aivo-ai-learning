@@ -1,5 +1,18 @@
 /**
- * Sprint 7 — `@aivo/ops-alert`. (Task #69)
+ * @deprecated Sprint 7 — `@aivo/ops-alert`. (Task #69)
+ *
+ * As of v2.1 §9.1 dedup, this package is **deprecated**. New code should
+ * use `@aivo/ops-alerts` (durable outbox + alerts-proxy-svc). Drop-in
+ * callers that still need the `send({severity,title,body,dedupKey,fields})`
+ * shape can wrap the new client with `LegacyOpsAlertClient`:
+ *
+ *   import { OpsAlertClient, LegacyOpsAlertClient } from "@aivo/ops-alerts";
+ *   const legacy = new LegacyOpsAlertClient({ client });
+ *   await legacy.send({ severity, title, body, dedupKey, fields });
+ *
+ * The implementation below is preserved verbatim so any not-yet-migrated
+ * call sites keep working while the migration completes. Do not add new
+ * features here.
  *
  * One client used by every service that pages on-call. Each service used to
  * read its own `_WATCHDOG_WEBHOOK_URL` env vars and shape its own JSON for

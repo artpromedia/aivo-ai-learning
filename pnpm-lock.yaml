@@ -590,9 +590,6 @@ importers:
       '@aivo/observability':
         specifier: workspace:*
         version: link:../../packages/observability
-      '@aivo/ops-alert':
-        specifier: workspace:*
-        version: link:../../packages/ops-alert
       '@aivo/ops-alerts':
         specifier: workspace:*
         version: link:../../packages/ops-alerts
@@ -707,9 +704,6 @@ importers:
       '@aivo/observability':
         specifier: workspace:*
         version: link:../../packages/observability
-      '@aivo/ops-alert':
-        specifier: workspace:*
-        version: link:../../packages/ops-alert
       '@aivo/ops-alerts':
         specifier: workspace:*
         version: link:../../packages/ops-alerts
