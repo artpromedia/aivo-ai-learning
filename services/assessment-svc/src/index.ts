@@ -2,7 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
-import { createLogger } from "@aivo/observability";
+import { createLogger, registerObservabilityPlugin } from "@aivo/observability";
 import { createDb } from "@aivo/db";
 import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
 import { registerHealthRoutes } from "./routes/health.js";
@@ -23,6 +23,9 @@ const PORT = parseInt(process.env.ASSESSMENT_PORT || "3003", 10);
 async function start() {
   const db = createDb(process.env.DATABASE_URL!);
   const app = Fastify({ logger: false });
+
+  // Structured request logging + /metrics for Prometheus scrape (Supp A).
+  registerObservabilityPlugin(app, "assessment-svc");
 
   await app.register(cors, { origin: true, credentials: true });
   await app.register(swagger, {

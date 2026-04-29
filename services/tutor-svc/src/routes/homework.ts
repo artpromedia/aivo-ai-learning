@@ -2,7 +2,10 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { eq, and, desc } from "drizzle-orm";
 import { homeworkAssignments, homeworkSessions, tutorSubscriptions, learners } from "@aivo/db";
 import { verifyJWT, JWTPayload } from "@aivo/security";
+import { createLogger } from "@aivo/observability";
 import { getActiveCurriculumFocus } from "./curriculum.js";
+
+const logger = createLogger("tutor-svc.homework");
 
 const HOMEWORK_SUBJECT_TO_FOCUS: Record<string, string> = {
   MATH: "math",
@@ -121,7 +124,7 @@ async function writeMasteryUpdate(
       }),
     });
   } catch (err) {
-    console.error("Mastery write-back failed (non-blocking):", err);
+    logger.error("Mastery write-back failed (non-blocking)", { err: String(err) });
   }
 }
 
@@ -209,7 +212,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
             adaptedProblems = adaptData.adapted_problems || [];
           }
         } catch (err) {
-          console.error("Adaptation failed, using raw problems:", err);
+          logger.error("Adaptation failed, using raw problems", { err: String(err) });
         }
       }
 
@@ -429,7 +432,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
       const focus = await getActiveCurriculumFocus(db, session.learnerId, focusSubject);
       if (focus) (brainContext as any).curriculum_focus = focus;
     } catch (err) {
-      console.error("Failed to load curriculum focus for homework (non-blocking):", err);
+      logger.error("Failed to load curriculum focus for homework (non-blocking)", { err: String(err) });
     }
 
     try {

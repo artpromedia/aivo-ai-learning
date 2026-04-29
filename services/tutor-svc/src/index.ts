@@ -2,7 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
-import { createLogger } from "@aivo/observability";
+import { createLogger, registerObservabilityPlugin } from "@aivo/observability";
 import { createDb } from "@aivo/db";
 import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
 import { registerHealthRoutes } from "./routes/health.js";
@@ -20,6 +20,9 @@ const PORT = parseInt(process.env.TUTOR_PORT || "3006", 10);
 async function start() {
   const db = createDb(process.env.DATABASE_URL!);
   const app = Fastify({ logger: false });
+
+  // Structured request logging + /metrics for Prometheus scrape (Supp A).
+  registerObservabilityPlugin(app, "tutor-svc");
 
   await app.register(cors, { origin: true, credentials: true });
   await app.register(swagger, {
@@ -55,6 +58,6 @@ async function start() {
 }
 
 start().catch((err) => {
-  console.error("Failed to start tutor-svc:", err);
+  logger.error(err, "Failed to start tutor-svc");
   process.exit(1);
 });

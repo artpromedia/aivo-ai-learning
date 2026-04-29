@@ -29,7 +29,11 @@ export const HTTP_5XX_RATE_WARNING = 0.02;
 
 export interface WatchdogOptions {
   intervalMs?: number;
-  log?: { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void };
+  log?: {
+    info: (...args: unknown[]) => void;
+    warn: (...args: unknown[]) => void;
+    error: (...args: unknown[]) => void;
+  };
 }
 
 const DEFAULT_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
@@ -113,6 +117,55 @@ export async function runWatchdogOnce(
 // ── Domain-specific alert helpers (Supplemental A) ────────────────────────
 
 /**
+ * Trigger the brain-svc auto-cap endpoint to pause LLM calls for a tenant.
+ * Called by `checkLlmCostAlerts` after a CRITICAL alert. Idempotent — the
+ * brain-svc endpoint should treat repeated POSTs as a no-op when the tenant
+ * is already paused. Failures are logged but do NOT throw, so a brain-svc
+ * outage cannot break the watchdog tick that already paged on-call.
+ */
+async function triggerBrainSvcLlmPause(
+  tenantId: string,
+  costUsd: number,
+  log?: WatchdogOptions["log"],
+): Promise<void> {
+  const brainSvcUrl = process.env.BRAIN_SVC_URL;
+  if (!brainSvcUrl) {
+    log?.warn(
+      { tenantId },
+      "LLM auto-cap skipped: BRAIN_SVC_URL not configured",
+    );
+    return;
+  }
+  const internalToken = process.env.INTERNAL_SERVICE_TOKEN || process.env.INTERNAL_SERVICE_KEY || "";
+  try {
+    const res = await fetch(`${brainSvcUrl}/api/brain/admin/pause-llm`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-internal-service": "admin-svc",
+        ...(internalToken ? { "x-service-token": internalToken } : {}),
+      },
+      body: JSON.stringify({
+        tenantId,
+        reason: "llm_cost_critical",
+        costUsd,
+        threshold: LLM_COST_CRITICAL_USD,
+      }),
+    });
+    if (!res.ok) {
+      log?.error(
+        { tenantId, status: res.status },
+        "LLM auto-cap brain-svc returned non-2xx",
+      );
+    } else {
+      log?.warn({ tenantId, costUsd }, "LLM auto-cap engaged via brain-svc");
+    }
+  } catch (e) {
+    log?.error({ err: e, tenantId }, "LLM auto-cap brain-svc call failed");
+  }
+}
+
+/**
  * Check per-tenant LLM daily spend and page if over threshold.
  * `tenantSpend` is a map of tenantId → USD spent today.
  */
@@ -131,6 +184,10 @@ export async function checkLlmCostAlerts(
         dedupKey: `llm-cost-critical:${tenantId}:${new Date().toISOString().slice(0, 10)}`,
         fields: { tenantId, costUsd: costUsd.toFixed(2), threshold: String(LLM_COST_CRITICAL_USD) },
       }).catch((e: unknown) => log?.error({ err: e }, "llm cost alert send failed"));
+      // Auto-cap: pause LLM for the offending tenant via brain-svc so
+      // costs stop accruing while ops investigates. This MUST run after
+      // the alert send so an on-call human is aware of the pause.
+      await triggerBrainSvcLlmPause(tenantId, costUsd, log);
     } else if (costUsd >= LLM_COST_WARNING_USD) {
       log?.warn({ tenantId, costUsd }, "LLM cost WARNING threshold reached");
       await alerts.send({

@@ -22,7 +22,10 @@ import {
 import { eq, and, count, isNull, ne } from "drizzle-orm";
 import argon2 from "argon2";
 import crypto from "crypto";
+import { createLogger } from "@aivo/observability";
 import { requireStepUp } from "./step-up.js";
+
+const logger = createLogger("identity-svc.district-admins");
 
 const INVITE_TTL_HOURS = 72;
 const STEP_UP_SCOPE = "district:admin-mgmt" as const;
@@ -88,7 +91,7 @@ async function emailInvite(opts: {
   } catch (err) {
     // Fail-soft: invite row is already persisted, the admin can resend
     // if email delivery hiccups.
-    console.warn("[district-admins] invite email enqueue failed", err);
+    logger.warn("invite email enqueue failed", { err: String(err) });
   }
 }
 

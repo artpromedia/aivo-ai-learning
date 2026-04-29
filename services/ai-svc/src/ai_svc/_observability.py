@@ -1,9 +1,13 @@
 """
 FastAPI observability middleware — Python equivalent of fastify-plugin.ts.
 
+Vendored copy of packages/observability/src/fastapi-middleware.py because
+this repo doesn't yet ship a published Python package for shared modules.
+Keep in sync with the canonical file under packages/observability/.
+
 Usage in a FastAPI main.py:
     from observability_middleware import add_observability
-    add_observability(app, service_name="my-svc")
+    add_observability(app, service_name="ai-svc")
 """
 from __future__ import annotations
 

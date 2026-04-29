@@ -6,12 +6,16 @@ from .routes.homework import router as homework_router
 from .routes.transcribe import router as transcribe_router
 from .routes.curriculum import router as curriculum_router
 from .routes.speech_buddy import router as speech_buddy_router
+from ._observability import add_observability
 
 app = FastAPI(
     title="AIVO AI Service",
     description="LLM Gateway + Content Generation + Tutor Chat + Homework Helper",
     version="1.1.0",
 )
+
+# Structured request logging + /metrics for Prometheus scrape (Supp A).
+add_observability(app, "ai-svc")
 
 app.add_middleware(
     CORSMiddleware,
