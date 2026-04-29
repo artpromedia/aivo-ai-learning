@@ -25,7 +25,7 @@ import { registerDistrictAdminRoutes } from "./routes/district-admins.js";
 import { registerSsoRoutes } from "./routes/sso.js";
 import { registerScimRoutes } from "./routes/scim.js";
 import { registerAvatarRoutes } from "./routes/avatars.js";
-import { AVATAR_MAX_BYTES, AVATAR_STORAGE_ROOT } from "./lib/avatar-storage.js";
+import { AVATAR_MAX_BYTES, AVATAR_STORAGE_ROOT, AVATAR_S3_ENABLED, getAvatarObjectFromS3 } from "./lib/avatar-storage.js";
 import { registerDistrictTenantScope, REQUIRE_DISTRICT_ADMIN_FLAG } from "./hooks/require-district-admin.js";
 
 const logger = createLogger("identity-svc");
@@ -104,15 +104,37 @@ export async function buildApp() {
 
   // Static read-only delivery of the re-encoded WebP avatars. Writes are
   // gated through POST /api/users/me/avatar; this prefix is read-only.
-  await fsp.mkdir(AVATAR_STORAGE_ROOT, { recursive: true }).catch(() => undefined);
-  await app.register(fastifyStatic, {
-    root: AVATAR_STORAGE_ROOT,
-    prefix: "/api/avatars/",
-    decorateReply: false,
-    cacheControl: true,
-    maxAge: "7d",
-    immutable: false,
-  });
+  if (AVATAR_S3_ENABLED) {
+    // S3-backed avatars (e.g. in-cluster MinIO): stream objects through
+    // identity-svc so the bucket can stay private and replicas share state.
+    app.get<{ Params: { userId: string; file: string } }>(
+      "/api/avatars/:userId/:file",
+      async (req, reply) => {
+        const { userId, file } = req.params;
+        if (!/^[0-9a-fA-F-]{36}$/.test(userId) || !/^[a-zA-Z0-9._-]+\.webp$/.test(file)) {
+          return reply.status(400).send({ error: "Invalid avatar path." });
+        }
+        const obj = await getAvatarObjectFromS3(userId, file);
+        if (!obj) return reply.status(404).send({ error: "Not found" });
+        reply
+          .header("content-type", obj.contentType)
+          .header("cache-control", "public, max-age=604800");
+        if (obj.contentLength != null) reply.header("content-length", String(obj.contentLength));
+        if (obj.etag) reply.header("etag", obj.etag);
+        return reply.send(obj.body);
+      },
+    );
+  } else {
+    await fsp.mkdir(AVATAR_STORAGE_ROOT, { recursive: true }).catch(() => undefined);
+    await app.register(fastifyStatic, {
+      root: AVATAR_STORAGE_ROOT,
+      prefix: "/api/avatars/",
+      decorateReply: false,
+      cacheControl: true,
+      maxAge: "7d",
+      immutable: false,
+    });
+  }
 
   await app.register(swagger, {
     openapi: {

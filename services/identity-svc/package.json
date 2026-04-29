@@ -18,6 +18,7 @@
     "@aivo/scheduling": "workspace:*",
     "@aivo/security": "workspace:*",
     "@aivo/sso": "workspace:*",
+    "@aws-sdk/client-s3": "^3.654.0",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.0.0",
     "@fastify/multipart": "^9.4.0",

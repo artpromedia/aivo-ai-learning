@@ -2,6 +2,15 @@ import { promises as fs } from "node:fs";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import sharp from "sharp";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  ListObjectsV2Command,
+} from "@aws-sdk/client-s3";
+import type { Readable } from "node:stream";
 
 /**
  * Avatar storage layer for adult-user profile photos (parents, teachers,
@@ -22,6 +31,33 @@ const STORAGE_ROOT = process.env.AVATAR_STORAGE_DIR
   || path.resolve(process.cwd(), "../../data/avatars");
 
 const PUBLIC_URL_PREFIX = process.env.AVATAR_PUBLIC_URL_PREFIX || "/api/avatars";
+
+/**
+ * S3 backend (e.g. in-cluster MinIO). Enabled when `AVATAR_S3_BUCKET` is set.
+ * When enabled, files live in `<bucket>/<userId>/<file>` and `/api/avatars/...`
+ * GETs are streamed via the route registered in `src/index.ts`.
+ */
+const S3_BUCKET = process.env.AVATAR_S3_BUCKET || "";
+const S3_ENABLED = S3_BUCKET.length > 0;
+let s3Client: S3Client | null = null;
+function getS3(): S3Client {
+  if (!s3Client) {
+    s3Client = new S3Client({
+      region: process.env.AVATAR_S3_REGION || "us-east-1",
+      endpoint: process.env.AVATAR_S3_ENDPOINT || undefined,
+      forcePathStyle: (process.env.AVATAR_S3_FORCE_PATH_STYLE || "true") === "true",
+      credentials: process.env.AVATAR_S3_ACCESS_KEY_ID
+        ? {
+            accessKeyId: process.env.AVATAR_S3_ACCESS_KEY_ID,
+            secretAccessKey: process.env.AVATAR_S3_SECRET_ACCESS_KEY || "",
+          }
+        : undefined,
+    });
+  }
+  return s3Client;
+}
+
+export const AVATAR_S3_ENABLED = S3_ENABLED;
 
 export const AVATAR_STORAGE_ROOT = STORAGE_ROOT;
 export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
@@ -136,9 +172,27 @@ export async function processAndStoreAvatar(opts: {
   const thumbName = `${hash}-thumb.webp`;
 
   const userDir = path.join(STORAGE_ROOT, userId);
-  await ensureDir(userDir);
-  await fs.writeFile(path.join(userDir, mainName), main);
-  await fs.writeFile(path.join(userDir, thumbName), thumb);
+  if (S3_ENABLED) {
+    const s3 = getS3();
+    await s3.send(new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: `${userId}/${mainName}`,
+      Body: main,
+      ContentType: "image/webp",
+      CacheControl: "public, max-age=604800",
+    }));
+    await s3.send(new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: `${userId}/${thumbName}`,
+      Body: thumb,
+      ContentType: "image/webp",
+      CacheControl: "public, max-age=604800",
+    }));
+  } else {
+    await ensureDir(userDir);
+    await fs.writeFile(path.join(userDir, mainName), main);
+    await fs.writeFile(path.join(userDir, thumbName), thumb);
+  }
 
   return {
     url: publicUrlFor(userId, mainName),
@@ -156,6 +210,25 @@ export async function processAndStoreAvatar(opts: {
  * photo). Missing files are not an error.
  */
 export async function deleteAvatarsFor(userId: string): Promise<void> {
+  if (S3_ENABLED) {
+    const s3 = getS3();
+    try {
+      const list = await s3.send(new ListObjectsV2Command({
+        Bucket: S3_BUCKET,
+        Prefix: `${userId}/`,
+      }));
+      const keys = (list.Contents || []).map((o) => ({ Key: o.Key! })).filter((k) => k.Key);
+      if (keys.length > 0) {
+        await s3.send(new DeleteObjectsCommand({
+          Bucket: S3_BUCKET,
+          Delete: { Objects: keys, Quiet: true },
+        }));
+      }
+    } catch {
+      // best-effort
+    }
+    return;
+  }
   const userDir = path.join(STORAGE_ROOT, userId);
   try {
     await fs.rm(userDir, { recursive: true, force: true });
@@ -181,6 +254,14 @@ export async function deletePreviousAvatarUrl(
   if (file.includes("..") || file.includes("/")) return;
   // Also remove the matching thumb.
   const baseName = file.replace(/\.webp$/, "");
+  if (S3_ENABLED) {
+    const s3 = getS3();
+    await Promise.all([
+      s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: `${userId}/${file}` })).catch(() => undefined),
+      s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: `${userId}/${baseName}-thumb.webp` })).catch(() => undefined),
+    ]);
+    return;
+  }
   const targets = [
     path.join(STORAGE_ROOT, userId, file),
     path.join(STORAGE_ROOT, userId, `${baseName}-thumb.webp`),
@@ -188,4 +269,33 @@ export async function deletePreviousAvatarUrl(
   await Promise.all(
     targets.map((p) => fs.rm(p, { force: true }).catch(() => undefined)),
   );
+}
+
+/**
+ * Stream an avatar object from S3. Returns null if the object doesn't exist
+ * or the backend isn't S3.
+ */
+export async function getAvatarObjectFromS3(
+  userId: string,
+  file: string,
+): Promise<{ body: Readable; contentType: string; contentLength?: number; etag?: string } | null> {
+  if (!S3_ENABLED) return null;
+  if (file.includes("..") || file.includes("/")) return null;
+  try {
+    const out = await getS3().send(new GetObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: `${userId}/${file}`,
+    }));
+    return {
+      body: out.Body as Readable,
+      contentType: out.ContentType || "image/webp",
+      contentLength: out.ContentLength,
+      etag: out.ETag,
+    };
+  } catch (err: any) {
+    if (err?.$metadata?.httpStatusCode === 404 || err?.name === "NoSuchKey") {
+      return null;
+    }
+    throw err;
+  }
 }
