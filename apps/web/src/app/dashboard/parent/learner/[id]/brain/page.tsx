@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import BrainVisualization from "@/components/BrainVisualization";
+import BrainCloneCard from "@/components/brain/BrainCloneCard";
 import { useTranslations } from "next-intl";
 import { Brain, Palette, Lightbulb, Target } from "lucide-react";
 import { IconWell } from "@/components/discovery/_vi";
@@ -15,6 +16,7 @@ export default function ParentBrainProfilePage() {
   const t = useTranslations("parent");
 
   const [learnerName, setLearnerName] = useState("Learner");
+  const [learnerGrade, setLearnerGrade] = useState<string | null>(null);
   const [baselineCompleted, setBaselineCompleted] = useState(false);
 
   useEffect(() => {
@@ -23,7 +25,10 @@ export default function ParentBrainProfilePage() {
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         const found = (Array.isArray(data) ? data : []).find((l: any) => l.id === learnerId);
-        if (found) setLearnerName(found.name);
+        if (found) {
+          setLearnerName(found.name);
+          setLearnerGrade(found.gradeLevel ?? null);
+        }
       })
       .catch(() => {});
 
@@ -45,6 +50,23 @@ export default function ParentBrainProfilePage() {
         <h1 className="text-2xl font-heading font-bold vi-text mb-2">{t("brain_profile_title", { name: learnerName })}</h1>
         <p className="text-sm vi-text-muted">{t("brain_profile_desc")}</p>
       </div>
+
+      {/* Interactive brain map — Phase 1: anchored regions, hover, drill-in */}
+      {accessToken && (
+        <div className="vi-card p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <IconWell color="primary" size="sm"><Brain className="w-5 h-5" /></IconWell>
+            <h2 className="font-heading font-bold text-lg vi-text">Interactive Brain Map</h2>
+          </div>
+          <BrainCloneCard
+            learnerId={learnerId}
+            learnerName={learnerName}
+            enrolledGrade={learnerGrade}
+            accessToken={accessToken}
+            variant="full"
+          />
+        </div>
+      )}
 
       <div className="vi-card p-6">
         <div className="flex items-center gap-3 mb-4">

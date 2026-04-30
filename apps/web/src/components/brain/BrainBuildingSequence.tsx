@@ -205,7 +205,20 @@ export default function BrainBuildingSequence({
   const overallProgress = ((stageIdx) / (STAGE_ORDER.length - 1)) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a0a3e] via-[#0f172a] to-[#0c1222] text-white overflow-hidden">
+    <div
+      className="min-h-screen text-white overflow-hidden"
+      style={{
+        // The build sequence is intentionally cinematic/dark across all
+        // tiers, but we tint the deep-space base with the active tier's
+        // sky tone so K-5 reads as a softer aurora and 9-12 as cooler
+        // editorial. Falls back to the original violet/slate gradient
+        // when --tier-sky isn't set (e.g. preview routes without a
+        // TierThemeProvider).
+        backgroundImage:
+          "radial-gradient(ellipse at top, color-mix(in srgb, var(--tier-sky, #3F2D6E) 55%, transparent), transparent 70%), linear-gradient(to bottom right, #1a0a3e, #0f172a, #0c1222)",
+        backgroundColor: "#0c1222",
+      }}
+    >
       <div className="max-w-3xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">

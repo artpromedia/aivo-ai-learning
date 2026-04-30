@@ -5,6 +5,7 @@ import { useEffect, useState, createContext, useContext, useCallback } from "rea
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { TierThemeProvider } from "@aivo/learner-ui";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useTenantBranding } from "@/lib/use-tenant-branding";
 import {
@@ -195,7 +196,8 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
 
   return (
     <ParentLayoutContext.Provider value={{ learners, activeLearner, setActiveLearner, unreadCount, refreshLearners, refreshUnread }}>
-      <div className="min-h-screen vi-bg">
+      <TierThemeProvider gradeLevel={activeLearner?.gradeLevel ?? null}>
+      <div className="min-h-screen vi-bg" data-parent-tier={activeLearner?.gradeLevel ?? "none"}>
         <nav
           aria-label="Parent sidebar"
           className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:flex-col"
@@ -443,6 +445,7 @@ export default function ParentDashboardLayout({ children }: { children: React.Re
           )}
         </nav>
       </div>
+      </TierThemeProvider>
     </ParentLayoutContext.Provider>
   );
 }

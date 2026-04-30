@@ -11,6 +11,7 @@ import {
   Target,
   TrendingUp,
 } from "lucide-react";
+import BrainCloneCard from "@/components/brain/BrainCloneCard";
 
 interface LearnerSummaryCardProps {
   learner: {
@@ -26,6 +27,9 @@ interface LearnerSummaryCardProps {
   pendingReview?: boolean;
   baselineCompleted?: boolean;
   pendingRecommendations?: number;
+  /** Token used to fetch the brain preview. When omitted, the preview
+   *  is hidden — the parent dashboard supplies it once authenticated. */
+  accessToken?: string | null;
 }
 
 const LEVEL_LABELS: Record<string, string> = {
@@ -52,6 +56,7 @@ export function LearnerSummaryCard({
   pendingReview = false,
   baselineCompleted = false,
   pendingRecommendations = 0,
+  accessToken,
 }: LearnerSummaryCardProps) {
   const router = useRouter();
 
@@ -159,6 +164,27 @@ export function LearnerSummaryCard({
                 {badgeCount} badge{badgeCount !== 1 ? "s" : ""}
               </span>
             )}
+          </div>
+        )}
+
+        {/* Brain Clone preview — only shown once the brain has been built.
+            Stops click-bubbling so interacting with the brain (hover/click
+            a region) does not also navigate to the learner detail page. */}
+        {hasBrain && accessToken && (
+          <div
+            className="mb-4"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            role="presentation"
+          >
+            <BrainCloneCard
+              learnerId={learner.id}
+              learnerName={learner.name}
+              enrolledGrade={learner.gradeLevel ?? null}
+              accessToken={accessToken}
+              variant="card"
+              summary={{ streak, badgeCount }}
+            />
           </div>
         )}
 

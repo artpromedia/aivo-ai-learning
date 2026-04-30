@@ -7,6 +7,7 @@ import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
 import BrainSphere from "@/components/brain/BrainSphere";
 import BrainBuildingSequence from "@/components/brain/BrainBuildingSequence";
+import MasterToChildClone from "@/components/brain/MasterToChildClone";
 import { useTranslations } from "next-intl";
 import { Brain, CheckCircle2, RefreshCw, RotateCcw, Compass, Search, BarChart3, Shield, GraduationCap, ClipboardList, Lock, Users2, BookOpen, Microscope, Landmark, Code2, MessageCircle, Heart, Puzzle, Home, Target, Palette, Wrench, Dna, Plus, Check, type LucideIcon } from "lucide-react";
 import { subjectIcon, subjectBarClass, subjectWellClass } from "@/lib/subject-icons";
@@ -524,25 +525,15 @@ export default function BrainReviewPage() {
   }
 
   if (pageMode === "cloning") {
+    const cloningName = preCloneData?.learner?.name || review?.learner_name || "your child";
     return (
-      <div className="min-h-screen vi-bg vi-text flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative mx-auto w-48 h-48 mb-6">
-            <div className="absolute inset-0 rounded-full border-2 border-dashed border-[hsl(var(--visual-primary)/0.40)] animate-spin" style={{ animationDuration: "20s" }} />
-            <div className="absolute inset-4 rounded-full border border-dashed border-[hsl(var(--visual-reading)/0.30)] animate-spin" style={{ animationDuration: "15s", animationDirection: "reverse" }} />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Brain className="w-16 h-16 text-[hsl(var(--visual-primary))] animate-pulse" />
-            </div>
-          </div>
-          <h2 className="font-heading font-bold text-xl mb-2 vi-text">Building the Brain...</h2>
-          <p className="vi-text-muted text-sm font-body">Analyzing assessment data and constructing a personalized learning profile</p>
-          <div className="flex gap-1 justify-center mt-4">
-            <div className="w-2 h-2 rounded-full bg-[hsl(var(--visual-primary))] animate-bounce" style={{ animationDelay: "0ms" }} />
-            <div className="w-2 h-2 rounded-full bg-[hsl(var(--visual-primary))] animate-bounce" style={{ animationDelay: "150ms" }} />
-            <div className="w-2 h-2 rounded-full bg-[hsl(var(--visual-primary))] animate-bounce" style={{ animationDelay: "300ms" }} />
-          </div>
-        </div>
-      </div>
+      <MasterToChildClone
+        learnerName={cloningName}
+        // Don't auto-advance — the API call drives the transition to
+        // "building" once the clone returns. The animation loop just
+        // keeps progress at 100 % when it finishes its 5s arc.
+        onComplete={undefined}
+      />
     );
   }
 

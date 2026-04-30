@@ -450,6 +450,7 @@ export default function ParentDashboard() {
                 hasBrain={!!hasBrain[l.id]}
                 pendingReview={!!pendingReviews[l.id]}
                 baselineCompleted={!!baselineCompleted[l.id]}
+                accessToken={accessToken}
               />
             );
           })}

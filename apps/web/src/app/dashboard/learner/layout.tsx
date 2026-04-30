@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { TierThemeProvider } from "@aivo/learner-ui";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -20,9 +21,16 @@ interface LearnerRecord {
  * The provider writes `--tier-*` CSS variables to `document.documentElement`
  * and exposes the same theme via the `useTierTheme()` hook for components
  * that want conditional logic (e.g. mascot vs. no-mascot hero).
+ *
+ * When a parent enters this layout (e.g. running the baseline adventure on
+ * behalf of a child via `?learnerId=…`), the queried learner takes priority
+ * over the parent's "first learner" so the tier matches the child the
+ * adventure is actually for.
  */
 export default function LearnerLayout({ children }: { children: React.ReactNode }) {
   const { user, accessToken } = useAuth();
+  const searchParams = useSearchParams();
+  const queriedLearnerId = searchParams.get("learnerId");
   const [gradeLevel, setGradeLevel] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,11 +51,13 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
           setGradeLevel(null);
           return;
         }
-        // If the logged-in user is a LEARNER, prefer their own record;
-        // otherwise (PARENT/TEACHER viewing a child), fall back to the
-        // first available learner.
+        // Priority: explicit ?learnerId query (parent acting on behalf of a
+        // child) > the logged-in learner's own record > first available.
+        const queried = queriedLearnerId
+          ? data.find((l) => l.id === queriedLearnerId || l.userId === queriedLearnerId)
+          : null;
         const own = data.find((l) => l.userId === user.id || l.id === user.id);
-        const chosen = own ?? data[0];
+        const chosen = queried ?? own ?? data[0];
         setGradeLevel(chosen?.gradeLevel ?? null);
       })
       .catch(() => {
@@ -57,7 +67,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
     return () => {
       cancelled = true;
     };
-  }, [user?.id, accessToken]);
+  }, [user?.id, accessToken, queriedLearnerId]);
 
   return (
     <TierThemeProvider gradeLevel={gradeLevel}>
