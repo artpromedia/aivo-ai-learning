@@ -1,56 +1,25 @@
-"use client";
-import { useEffect, useState } from "react";
 import {
-  StickyHeader,
-  Hero,
   TrustStrip,
-  Features,
   HowItWorks,
   FunctioningLevels,
   BrainClone,
   TutorCarousel,
   Pricing,
   Testimonials,
-  FAQ,
+  FAQ as Faq,
   CTASection,
   Footer,
   TUTORS,
 } from "@/components/marketing";
-
-function useParallax() {
-  const [scrollY, setScrollY] = useState(0);
-  useEffect(() => {
-    let ticking = false;
-    function onScroll() {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          setScrollY(window.scrollY);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    }
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-  return scrollY;
-}
+import { HomePageHeroShell } from "@/components/marketing/HomePageHeroShell";
 
 export default function Home() {
-  const scrollY = useParallax();
-
   return (
     <div className="min-h-screen bg-white">
-      <StickyHeader scrollY={scrollY} />
-
       <main>
-        <Hero scrollY={scrollY} />
+        <HomePageHeroShell />
 
         <TrustStrip />
-
-        <div id="features">
-          <Features scrollY={scrollY} />
-        </div>
 
         <HowItWorks />
 
@@ -71,7 +40,7 @@ export default function Home() {
         <Pricing />
 
         <div id="faq">
-          <FAQ />
+          <Faq />
         </div>
 
         <CTASection />

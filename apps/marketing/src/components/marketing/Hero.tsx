@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowRight, CheckCircle2, Flame, PlayCircle, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Flame, PauseCircle, PlayCircle, Sparkles } from "lucide-react";
 import { trackCTAClick, trackSignupInitiation } from "@/lib/analytics";
 import { WEB_APP_URL } from "@/lib/constants";
 
@@ -42,23 +42,17 @@ const SLIDES: Slide[] = [
   },
 ];
 
-const SLIDE_INTERVAL_MS = 5000;
+const SLIDE_INTERVAL_MS = 10000;
 
-export function Hero({ scrollY }: { scrollY: number }) {
+export function Hero({ scrollY }: Readonly<{ scrollY: number }>) {
   const t = useTranslations("marketing.hero");
-  const [visible, setVisible] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setVisible(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (typeof globalThis === "undefined" || !("matchMedia" in globalThis)) return;
+    const mq = globalThis.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setPrefersReducedMotion(mq.matches);
     update();
     mq.addEventListener("change", update);
@@ -68,8 +62,8 @@ export function Hero({ scrollY }: { scrollY: number }) {
   // Disable parallax on small screens / low-power devices to avoid jank
   const [parallaxEnabled, setParallaxEnabled] = useState(false);
   useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(min-width: 768px) and (prefers-reduced-motion: no-preference)");
+    if (typeof globalThis === "undefined" || !("matchMedia" in globalThis)) return;
+    const mq = globalThis.matchMedia("(min-width: 768px) and (prefers-reduced-motion: no-preference)");
     const update = () => setParallaxEnabled(mq.matches);
     update();
     mq.addEventListener("change", update);
@@ -77,12 +71,12 @@ export function Hero({ scrollY }: { scrollY: number }) {
   }, []);
 
   useEffect(() => {
-    if (paused || prefersReducedMotion) return;
-    const id = window.setInterval(() => {
+    if (!autoPlay || prefersReducedMotion) return;
+    const id = globalThis.setInterval(() => {
       setActiveSlide((i) => (i + 1) % SLIDES.length);
     }, SLIDE_INTERVAL_MS);
-    return () => window.clearInterval(id);
-  }, [paused, prefersReducedMotion]);
+    return () => globalThis.clearInterval(id);
+  }, [autoPlay, prefersReducedMotion]);
 
   const STATS = [
     { value: "14", label: t("stat_tutors"), icon: "👨‍🏫" },
@@ -105,7 +99,7 @@ export function Hero({ scrollY }: { scrollY: number }) {
 
       <div className="relative max-w-6xl mx-auto px-6 md:px-8 pt-16 pb-20 md:pt-24 md:pb-28">
         <div
-          className={`grid md:grid-cols-2 gap-12 items-center transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
+          className="grid md:grid-cols-2 gap-12 items-center"
           style={{ transform: parallaxEnabled ? `translateY(${scrollY * -0.05}px)` : undefined }}
         >
           <div className="space-y-7 text-center md:text-left">
@@ -162,12 +156,10 @@ export function Hero({ scrollY }: { scrollY: number }) {
 
           <div
             className="relative w-full max-w-lg mx-auto md:max-w-none"
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
-            onFocus={() => setPaused(true)}
-            onBlur={() => setPaused(false)}
+            onMouseEnter={() => setAutoPlay(false)}
           >
             <div
+              aria-hidden="true"
               className="absolute -top-4 -right-4 z-20 bg-white p-4 rounded-2xl shadow-2xl border border-slate-100 rotate-3 animate-float-slow motion-reduce:animate-none"
               style={{ animationDelay: "0.5s" }}
             >
@@ -182,6 +174,7 @@ export function Hero({ scrollY }: { scrollY: number }) {
               </div>
             </div>
             <div
+              aria-hidden="true"
               key={current.tutor.name}
               className="absolute -bottom-4 -left-4 z-20 bg-white p-3 pr-5 rounded-2xl shadow-2xl border border-slate-100 -rotate-3 animate-float-slow motion-reduce:animate-none flex items-center gap-3 transition-all duration-500"
             >
@@ -206,34 +199,45 @@ export function Hero({ scrollY }: { scrollY: number }) {
               aria-roledescription="carousel"
               aria-label="Learners using AIVO"
             >
-              {SLIDES.map((slide, i) => (
-                <div
-                  key={slide.src}
-                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out motion-reduce:transition-none ${i === activeSlide ? "opacity-100" : "opacity-0"}`}
-                  aria-hidden={i !== activeSlide}
-                >
-                  <Image
-                    src={slide.src}
-                    alt={slide.alt}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    priority={i === 0}
-                  />
-                </div>
-              ))}
+              <div className="absolute inset-0">
+                <Image
+                  key={current.src}
+                  src={current.src}
+                  alt={current.alt}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority={activeSlide === 0}
+                />
+              </div>
 
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-3 py-2">
                 {SLIDES.map((slide, i) => (
                   <button
                     key={slide.src}
                     type="button"
-                    onClick={() => setActiveSlide(i)}
+                    onClick={() => {
+                      setAutoPlay(false);
+                      setActiveSlide(i);
+                    }}
                     aria-label={`Show slide ${i + 1} of ${SLIDES.length}`}
                     aria-current={i === activeSlide}
                     className={`h-2 rounded-full transition-all ${i === activeSlide ? "w-6 bg-white" : "w-2 bg-white/60 hover:bg-white/80"}`}
                   />
                 ))}
+                <button
+                  type="button"
+                  onClick={() => setAutoPlay((value) => !value)}
+                  aria-label={autoPlay ? "Pause automatic slide rotation" : "Play automatic slide rotation"}
+                  aria-pressed={autoPlay}
+                  className="ml-1 inline-flex items-center justify-center text-white/90 hover:text-white transition"
+                >
+                  {autoPlay ? (
+                    <PauseCircle className="w-5 h-5" aria-hidden="true" />
+                  ) : (
+                    <PlayCircle className="w-5 h-5" aria-hidden="true" />
+                  )}
+                </button>
               </div>
             </div>
           </div>
