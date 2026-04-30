@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { TierThemeProvider } from "@aivo/learner-ui";
 import { useAuth } from "@/providers/auth-provider";
@@ -28,6 +28,14 @@ interface LearnerRecord {
  * adventure is actually for.
  */
 export default function LearnerLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#FFFAEF" }} />}>
+      <LearnerLayoutInner>{children}</LearnerLayoutInner>
+    </Suspense>
+  );
+}
+
+function LearnerLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, accessToken } = useAuth();
   const searchParams = useSearchParams();
   const queriedLearnerId = searchParams.get("learnerId");
