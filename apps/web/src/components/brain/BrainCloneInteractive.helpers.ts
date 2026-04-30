@@ -30,6 +30,17 @@ export function gradeToNumber(g: string | number | null | undefined): number {
 }
 
 /**
+ * Format an enrolled grade number back into a human-friendly label.
+ * Mirrors the inverse of `gradeToNumber`, so 0 renders as "K" rather
+ * than the bare numeric "0" parents would not recognise.
+ */
+export function formatGrade(enrolled: number): string {
+  if (!Number.isFinite(enrolled)) return "—";
+  if (enrolled <= 0) return "K";
+  return String(enrolled);
+}
+
+/**
  * Compute the visual + textual status for a region given its mastery
  * (0..1) and the learner's enrolled grade. Bands:
  *  - strong       : on or above grade (gap ≤ 0.25 yrs)
@@ -52,13 +63,14 @@ export function statusFor(
   }
   const equivalent = mastery * Math.max(enrolled, 1);
   const gap = enrolled - equivalent;
+  const enrolledLabel = formatGrade(enrolled);
   if (gap <= 0.25) {
     return {
       band: "strong",
       fill: "rgba(16,185,129,0.55)",
       ring: "rgba(16,185,129,0.95)",
       label: "On or above grade",
-      description: `Performing at grade ${equivalent.toFixed(1)} against an enrolled grade of ${enrolled}.`,
+      description: `Performing at grade ${equivalent.toFixed(1)} against an enrolled grade of ${enrolledLabel}.`,
     };
   }
   if (gap <= 1.5) {

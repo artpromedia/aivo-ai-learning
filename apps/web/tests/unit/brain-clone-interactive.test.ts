@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 
 import {
   domainToSlot,
+  formatGrade,
   gradeToNumber,
   pulseSecondsFor,
   statusFor,
@@ -98,4 +99,23 @@ test("domainToSlot maps the canonical 6 domains", () => {
 test("domainToSlot returns null for unknown domains so the caller can fall back", () => {
   assert.equal(domainToSlot("art"), null);
   assert.equal(domainToSlot(""), null);
+});
+
+test("formatGrade renders Kindergarten as 'K' rather than '0'", () => {
+  // The "strong" status copy embeds the enrolled grade. K = 0 internally,
+  // but parents read "K" — never "0" — so formatGrade is the canonical
+  // way to surface enrolled.
+  assert.equal(formatGrade(0), "K");
+  assert.equal(formatGrade(-1), "K");
+  assert.equal(formatGrade(3), "3");
+  assert.equal(formatGrade(10), "10");
+  assert.equal(formatGrade(NaN), "—");
+});
+
+test("statusFor descriptions render Kindergarten as 'K' for enrolled-grade copy", () => {
+  // Mastery 1.0, enrolled 0 (K) → on-grade band → description must
+  // contain "enrolled grade of K", not "enrolled grade of 0".
+  const s = statusFor(1.0, 0);
+  assert.equal(s.band, "strong");
+  assert.match(s.description, /enrolled grade of K/);
 });
