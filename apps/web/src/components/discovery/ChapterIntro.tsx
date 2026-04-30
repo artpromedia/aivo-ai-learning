@@ -24,7 +24,7 @@ export default function ChapterIntro({ chapter, chapterNumber, totalChapters, on
 
   if (phase === "ready") {
     return (
-      <div className="fixed inset-0 vi-bg flex flex-col items-center justify-center overflow-y-auto py-8 pt-20">
+      <div className="fixed inset-0 vi-bg tier-scene-bg flex flex-col items-center justify-center overflow-y-auto py-8 pt-20">
         <div className="relative w-full max-w-md mx-auto px-6">
           <section className="vi-card p-8 text-center" style={{ borderColor: `${subjectColor}26` }}>
             <div className="mx-auto mb-5 inline-flex">
@@ -68,7 +68,7 @@ export default function ChapterIntro({ chapter, chapterNumber, totalChapters, on
   }
 
   return (
-    <div className="fixed inset-0 vi-bg flex flex-col items-center justify-center overflow-y-auto py-8 pt-20">
+    <div className="fixed inset-0 vi-bg tier-scene-bg flex flex-col items-center justify-center overflow-y-auto py-8 pt-20">
       <div className="relative w-full max-w-md mx-auto px-6">
         <section
           className="vi-card p-8 text-center relative overflow-hidden"

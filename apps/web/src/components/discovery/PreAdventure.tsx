@@ -28,7 +28,7 @@ export default function PreAdventure({ learnerName, onStart, onShowMap }: PreAdv
   const displayTutor = TUTORS[displayIntro.tutorKey];
 
   return (
-    <div className="fixed inset-0 vi-bg flex flex-col items-center justify-center overflow-y-auto py-8">
+    <div className="fixed inset-0 vi-bg tier-scene-bg flex flex-col items-center justify-center overflow-y-auto py-8">
       <div className="relative w-full max-w-xl mx-auto px-6">
         <section className="vi-card p-8 md:p-10 bg-gradient-to-br from-white via-[hsl(262_83%_58%/0.04)] to-[hsl(43_100%_50%/0.06)] border-2 border-[hsl(262_83%_58%/0.15)] text-center relative overflow-hidden">
           <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[hsl(43_100%_50%/0.18)] blur-2xl" aria-hidden />

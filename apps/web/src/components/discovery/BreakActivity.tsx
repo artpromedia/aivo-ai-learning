@@ -98,7 +98,7 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
 
   if (!selectedBreak) {
     return (
-      <div className="fixed inset-0 vi-bg flex items-center justify-center px-4">
+      <div className="fixed inset-0 vi-bg tier-scene-bg flex items-center justify-center px-4">
         <div className={`max-w-md w-full text-center transition-all duration-700 ${show ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}>
           <div className="text-5xl mb-4">🎉</div>
           {!isTextFree && (
@@ -152,7 +152,7 @@ export default function BreakActivity({ chapterNumber, onBreakComplete, function
   }
 
   return (
-    <div className="fixed inset-0 vi-bg flex items-center justify-center px-4">
+    <div className="fixed inset-0 vi-bg tier-scene-bg flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">
         {selectedBreak === "music" && (
           <div className="space-y-6">

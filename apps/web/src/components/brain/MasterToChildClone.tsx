@@ -22,6 +22,9 @@
  */
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Brain, Lock, Sparkles } from "lucide-react";
+import AudioMuteToggle from "@/components/AudioMuteToggle";
+import { playChime, playSwell } from "@/lib/audio";
+import { markSeenClone } from "@/lib/clone-flags";
 
 interface MasterToChildCloneProps {
   learnerName: string;
@@ -31,6 +34,12 @@ interface MasterToChildCloneProps {
   caption?: string;
   /** Total scripted duration in milliseconds. Defaults to 5000 (~5s). */
   durationMs?: number;
+  /**
+   * If provided, the component records that this learner's parent has now
+   * watched the cloning animation in full (used by the brain-review page
+   * to auto-skip on revisit while keeping a "Replay clone" button).
+   */
+  learnerId?: string;
 }
 
 const DOMAIN_PARTICLES = [
@@ -47,6 +56,7 @@ export default function MasterToChildClone({
   onComplete,
   caption,
   durationMs = 5000,
+  learnerId,
 }: MasterToChildCloneProps) {
   const reactId = useId();
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -54,6 +64,9 @@ export default function MasterToChildClone({
   const startedRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
   const completedRef = useRef(false);
+  const swellStopRef = useRef<(() => void) | null>(null);
+  // Each particle plays its own chime exactly once when it "arrives".
+  const chimedDomainsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
@@ -63,6 +76,15 @@ export default function MasterToChildClone({
     mq.addEventListener?.("change", update);
     return () => mq.removeEventListener?.("change", update);
   }, []);
+
+  // Start the ambient swell exactly once per mount; tear down on skip/unmount.
+  useEffect(() => {
+    swellStopRef.current = playSwell(durationMs / 1000);
+    return () => {
+      swellStopRef.current?.();
+      swellStopRef.current = null;
+    };
+  }, [durationMs]);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,6 +98,10 @@ export default function MasterToChildClone({
         rafRef.current = requestAnimationFrame(tick);
       } else if (!completedRef.current) {
         completedRef.current = true;
+        // Persist "seen" so the parent can opt into auto-skip on revisit
+        // and the "Replay clone" button on the review screen works as a
+        // deliberate replay rather than the only way to discover the moment.
+        if (learnerId) markSeenClone(learnerId);
         // Defer onComplete to the next macro-task so consumers can safely
         // unmount this component without React warning about state
         // updates during a render cycle.
@@ -87,12 +113,15 @@ export default function MasterToChildClone({
       cancelled = true;
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     };
-  }, [durationMs, onComplete]);
+  }, [durationMs, onComplete, learnerId]);
 
   const handleSkip = () => {
     if (completedRef.current) return;
     completedRef.current = true;
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    swellStopRef.current?.();
+    swellStopRef.current = null;
+    if (learnerId) markSeenClone(learnerId);
     setProgress(1);
     onComplete?.();
   };
@@ -102,6 +131,20 @@ export default function MasterToChildClone({
     () => Math.floor(progress * (DOMAIN_PARTICLES.length + 1)),
     [progress]
   );
+
+  // Fire a per-region chime exactly once when each particle first arrives.
+  // Uses a ref-set so React's StrictMode double-invocation in dev can't
+  // trigger duplicate audio. Pitches climb the C-major pentatonic so the
+  // sequence reads as a positive arpeggio regardless of domain ordering.
+  useEffect(() => {
+    const PENTATONIC = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5]; // C5 D5 E5 G5 A5 C6
+    for (let i = 0; i < arrivedCount && i < DOMAIN_PARTICLES.length; i++) {
+      const key = DOMAIN_PARTICLES[i].key;
+      if (chimedDomainsRef.current.has(key)) continue;
+      chimedDomainsRef.current.add(key);
+      playChime({ frequency: PENTATONIC[i % PENTATONIC.length], duration: 0.32, volume: 0.13 });
+    }
+  }, [arrivedCount]);
 
   return (
     <div
@@ -115,7 +158,10 @@ export default function MasterToChildClone({
       aria-live="polite"
       aria-label={`Cloning AIVO's learning model into ${learnerName}'s personal brain`}
     >
-      <div className="max-w-3xl w-full text-center">
+      <div className="max-w-3xl w-full text-center relative">
+        <div className="absolute right-0 top-0">
+          <AudioMuteToggle compact />
+        </div>
         <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider">
           <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
           Cloning Brain

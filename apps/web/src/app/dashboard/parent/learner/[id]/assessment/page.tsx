@@ -9,6 +9,8 @@ import {
   ShieldCheck, ListChecks,
 } from "lucide-react";
 import { IconWell } from "@/components/discovery/_vi";
+import SectionJourneyGraphic from "@/components/SectionJourneyGraphic";
+import ConfettiBurst from "@/components/ConfettiBurst";
 import {
   PARENT_ASSESSMENT_SECTIONS,
   REAL_SECTIONS,
@@ -216,6 +218,12 @@ export default function ParentAssessmentPage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Confetti is fired when transitioning forward to a brand-new section
+  // (not on initial load, not on skipping back). The trigger value bumps
+  // each time so successive completions all play.
+  const [confettiTrigger, setConfettiTrigger] = useState<number | null>(null);
+  const previousSectionIdx = useRef<number>(0);
+
   // ── Auth gating ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -332,8 +340,19 @@ export default function ParentAssessmentPage() {
 
   const goNextSection = () => {
     if (currentSectionIdx < REAL_SECTIONS.length - 1) {
+      // Celebrate completing this section — but only if the parent actually
+      // engaged with it (any answer recorded). Skipped sections shouldn't
+      // trigger fireworks.
+      const finishedSection = REAL_SECTIONS[currentSectionIdx];
+      const answered = countAnswered(finishedSection, answers, currentBand);
+      if (answered > 0) {
+        setConfettiTrigger(Date.now());
+      }
+      previousSectionIdx.current = currentSectionIdx + 1;
       goToSection(currentSectionIdx + 1);
     } else {
+      // Final section → wrap-up. Always celebrate; this is a real milestone.
+      setConfettiTrigger(Date.now());
       setScreen("wrap_up");
       if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -427,7 +446,9 @@ export default function ParentAssessmentPage() {
 
   if (submitted && result) return <SubmittedScreen
     result={result}
-    onContinue={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
+    learnerId={learnerId}
+    onContinue={() => router.push(`/dashboard/parent`)}
+    onContinueToBrain={() => router.push(`/dashboard/parent/learner/${learnerId}/brain-review`)}
     t={t}
   />;
 
@@ -463,6 +484,7 @@ export default function ParentAssessmentPage() {
   if (screen === "wrap_up") {
     return (
       <div className="min-h-screen vi-bg">
+        <ConfettiBurst triggerKey={confettiTrigger} />
         <Header
           learnerName={learnerName}
           totalAnswered={totalAnswered}
@@ -474,6 +496,12 @@ export default function ParentAssessmentPage() {
           t={t}
         />
         <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+          <SectionJourneyGraphic
+            sections={REAL_SECTIONS.map((s) => ({ key: s.key, label: s.label, shortLabel: s.shortLabel, icon: s.icon }))}
+            currentIdx={REAL_SECTIONS.length}
+            completed={REAL_SECTIONS.map((s) => countAnswered(s, answers, currentBand) === countTotal(s, currentBand))}
+            onJump={(i) => { setScreen("section"); goToSection(i); }}
+          />
           <SectionProgressChips
             currentIdx={REAL_SECTIONS.length}
             answers={answers}
@@ -507,6 +535,7 @@ export default function ParentAssessmentPage() {
   const section = REAL_SECTIONS[currentSectionIdx];
   return (
     <div className="min-h-screen vi-bg">
+      <ConfettiBurst triggerKey={confettiTrigger} />
       <Header
         learnerName={learnerName}
         totalAnswered={totalAnswered}
@@ -518,6 +547,12 @@ export default function ParentAssessmentPage() {
           t={t}
       />
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+        <SectionJourneyGraphic
+          sections={REAL_SECTIONS.map((s) => ({ key: s.key, label: s.label, shortLabel: s.shortLabel, icon: s.icon }))}
+          currentIdx={currentSectionIdx}
+          completed={REAL_SECTIONS.map((s) => countAnswered(s, answers, currentBand) === countTotal(s, currentBand))}
+          onJump={goToSection}
+        />
         <SectionProgressChips
           currentIdx={currentSectionIdx}
           answers={answers}
@@ -1717,12 +1752,17 @@ function AlreadyCompletedScreen({
 }
 
 function SubmittedScreen({
-  result, onContinue, t,
+  result, learnerId, onContinue, onContinueToBrain, t,
 }: {
   result: any;
+  learnerId: string;
   onContinue: () => void;
+  onContinueToBrain: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
+  // void learnerId so future analytics or deep-links can use it without
+  // adding it as a dead unused-warning.
+  void learnerId;
   return (
     <div className="min-h-screen vi-bg flex items-center justify-center px-4 py-8">
       <div className="max-w-lg w-full">
@@ -1753,18 +1793,37 @@ function SubmittedScreen({
                 </p>
               </div>
             )}
-            <div className="vi-card p-4 text-left" style={{ background: "hsl(43 100% 50% / 0.06)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
+            {/* Hand-off card → brain-review. Replaces the older generic
+                "next step" copy with an actionable bridge into the very
+                next thing the parent should do, since the assessment they
+                just completed is the input to the brain-clone flow. */}
+            <div className="vi-card p-5 text-left" style={{ background: "hsl(262 83% 58% / 0.06)", borderColor: "hsl(262 83% 58% / 0.3)" }}>
               <div className="flex items-start gap-3">
-                <IconWell color="sel" size="sm"><Compass className="w-5 h-5" strokeWidth={2.5} /></IconWell>
+                <IconWell color="primary" size="sm"><Compass className="w-5 h-5" strokeWidth={2.5} /></IconWell>
                 <div className="flex-1">
-                  <p className="text-sm font-extrabold text-[hsl(43_100%_50%)]">{t("next_step_baseline")}</p>
-                  <p className="text-xs vi-text-muted mt-1">{t("baseline_generic_desc")}</p>
+                  <p className="text-sm font-extrabold text-[hsl(262_83%_58%)]">Thanks — here&apos;s what we&apos;ll do next</p>
+                  <p className="text-xs vi-text-muted mt-1 leading-relaxed">
+                    We&apos;ll use what you just shared to clone a starting Brain for your child, then walk you through reviewing and approving it. Should take about a minute.
+                  </p>
                 </div>
               </div>
             </div>
-            <button onClick={onContinue} className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold shadow-xl shadow-[hsl(262_83%_58%/0.3)] hover:scale-105 active:scale-95 transition-transform" style={{ minHeight: "48px" }}>
-              {t("continue_to_profile")} <ChevronRight className="w-4 h-4" />
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={onContinueToBrain}
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold shadow-xl shadow-[hsl(262_83%_58%/0.3)] hover:scale-105 active:scale-95 transition-transform"
+                style={{ minHeight: "48px" }}
+              >
+                Build the Brain <ChevronRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={onContinue}
+                className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-full vi-surface-soft border vi-border vi-text-muted font-bold hover:bg-[hsl(var(--visual-surface))] transition"
+                style={{ minHeight: "44px" }}
+              >
+                {t("continue_to_profile")}
+              </button>
+            </div>
           </div>
         </section>
       </div>

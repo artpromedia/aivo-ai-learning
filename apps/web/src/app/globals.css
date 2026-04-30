@@ -115,6 +115,40 @@
   box-shadow: 0 4px 14px rgba(41, 47, 61, 0.06);
 }
 
+/* Tier-aware "scene" backdrop used by discovery chapters & finales.
+ *
+ * Sits on top of the same per-tier `--visual-bg` that `.vi-bg` consumes,
+ * but layers the atmospheric `--tier-sky` glow at the top and a soft
+ * `--tier-warm` haze at the bottom so each tier reads distinctly:
+ *   EARLY  — pastel meadow with peach warmth
+ *   MIDDLE — twilight violet sky over paper-cream night surface
+ *   HIGH   — warm paper-cream with editorial moss accent
+ *
+ * Falls back gracefully when no `<TierThemeProvider>` is mounted.
+ */
+.tier-scene-bg {
+  background-color: hsl(var(--visual-bg));
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in srgb, var(--tier-sky, #EDE3FE) 65%, transparent) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, color-mix(in srgb, var(--tier-warm, #F8C4A0) 30%, transparent) 0%, transparent 70%);
+}
+[data-tier="MIDDLE"] .tier-scene-bg {
+  /* Twilight tier needs a stronger top-down gradient because the
+     base surface is already dark. */
+  background-image:
+    radial-gradient(ellipse 80% 70% at 50% 0%, color-mix(in srgb, var(--tier-sky, #3F2D6E) 80%, transparent) 0%, transparent 75%),
+    linear-gradient(to bottom, transparent 60%, color-mix(in srgb, var(--tier-warm, #5D7A5C) 18%, transparent) 100%);
+}
+
+/* Pace-aware variant for animated decoration inside scenes — lets us write
+   `style={{ animationDuration: "var(--scene-anim-fast)" }}` etc. without
+   per-component math. */
+.tier-scene-bg {
+  --scene-anim-fast: calc(0.6s * var(--tier-pace, 1));
+  --scene-anim-medium: calc(1s * var(--tier-pace, 1));
+  --scene-anim-slow: calc(2s * var(--tier-pace, 1));
+}
+
 @theme {
   --color-primary: #7C3AED;
   --color-primary-light: #A78BFA;

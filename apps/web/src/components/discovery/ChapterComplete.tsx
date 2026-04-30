@@ -26,7 +26,7 @@ export default function ChapterComplete({ chapter, result, isLastChapter, onCont
   }, []);
 
   return (
-    <div className="fixed inset-0 vi-bg flex items-center justify-center overflow-y-auto py-8">
+    <div className="fixed inset-0 vi-bg tier-scene-bg flex items-center justify-center overflow-y-auto py-8">
       <div className={`relative w-full max-w-md mx-auto px-6 transition-all duration-700 ${show ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}>
         <section
           className="vi-card p-8 text-center relative overflow-hidden"

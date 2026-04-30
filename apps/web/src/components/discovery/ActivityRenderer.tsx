@@ -1,10 +1,13 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { Check, Heart, Sparkles } from "lucide-react";
+import { Check, Heart } from "lucide-react";
 import { TUTORS } from "@aivo/brand";
 import type { Activity, AdventureChapter, ActivityChoice } from "./types";
 import { IconWell, colorForTutor, VI_COLOR, VI_TINT } from "./_vi";
+import { playCorrectCue, playIncorrectCue } from "@/lib/audio";
+import { useTutorVoice } from "@/lib/useTutorVoice";
+import Mascot from "@/components/Mascot";
 
 interface ActivityRendererProps {
   activity: Activity;
@@ -28,6 +31,12 @@ export default function ActivityRenderer({
   const subjectColor = VI_COLOR[subjectKey];
   const subjectTint = VI_TINT[subjectKey];
 
+  // Speak the narration during the narrating phase, then the tutor line
+  // once choices are showing. Mute toggle and reduced-motion fallback live
+  // inside the hook so call sites don't repeat the gating.
+  useTutorVoice(phase === "narrating" ? activity.narration : null);
+  useTutorVoice(phase !== "narrating" && showChoices ? activity.tutorLine : null);
+
   useEffect(() => {
     setPhase("narrating");
     setSelected(null);
@@ -44,11 +53,13 @@ export default function ActivityRenderer({
     setIsCorrect(choice.isCorrect);
     setPhase("feedback");
     const latency = Date.now() - promptStartRef.current;
+    if (choice.isCorrect) playCorrectCue();
+    else playIncorrectCue();
     setTimeout(() => onAnswer(choice.isCorrect, latency), 1800);
   };
 
   return (
-    <div className="fixed inset-0 vi-bg flex flex-col overflow-hidden pt-20">
+    <div className="fixed inset-0 vi-bg tier-scene-bg flex flex-col overflow-hidden pt-20">
       <div className="max-w-3xl mx-auto w-full px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg" aria-hidden>{chapter.landmark.emoji}</span>
@@ -79,9 +90,13 @@ export default function ActivityRenderer({
               }}
             >
               <div className="mx-auto mb-2 inline-flex">
-                <IconWell color={isCorrect ? "science" : "sel"} size="md">
-                  {isCorrect ? <Sparkles className="w-7 h-7" strokeWidth={2.5} /> : <Heart className="w-7 h-7" strokeWidth={2.5} />}
-                </IconWell>
+                {isCorrect ? (
+                  <Mascot mood="cheer" size={72} label="Great job!" />
+                ) : (
+                  <IconWell color="sel" size="md">
+                    <Heart className="w-7 h-7" strokeWidth={2.5} />
+                  </IconWell>
+                )}
               </div>
               <p className="text-xl font-extrabold text-slate-900">{isCorrect ? "Amazing!" : "Good try!"}</p>
               <p className="text-sm text-slate-600 mt-1">{isCorrect ? "You got it right!" : "The adventure continues!"}</p>

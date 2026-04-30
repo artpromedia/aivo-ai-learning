@@ -1,13 +1,18 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { Trophy, Sparkles, Home, Award, Loader2, CheckCircle2 } from "lucide-react";
 import { TUTORS } from "@aivo/brand";
 import { ADVENTURE_CHAPTERS, TUTOR_INTROS, type ChapterResult, type FunctioningLevel } from "./types";
 import { IconWell } from "./_vi";
+import { loadBadges, unlockBadges, type UnlockedBadge } from "@/lib/badges";
 
 interface FinaleProps {
   learnerName: string;
+  /** Used to persist per-domain badges across sessions. Optional — if
+   *  unset (e.g. unauthenticated preview routes) badges still render but
+   *  aren't saved. */
+  learnerId?: string;
   chapterResults: ChapterResult[];
   totalCorrect: number;
   totalAttempts: number;
@@ -70,11 +75,45 @@ function describeSaveError(code: string | undefined, status: number | undefined)
 }
 
 export default function Finale({
-  learnerName, chapterResults, totalCorrect, totalAttempts, xpEarned,
+  learnerName, learnerId, chapterResults, totalCorrect, totalAttempts, xpEarned,
   onFinish, onExitHome, onSubmitResults,
 }: FinaleProps) {
   const [stage, setStage] = useState<FinaleStage>("celebration");
   const [step, setStep] = useState(0);
+
+  // Per-domain badges. We award one badge per chapter the learner reached
+  // ≥50% on (the same threshold the existing celebratory grid uses), then
+  // merge with whatever's already in localStorage so re-runs accumulate
+  // rather than reset the wall. The "Baseline Complete" badge is still
+  // surfaced separately above — these are *domain* badges (math/ela/etc.),
+  // resolved off each chapter's tutor key.
+  const earnedBadgeIds = useMemo(() => {
+    return chapterResults
+      .filter((r) => r.total > 0 && r.correct / r.total >= 0.5)
+      .map((r) => {
+        const ch = ADVENTURE_CHAPTERS.find((c) => c.id === r.chapterId);
+        return ch ? `domain:${ch.tutorKey}` : null;
+      })
+      .filter((x): x is string => !!x);
+  }, [chapterResults]);
+
+  const [unlockedBadges, setUnlockedBadges] = useState<UnlockedBadge[]>([]);
+
+  // On mount: hydrate already-unlocked badges, then merge in this run's
+  // newly earned ones. Triggering this in an effect (not a render) keeps
+  // SSR safe and avoids double-writes under StrictMode.
+  useEffect(() => {
+    if (!learnerId) {
+      setUnlockedBadges(earnedBadgeIds.map((id) => ({ id, unlockedAt: Date.now() })));
+      return;
+    }
+    setUnlockedBadges(loadBadges(learnerId));
+  }, [learnerId, earnedBadgeIds]);
+
+  useEffect(() => {
+    if (!learnerId || earnedBadgeIds.length === 0) return;
+    setUnlockedBadges(unlockBadges(learnerId, earnedBadgeIds));
+  }, [learnerId, earnedBadgeIds]);
 
   const [saveError, setSaveError] = useState<string>("");
   const [saveErrorCode, setSaveErrorCode] = useState<string | undefined>(undefined);
@@ -185,7 +224,7 @@ export default function Finale({
   };
 
   return (
-    <div className="fixed inset-0 vi-bg flex items-center justify-center overflow-y-auto py-8">
+    <div className="fixed inset-0 vi-bg tier-scene-bg flex items-center justify-center overflow-y-auto py-8">
       <div className="relative w-full max-w-md mx-auto px-6">
         <section className="vi-card p-8 bg-gradient-to-br from-white via-[hsl(262_83%_58%/0.04)] to-[hsl(43_100%_50%/0.06)] border-2 border-[hsl(262_83%_58%/0.15)] text-center relative overflow-hidden">
           <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[hsl(43_100%_50%/0.18)] blur-2xl" aria-hidden />
@@ -250,6 +289,41 @@ export default function Finale({
                   </div>
                 </div>
               </div>
+
+              {unlockedBadges.length > 0 && (
+                <div className="vi-card p-4 mt-3" aria-label="Badge wall">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3">Domain badges</p>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    {unlockedBadges.map((b) => {
+                      const tutorKey = b.id.startsWith("domain:") ? b.id.slice(7) : b.id;
+                      const tutor = TUTORS[tutorKey as keyof typeof TUTORS];
+                      const isFresh = earnedBadgeIds.includes(b.id);
+                      const tone = tutor?.color || "#7C3AED";
+                      return (
+                        <div
+                          key={b.id}
+                          className={`flex flex-col items-center gap-1 ${isFresh ? "scale-105" : "opacity-80"}`}
+                          title={tutor ? `${tutor.name} — unlocked` : b.id}
+                        >
+                          <div
+                            className="w-12 h-12 rounded-full flex items-center justify-center border-2 shadow-sm"
+                            style={{ borderColor: tone, background: `${tone}1a` }}
+                          >
+                            {tutor?.avatar ? (
+                              <Image src={tutor.avatar} alt={tutor.name} width={40} height={40} className="rounded-full object-cover" />
+                            ) : (
+                              <Sparkles className="w-5 h-5" style={{ color: tone }} />
+                            )}
+                          </div>
+                          <p className="text-[10px] font-bold text-slate-600 text-center max-w-[60px] leading-tight">
+                            {tutor?.name || b.id}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className={`transition-all duration-1000 ${step >= 4 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>

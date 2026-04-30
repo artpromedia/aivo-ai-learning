@@ -8,8 +8,9 @@ import { TUTORS, type TutorKey } from "@aivo/brand";
 import BrainSphere from "@/components/brain/BrainSphere";
 import BrainBuildingSequence from "@/components/brain/BrainBuildingSequence";
 import MasterToChildClone from "@/components/brain/MasterToChildClone";
+import { hasSeenClone } from "@/lib/clone-flags";
 import { useTranslations } from "next-intl";
-import { Brain, CheckCircle2, RefreshCw, RotateCcw, Compass, Search, BarChart3, Shield, GraduationCap, ClipboardList, Lock, Users2, BookOpen, Microscope, Landmark, Code2, MessageCircle, Heart, Puzzle, Home, Target, Palette, Wrench, Dna, Plus, Check, type LucideIcon } from "lucide-react";
+import { Brain, CheckCircle2, RefreshCw, RotateCcw, Compass, Search, BarChart3, Shield, GraduationCap, ClipboardList, Lock, Users2, BookOpen, Microscope, Landmark, Code2, MessageCircle, Heart, Puzzle, Home, Target, Palette, Wrench, Dna, Plus, Check, PlayCircle, type LucideIcon } from "lucide-react";
 import { subjectIcon, subjectBarClass, subjectWellClass } from "@/lib/subject-icons";
 import { IconWell } from "@/components/discovery/_vi";
 
@@ -175,6 +176,12 @@ export default function BrainReviewPage() {
 
   const [showStartOverConfirm, setShowStartOverConfirm] = useState(false);
   const [startOverReason, setStartOverReason] = useState("");
+
+  // Replay-clone overlay state. When true, the cloning animation is rendered
+  // on top of the review UI without re-calling the clone API; on completion
+  // we just dismiss it. Independent from `pageMode === "cloning"` which is
+  // reserved for the live first-time clone-and-build flow.
+  const [replayingClone, setReplayingClone] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -528,7 +535,18 @@ export default function BrainReviewPage() {
     const cloningName = preCloneData?.learner?.name || review?.learner_name || "your child";
     // The API call drives the transition to "building" once the clone
     // returns; the animation just runs ambiently in the meantime.
-    return <MasterToChildClone learnerName={cloningName} />;
+    // Once-per-child: if the parent has already watched the cloning moment
+    // for this learner, render a much shorter (~1.5s) version so re-builds
+    // don't feel padded — the deliberate "Replay clone" button on the
+    // review screen is how they revisit the full animation.
+    const seen = hasSeenClone(learnerId);
+    return (
+      <MasterToChildClone
+        learnerName={cloningName}
+        learnerId={learnerId}
+        durationMs={seen ? 1500 : 5000}
+      />
+    );
   }
 
   if (pageMode === "building" && review) {
@@ -573,9 +591,28 @@ export default function BrainReviewPage() {
 
   return (
     <div className="min-h-screen vi-bg">
+      {replayingClone && (
+        <div className="fixed inset-0 z-50">
+          <MasterToChildClone
+            learnerName={review.learner_name}
+            learnerId={learnerId}
+            durationMs={5000}
+            onComplete={() => setReplayingClone(false)}
+          />
+        </div>
+      )}
       <header className="bg-[hsl(var(--visual-surface)/0.95)] backdrop-blur border-b vi-border px-6 py-4 flex items-center justify-between">
         <Image src="/images/aivo-logo-purple.png" alt="AIVO" width={120} height={36} style={{ height: "auto" }} />
         <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setReplayingClone(true)}
+            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-[hsl(var(--visual-primary))] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--visual-primary))] rounded-full px-2 py-1"
+            aria-label="Replay the cloning animation for this learner"
+          >
+            <PlayCircle className="w-4 h-4" aria-hidden="true" />
+            Replay clone
+          </button>
           <Link href={`/dashboard/parent/learner/${learnerId}`} className="text-sm text-[hsl(var(--visual-primary))] font-semibold hover:underline">{t("back_to_profile")}</Link>
           <span className="text-sm font-semibold vi-text-muted">{user.name}</span>
         </div>

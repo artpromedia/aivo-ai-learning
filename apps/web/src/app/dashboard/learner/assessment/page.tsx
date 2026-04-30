@@ -282,6 +282,7 @@ function DiscoveryAdventureInner({
     return (
       <Finale
         learnerName={learnerName}
+        learnerId={learnerId}
         chapterResults={state.chapterResults}
         totalCorrect={state.totalCorrect}
         totalAttempts={state.totalAttempts}
