@@ -234,7 +234,7 @@ export default function MasterToChildClone({
               fontWeight="700"
               fill="rgba(255,255,255,0.85)"
             >
-              {learnerName}&apos;s Brain
+              {learnerName}'s Brain
             </text>
           </g>
 

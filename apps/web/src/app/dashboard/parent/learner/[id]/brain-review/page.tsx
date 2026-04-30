@@ -526,15 +526,9 @@ export default function BrainReviewPage() {
 
   if (pageMode === "cloning") {
     const cloningName = preCloneData?.learner?.name || review?.learner_name || "your child";
-    return (
-      <MasterToChildClone
-        learnerName={cloningName}
-        // Don't auto-advance — the API call drives the transition to
-        // "building" once the clone returns. The animation loop just
-        // keeps progress at 100 % when it finishes its 5s arc.
-        onComplete={undefined}
-      />
-    );
+    // The API call drives the transition to "building" once the clone
+    // returns; the animation just runs ambiently in the meantime.
+    return <MasterToChildClone learnerName={cloningName} />;
   }
 
   if (pageMode === "building" && review) {

@@ -159,6 +159,10 @@ export default function BrainCloneCard({
       id: domain,
       domain,
       label: labelFor(domain),
+      // The brain API normally returns mastery on a 0..1 scale, but a
+      // few legacy code paths still hand back 0..100 percentages. We
+      // guard by treating any value > 1 as a percentage and dividing —
+      // safe because a real mastery probability can never exceed 1.0.
       mastery: typeof score === "number" ? (score > 1 ? score / 100 : score) : 0,
       lastActivity: state.updatedAt ?? null,
       accommodations: accomByDomain[domain.toLowerCase()] ?? [],
