@@ -18,7 +18,7 @@ const CHECK_WHITE = (
   </svg>
 );
 
-const ANNUAL_DISCOUNT = 0.8; // 20% off when billed annually
+const ANNUAL_DISCOUNT = 0.8; // 20% discount when billed annually (customers pay 80% of monthly price)
 
 function formatAnnual(monthlyPrice: number): string {
   const discounted = Math.round(monthlyPrice * ANNUAL_DISCOUNT * 100) / 100;

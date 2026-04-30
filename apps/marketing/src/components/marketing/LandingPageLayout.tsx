@@ -43,7 +43,7 @@ export function LandingPageLayout({
           <Link href="/" className="flex items-center" aria-label="AIVO Learning home">
             <Image
               src="/images/aivo-logo-purple.png"
-              alt="AIVO"
+              alt=""
               width={130}
               height={40}
               priority

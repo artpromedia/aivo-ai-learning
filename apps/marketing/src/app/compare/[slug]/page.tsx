@@ -38,7 +38,6 @@ export default async function ComparePage({ params }: Props) {
       subtitle="An honest, side-by-side look at how the two platforms differ — written by us, fact-checked against public information from both vendors."
       breadcrumbs={[
         { name: "Home", href: "/" },
-        { name: "Compare", href: "/compare/aivo-vs-ixl" },
         { name: `AIVO vs ${comp.competitor}`, href: `/compare/${comp.slug}` },
       ]}
     >
