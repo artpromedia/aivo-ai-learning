@@ -112,8 +112,8 @@ export function useTTS(
       for (const v of voices) {
         const vLang = v.lang.toLowerCase();
         if (vLang === langTag) {
-          if (!exactNatural && v.name.toLowerCase().includes("natural")) {
-            exactNatural = v;
+          if (v.name.toLowerCase().includes("natural")) {
+            exactNatural ??= v;
             break; // best possible match — stop early
           }
           exact ??= v;
