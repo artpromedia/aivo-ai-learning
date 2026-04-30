@@ -40,7 +40,7 @@ export const actflWorldLanguagesNoviceLow: SkillGraph = {
     },
     {
       id: "actfl.nl.interp.menu",
-      title: "Recognise familiar words on a menu or sign",
+      title: "Recognize familiar words on a menu or sign",
       description: "I can find familiar words on a menu, sign, or schedule.",
       subject: "world_languages",
       gradeBand: "6",

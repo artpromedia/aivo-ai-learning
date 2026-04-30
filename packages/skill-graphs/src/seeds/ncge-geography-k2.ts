@@ -29,7 +29,7 @@ export const ngsGeographyK2: SkillGraph = {
     },
     {
       id: "ncge.k2.S2.1",
-      title: "Describe my neighbourhood with mental maps",
+      title: "Describe my neighborhood with mental maps",
       description: "I can draw a simple map of my home, classroom, or street.",
       subject: "geography",
       gradeBand: "K",
