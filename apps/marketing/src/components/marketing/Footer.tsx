@@ -21,7 +21,7 @@ function NewsletterSignup() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("Newsletter subscription failed");
       setStatus("success");
       trackFormSubmission("newsletter_signup");
       setEmail("");
@@ -48,19 +48,21 @@ function NewsletterSignup() {
         <button
           type="submit"
           disabled={status === "submitting" || status === "success"}
-          className="m-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-primary-dark px-5 py-2.5 text-sm font-bold text-white hover:opacity-95 transition disabled:opacity-70 shrink-0 min-h-[40px]"
+          className="m-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-linear-to-r from-primary to-primary-dark px-5 py-2.5 text-sm font-bold text-white hover:opacity-95 transition disabled:opacity-70 shrink-0 min-h-10"
         >
-          {status === "submitting" ? (
+          {status === "submitting" && (
             <>
               <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
               <span className="sr-only">Submitting</span>
             </>
-          ) : status === "success" ? (
+          )}
+          {status === "success" && (
             <>
               <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
               Subscribed
             </>
-          ) : (
+          )}
+          {status !== "submitting" && status !== "success" && (
             <>
               Subscribe
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
