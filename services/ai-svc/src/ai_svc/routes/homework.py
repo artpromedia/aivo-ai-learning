@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from ..vision.ocr_processor import process_ocr
 from ..vision.homework_adapter import adapt_homework
 from ..services.llm_gateway import generate_completion
-from ..services.prompt_builder import build_tutor_system_prompt
+from ..services.prompt_builder import build_tutor_system_prompt, _build_language_directive, _normalize_locale
 
 logger = logging.getLogger("ai-svc.homework")
 
@@ -38,6 +38,7 @@ class HomeworkChatRequest(BaseModel):
     homework_context: dict[str, Any] = Field(default_factory=dict)
     messages: list[dict[str, str]] = Field(default_factory=list)
     max_tokens: int = 1500
+    locale: str | None = None
 
 
 _HOMEWORK_AGENT_SYSTEM_PROMPT = """You are the AIVO Homework Helper — a patient, encouraging AI tutor that helps students work through their homework.
@@ -110,6 +111,7 @@ async def homework_chat(body: HomeworkChatRequest):
         tutor_sku=body.tutor_sku,
         brain_context=body.brain_context,
         functioning_level=body.functioning_level,
+        locale=body.locale,
     )
 
     homework_summary = ""
@@ -126,6 +128,12 @@ async def homework_chat(body: HomeworkChatRequest):
         tutor_context=f"You are acting as the homework helper with the persona context:\n{tutor_system[:500]}",
         homework_summary=homework_summary or "No specific homework loaded yet.",
     )
+
+    # Re-append the language directive AFTER the homework wrapper so the
+    # final instruction the model sees is "respond in {language}". The
+    # wrapper above is hard-coded English and would otherwise pull the
+    # response back to English even when the persona block asked for Spanish.
+    system_prompt += "\n" + _build_language_directive(_normalize_locale(body.locale))
 
     try:
         result = await generate_completion(

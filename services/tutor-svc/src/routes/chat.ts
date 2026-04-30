@@ -137,7 +137,7 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
 
   app.post("/api/tutor/session/:sessionId/message", async (request, reply) => {
     const { sessionId } = request.params as any;
-    const { message } = request.body as any;
+    const { message, locale } = request.body as any;
     if (!message) return reply.code(400).send({ error: "message required" });
 
     const [session] = await db.select().from(tutorSessions).where(eq(tutorSessions.id, sessionId));
@@ -169,6 +169,7 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
           functioning_level: session.functioningLevel || "STANDARD",
           brain_context: liveBrainContext,
           messages: chatMessages,
+          locale: typeof locale === "string" && locale ? locale : undefined,
         }),
       });
 

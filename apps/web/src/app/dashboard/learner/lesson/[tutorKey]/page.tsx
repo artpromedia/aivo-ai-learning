@@ -11,6 +11,7 @@ import { CelebrationOverlay } from "@/components/stage/CelebrationOverlay";
 import { useSensoryAdapter } from "@/components/stage/useSensoryAdapter";
 import { useSessionFlow } from "@/components/stage/useSessionFlow";
 import { useTTS } from "@/components/stage/useTTS";
+import { useLocale } from "@/providers/i18n-provider";
 import { TUTOR_THEMES } from "@/components/stage/types";
 import type { Beat, TutorState, FunctioningLevel } from "@/components/stage/types";
 
@@ -202,7 +203,8 @@ export default function LessonPage() {
 
   const { state, currentBeat, progress, setPhase, loadBeats, nextBeat, recordAnswer, cleanup } = useSessionFlow(tutorKey, user?.id || "", functioningLevel);
 
-  const { speak, stop: stopTTS, isSpeaking } = useTTS(tutorKey, adaptations);
+  const { locale } = useLocale();
+  const { speak, stop: stopTTS, isSpeaking } = useTTS(tutorKey, adaptations, locale);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");

@@ -6,7 +6,7 @@
  * §8 #2 Stage extraction (v2.1).
  */
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SensoryAdaptations } from "@aivo/stage-ui";
 
 const TUTOR_VOICE_PREFS: Record<string, { pitch: number; rate: number; lang: string }> = {
@@ -26,16 +26,55 @@ const TUTOR_VOICE_PREFS: Record<string, { pitch: number; rate: number; lang: str
   muse: { pitch: 1.1, rate: 0.9, lang: "en-US" },
 };
 
+/**
+ * Map a base locale (or full BCP-47 tag) to the BCP-47 voice locale used by
+ * the browser SpeechSynthesis API. Covers the locales advertised by the
+ * web app's i18n config.
+ */
+const LOCALE_TO_BCP47: Record<string, string> = {
+  en: "en-US",
+  es: "es-ES",
+  fr: "fr-FR",
+  de: "de-DE",
+  pt: "pt-BR",
+  zh: "zh-CN",
+  ja: "ja-JP",
+  ko: "ko-KR",
+  ar: "ar-SA",
+  hi: "hi-IN",
+};
+
+function resolveVoiceLang(locale: string | undefined, fallback: string): string {
+  if (!locale) return fallback;
+  const trimmed = locale.trim();
+  if (!trimmed) return fallback;
+  // Already a BCP-47 tag with region (e.g. "es-MX") — honour as-is.
+  if (trimmed.includes("-")) return trimmed;
+  const base = trimmed.toLowerCase();
+  return LOCALE_TO_BCP47[base] || fallback;
+}
+
 export interface UseTTSResult {
   speak: (text: string) => Promise<void>;
   stop: () => void;
   isSpeaking: boolean;
 }
 
-export function useTTS(tutorKey: string, adaptations: SensoryAdaptations): UseTTSResult {
+export function useTTS(
+  tutorKey: string,
+  adaptations: SensoryAdaptations,
+  locale?: string,
+): UseTTSResult {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const voicePrefs = TUTOR_VOICE_PREFS[tutorKey] || TUTOR_VOICE_PREFS.nova;
+  const basePrefs = TUTOR_VOICE_PREFS[tutorKey] || TUTOR_VOICE_PREFS.nova;
+  // Override the tutor's default lang when the learner has selected a
+  // non-English UI locale, so the tutor's spoken voice matches the language
+  // the LLM is now responding in.
+  const voicePrefs = useMemo(
+    () => ({ ...basePrefs, lang: resolveVoiceLang(locale, basePrefs.lang) }),
+    [basePrefs, locale],
+  );
 
   useEffect(() => {
     return () => {
@@ -58,10 +97,20 @@ export function useTTS(tutorKey: string, adaptations: SensoryAdaptations): UseTT
       utterance.volume = adaptations.volumeLevel;
       utterance.lang = voicePrefs.lang;
 
+      // Prefer a "natural" voice in the requested language, then any voice
+      // that matches the language family, then fall back to the browser
+      // default. The base-language match (e.g. any `es-*`) handles regional
+      // variants when the exact `lang` isn't installed.
       const voices = window.speechSynthesis.getVoices();
-      const preferred = voices.find(
-        (v) => v.lang.startsWith("en") && v.name.toLowerCase().includes("natural"),
-      ) || voices.find((v) => v.lang.startsWith("en"));
+      const langTag = voicePrefs.lang;
+      const baseLang = langTag.split("-")[0].toLowerCase();
+      const preferred =
+        voices.find(
+          (v) => v.lang.toLowerCase() === langTag.toLowerCase() && v.name.toLowerCase().includes("natural"),
+        ) ||
+        voices.find((v) => v.lang.toLowerCase() === langTag.toLowerCase()) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith(baseLang + "-")) ||
+        voices.find((v) => v.lang.toLowerCase().startsWith(baseLang));
       if (preferred) utterance.voice = preferred;
 
       utterance.onstart = () => setIsSpeaking(true);

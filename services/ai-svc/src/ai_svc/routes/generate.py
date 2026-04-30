@@ -42,6 +42,7 @@ class TutorChatRequest(BaseModel):
     brain_context: dict = {}
     messages: list[dict] = []
     max_tokens: int = 1500
+    locale: Optional[str] = None
 
 
 class TutorChatResponse(BaseModel):
@@ -104,6 +105,7 @@ async def tutor_chat(req: TutorChatRequest):
         tutor_sku=req.tutor_sku,
         brain_context=req.brain_context,
         functioning_level=req.functioning_level,
+        locale=req.locale,
     )
 
     messages = [{"role": "system", "content": system_prompt}]

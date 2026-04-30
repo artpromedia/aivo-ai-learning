@@ -126,7 +126,7 @@ export default function HomeworkSessionPage() {
       const res = await fetch(`/api/tutors/homework/session/${sessionId}/message`, {
         method: "POST",
         headers: h,
-        body: JSON.stringify({ message: userMessage }),
+        body: JSON.stringify({ message: userMessage, locale }),
       });
 
       if (!res.ok) throw new Error("Message failed");

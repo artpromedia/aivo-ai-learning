@@ -422,3 +422,125 @@ class TestDapeBlock:
         assert '## DAPE Track Active' in prompt
         assert 'active DAPE indicators on the IEP' in prompt
 
+
+# ---------------------------------------------------------------------------
+# Response-language directive: the prompt must instruct the tutor to
+# respond in the learner's selected UI locale.
+# ---------------------------------------------------------------------------
+class TestLanguageDirective:
+    def test_default_locale_renders_english_directive(self):
+        prompt = build_tutor_system_prompt("ADDON_TUTOR_MATH", {}, "STANDARD")
+        assert "## Response Language" in prompt
+        assert "English" in prompt
+
+    def test_explicit_english_locale_matches_default(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD", locale="en"
+        )
+        assert "## Response Language" in prompt
+        assert "Respond entirely in English" in prompt
+
+    def test_spanish_locale_renders_spanish_directive(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD", locale="es"
+        )
+        assert "Spanish" in prompt
+        assert "Respond entirely in Spanish" in prompt
+        # Non-English locales should also encourage subject-vocabulary glossing
+        assert "Translate or gloss subject-specific vocabulary" in prompt
+
+    def test_french_locale_renders_french_directive(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD", locale="fr"
+        )
+        assert "Respond entirely in French" in prompt
+
+    def test_full_bcp47_tag_is_normalised_to_base(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD", locale="es-MX"
+        )
+        assert "Respond entirely in Spanish" in prompt
+
+    def test_unknown_locale_falls_back_to_english(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD", locale="xx"
+        )
+        assert "Respond entirely in English" in prompt
+
+    def test_none_locale_falls_back_to_english(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD", locale=None
+        )
+        assert "Respond entirely in English" in prompt
+
+    def test_empty_string_locale_falls_back_to_english(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD", locale=""
+        )
+        assert "Respond entirely in English" in prompt
+
+    def test_directive_appears_after_persona_block(self):
+        # Putting the language directive last maximises adherence — we
+        # explicitly want the directive at the end of the prompt.
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD", locale="ja"
+        )
+        idx_persona = prompt.find("Subject Strategy")
+        idx_lang = prompt.find("Response Language")
+        assert idx_persona >= 0 and idx_lang > idx_persona
+
+    def test_locale_works_for_every_supported_language(self):
+        # All UI-supported locales must round-trip a coherent directive.
+        cases = {
+            "en": "English",
+            "es": "Spanish",
+            "fr": "French",
+            "de": "German",
+            "pt": "Portuguese",
+            "zh": "Chinese (Simplified)",
+            "ja": "Japanese",
+            "ko": "Korean",
+            "ar": "Arabic",
+            "hi": "Hindi",
+        }
+        for code, name in cases.items():
+            prompt = build_tutor_system_prompt(
+                "ADDON_TUTOR_MATH", {}, "STANDARD", locale=code
+            )
+            assert f"Respond entirely in {name}" in prompt, f"locale={code}"
+
+
+class TestLinguaLanguageProfile:
+    """Lingua expects a `language_profile` to drive bilingual scaffolding.
+    When the caller hasn't supplied one but a non-English locale is set,
+    the prompt builder should surface the locale as the learner's
+    dominant_language so the persona's protocol can engage."""
+
+    def test_lingua_synthesises_dominant_language_from_locale(self):
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_LANGUAGES", {}, "STANDARD", locale="es"
+        )
+        assert "## Language Profile" in prompt
+        assert "Dominant language: Spanish" in prompt
+
+    def test_lingua_respects_explicit_language_profile(self):
+        ctx = {
+            "language_profile": {
+                "dominant_language": "Spanish",
+                "target_language": "French",
+            }
+        }
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_LANGUAGES", ctx, "STANDARD", locale="es"
+        )
+        assert "Dominant language: Spanish" in prompt
+        assert "Target language: French" in prompt
+
+    def test_other_tutors_dont_synthesise_language_profile(self):
+        # Only Lingua needs a synthetic language_profile; other tutors
+        # carry the language directive without an extra block.
+        prompt = build_tutor_system_prompt(
+            "ADDON_TUTOR_MATH", {}, "STANDARD", locale="es"
+        )
+        assert "## Language Profile" not in prompt
+

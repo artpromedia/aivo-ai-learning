@@ -400,7 +400,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
     const { sessionId } = request.params as any;
-    const { message } = request.body as any;
+    const { message, locale } = request.body as any;
     if (!message) return reply.code(400).send({ error: "message required" });
 
     const [session] = await db
@@ -451,6 +451,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
               }
             : {},
           messages: existingMessages.map((m: any) => ({ role: m.role, content: m.content })),
+          locale: typeof locale === "string" && locale ? locale : undefined,
         }),
       });
 

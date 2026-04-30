@@ -61,13 +61,15 @@ export function useSendMessage() {
     mutationFn: async ({
       sessionId,
       message,
+      locale,
     }: {
       sessionId: string;
       message: string;
+      locale?: string;
     }) => {
       const res = await apiFetch(API.TUTOR, `/api/tutor/session/${sessionId}/message`, {
         method: 'POST',
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, locale }),
       });
       if (!res.ok) throw new Error('Failed to send message');
       return res.json();

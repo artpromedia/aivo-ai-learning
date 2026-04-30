@@ -67,6 +67,11 @@ interface PlanBody {
    *  this to ai-svc `brain_context` so the prompt builder renders the
    *  DAPE Track block defined in `prompt_builder._build_dape_block`. */
   dapeProfile?: DapeProfileSummary;
+  /** BCP-47 base locale (e.g. "es", "fr") for the learner's selected UI
+   *  language. The chat layer forwards this to ai-svc so persona system
+   *  prompts include a `Respond in {language}` directive. Optional —
+   *  defaults to English when omitted. */
+  locale?: string;
 }
 
 /** Hint to the caller that a tutor delegates part of its session to a

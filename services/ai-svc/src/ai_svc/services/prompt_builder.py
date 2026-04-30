@@ -3,6 +3,63 @@ from typing import Optional
 from ..prompts.tutor_personas import TUTOR_PERSONAS, FUNCTIONING_LEVEL_ADAPTATIONS
 
 
+# BCP-47 base locale → human-readable language name. Used to interpolate a
+# clear "Respond in {language}" directive into every persona's system prompt
+# so the agentic tutors honour the learner's selected UI locale.
+LANGUAGE_NAMES: dict[str, str] = {
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "de": "German",
+    "pt": "Portuguese",
+    "zh": "Chinese (Simplified)",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "ar": "Arabic",
+    "hi": "Hindi",
+}
+
+DEFAULT_LOCALE = "en"
+
+
+def _normalize_locale(locale: str | None) -> str:
+    """Normalise a locale string ("es-MX", "ES", " fr_CA ") to a base
+    language code ("es", "es", "fr"). Falls back to DEFAULT_LOCALE for
+    empty/unknown inputs."""
+    if not locale:
+        return DEFAULT_LOCALE
+    base = str(locale).strip().lower().replace("_", "-").split("-")[0]
+    return base if base in LANGUAGE_NAMES else DEFAULT_LOCALE
+
+
+def _build_language_directive(locale: str) -> str:
+    """Return the system-prompt block that pins the tutor's response language
+    to the learner's selected locale. Always rendered (even for English) so
+    the model can't drift back to its default when the learner switches mid-
+    session."""
+    language = LANGUAGE_NAMES.get(locale, LANGUAGE_NAMES[DEFAULT_LOCALE])
+    lines = [
+        "\n## Response Language",
+        f"The learner has selected {language} as their interface language.",
+        f"Respond entirely in {language}, including all explanations, "
+        f"examples, encouragement, hints, and feedback.",
+        "Use natural, age-appropriate phrasing for that language. Do not "
+        "switch to another language unless the learner writes in one, in "
+        "which case you may briefly acknowledge in their language and then "
+        f"continue teaching in {language}.",
+    ]
+    if locale != DEFAULT_LOCALE:
+        # Reinforce that subject vocabulary should still be teachable — the
+        # model should translate or gloss technical English terms rather than
+        # silently keep them in English.
+        lines.append(
+            "Translate or gloss subject-specific vocabulary so the learner "
+            f"sees both the {language} term and, when useful, a short "
+            "parenthetical English note (e.g. 'fracción (fraction)')."
+        )
+    return "\n".join(lines)
+
+
 def build_tutor_system_prompt(
     tutor_sku: str,
     brain_context: dict,
@@ -10,9 +67,12 @@ def build_tutor_system_prompt(
     attempts_on_current_topic: int = 0,
     mastery_trend: str = "stable",
     current_mastery: float | None = None,
+    locale: str | None = None,
 ) -> str:
     persona = TUTOR_PERSONAS.get(tutor_sku, {})
     adaptation = FUNCTIONING_LEVEL_ADAPTATIONS.get(functioning_level, FUNCTIONING_LEVEL_ADAPTATIONS["STANDARD"])
+
+    normalized_locale = _normalize_locale(locale)
 
     layer1 = persona.get("system_prompt", "You are a helpful AI tutor.")
 
@@ -97,6 +157,30 @@ def build_tutor_system_prompt(
     )
     if scaffolding:
         layer2_parts.append(scaffolding)
+
+    # Lingua (World Languages) expects a `language_profile` in brain_context
+    # to drive its bilingual scaffolding protocol. When the caller hasn't
+    # supplied one but we know the learner's UI locale, surface that as the
+    # dominant_language so the persona's protocol has something to anchor on.
+    language_profile = brain_context.get("language_profile") or {}
+    if tutor_sku == "ADDON_TUTOR_LANGUAGES" and not language_profile.get("dominant_language") and normalized_locale != DEFAULT_LOCALE:
+        language_profile = {
+            **language_profile,
+            "dominant_language": LANGUAGE_NAMES[normalized_locale],
+        }
+    if language_profile:
+        profile_lines = ["\n## Language Profile"]
+        if language_profile.get("dominant_language"):
+            profile_lines.append(f"- Dominant language: {language_profile['dominant_language']}")
+        if language_profile.get("target_language"):
+            profile_lines.append(f"- Target language: {language_profile['target_language']}")
+        if len(profile_lines) > 1:
+            layer2_parts.append("\n".join(profile_lines))
+
+    # The language directive is appended last so it is the most recent
+    # instruction the model sees before generating — this maximises
+    # adherence across providers.
+    layer2_parts.append(_build_language_directive(normalized_locale))
 
     return layer1 + "\n".join(layer2_parts)
 
@@ -233,8 +317,11 @@ def build_content_generation_prompt(
     functioning_level: str,
     brain_context: dict,
     content_type: str = "LESSON",
+    locale: str | None = None,
 ) -> tuple[str, str]:
     adaptation = FUNCTIONING_LEVEL_ADAPTATIONS.get(functioning_level, FUNCTIONING_LEVEL_ADAPTATIONS["STANDARD"])
+    normalized_locale = _normalize_locale(locale)
+    language_name = LANGUAGE_NAMES.get(normalized_locale, LANGUAGE_NAMES[DEFAULT_LOCALE])
 
     system_prompt = f"""You are AIVO's content generation engine. Generate educational content that is:
 - Age-appropriate and engaging
@@ -242,6 +329,7 @@ def build_content_generation_prompt(
 - Delivered at {delivery_level} comprehension level
 - Adapted for {functioning_level} functioning level ({adaptation['method']})
 - Using {adaptation['response_format']} format
+- Written entirely in {language_name}
 
 Content must be safe, accurate, and free of bias. Never include violent, sexual, or inappropriate content.
 Never reference real children or specific personal situations."""
