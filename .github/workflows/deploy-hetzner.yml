@@ -226,6 +226,7 @@ jobs:
 
           helm_apply() {
             local svc="$1" port="$2"
+            local timeout="$3"
             helm upgrade --install "$svc" "${{ env.CHART_PATH }}" \
               -f "${{ env.STAGING_VALUES }}" \
               --set serviceName="$svc" \
@@ -241,12 +242,13 @@ jobs:
               --set service.targetPort=$port \
               --set replicaCount=1 \
               "${EXTRA_SETS[@]}" \
-              -n "$NS" --timeout 3m --wait
+                -n "$NS" --timeout "$timeout" --wait
           }
 
           FAILED=0
           for svc in "${SERVICES[@]}"; do
             PORT=3000
+            HELM_TIMEOUT=3m
             # Mirror the per-service env fixes applied in production:
             #  - Override K8s-injected <SVC-UPPER>_PORT=tcp://... so
             #    parseInt() receives a numeric value.
@@ -257,7 +259,10 @@ jobs:
             case "$svc" in
               admin-svc)        EXTRA_SETS=(--set env.ADMIN_SVC_PORT=3000) ;;
               billing-svc)      EXTRA_SETS=(--set env.BILLING_SVC_PORT=3000) ;;
-              comms-svc)        EXTRA_SETS=(--set env.COMMS_SVC_PORT=3000) ;;
+              comms-svc)
+                HELM_TIMEOUT=5m
+                EXTRA_SETS=(--set env.COMMS_SVC_PORT=3000)
+                ;;
               i18n-svc)         EXTRA_SETS=(--set env.I18N_SVC_PORT=3000) ;;
               integrations-svc) EXTRA_SETS=(--set env.INTEGRATIONS_SVC_PORT=3000) ;;
               research-svc)     EXTRA_SETS=(--set env.RESEARCH_SVC_PORT=3000) ;;
@@ -291,7 +296,7 @@ jobs:
 
             echo "═══ Staging deploy: $svc ($IMAGE_TAG) ═══"
             set +e
-            OUT=$(helm_apply "$svc" "$PORT" 2>&1)
+            OUT=$(helm_apply "$svc" "$PORT" "$HELM_TIMEOUT" 2>&1)
             RC=$?
             set -e
 
@@ -307,8 +312,17 @@ jobs:
                   echo "⚠  $svc has immutable/invalid resource state; removing Deployment before retry"
                 fi
                 kubectl -n "$NS" delete deployment "$svc" --ignore-not-found=true >/dev/null 2>&1 || true
-                if ! helm_apply "$svc" "$PORT"; then
+                if ! helm_apply "$svc" "$PORT" "$HELM_TIMEOUT"; then
                   echo "::warning::$svc deploy incomplete"
+                  FAILED=$((FAILED+1))
+                fi
+              elif echo "$OUT" | grep -q "context deadline exceeded"; then
+                echo "⚠  $svc exceeded Helm timeout ($HELM_TIMEOUT); deleting Deployment and retrying once"
+                kubectl -n "$NS" delete deployment "$svc" --ignore-not-found=true >/dev/null 2>&1 || true
+                if ! helm_apply "$svc" "$PORT" "$HELM_TIMEOUT"; then
+                  echo "::warning::$svc deploy incomplete"
+                  kubectl -n "$NS" get pods -l app.kubernetes.io/name="$svc" -o wide || true
+                  kubectl -n "$NS" describe deployment "$svc" || true
                   FAILED=$((FAILED+1))
                 fi
               else
