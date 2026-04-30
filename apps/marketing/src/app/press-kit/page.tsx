@@ -15,6 +15,7 @@ export default function PressKitPage() {
   return (
     <CompanyPageLayout
       badge="Press Kit"
+      breadcrumbSlug="press-kit"
       title="Media Resources"
       subtitle="Everything you need to tell the AIVO story. Download logos, read our fact sheet, and get in touch with our press team."
       icon="📰"

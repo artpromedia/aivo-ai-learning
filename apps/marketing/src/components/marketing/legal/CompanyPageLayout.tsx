@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { trackCTAClick, trackSignupInitiation } from "@/lib/analytics";
-import { WEB_APP_URL } from "@/lib/constants";
+import { WEB_APP_URL, SITE_URL } from "@/lib/constants";
 
 interface CompanyPageLayoutProps {
   badge: string;
@@ -11,6 +11,10 @@ interface CompanyPageLayoutProps {
   subtitle: string;
   icon: string;
   accentColor: string;
+  /** Slug for the current page, used to emit BreadcrumbList JSON-LD. Optional for backward-compat. */
+  breadcrumbSlug?: string;
+  /** Display label for the breadcrumb. Defaults to `badge`. */
+  breadcrumbLabel?: string;
   children: React.ReactNode;
 }
 
@@ -20,10 +24,39 @@ export function CompanyPageLayout({
   subtitle,
   icon,
   accentColor,
+  breadcrumbSlug,
+  breadcrumbLabel,
   children,
 }: CompanyPageLayoutProps) {
+  const breadcrumbJsonLd = breadcrumbSlug
+    ? {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: SITE_URL,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: breadcrumbLabel || badge,
+            item: `${SITE_URL}/${breadcrumbSlug.replace(/^\//, "")}`,
+          },
+        ],
+      }
+    : null;
+
   return (
     <div className="min-h-screen bg-white">
+      {breadcrumbJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        />
+      )}
       <header className="bg-white border-b border-slate-100 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 md:px-8 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center">

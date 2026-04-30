@@ -264,6 +264,7 @@ export default function ContactPage() {
   return (
     <CompanyPageLayout
       badge="Contact"
+      breadcrumbSlug="contact"
       title="Get in Touch"
       subtitle="We'd love to hear from you. Whether you're a parent, educator, or administrator, our team is here to help."
       icon="💬"

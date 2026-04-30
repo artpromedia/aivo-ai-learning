@@ -43,6 +43,7 @@ export default function CareersPage() {
   return (
     <CompanyPageLayout
       badge="Careers"
+      breadcrumbSlug="careers"
       title="Join the AIVO Team"
       subtitle="Help us build a world where every student gets the personalized education they deserve. We're always looking for passionate people."
       icon="🚀"

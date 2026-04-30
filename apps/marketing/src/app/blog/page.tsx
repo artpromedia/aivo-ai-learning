@@ -42,6 +42,7 @@ export default function BlogPage() {
   return (
     <CompanyPageLayout
       badge="Blog"
+      breadcrumbSlug="blog"
       title="Insights & Updates"
       subtitle="The latest from the AIVO team — product updates, education research, and stories from our community."
       icon="📝"
