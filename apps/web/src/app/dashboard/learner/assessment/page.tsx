@@ -5,6 +5,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { Compass, ClipboardList, ChevronRight, Home, Sparkles } from "lucide-react";
 import { useDiscoveryEngine } from "@/components/discovery/useDiscoveryEngine";
+import { useLocale } from "@/providers/i18n-provider";
 import PreAdventure from "@/components/discovery/PreAdventure";
 import AdventureMap from "@/components/discovery/AdventureMap";
 import ChapterIntro from "@/components/discovery/ChapterIntro";
@@ -206,11 +207,12 @@ function DiscoveryAdventureInner({
 }) {
   const router = useRouter();
   const t = useTranslations("assessment");
+  const { locale } = useLocale();
   const {
     state, chapters, getCurrentActivity, getCurrentActivities,
     startAdventure, beginFirstChapter, startChapterActivities, handleAnswer,
     advanceToNextChapter, resumeAfterBreak, exitToHome, hasSavedProgress, submitResults,
-  } = useDiscoveryEngine({ learnerId, learnerName, functioningLevel, accessToken, refreshToken });
+  } = useDiscoveryEngine({ learnerId, learnerName, functioningLevel, accessToken, refreshToken, locale });
 
   useEffect(() => {
     if (!hasSavedProgress()) startAdventure();

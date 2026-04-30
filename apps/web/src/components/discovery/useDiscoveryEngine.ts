@@ -20,6 +20,7 @@ interface UseDiscoveryEngineProps {
   functioningLevel: FunctioningLevel;
   accessToken: string | null;
   refreshToken?: () => Promise<string | null>;
+  locale?: string;
 }
 
 const STORAGE_KEY_PREFIX = "aivo_discovery_";
@@ -51,7 +52,7 @@ function clearSavedState(learnerId: string) {
   } catch {}
 }
 
-export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, accessToken, refreshToken }: UseDiscoveryEngineProps) {
+export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, accessToken, refreshToken, locale }: UseDiscoveryEngineProps) {
   const config = FUNCTIONING_LEVEL_CONFIG[functioningLevel] || FUNCTIONING_LEVEL_CONFIG.STANDARD;
   const chapters = ADVENTURE_CHAPTERS.slice(0, config.chaptersCount);
 
@@ -118,6 +119,10 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
             tutorKey: chapter.tutorKey,
             sceneDescription: chapter.sceneDescription,
           },
+          // Forward the learner's UI locale so the LLM produces
+          // narration/tutorLine/choice labels in their language
+          // (matches locale-aware tutor chat).
+          locale: locale ?? undefined,
         }),
       });
 
@@ -140,7 +145,7 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     const fallback = FALLBACK_ACTIVITIES[chapter.id] || FALLBACK_ACTIVITIES.sage_story_garden;
     chapterActivitiesRef.current[chapter.id] = fallback;
     return fallback;
-  }, [accessToken, learnerId]);
+  }, [accessToken, learnerId, locale]);
 
   useEffect(() => {
     if (resumeHandledRef.current) return;

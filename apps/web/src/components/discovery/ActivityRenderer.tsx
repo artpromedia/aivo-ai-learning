@@ -7,6 +7,8 @@ import type { Activity, AdventureChapter, ActivityChoice } from "./types";
 import { IconWell, colorForTutor, VI_COLOR, VI_TINT } from "./_vi";
 import { playCorrectCue, playIncorrectCue } from "@/lib/audio";
 import { useTutorVoice } from "@/lib/useTutorVoice";
+import { resolveSpeechLang } from "@/components/stage/useTTS";
+import { useLocale } from "@/providers/i18n-provider";
 import Mascot from "@/components/Mascot";
 
 interface ActivityRendererProps {
@@ -30,12 +32,16 @@ export default function ActivityRenderer({
   const subjectKey = colorForTutor(tutor?.color);
   const subjectColor = VI_COLOR[subjectKey];
   const subjectTint = VI_TINT[subjectKey];
+  const { locale } = useLocale();
+  const voiceLang = resolveSpeechLang(locale);
 
   // Speak the narration during the narrating phase, then the tutor line
   // once choices are showing. Mute toggle and reduced-motion fallback live
-  // inside the hook so call sites don't repeat the gating.
-  useTutorVoice(phase === "narrating" ? activity.narration : null);
-  useTutorVoice(phase !== "narrating" && showChoices ? activity.tutorLine : null);
+  // inside the hook so call sites don't repeat the gating. `lang` pins the
+  // SpeechSynthesis voice to the learner's selected UI locale so the tutor
+  // speaks in the same language the LLM produced the narration in.
+  useTutorVoice(phase === "narrating" ? activity.narration : null, { lang: voiceLang });
+  useTutorVoice(phase !== "narrating" && showChoices ? activity.tutorLine : null, { lang: voiceLang });
 
   useEffect(() => {
     setPhase("narrating");

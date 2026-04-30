@@ -1,6 +1,8 @@
 import json
 from typing import Optional
 
+from .prompt_builder import _build_language_directive, _normalize_locale
+
 
 CURRICULUM_FRAMEWORK_GUIDANCE = {
     "CCSS": "Common Core State Standards (math: K-CC, OA, NBT, NF, MD, G; ELA: RL, RI, RF, W, SL, L)",
@@ -312,6 +314,7 @@ def build_discovery_adventure_prompt(
     interest_profile: Optional[dict] = None,
     caregiver_perspectives: Optional[list] = None,
     teacher_assessment: Optional[dict] = None,
+    locale: Optional[str] = None,
 ) -> tuple[str, str]:
     responses = parent_assessment.get("responses", {})
     communication_mode = parent_assessment.get("communicationMode", "verbal")
@@ -416,7 +419,7 @@ def build_discovery_adventure_prompt(
 9. Activity narration should be the tutor telling a mini-story that leads naturally to the interaction
 10. Each activity title should be a fun, thematic name (e.g., "The Word Garden", "Star Counting")
 11. Content must be safe, age-appropriate, and culturally neutral
-12. Brain measures should specify what cognitive/academic skills each activity assesses"""
+12. Brain measures should specify what cognitive/academic skills each activity assesses{_build_language_directive(_normalize_locale(locale))}"""
 
     user_prompt = f"""Generate discovery adventure activities for "{chapter['title']}" ({chapter['domain']} domain).
 
@@ -475,6 +478,7 @@ def build_baseline_generation_prompt(
     interest_profile: Optional[dict] = None,
     caregiver_perspectives: Optional[list] = None,
     teacher_assessment: Optional[dict] = None,
+    locale: Optional[str] = None,
 ) -> tuple[str, str]:
     responses = parent_assessment.get("responses", {})
     communication_mode = parent_assessment.get("communicationMode", "verbal")
@@ -565,7 +569,7 @@ def build_baseline_generation_prompt(
 11. For speech questions: test phonological awareness, vocabulary, grammar, pragmatic language, and comprehension
 12. For SEL questions: test emotional recognition, regulation strategies, empathy, social skills, and conflict resolution
 13. For life_skills questions: test safety awareness, daily routines, money concepts, hygiene, and self-care
-14. For executive_function questions: test planning, organization, working memory, flexible thinking, impulse control, and task initiation"""
+14. For executive_function questions: test planning, organization, working memory, flexible thinking, impulse control, and task initiation{_build_language_directive(_normalize_locale(locale))}"""
 
     user_prompt = f"""Generate 42 personalized baseline assessment questions (6 per subject) for this learner.
 

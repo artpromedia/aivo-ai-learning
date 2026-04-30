@@ -283,6 +283,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
         required: ["chapter"],
         properties: {
           chapter: { type: "object" },
+          locale: { type: "string" },
         },
       },
     },
@@ -291,7 +292,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
     const db = (app as any).db;
     const user = (req as any).user;
     const { learnerId } = req.params as { learnerId: string };
-    const { chapter } = req.body as { chapter: any };
+    const { chapter, locale } = req.body as { chapter: any; locale?: string };
 
     let [learner] = await db.select().from(learners).where(eq(learners.id, learnerId)).limit(1);
     if (!learner) {
@@ -341,6 +342,10 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
           // Optional inputs — null/empty array when not on file.
           caregiver_perspectives: caregiverPerspectives,
           teacher_assessment: teacherContext,
+          // Forward the learner's UI locale so generated narration,
+          // tutor lines, and choice labels are produced in their language
+          // (matches the locale-aware tutor chat behaviour).
+          locale: locale || null,
         }),
       });
 
@@ -573,12 +578,17 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
         required: ["learnerId"],
         properties: { learnerId: { type: "string" } },
       },
+      querystring: {
+        type: "object",
+        properties: { locale: { type: "string" } },
+      },
     },
     preHandler: authenticate,
   }, async (req, reply) => {
     const db = (app as any).db;
     const user = (req as any).user;
     const { learnerId } = req.params as { learnerId: string };
+    const { locale } = (req.query as { locale?: string }) || {};
 
     let [learner] = await db.select().from(learners).where(eq(learners.id, learnerId)).limit(1);
     if (!learner) {
@@ -636,6 +646,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
           // Optional inputs — null/empty array when not on file.
           caregiver_perspectives: caregiverPerspectives,
           teacher_assessment: teacherContext,
+          locale: locale || null,
         }),
       });
 

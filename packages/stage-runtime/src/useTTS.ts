@@ -54,6 +54,16 @@ function resolveVoiceLang(locale: string | undefined, fallback: string): string 
   return LOCALE_TO_BCP47[base] || fallback;
 }
 
+/**
+ * Public, no-tutor variant — resolves a base locale (or a full BCP-47 tag)
+ * to a BCP-47 voice locale suitable for `SpeechSynthesisUtterance.lang`.
+ * Used by callers that don't have tutor voice prefs (e.g. the Discovery
+ * Adventure baseline assessment narration).
+ */
+export function resolveSpeechLang(locale: string | undefined): string {
+  return resolveVoiceLang(locale, LOCALE_TO_BCP47.en);
+}
+
 export interface UseTTSResult {
   speak: (text: string) => Promise<void>;
   stop: () => void;

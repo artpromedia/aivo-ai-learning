@@ -142,6 +142,7 @@ class BaselineRequest(BaseModel):
     # a parent assessment still gets a baseline generation.
     caregiver_perspectives: Optional[list] = None
     teacher_assessment: Optional[dict] = None
+    locale: Optional[str] = None
 
 
 class BaselineResponse(BaseModel):
@@ -163,6 +164,7 @@ async def generate_baseline(req: BaselineRequest):
         interest_profile=req.interest_profile,
         caregiver_perspectives=req.caregiver_perspectives,
         teacher_assessment=req.teacher_assessment,
+        locale=req.locale,
     )
 
     try:
@@ -228,6 +230,7 @@ class DiscoveryChapterRequest(BaseModel):
     # Optional — see BaselineRequest for the same rationale.
     caregiver_perspectives: Optional[list] = None
     teacher_assessment: Optional[dict] = None
+    locale: Optional[str] = None
 
 
 class DiscoveryChapterResponse(BaseModel):
@@ -250,6 +253,7 @@ async def generate_discovery_chapter(req: DiscoveryChapterRequest):
         interest_profile=req.interest_profile,
         caregiver_perspectives=req.caregiver_perspectives,
         teacher_assessment=req.teacher_assessment,
+        locale=req.locale,
     )
 
     try:
