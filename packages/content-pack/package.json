@@ -2,7 +2,7 @@
   "name": "@aivo/content-pack",
   "version": "0.1.0",
   "private": true,
-  "description": "Content-pack schema + validator for the AIVO authoring/CMS pipeline. Replaces the inline FALLBACK_ACTIVITIES constant in apps/web/src/components/discovery/useDiscoveryEngine.ts (§5 Content infrastructure, v2.1 §9.3 Build).",
+  "description": "Content-pack schema + validator for the AIVO authoring/CMS pipeline. Provides sealed, versioned (subject, gradeBand) bundles that bootstrap tutor-svc planSession() and seed live LLM generation — AIVO generates activities live by default; packs are scaffolding for cold-start and offline/degraded-mode floors, not a replacement for runtime generation. The web FALLBACK_ACTIVITIES constant in apps/web/src/components/discovery/useDiscoveryEngine.ts is an independent zero-network safety net and is not phased out by this package (§5 Content infrastructure, v2.1 §9.3 Build).",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -4,9 +4,18 @@
  * A "content pack" is a sealed, versioned bundle of authored learning
  * activities for a specific (subject, gradeBand) slice — e.g. the
  * "K-Math-Fall-2026" pack. Packs are produced by the (future) admin CMS
- * and consumed by tutor-runtime, replacing the inline FALLBACK_ACTIVITIES
- * constant currently embedded in apps/web/src/components/discovery/
- * useDiscoveryEngine.ts.
+ * and consumed by tutor-runtime as bootstrap scaffolding for
+ * `planSession()` and as seed material for live LLM generation.
+ *
+ * AIVO's runtime principle is *generate live, don't pre-author* — packs
+ * are not the primary source of activities at session time. They cover
+ * cold-start, offline, and budget-capped degraded states, and give the
+ * generator high-quality exemplars to imitate.
+ *
+ * Note: the `FALLBACK_ACTIVITIES` constant in
+ * apps/web/src/components/discovery/useDiscoveryEngine.ts is a separate,
+ * intentionally minimal client-side safety net for the no-token /
+ * ai-svc-unreachable case. It is *not* superseded by this package.
  *
  * Each `Activity` references a `Skill` from `@aivo/skill-graphs` so the
  * pack can be checked for coverage gaps before publish.
