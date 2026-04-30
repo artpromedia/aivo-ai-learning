@@ -304,4 +304,186 @@ export async function registerIepRoutes(app: FastifyInstance) {
     }
     return { learnerId, packet };
   });
+
+  /**
+   * IEP PDF intake — `POST /api/iep/upload-pdf` (multipart/form-data).
+   *
+   * Parents and SPED leads can upload a learner's existing IEP as a PDF.
+   * The handler:
+   *   1. Reads the multipart upload (≤ 10 MB, see multipart registration
+   *      in `src/index.ts`).
+   *   2. Extracts the document text via `pdf-parse` (pure-JS, no native
+   *      dependency).
+   *   3. Forwards the extracted text to the existing
+   *      `ai-svc /api/ai/parse-iep` LLM-extraction endpoint.
+   *   4. Persists the document, profile, goals, and recommended
+   *      functioning level via the same flow used by `POST /api/iep/parse`.
+   *
+   * Form fields:
+   *   - `file`           — the PDF file (required).
+   *   - `learnerId`      — the learner the IEP belongs to (required).
+   *   - `fileName`       — optional override for the stored file name;
+   *                        falls back to the multipart filename.
+   *
+   * Returns the same `{ document, profile?, parsed, summary? }` shape as
+   * `/api/iep/parse` so the parent-portal upload UI has a single response
+   * contract regardless of whether text was pasted or a PDF was uploaded.
+   */
+  app.post("/api/iep/upload-pdf", {
+    schema: {
+      tags: ["IEP"],
+      security: [{ bearerAuth: [] }],
+      consumes: ["multipart/form-data"],
+    },
+    preHandler: authenticate,
+  }, async (req, reply) => {
+    const db = (app as any).db;
+
+    if (!(req as any).isMultipart || !(req as any).isMultipart()) {
+      return reply.status(400).send({ error: "Expected multipart/form-data." });
+    }
+
+    let learnerId: string | undefined;
+    let fileNameOverride: string | undefined;
+    let fileName: string | undefined;
+    let fileBuffer: Buffer | undefined;
+
+    try {
+      // Iterate parts so file + learnerId can arrive in any order. The
+      // multipart plugin enforces files=1 + 10 MB cap registered at boot.
+      for await (const part of (req as any).parts()) {
+        if (part.type === "file") {
+          fileName = part.filename;
+          try {
+            fileBuffer = await part.toBuffer();
+          } catch (err: any) {
+            if (err?.code === "FST_REQ_FILE_TOO_LARGE" || err?.code === "FST_FILES_LIMIT") {
+              return reply.status(413).send({
+                error: "PDF must be at most 10 MB.",
+                code: "file_too_large",
+              });
+            }
+            return reply.status(400).send({ error: "Could not read upload." });
+          }
+        } else if (part.fieldname === "learnerId") {
+          learnerId = String(part.value);
+        } else if (part.fieldname === "fileName") {
+          fileNameOverride = String(part.value);
+        }
+      }
+    } catch {
+      return reply.status(400).send({ error: "Could not read upload." });
+    }
+
+    if (!learnerId) {
+      return reply.status(400).send({ error: "Missing learnerId field." });
+    }
+    if (!fileBuffer) {
+      return reply.status(400).send({ error: "No file provided." });
+    }
+    if (fileBuffer.length === 0) {
+      return reply.status(400).send({ error: "Empty PDF." });
+    }
+
+    // Extract the document text. Lazy-import `pdf-parse` from its inner
+    // module path so the package's debug-mode top-level test-file load
+    // (which scans `./test/data/05-versions-space.pdf`) does not run when
+    // assessment-svc imports this route at boot.
+    let documentText: string;
+    try {
+      const pdfParseMod: any = await import("pdf-parse/lib/pdf-parse.js");
+      const pdfParse = pdfParseMod.default ?? pdfParseMod;
+      const parsed = await pdfParse(fileBuffer);
+      documentText = String(parsed?.text ?? "").trim();
+    } catch {
+      return reply.status(400).send({ error: "Could not parse PDF." });
+    }
+
+    if (documentText.length < 50) {
+      return reply.status(400).send({
+        error: "PDF text is too short to be an IEP (need at least 50 characters of extractable text).",
+        code: "pdf_text_too_short",
+      });
+    }
+
+    // Forward the extracted text to the AI extraction endpoint. This is
+    // the same path `POST /api/iep/parse` uses for pasted text, so the
+    // downstream persistence behaviour is identical.
+    let parsedData: any;
+    try {
+      const aiRes = await fetch(`${AI_SVC_URL}/api/ai/parse-iep`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ document_text: documentText, learner_name: "" }),
+      });
+      if (aiRes.ok) {
+        parsedData = await aiRes.json();
+      }
+    } catch {
+      /* AI parsing failed; continue and store raw text so a human can review. */
+    }
+
+    const storedFileName = fileNameOverride || fileName || "uploaded-iep.pdf";
+
+    const [doc] = await db.insert(iepDocuments).values({
+      learnerId,
+      fileName: storedFileName,
+      parsedData: parsedData || { raw_text: documentText.substring(0, 5000) },
+      status: parsedData ? "parsed" : "uploaded",
+    }).returning();
+
+    if (!parsedData) {
+      return { document: doc, parsed: false };
+    }
+
+    const goals = (parsedData.goals || []).map((g: any) => ({
+      text: g.description || g.text || "",
+      domain: g.domain || "other",
+      subDomain: g.sub_domain || g.subDomain || null,
+      baseline: g.baseline || "",
+      targetCriteria: g.measurable_criteria || g.target || "",
+    }));
+
+    const [profile] = await db.insert(iepProfiles).values({
+      learnerId,
+      disabilityCategories: parsedData.disability_categories || [],
+      accommodations: parsedData.accommodations || [],
+      goals,
+      recommendedFunctioningLevel: parsedData.recommended_functioning_level,
+    }).returning();
+
+    for (const goal of goals) {
+      const composedDomain = goal.subDomain
+        ? `${goal.domain || "motor"}:${goal.subDomain}`
+        : goal.domain;
+      await db.insert(iepGoals).values({
+        learnerId,
+        iepProfileId: profile.id,
+        goalText: goal.text,
+        domain: composedDomain,
+        baseline: goal.baseline,
+        targetCriteria: goal.targetCriteria,
+      });
+    }
+
+    if (parsedData.recommended_functioning_level) {
+      await db.update(learners)
+        .set({ functioningLevel: parsedData.recommended_functioning_level })
+        .where(eq(learners.id, learnerId));
+
+      await db.insert(learnerFunctioningLevels).values({
+        learnerId,
+        level: parsedData.recommended_functioning_level,
+        determinedBy: "ai_iep_pdf_parse",
+        iepSignals: {
+          disabilityCategories: parsedData.disability_categories,
+          accommodations: parsedData.accommodations,
+          model: parsedData.model,
+        },
+        confidence: 85,
+      });
+    }
+
+    return { document: doc, profile, parsed: true, summary: parsedData.summary };
+  });
 }

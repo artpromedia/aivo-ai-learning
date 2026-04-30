@@ -5,9 +5,11 @@ export type {
   SessionPhase,
   TutorState,
   FunctioningLevel,
+  SensoryLevel,
   SensoryProfile,
   SensoryAdaptations,
   SessionState,
+  InteractionType,
 } from "./types.js";
 
 // Web (DOM) component exports. Metro's platform extension resolution prefers
