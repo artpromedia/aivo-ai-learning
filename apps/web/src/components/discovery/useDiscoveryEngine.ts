@@ -95,14 +95,22 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
   const chapterLatenciesRef = useRef<number[]>([]);
   const loadingChapterRef = useRef<string | null>(null);
 
+  // Cache activities per (chapter, locale) so a mid-session locale switch
+  // returns translated activities instead of stale English ones.
+  const activityCacheKey = useCallback(
+    (chapterId: string) => `${chapterId}::${locale ?? "en"}`,
+    [locale]
+  );
+
   const loadChapterActivities = useCallback(async (chapter: AdventureChapter): Promise<ChapterActivities> => {
-    if (chapterActivitiesRef.current[chapter.id]) {
-      return chapterActivitiesRef.current[chapter.id];
+    const cacheKey = activityCacheKey(chapter.id);
+    if (chapterActivitiesRef.current[cacheKey]) {
+      return chapterActivitiesRef.current[cacheKey];
     }
 
     if (!accessToken) {
       const fallback = FALLBACK_ACTIVITIES[chapter.id] || FALLBACK_ACTIVITIES.sage_story_garden;
-      chapterActivitiesRef.current[chapter.id] = fallback;
+      chapterActivitiesRef.current[cacheKey] = fallback;
       return fallback;
     }
 
@@ -134,7 +142,7 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
             tier => (activities[tier as DifficultyTier] || []).length > 0
           );
           if (hasActivities) {
-            chapterActivitiesRef.current[chapter.id] = activities;
+            chapterActivitiesRef.current[cacheKey] = activities;
             return activities;
           }
         }
@@ -143,9 +151,9 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     }
 
     const fallback = FALLBACK_ACTIVITIES[chapter.id] || FALLBACK_ACTIVITIES.sage_story_garden;
-    chapterActivitiesRef.current[chapter.id] = fallback;
+    chapterActivitiesRef.current[cacheKey] = fallback;
     return fallback;
-  }, [accessToken, learnerId, locale]);
+  }, [accessToken, learnerId, locale, activityCacheKey]);
 
   useEffect(() => {
     if (resumeHandledRef.current) return;
@@ -161,11 +169,11 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
   const getCurrentActivities = useCallback((): Activity[] => {
     const chapter = chapters[state.currentChapterIdx];
     if (!chapter) return [];
-    const chapterActs = chapterActivitiesRef.current[chapter.id];
+    const chapterActs = chapterActivitiesRef.current[activityCacheKey(chapter.id)];
     if (!chapterActs) return [];
     const tierActs = chapterActs[state.currentDifficulty] || chapterActs.easy || [];
     return tierActs.slice(0, config.activitiesPerChapter);
-  }, [state.currentChapterIdx, state.currentDifficulty, chapters, config.activitiesPerChapter]);
+  }, [state.currentChapterIdx, state.currentDifficulty, chapters, config.activitiesPerChapter, activityCacheKey]);
 
   const getCurrentActivity = useCallback((): Activity | null => {
     const activities = getCurrentActivities();
@@ -206,7 +214,7 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
       const chapter = chapters[s.currentChapterIdx];
       if (!chapter) return s;
 
-      const chapterActs = chapterActivitiesRef.current[chapter.id];
+      const chapterActs = chapterActivitiesRef.current[activityCacheKey(chapter.id)];
       if (!chapterActs) return s;
       const tierActs = chapterActs[s.currentDifficulty] || chapterActs.easy || [];
       const activities = tierActs.slice(0, config.activitiesPerChapter);

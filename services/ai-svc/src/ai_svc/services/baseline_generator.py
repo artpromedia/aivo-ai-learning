@@ -466,7 +466,15 @@ IMPORTANT:
 - For LOW_VERBAL/NON_VERBAL: use emoji-only labels (no words)
 - Personalize themes using learner interests: {', '.join(interests) if interests else 'general themes'}
 - ID format: {chapter['domain']}_[easy/medium/hard]_[number]
-- Return ONLY the JSON object, no markdown or code blocks"""
+- Return ONLY the JSON object, no markdown or code blocks
+
+CRITICAL — keep these fields in English/ASCII exactly as specified, even when responding in another language:
+- All JSON keys (`activities`, `easy`, `medium`, `hard`, `id`, `title`, `narration`, `tutorLine`, `interaction`, `choices`, `label`, `emoji`, `isCorrect`, `sceneEmoji`, `difficulty`, `brainMeasures`).
+- `id` values: keep the `{chapter['domain']}_<tier>_<n>` format unchanged.
+- `interaction` values: must be one of "tap_image", "tap_word", "drag_sort", "sequence", "pattern_fill", "memory", "emotion_pick", "observation".
+- `difficulty` values: keep as "easy", "medium", or "hard" (do NOT translate).
+- Choice `id` values: keep as "a", "b", "c", "d", etc.
+Only translate the human-readable text fields: `title`, `narration`, `tutorLine`, `label` values, and `brainMeasures` entries."""
 
     return system_prompt, user_prompt
 
@@ -595,6 +603,14 @@ Return ONLY valid JSON in this exact format:
 ID format: m1-m6 for math, e1-e6 for ela, s1-s6 for science, sp1-sp6 for speech, sel1-sel6 for sel, ls1-ls6 for life_skills, ef1-ef6 for executive_function.
 difficulty: 1 (easy) or 2 (moderate) — start each subject with difficulty 1.
 Personalize based on the learner's interests ({', '.join(interests) if interests else 'general'}), strengths, and challenges.
+
+CRITICAL — keep these fields in English/ASCII exactly as specified, even when responding in another language:
+- All JSON keys (`id`, `subject`, `questionText`, `options`, `label`, `value`, `correctAnswer`, `difficulty`).
+- `subject` values: must be one of "math", "ela", "science", "speech", "sel", "life_skills", "executive_function" (do NOT translate).
+- `id` values: keep the prefixes shown above (m1, e1, s1, sp1, sel1, ls1, ef1).
+- `value` letters in options: keep as "a", "b", "c", "d".
+Only translate the human-readable text fields: `questionText` and option `label` values.
+
 Return ONLY the JSON object, no markdown formatting or code blocks."""
 
     return system_prompt, user_prompt
