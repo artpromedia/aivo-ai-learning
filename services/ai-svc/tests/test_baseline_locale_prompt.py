@@ -155,3 +155,69 @@ class TestSchemaStabilityGuidance:
         # the same schema discipline so the validators stay strict.
         _, user = build_baseline_generation_prompt(PARENT)
         assert "non-English" in user or "do not translate" in user.lower()
+
+
+SPEECH_CHAPTER = {
+    "id": "echo_sound_studio",
+    "title": "Echo's Sound Studio",
+    "domain": "speech",
+    "sceneDescription": "A friendly recording studio.",
+    "tutorKey": "echo",
+}
+
+
+class TestVoiceResponseInteraction:
+    """`voice_response` is an STT-driven activity type that gates on both
+    chapter domain (`speech`) and functioning level. It must NOT be
+    advertised to the LLM for non-speech chapters or for learners with
+    NON_VERBAL / LOW_VERBAL profiles, otherwise we'd ask the kid to
+    speak when they can't reliably produce verbal output.
+    """
+
+    def _user_prompt(self, chapter, functioning_level="STANDARD"):
+        parent = {**PARENT, "functioningLevel": functioning_level}
+        _, user = build_discovery_adventure_prompt(parent, chapter)
+        return user
+
+    def test_voice_response_offered_for_speech_chapter_standard(self):
+        user = self._user_prompt(SPEECH_CHAPTER)
+        assert "voice_response" in user
+        assert "correctAnswer" in user
+        assert "acceptedAnswers" in user
+
+    def test_voice_response_offered_for_speech_chapter_supported(self):
+        user = self._user_prompt(SPEECH_CHAPTER, functioning_level="SUPPORTED")
+        assert "voice_response" in user
+
+    def test_voice_response_NOT_offered_for_low_verbal(self):
+        user = self._user_prompt(SPEECH_CHAPTER, functioning_level="LOW_VERBAL")
+        assert "voice_response" not in user
+
+    def test_voice_response_NOT_offered_for_non_verbal(self):
+        user = self._user_prompt(SPEECH_CHAPTER, functioning_level="NON_VERBAL")
+        assert "voice_response" not in user
+
+    def test_voice_response_NOT_offered_for_non_speech_chapter(self):
+        # The default ELA/CHAPTER fixture used elsewhere.
+        user = self._user_prompt(CHAPTER)
+        assert "voice_response" not in user
+
+    def test_voice_response_in_enum_pinning_when_enabled(self):
+        # The schema-stability block lists `voice_response` so the LLM
+        # keeps the enum in English when responding in another language.
+        parent = {**PARENT, "functioningLevel": "STANDARD"}
+        _, user = build_discovery_adventure_prompt(parent, SPEECH_CHAPTER, locale="es")
+        # Both the interaction-list block AND the enum-pinning block
+        # must mention voice_response so non-English responses don't
+        # localise the value (e.g. "respuesta_de_voz").
+        assert user.count("voice_response") >= 2
+
+    def test_voice_response_correctAnswer_language_guidance(self):
+        # When responding in a non-English language, correctAnswer/
+        # acceptedAnswers MUST be in that language (it's what the
+        # learner actually speaks). The prompt must state this.
+        parent = {**PARENT, "functioningLevel": "STANDARD"}
+        _, user = build_discovery_adventure_prompt(parent, SPEECH_CHAPTER, locale="es")
+        assert "correctAnswer" in user
+        # Look for the explicit guidance line.
+        assert "same language as" in user

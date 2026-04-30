@@ -2,7 +2,7 @@ import type { TutorKey } from "@aivo/brand";
 
 export type AdventurePhase = "loading" | "pre-adventure" | "map" | "chapter-intro" | "activity" | "chapter-complete" | "break" | "finale" | "results";
 
-export type ActivityInteraction = "tap_image" | "tap_word" | "drag_sort" | "drag_place" | "sequence" | "emotion_pick" | "pattern_fill" | "memory" | "observation";
+export type ActivityInteraction = "tap_image" | "tap_word" | "drag_sort" | "drag_place" | "sequence" | "emotion_pick" | "pattern_fill" | "memory" | "observation" | "voice_response";
 
 export type DifficultyTier = "easy" | "medium" | "hard";
 
@@ -21,6 +21,17 @@ export interface Activity {
   tutorLine: string;
   interaction: ActivityInteraction;
   choices?: ActivityChoice[];
+  /**
+   * For `voice_response` activities: the canonical answer the learner is
+   * expected to speak. Matched against the STT transcript via
+   * `matchVoiceAnswer` from `@aivo/stage-runtime`.
+   */
+  correctAnswer?: string;
+  /**
+   * Optional additional accepted spoken answers (synonyms, regional
+   * variants). Matched in addition to `correctAnswer`.
+   */
+  acceptedAnswers?: string[];
   sceneEmoji: string;
   difficulty: DifficultyTier;
   brainMeasures: string[];

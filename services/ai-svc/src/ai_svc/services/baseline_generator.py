@@ -306,6 +306,28 @@ ADVENTURE_CHAPTERS = [
 ]
 
 
+def _voice_response_prompt_addendum(enabled: bool) -> str:
+    """Return the voice_response interaction documentation block.
+
+    Only the speech-domain chapter at verbal-output functioning levels
+    enables `voice_response`; for everything else we omit the block so
+    the LLM doesn't try to use it elsewhere. The block describes the
+    extra fields (`correctAnswer`, `acceptedAnswers`) that replace
+    `choices` for spoken activities.
+    """
+    if not enabled:
+        return ""
+    return (
+        '\n- "voice_response": Child taps a microphone and speaks their '
+        "answer (speech production, expressive vocabulary). MUST omit "
+        "`choices` and instead include `correctAnswer` (string, the "
+        "canonical spoken answer) and optionally `acceptedAnswers` "
+        "(array of additional accepted spoken variants — synonyms, "
+        "regional forms). Use this for naming, rhyming, articulation, "
+        "and synonym-production tasks. Keep correctAnswer to 1-3 words."
+    )
+
+
 def build_discovery_adventure_prompt(
     parent_assessment: dict,
     chapter: dict,
@@ -367,6 +389,16 @@ def build_discovery_adventure_prompt(
         "PRE_SYMBOLIC": {"activities": 0, "choices": 0, "interaction_types": "observational", "complexity": "parent/caregiver observational"},
     }
     fl = fl_config.get(functioning_level, fl_config["STANDARD"])
+
+    # For the speech-domain chapter (Echo's Sound Studio) we allow the LLM
+    # to emit `voice_response` activities — the learner taps a microphone
+    # and speaks the answer, which is matched server-side by the STT
+    # pipeline. Only enabled at functioning levels with verbal output, so
+    # NON_VERBAL / LOW_VERBAL still get tap-only interactions.
+    is_speech_chapter = chapter.get("domain") == "speech"
+    voice_enabled = is_speech_chapter and functioning_level in ("STANDARD", "SUPPORTED")
+    if voice_enabled:
+        fl = {**fl, "interaction_types": fl["interaction_types"] + ", voice_response"}
 
     system_prompt = f"""You are AIVO's Discovery Adventure generator. You create immersive, narrative-driven baseline assessment activities for learners. Each activity is part of a themed adventure chapter, NOT a traditional test.
 
@@ -458,10 +490,10 @@ Interaction types to use (pick appropriate ones for this domain):
 - "pattern_fill": Child fills in missing pattern element (patterns, logic)
 - "memory": Child recalls items from a briefly shown sequence (working memory)
 - "emotion_pick": Child identifies emotions from scenes (SEL-specific)
-- "observation": Child observes a scene and answers about it (science, inference)
+- "observation": Child observes a scene and answers about it (science, inference){_voice_response_prompt_addendum(voice_enabled)}
 
 IMPORTANT:
-- Each choice MUST have an emoji field
+- Each tap/drag/sequence choice MUST have an emoji field
 - Exactly ONE choice per activity must have isCorrect: true
 - For LOW_VERBAL/NON_VERBAL: use emoji-only labels (no words)
 - Personalize themes using learner interests: {', '.join(interests) if interests else 'general themes'}
@@ -471,10 +503,11 @@ IMPORTANT:
 CRITICAL — when responding in a non-English language, only translate the human-readable text fields (`title`, `narration`, `tutorLine`, `label` values, `brainMeasures` entries). Keep all of the following in English/ASCII exactly as specified:
 - All JSON keys (do not translate any field name).
 - `id` values: keep the `{chapter['domain']}_<tier>_<n>` format unchanged.
-- `interaction` values: one of "tap_image", "tap_word", "drag_sort", "sequence", "pattern_fill", "memory", "emotion_pick", "observation".
+- `interaction` values: one of "tap_image", "tap_word", "drag_sort", "sequence", "pattern_fill", "memory", "emotion_pick", "observation"{', "voice_response"' if voice_enabled else ''}.
 - `difficulty` values: one of "easy", "medium", "hard".
 - Choice `id` values: "a", "b", "c", "d", etc.
-- Booleans (`isCorrect`) and numbers (`difficulty` ints if used) — never translate."""
+- Booleans (`isCorrect`) and numbers (`difficulty` ints if used) — never translate.{('''
+- For `voice_response` activities: `correctAnswer` and `acceptedAnswers` MUST be in the same language as `narration`/`tutorLine` (these are what the learner speaks).''') if voice_enabled else ''}"""
 
     return system_prompt, user_prompt
 

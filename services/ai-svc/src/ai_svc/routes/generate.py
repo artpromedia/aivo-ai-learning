@@ -287,6 +287,15 @@ async def generate_discovery_chapter(req: DiscoveryChapterRequest):
                 continue
             if not all(k in act for k in ("id", "title", "narration", "interaction")):
                 continue
+            interaction = act.get("interaction")
+            if interaction == "voice_response":
+                # voice_response activities don't use multiple-choice
+                # buttons; instead they require a `correctAnswer` string
+                # against which the STT transcript is matched.
+                ca = act.get("correctAnswer")
+                if isinstance(ca, str) and ca.strip():
+                    valid.append(act)
+                continue
             choices = act.get("choices", [])
             if isinstance(choices, list) and len(choices) >= 2:
                 has_correct = any(c.get("isCorrect") for c in choices if isinstance(c, dict))
