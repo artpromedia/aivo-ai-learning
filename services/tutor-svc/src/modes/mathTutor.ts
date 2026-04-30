@@ -37,7 +37,12 @@ export const mathTutor: TutorDefinition = defineTutor({
   skillGraphRefs: ["ccss-math-k"],
   defaultContentPackRefs: ["math-k-fall-2026"],
   policy: {
-    requiresConsent: false,
+    // `voice_out` is declared, so consent is required per the SDK
+    // validator (`policy_consent_required_for_voice`). The runtime
+    // gate for non-Speech-Buddy tutors short-circuits via the same
+    // dev-allow-list as Speech Buddy until the generic consent UI
+    // ships.
+    requiresConsent: true,
     minAgeYears: 4,
     maxSessionMinutes: 15,
     requirePiiScrubbing: true,
@@ -45,6 +50,7 @@ export const mathTutor: TutorDefinition = defineTutor({
   authoringMeta: {
     owner: "curriculum-math",
     status: "scaffold",
+    aiSvcPersonaKey: "ADDON_TUTOR_MATH",
   },
 });
 
