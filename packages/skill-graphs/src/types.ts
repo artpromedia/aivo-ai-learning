@@ -15,8 +15,19 @@ export type FrameworkId =
   | "CCSS-Math"
   | "CCSS-ELA"
   | "NGSS"
+  | "NGSS-Engineering"
   | "WIDA-ELD"
-  | "ISTE";
+  | "ISTE"
+  | "C3"
+  | "NCSS"
+  | "NCGE"
+  | "CSTA"
+  | "CASEL"
+  | "ASHA"
+  | "NCAS"
+  | "SHAPE"
+  | "ACTFL"
+  | "CEC-LS";
 
 /** A reference to a single code in an external standards framework. */
 export interface FrameworkRef {
@@ -33,10 +44,17 @@ export type Subject =
   | "ela"
   | "science"
   | "social_studies"
+  | "geography"
+  | "coding"
   | "speech"
   | "sel"
   | "life_skills"
-  | "executive_function";
+  | "executive_function"
+  | "music"
+  | "pe_health"
+  | "world_languages"
+  | "stem_engineering"
+  | "creative_arts";
 
 /** Grade-band targeting. We use the U.S. K–12 convention; "PRE_K" and
  * "ADULT" exist for transition / SPED workflows. */

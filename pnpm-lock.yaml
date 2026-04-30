@@ -1326,6 +1326,9 @@ importers:
       '@aivo/brand':
         specifier: workspace:*
         version: link:../../packages/brand
+      '@aivo/content-pack':
+        specifier: workspace:*
+        version: link:../../packages/content-pack
       '@aivo/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -1341,12 +1344,24 @@ importers:
       '@aivo/ops-alerts':
         specifier: workspace:*
         version: link:../../packages/ops-alerts
+      '@aivo/pedagogy':
+        specifier: workspace:*
+        version: link:../../packages/pedagogy
       '@aivo/scoring':
         specifier: workspace:*
         version: link:../../packages/scoring
       '@aivo/security':
         specifier: workspace:*
         version: link:../../packages/security
+      '@aivo/skill-graphs':
+        specifier: workspace:*
+        version: link:../../packages/skill-graphs
+      '@aivo/special-interest-engine':
+        specifier: workspace:*
+        version: link:../../packages/special-interest-engine
+      '@aivo/tutor-runtime':
+        specifier: workspace:*
+        version: link:../../packages/tutor-runtime
       '@aivo/tutor-sdk':
         specifier: workspace:*
         version: link:../../packages/tutor-sdk

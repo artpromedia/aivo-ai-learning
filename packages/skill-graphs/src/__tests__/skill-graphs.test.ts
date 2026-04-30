@@ -28,6 +28,20 @@ describe("seed graphs", () => {
     expect(validateGraph(ngssK2PhysicalScience)).toEqual([]);
   });
 
+  it("every seed graph validates clean (no duplicate ids, no cycles, prereqs resolve)", () => {
+    for (const seed of SEED_GRAPHS) {
+      expect(validateGraph(seed), `seed "${seed.id}" has issues`).toEqual([]);
+    }
+  });
+
+  it("every seed graph is registered under its own id and is unique", () => {
+    const ids = SEED_GRAPHS.map((g) => g.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const seed of SEED_GRAPHS) {
+      expect(getSeedGraph(seed.id)).toBe(seed);
+    }
+  });
+
   it("CCSS-Math K seed topo-sorts (no cycles)", () => {
     const ordered = topologicalSort(ccssMathKindergarten);
     expect(ordered.length).toBe(ccssMathKindergarten.skills.length);
