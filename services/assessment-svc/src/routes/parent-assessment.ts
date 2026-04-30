@@ -106,6 +106,7 @@ export async function registerParentAssessmentRoutes(app: FastifyInstance) {
     const [assessment] = await db.insert(parentAssessments).values({
       tenantId: learnerTenantId,
       learnerId: body.learnerId,
+      submittedBy: submitterId,
       communicationMode: body.communicationMode,
       deviceInteraction: body.deviceInteraction,
       responseMethod: body.responseMethod,

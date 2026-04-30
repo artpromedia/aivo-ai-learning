@@ -135,6 +135,11 @@ class BaselineRequest(BaseModel):
     iep: Optional[dict] = None
     district: Optional[dict] = None
     interest_profile: Optional[dict] = None
+    # All three of these are OPTIONAL — the prompt builder degrades
+    # gracefully when any (or all) are absent, so a learner with only
+    # a parent assessment still gets a baseline generation.
+    caregiver_perspectives: Optional[list] = None
+    teacher_assessment: Optional[dict] = None
 
 
 class BaselineResponse(BaseModel):
@@ -154,6 +159,8 @@ async def generate_baseline(req: BaselineRequest):
         iep=req.iep,
         district=req.district,
         interest_profile=req.interest_profile,
+        caregiver_perspectives=req.caregiver_perspectives,
+        teacher_assessment=req.teacher_assessment,
     )
 
     try:
@@ -216,6 +223,9 @@ class DiscoveryChapterRequest(BaseModel):
     iep: Optional[dict] = None
     district: Optional[dict] = None
     interest_profile: Optional[dict] = None
+    # Optional — see BaselineRequest for the same rationale.
+    caregiver_perspectives: Optional[list] = None
+    teacher_assessment: Optional[dict] = None
 
 
 class DiscoveryChapterResponse(BaseModel):
@@ -236,6 +246,8 @@ async def generate_discovery_chapter(req: DiscoveryChapterRequest):
         iep=req.iep,
         district=req.district,
         interest_profile=req.interest_profile,
+        caregiver_perspectives=req.caregiver_perspectives,
+        teacher_assessment=req.teacher_assessment,
     )
 
     try:

@@ -8,6 +8,7 @@ import { createDb } from "@aivo/db";
 import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerParentAssessmentRoutes } from "./routes/parent-assessment.js";
+import { registerTeacherAssessmentRoutes } from "./routes/teacher-assessment.js";
 import { registerAssessmentRoutes } from "./routes/assessments.js";
 import { registerIepRoutes } from "./routes/iep.js";
 import { registerIepEvaluationRoutes } from "./routes/iep-evaluations.js";
@@ -55,6 +56,7 @@ async function start() {
 
   await registerHealthRoutes(app);
   await registerParentAssessmentRoutes(app);
+  await registerTeacherAssessmentRoutes(app);
   await registerAssessmentRoutes(app);
   await registerIepRoutes(app);
   await registerIepEvaluationRoutes(app);

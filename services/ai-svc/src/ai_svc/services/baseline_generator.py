@@ -69,6 +69,126 @@ def _format_iep_block(iep: Optional[dict]) -> str:
 {accom_block}"""
 
 
+def _format_caregiver_perspectives_block(perspectives: Optional[list]) -> str:
+    """Render caregiver (parent + co-parent) perspectives for the prompt.
+
+    The product requirement is that both perspectives, when present,
+    are surfaced to the LLM — the parent and the co-parent may answer
+    differently (one says "verbal", one says "minimally verbal") and
+    the model should weigh both rather than seeing the last writer
+    only. Co-parent input is OPTIONAL: when only one caregiver row
+    exists, we render a single perspective and note no second
+    caregiver is on file. When zero exist, return an empty string so
+    the prompt is unaffected (the surrounding parent_assessment block
+    still carries the primary signal).
+    """
+    if not isinstance(perspectives, list) or len(perspectives) == 0:
+        return ""
+
+    def _fmt_one(idx: int, p: dict) -> str:
+        if not isinstance(p, dict):
+            return ""
+        comm = p.get("communicationMode") or "not specified"
+        dev = p.get("deviceInteraction") or "not specified"
+        resp_method = p.get("responseMethod") or "not specified"
+        attn = p.get("attentionSpan") or "not specified"
+        dx = p.get("diagnoses") or []
+        responses = p.get("responses") or {}
+        # Surface only the high-signal answer keys so the prompt does
+        # not balloon with a full intake dump per caregiver.
+        signal_keys = ["ls-1", "str-1", "ch-1", "ch-2", "fl-5", "fl-7", "pref-1", "ch-5", "se-1"]
+        signal_lines = []
+        for k in signal_keys:
+            if k in responses and responses[k] not in (None, "", []):
+                v = responses[k]
+                if isinstance(v, list):
+                    v = ", ".join(str(x) for x in v[:6])
+                signal_lines.append(f"  - {k}: {v}")
+        signals_block = "\n".join(signal_lines) if signal_lines else "  - (no detailed responses)"
+        return f"""### Caregiver perspective {idx}
+- Communication: {comm}
+- Device interaction: {dev}
+- Response method: {resp_method}
+- Attention span: {attn}
+- Diagnoses reported: {', '.join(dx) if dx else 'none reported'}
+- Key responses:
+{signals_block}"""
+
+    rendered = "\n\n".join(_fmt_one(i + 1, p) for i, p in enumerate(perspectives) if isinstance(p, dict))
+    if not rendered:
+        return ""
+
+    if len(perspectives) == 1:
+        header = ("## Caregiver Perspectives (1 caregiver on file — co-parent input is optional)\n"
+                  "Only one caregiver has submitted an assessment. Treat their answers as the primary signal.")
+    else:
+        header = (f"## Caregiver Perspectives ({len(perspectives)} caregivers on file)\n"
+                  "Multiple caregivers have submitted assessments. Their answers may DIFFER (e.g., one\n"
+                  "may say 'verbal' while another says 'minimally verbal'). When perspectives disagree,\n"
+                  "(a) calibrate difficulty to the MORE SUPPORTIVE perspective so the learner is not\n"
+                  "over-faced on item one, and (b) include items that probe the disputed area so the\n"
+                  "baseline result will resolve the disagreement.")
+
+    return f"""{header}
+
+{rendered}"""
+
+
+def _format_teacher_block(teacher: Optional[dict]) -> str:
+    """Render the (optional) teacher-led intake.
+
+    Teacher input is OPTIONAL: returns an explicit "no teacher input
+    on file" line when absent so the prompt is self-describing. When
+    present, surfaces classroom-observed strengths/challenges/
+    accommodations and any narrative observations.
+    """
+    if not isinstance(teacher, dict) or not teacher:
+        return "## Teacher Input\nNo teacher assessment on file (optional). Generate based on caregiver + IEP signal only."
+
+    role = teacher.get("teacherRole") or "Teacher"
+    grade = teacher.get("gradeLevel") or "not specified"
+    subject = teacher.get("subjectArea") or "not specified"
+    strengths = teacher.get("strengths") or []
+    challenges = teacher.get("challenges") or []
+    accommodations = teacher.get("accommodations") or []
+    observations = (teacher.get("observations") or "").strip()
+    focus_areas = teacher.get("recommendedFocusAreas") or []
+
+    def _bullets(items, fallback="(none recorded)"):
+        if not items:
+            return f"  - {fallback}"
+        rendered = []
+        for it in items[:10]:
+            if isinstance(it, str) and it:
+                rendered.append(f"  - {it}")
+            elif isinstance(it, dict):
+                desc = it.get("description") or it.get("text") or it.get("name") or ""
+                if desc:
+                    rendered.append(f"  - {desc}")
+        return "\n".join(rendered) if rendered else f"  - {fallback}"
+
+    obs_block = observations if observations else "(no narrative provided)"
+
+    return f"""## Teacher Input ({role})
+- Grade level (classroom): {grade}
+- Subject area: {subject}
+
+### Teacher-observed strengths
+{_bullets(strengths)}
+
+### Teacher-observed challenges
+{_bullets(challenges)}
+
+### Classroom accommodations the teacher uses or recommends
+{_bullets(accommodations)}
+
+### Teacher's recommended focus areas for the baseline
+{_bullets(focus_areas, fallback="(no specific focus requested — calibrate broadly)")}
+
+### Classroom observations
+{obs_block}"""
+
+
 def _format_district_block(district: Optional[dict]) -> str:
     """Render the learner's district / curriculum context as prompt-ready text."""
     if not district:
@@ -190,6 +310,8 @@ def build_discovery_adventure_prompt(
     iep: Optional[dict] = None,
     district: Optional[dict] = None,
     interest_profile: Optional[dict] = None,
+    caregiver_perspectives: Optional[list] = None,
+    teacher_assessment: Optional[dict] = None,
 ) -> tuple[str, str]:
     responses = parent_assessment.get("responses", {})
     communication_mode = parent_assessment.get("communicationMode", "verbal")
@@ -263,6 +385,10 @@ def build_discovery_adventure_prompt(
 - Self-Confidence (1-5): {confidence}
 
 {_format_iep_block(iep)}
+
+{_format_caregiver_perspectives_block(caregiver_perspectives)}
+
+{_format_teacher_block(teacher_assessment)}
 
 {_format_district_block(district)}
 
@@ -347,6 +473,8 @@ def build_baseline_generation_prompt(
     iep: Optional[dict] = None,
     district: Optional[dict] = None,
     interest_profile: Optional[dict] = None,
+    caregiver_perspectives: Optional[list] = None,
+    teacher_assessment: Optional[dict] = None,
 ) -> tuple[str, str]:
     responses = parent_assessment.get("responses", {})
     communication_mode = parent_assessment.get("communicationMode", "verbal")
@@ -411,6 +539,10 @@ def build_baseline_generation_prompt(
 - Self-Confidence (1-5): {confidence}
 
 {_format_iep_block(iep)}
+
+{_format_caregiver_perspectives_block(caregiver_perspectives)}
+
+{_format_teacher_block(teacher_assessment)}
 
 {_format_district_block(district)}
 
