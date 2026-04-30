@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowRight, CheckCircle2, Flame, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Flame, PlayCircle, Sparkles } from "lucide-react";
 import { trackCTAClick, trackSignupInitiation } from "@/lib/analytics";
 import { WEB_APP_URL } from "@/lib/constants";
 
@@ -65,6 +65,17 @@ export function Hero({ scrollY }: { scrollY: number }) {
     return () => mq.removeEventListener("change", update);
   }, []);
 
+  // Disable parallax on small screens / low-power devices to avoid jank
+  const [parallaxEnabled, setParallaxEnabled] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(min-width: 768px) and (prefers-reduced-motion: no-preference)");
+    const update = () => setParallaxEnabled(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
   useEffect(() => {
     if (paused || prefersReducedMotion) return;
     const id = window.setInterval(() => {
@@ -95,7 +106,7 @@ export function Hero({ scrollY }: { scrollY: number }) {
       <div className="relative max-w-6xl mx-auto px-6 md:px-8 pt-16 pb-20 md:pt-24 md:pb-28">
         <div
           className={`grid md:grid-cols-2 gap-12 items-center transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
-          style={{ transform: `translateY(${scrollY * -0.05}px)` }}
+          style={{ transform: parallaxEnabled ? `translateY(${scrollY * -0.05}px)` : undefined }}
         >
           <div className="space-y-7 text-center md:text-left">
             <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-100 text-purple-700 font-bold text-sm">
@@ -123,10 +134,14 @@ export function Hero({ scrollY }: { scrollY: number }) {
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
               </a>
               <a
-                href={`${WEB_APP_URL}/login`}
-                className="inline-flex items-center justify-center px-8 py-4 rounded-full border-2 border-slate-200 bg-white text-slate-700 font-bold text-lg hover:bg-slate-50 hover:border-slate-300 transition-all hover:-translate-y-0.5 min-h-[44px]"
+                href="#brain"
+                onClick={() => {
+                  trackCTAClick("hero_watch_demo", "#brain");
+                }}
+                className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full border-2 border-slate-200 bg-white text-slate-700 font-bold text-lg hover:bg-slate-50 hover:border-slate-300 transition-all hover:-translate-y-0.5 min-h-[44px]"
               >
-                {t("cta_signin")}
+                <PlayCircle className="w-5 h-5 text-primary" aria-hidden="true" />
+                {t("cta_demo")}
               </a>
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-2 justify-center md:justify-start text-sm font-bold text-slate-500">

@@ -81,6 +81,13 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: BASE_URL,
+    // Note: locales are runtime-switched (no per-locale URLs), so we only
+    // declare x-default + en. When per-locale paths ship (e.g. /es, /fr),
+    // expand this map to include the rest of `locales`.
+    languages: {
+      "x-default": BASE_URL,
+      en: BASE_URL,
+    },
   },
 };
 

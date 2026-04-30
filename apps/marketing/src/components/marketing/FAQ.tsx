@@ -19,6 +19,23 @@ export function FAQ() {
 
   return (
     <section className="py-24 bg-gradient-to-b from-slate-50/50 to-white" id="faq">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: FAQ_KEYS.map((faq) => ({
+              "@type": "Question",
+              name: t(faq.q),
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: t(faq.a),
+              },
+            })),
+          }),
+        }}
+      />
       <div className="max-w-3xl mx-auto px-6 md:px-8">
         <div className="text-center mb-16">
           <p className="text-sm font-bold text-secondary uppercase tracking-widest mb-3">

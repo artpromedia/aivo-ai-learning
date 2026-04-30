@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   StickyHeader,
   Hero,
+  TrustStrip,
   Features,
   HowItWorks,
   FunctioningLevels,
@@ -44,6 +45,8 @@ export default function Home() {
 
       <main>
         <Hero scrollY={scrollY} />
+
+        <TrustStrip />
 
         <div id="features">
           <Features scrollY={scrollY} />

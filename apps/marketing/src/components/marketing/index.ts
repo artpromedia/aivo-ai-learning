@@ -1,5 +1,6 @@
 export { StickyHeader } from "./StickyHeader";
 export { Hero } from "./Hero";
+export { TrustStrip } from "./TrustStrip";
 export { Features } from "./Features";
 export { HowItWorks } from "./HowItWorks";
 export { FunctioningLevels } from "./FunctioningLevels";
