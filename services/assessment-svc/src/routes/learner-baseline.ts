@@ -588,7 +588,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
     const db = (app as any).db;
     const user = (req as any).user;
     const { learnerId } = req.params as { learnerId: string };
-    const { locale } = (req.query as { locale?: string }) || {};
+    const { locale } = req.query as { locale?: string };
 
     let [learner] = await db.select().from(learners).where(eq(learners.id, learnerId)).limit(1);
     if (!learner) {
