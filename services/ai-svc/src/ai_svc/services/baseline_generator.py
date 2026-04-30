@@ -468,13 +468,13 @@ IMPORTANT:
 - ID format: {chapter['domain']}_[easy/medium/hard]_[number]
 - Return ONLY the JSON object, no markdown or code blocks
 
-CRITICAL — keep these fields in English/ASCII exactly as specified, even when responding in another language:
-- All JSON keys (`activities`, `easy`, `medium`, `hard`, `id`, `title`, `narration`, `tutorLine`, `interaction`, `choices`, `label`, `emoji`, `isCorrect`, `sceneEmoji`, `difficulty`, `brainMeasures`).
+CRITICAL — when responding in a non-English language, only translate the human-readable text fields (`title`, `narration`, `tutorLine`, `label` values, `brainMeasures` entries). Keep all of the following in English/ASCII exactly as specified:
+- All JSON keys (do not translate any field name).
 - `id` values: keep the `{chapter['domain']}_<tier>_<n>` format unchanged.
-- `interaction` values: must be one of "tap_image", "tap_word", "drag_sort", "sequence", "pattern_fill", "memory", "emotion_pick", "observation".
-- `difficulty` values: keep as "easy", "medium", or "hard" (do NOT translate).
-- Choice `id` values: keep as "a", "b", "c", "d", etc.
-Only translate the human-readable text fields: `title`, `narration`, `tutorLine`, `label` values, and `brainMeasures` entries."""
+- `interaction` values: one of "tap_image", "tap_word", "drag_sort", "sequence", "pattern_fill", "memory", "emotion_pick", "observation".
+- `difficulty` values: one of "easy", "medium", "hard".
+- Choice `id` values: "a", "b", "c", "d", etc.
+- Booleans (`isCorrect`) and numbers (`difficulty` ints if used) — never translate."""
 
     return system_prompt, user_prompt
 
@@ -604,12 +604,12 @@ ID format: m1-m6 for math, e1-e6 for ela, s1-s6 for science, sp1-sp6 for speech,
 difficulty: 1 (easy) or 2 (moderate) — start each subject with difficulty 1.
 Personalize based on the learner's interests ({', '.join(interests) if interests else 'general'}), strengths, and challenges.
 
-CRITICAL — keep these fields in English/ASCII exactly as specified, even when responding in another language:
-- All JSON keys (`id`, `subject`, `questionText`, `options`, `label`, `value`, `correctAnswer`, `difficulty`).
-- `subject` values: must be one of "math", "ela", "science", "speech", "sel", "life_skills", "executive_function" (do NOT translate).
+CRITICAL — when responding in a non-English language, only translate the human-readable text fields (`questionText` and option `label` values). Keep all of the following in English/ASCII exactly as specified:
+- All JSON keys (do not translate any field name).
+- `subject` values: one of "math", "ela", "science", "speech", "sel", "life_skills", "executive_function".
 - `id` values: keep the prefixes shown above (m1, e1, s1, sp1, sel1, ls1, ef1).
-- `value` letters in options: keep as "a", "b", "c", "d".
-Only translate the human-readable text fields: `questionText` and option `label` values.
+- `value` letters in options: "a", "b", "c", "d".
+- `correctAnswer`: a single letter matching one of the option `value`s.
 
 Return ONLY the JSON object, no markdown formatting or code blocks."""
 

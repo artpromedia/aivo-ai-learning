@@ -128,7 +128,8 @@ class TestSchemaStabilityGuidance:
         _, user = build_baseline_generation_prompt(PARENT, locale="es")
         assert "subject" in user
         assert "math" in user and "ela" in user and "executive_function" in user
-        assert "do NOT translate" in user
+        # Schema-stability guidance must be present in non-English mode.
+        assert "non-English" in user or "do not translate" in user.lower()
 
     def test_baseline_user_prompt_pins_id_prefixes(self):
         _, user = build_baseline_generation_prompt(PARENT, locale="es")
@@ -153,4 +154,4 @@ class TestSchemaStabilityGuidance:
         # Defensive: even when the LLM is responding in English we want
         # the same schema discipline so the validators stay strict.
         _, user = build_baseline_generation_prompt(PARENT)
-        assert "do NOT translate" in user
+        assert "non-English" in user or "do not translate" in user.lower()
