@@ -143,10 +143,10 @@ async function bestEffortSendEmail(template: string, to: string, data: Record<st
       body: JSON.stringify({ template, to, data }),
     });
     if (!res.ok) {
-      logger.warn({ template, to, status: res.status }, "iep-notify email dispatch returned non-2xx");
+      logger.warn("iep-notify email dispatch returned non-2xx", { template, to, status: res.status });
     }
   } catch (err: any) {
-    logger.warn({ template, to, err: err?.message }, "iep-notify email dispatch failed");
+    logger.warn("iep-notify email dispatch failed", { template, to, err: err?.message });
   }
 }
 
@@ -166,16 +166,16 @@ async function bestEffortInAppNotify(payload: {
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      logger.warn({
+      logger.warn("in-app-notify dispatch returned non-2xx", {
         template: payload.template, parentId: payload.parentId,
         learnerId: payload.learnerId, status: res.status,
-      }, "in-app-notify dispatch returned non-2xx");
+      });
     }
   } catch (err: any) {
-    logger.warn({
+    logger.warn("in-app-notify dispatch failed", {
       template: payload.template, parentId: payload.parentId,
       learnerId: payload.learnerId, err: err?.message,
-    }, "in-app-notify dispatch failed");
+    });
   }
 }
 

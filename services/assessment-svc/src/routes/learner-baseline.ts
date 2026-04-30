@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { parentAssessments, learners, assessmentAttempts, iepProfiles, iepGoals, learnerProfiles, learnerInterestSignals } from "@aivo/db";
+import { parentAssessments, teacherAssessments, learners, assessmentAttempts, iepProfiles, iepGoals, learnerProfiles, learnerInterestSignals } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { eq, desc } from "drizzle-orm";
 import {
@@ -84,6 +84,82 @@ function buildParentAssessmentPayload(parentAssessment: any, learner: any) {
     diagnoses: parentAssessment.diagnoses,
     responses: parentAssessment.responses,
     functioningLevel: learner.functioningLevel || "STANDARD",
+  };
+}
+
+/**
+ * Load EVERY completed caregiver assessment for the learner, deduped
+ * to one row per submitter (most recent wins). The baseline LLM prompt
+ * needs to see ALL caregiver perspectives — parent + co-parent —
+ * because their answers may differ (one says verbal, one says
+ * minimally verbal) and that disagreement is signal, not noise.
+ *
+ * Co-parent input is OPTIONAL: when only one row exists, the prompt
+ * builder simply renders one perspective and skips the disagreement
+ * scaffolding. When zero exist (legacy), returns an empty array.
+ */
+async function loadCaregiverPerspectives(db: any, learnerDbId: string) {
+  const rows = await db
+    .select()
+    .from(parentAssessments)
+    .where(eq(parentAssessments.learnerId, learnerDbId))
+    .orderBy(desc(parentAssessments.createdAt));
+
+  const completed = rows.filter((r: any) => !!r.completedAt);
+  if (completed.length === 0) return [];
+
+  // One row per submitter (most recent). Rows without `submittedBy`
+  // are legacy and treated as a single "anonymous" caregiver bucket
+  // so we don't accidentally collapse two anonymous rows from the
+  // same caregiver-pre-attribution era into separate perspectives.
+  const seen = new Set<string>();
+  const perspectives: any[] = [];
+  for (const r of completed) {
+    const key = r.submittedBy || "__legacy__";
+    if (seen.has(key)) continue;
+    seen.add(key);
+    perspectives.push({
+      submittedBy: r.submittedBy || null,
+      submittedAt: r.completedAt instanceof Date ? r.completedAt.toISOString() : r.completedAt,
+      communicationMode: r.communicationMode,
+      deviceInteraction: r.deviceInteraction,
+      responseMethod: r.responseMethod,
+      attentionSpan: r.attentionSpan,
+      diagnoses: r.diagnoses || [],
+      responses: r.responses || {},
+    });
+  }
+  return perspectives;
+}
+
+/**
+ * Load the most recent completed teacher assessment for the learner,
+ * if any. Teacher input is OPTIONAL — returns null when no row exists
+ * and the prompt builder degrades gracefully.
+ */
+async function loadTeacherContext(db: any, learnerDbId: string) {
+  const [row] = await db
+    .select()
+    .from(teacherAssessments)
+    .where(eq(teacherAssessments.learnerId, learnerDbId))
+    .orderBy(desc(teacherAssessments.createdAt))
+    .limit(1);
+
+  if (!row || !row.completedAt) return null;
+
+  return {
+    teacherRole: row.teacherRole || null,
+    gradeLevel: row.gradeLevel || null,
+    subjectArea: row.subjectArea || null,
+    strengths: row.strengths || [],
+    challenges: row.challenges || [],
+    accommodations: row.accommodations || [],
+    observations: row.observations || null,
+    recommendedFocusAreas: row.recommendedFocusAreas || [],
+    responses: row.responses || {},
+    submittedAt: row.completedAt instanceof Date
+      ? row.completedAt.toISOString()
+      : row.completedAt,
   };
 }
 
@@ -248,6 +324,8 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
     const iepContext = await loadIepContext(db, learner.id);
     const districtContext = buildDistrictContext(learner);
     const interestProfile = await loadInterestProfile(db, learner.id);
+    const caregiverPerspectives = await loadCaregiverPerspectives(db, learner.id);
+    const teacherContext = await loadTeacherContext(db, learner.id);
 
     try {
       const aiRes = await fetch(`${AI_SVC_URL}/api/ai/generate-discovery-chapter`, {
@@ -260,6 +338,9 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
           iep: iepContext,
           district: districtContext,
           interest_profile: interestProfile,
+          // Optional inputs — null/empty array when not on file.
+          caregiver_perspectives: caregiverPerspectives,
+          teacher_assessment: teacherContext,
         }),
       });
 
@@ -531,6 +612,8 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
     const iepContext = await loadIepContext(db, learner.id);
     const districtContext = buildDistrictContext(learner);
     const interestProfile = await loadInterestProfile(db, learner.id);
+    const caregiverPerspectives = await loadCaregiverPerspectives(db, learner.id);
+    const teacherContext = await loadTeacherContext(db, learner.id);
 
     try {
       const aiRes = await fetch(`${AI_SVC_URL}/api/ai/generate-baseline`, {
@@ -550,6 +633,9 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
           iep: iepContext,
           district: districtContext,
           interest_profile: interestProfile,
+          // Optional inputs — null/empty array when not on file.
+          caregiver_perspectives: caregiverPerspectives,
+          teacher_assessment: teacherContext,
         }),
       });
 

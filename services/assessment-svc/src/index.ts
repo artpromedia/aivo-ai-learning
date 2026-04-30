@@ -8,6 +8,7 @@ import { createDb } from "@aivo/db";
 import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerParentAssessmentRoutes } from "./routes/parent-assessment.js";
+import { registerTeacherAssessmentRoutes } from "./routes/teacher-assessment.js";
 import { registerAssessmentRoutes } from "./routes/assessments.js";
 import { registerIepRoutes } from "./routes/iep.js";
 import { registerIepEvaluationRoutes } from "./routes/iep-evaluations.js";
@@ -55,6 +56,7 @@ async function start() {
 
   await registerHealthRoutes(app);
   await registerParentAssessmentRoutes(app);
+  await registerTeacherAssessmentRoutes(app);
   await registerAssessmentRoutes(app);
   await registerIepRoutes(app);
   await registerIepEvaluationRoutes(app);
@@ -75,14 +77,14 @@ async function start() {
   // (catches anything missed while the service was down) and then daily.
   // Idempotent at the row level, so multiple instances racing is safe.
   setTimeout(() => {
-    checkReviewReminders(db).catch((err) => logger.error(err, "Initial reminder run failed"));
+    checkReviewReminders(db).catch((err) => logger.error("Initial reminder run failed", { err: err?.message || String(err) }));
   }, 30_000);
   setInterval(() => {
-    checkReviewReminders(db).catch((err) => logger.error(err, "Daily reminder run failed"));
+    checkReviewReminders(db).catch((err) => logger.error("Daily reminder run failed", { err: err?.message || String(err) }));
   }, 24 * 60 * 60 * 1000);
 }
 
 start().catch((err) => {
-  logger.error(err, "Failed to start assessment-svc");
+  logger.error("Failed to start assessment-svc", { err: err?.message || String(err) });
   process.exit(1);
 });

@@ -2,6 +2,7 @@ import { pgTable, uuid, varchar, timestamp, integer, jsonb, text, real } from "d
 import { assessmentModeEnum, assessmentStatusEnum } from "./enums.js";
 import { learners } from "./learners.js";
 import { tenants } from "./tenants.js";
+import { users } from "./users.js";
 
 export const assessmentAttempts = pgTable("assessment_attempts", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -33,6 +34,11 @@ export const parentAssessments = pgTable("parent_assessments", {
   id: uuid("id").defaultRandom().primaryKey(),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   learnerId: uuid("learner_id").references(() => learners.id).notNull(),
+  // Nullable on purpose: legacy rows pre-date caregiver attribution.
+  // When present, `submittedBy` lets the baseline generator distinguish
+  // parent from co-parent submissions and surface BOTH perspectives to
+  // the LLM rather than letting last-write-wins silently drop one.
+  submittedBy: uuid("submitted_by").references(() => users.id),
   communicationMode: varchar("communication_mode", { length: 50 }),
   deviceInteraction: varchar("device_interaction", { length: 50 }),
   responseMethod: varchar("response_method", { length: 50 }),
@@ -41,6 +47,39 @@ export const parentAssessments = pgTable("parent_assessments", {
   responses: jsonb("responses").default({}),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
+ * Optional teacher-led intake feeding the adaptive baseline generator.
+ * Every field except the FKs is nullable so a teacher can submit
+ * whatever they have (e.g., classroom observations only, or strengths
+ * + challenges only). The baseline LLM prompt degrades gracefully when
+ * no row exists for the learner.
+ */
+export const teacherAssessments = pgTable("teacher_assessments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  learnerId: uuid("learner_id").references(() => learners.id).notNull(),
+  submittedBy: uuid("submitted_by").references(() => users.id),
+  /** Free-text role label, e.g. "Special Ed Teacher", "General Ed Teacher". */
+  teacherRole: varchar("teacher_role", { length: 100 }),
+  gradeLevel: varchar("grade_level", { length: 20 }),
+  subjectArea: varchar("subject_area", { length: 100 }),
+  /** Classroom-observed strengths (array of short strings). */
+  strengths: jsonb("strengths").default([]),
+  /** Classroom-observed challenges (array of short strings). */
+  challenges: jsonb("challenges").default([]),
+  /** Accommodations the teacher uses or recommends (array). */
+  accommodations: jsonb("accommodations").default([]),
+  /** Free-form classroom observations narrative. */
+  observations: text("observations"),
+  /** Recommended baseline focus areas (array). */
+  recommendedFocusAreas: jsonb("recommended_focus_areas").default([]),
+  /** Free-form additional answers — same shape as parentAssessments.responses. */
+  responses: jsonb("responses").default({}),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const observationalAssessments = pgTable("observational_assessments", {
