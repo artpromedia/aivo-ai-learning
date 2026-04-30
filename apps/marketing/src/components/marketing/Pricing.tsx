@@ -175,16 +175,17 @@ export function Pricing() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-10">
           {PLANS.map((plan) => {
-            const monthlyDisplay = plan.monthly === 0
-              ? t("free_price")
-              : billing === "annual"
+            let monthlyDisplay = t("free_price");
+            if (plan.monthly > 0) {
+              monthlyDisplay = billing === "annual"
                 ? formatAnnual(plan.monthly)
                 : `$${plan.monthly.toFixed(2)}`;
-            const periodSuffix = plan.monthly === 0
-              ? ""
-              : billing === "annual"
-                ? t("annual_suffix")
-                : "/mo";
+            }
+
+            let periodSuffix = "";
+            if (plan.monthly > 0) {
+              periodSuffix = billing === "annual" ? t("annual_suffix") : "/mo";
+            }
 
             return (
               <div
@@ -310,9 +311,9 @@ export function Pricing() {
                   <th scope="row" className="text-left font-body p-4 font-semibold text-slate-700">
                     {t("compare_tutors")}
                   </th>
-                  <td className="text-center p-4">1</td>
-                  <td className="text-center p-4">2 + add-ons</td>
-                  <td className="text-center p-4">2 + add-ons</td>
+                  <td className="text-center p-4">{t("compare_tutors_free")}</td>
+                  <td className="text-center p-4">{t("compare_tutors_paid")}</td>
+                  <td className="text-center p-4">{t("compare_tutors_paid")}</td>
                   <td className="text-center p-4">14</td>
                 </tr>
                 <tr>
@@ -326,39 +327,30 @@ export function Pricing() {
                 </tr>
                 <tr>
                   <th scope="row" className="text-left font-body p-4 font-semibold text-slate-700">
-                    {t("compare_iep")}
+                    {t("compare_parent_dashboard")}
                   </th>
-                  <td className="text-center p-4 text-slate-300" aria-label={t("compare_no")}>{t("compare_no")}</td>
+                  <td className="text-center p-4"><Check className="inline w-4 h-4 text-emerald-500" aria-label={t("compare_yes")} /></td>
                   <td className="text-center p-4"><Check className="inline w-4 h-4 text-emerald-500" aria-label={t("compare_yes")} /></td>
                   <td className="text-center p-4"><Check className="inline w-4 h-4 text-emerald-500" aria-label={t("compare_yes")} /></td>
                   <td className="text-center p-4"><Check className="inline w-4 h-4 text-emerald-500" aria-label={t("compare_yes")} /></td>
                 </tr>
                 <tr>
                   <th scope="row" className="text-left font-body p-4 font-semibold text-slate-700">
-                    {t("compare_aac")}
+                    {t("compare_multi_learner_discount")}
                   </th>
                   <td className="text-center p-4 text-slate-300" aria-label={t("compare_no")}>{t("compare_no")}</td>
-                  <td className="text-center p-4"><Check className="inline w-4 h-4 text-emerald-500" aria-label={t("compare_yes")} /></td>
+                  <td className="text-center p-4 text-slate-300" aria-label={t("compare_no")}>{t("compare_no")}</td>
                   <td className="text-center p-4"><Check className="inline w-4 h-4 text-emerald-500" aria-label={t("compare_yes")} /></td>
                   <td className="text-center p-4"><Check className="inline w-4 h-4 text-emerald-500" aria-label={t("compare_yes")} /></td>
                 </tr>
                 <tr>
                   <th scope="row" className="text-left font-body p-4 font-semibold text-slate-700">
-                    {t("compare_analytics")}
+                    {t("compare_addon_tutors")}
                   </th>
                   <td className="text-center p-4 text-slate-300" aria-label={t("compare_no")}>{t("compare_no")}</td>
-                  <td className="text-center p-4"><Check className="inline w-4 h-4 text-emerald-500" aria-label={t("compare_yes")} /></td>
-                  <td className="text-center p-4"><Check className="inline w-4 h-4 text-emerald-500" aria-label={t("compare_yes")} /></td>
-                  <td className="text-center p-4"><Check className="inline w-4 h-4 text-emerald-500" aria-label={t("compare_yes")} /></td>
-                </tr>
-                <tr>
-                  <th scope="row" className="text-left font-body p-4 font-semibold text-slate-700">
-                    {t("compare_support")}
-                  </th>
-                  <td className="text-center p-4">{t("compare_support_community")}</td>
-                  <td className="text-center p-4">{t("compare_support_email")}</td>
-                  <td className="text-center p-4">{t("compare_support_email")}</td>
-                  <td className="text-center p-4">{t("compare_support_priority")}</td>
+                  <td className="text-center p-4">{t("compare_addon_price")}</td>
+                  <td className="text-center p-4">{t("compare_addon_price")}</td>
+                  <td className="text-center p-4">{t("compare_addon_included")}</td>
                 </tr>
               </tbody>
             </table>
