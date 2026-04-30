@@ -84,6 +84,8 @@ export function renderTemplate(templateId: string, data: TemplateData): { subjec
       return renderEvaluationSubmittedAdmin(data);
     case "evaluation_decided":
       return renderEvaluationDecidedParent(data);
+    case "newsletter_confirmation":
+      return renderNewsletterConfirmation(data);
     default:
       return renderGeneric(data);
   }
@@ -459,6 +461,26 @@ function renderEvaluationDecidedParent(data: TemplateData) {
   };
 }
 
+function renderNewsletterConfirmation(_data: TemplateData) {
+  const html = baseLayout(`
+    <h1 class="title">You're subscribed!</h1>
+    <p class="body-text">Thanks for signing up — you're now on the AIVO Learning newsletter list.</p>
+    <p class="body-text">Here's what you can expect:</p>
+    <ul class="body-text">
+      <li>Platform updates and new AI tutor releases</li>
+      <li>Learning tips for parents and educators</li>
+      <li>Special offers and early access invites</li>
+    </ul>
+    <p style="text-align:center"><a href="https://aivolearning.com" class="btn">Explore AIVO Learning</a></p>
+    <p class="body-text" style="font-size:13px;color:#6b7280">You can unsubscribe at any time by replying STOP to any email.</p>
+  `);
+  return {
+    subject: "You're subscribed to AIVO Learning news",
+    html,
+    text: `Thanks for signing up! You'll receive AIVO Learning updates, tips, and special offers. Reply STOP to unsubscribe.`,
+  };
+}
+
 export const AVAILABLE_TEMPLATES = [
   { id: "welcome", name: "Welcome Email", channels: ["email"] },
   { id: "collaboration_invite", name: "Collaboration Invite", channels: ["email"] },
@@ -480,4 +502,5 @@ export const AVAILABLE_TEMPLATES = [
   { id: "evaluation_submitted", name: "Evaluation — Submitted (Parent)", channels: ["email"] },
   { id: "evaluation_submitted_admin", name: "Evaluation — Submitted (District Admin)", channels: ["email"] },
   { id: "evaluation_decided", name: "Evaluation — Decision Recorded (Parent)", channels: ["email"] },
+  { id: "newsletter_confirmation", name: "Newsletter Subscription Confirmation", channels: ["email"] },
 ];

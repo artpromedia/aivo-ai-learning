@@ -707,4 +707,38 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
       return reply.code(500).send({ error: "Failed to subscribe" });
     }
   });
+
+  // Sends a subscription confirmation email via Postmark.
+  // Called by admin-svc after persisting the newsletter lead — internal-key
+  // auth matches all other /internal/* endpoints.
+  app.post("/api/comms/internal/newsletter-confirm", async (request, reply) => {
+    const internalKey = request.headers["x-internal-key"];
+    const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
+    if (!internalKey || !expectedKey || internalKey !== expectedKey) {
+      return reply.status(401).send({ error: "Unauthorized" });
+    }
+    const { to } = (request.body as any) || {};
+    if (!to) {
+      return reply.code(400).send({ error: "to is required" });
+    }
+    if (!isConfigured()) {
+      logger.warn({ to }, "Newsletter confirm requested but email not configured (dev mode)");
+      return { status: "dev_mode" };
+    }
+    const rendered = renderTemplate("newsletter_confirmation", {});
+    try {
+      const result = await sendEmail({
+        to,
+        subject: rendered.subject,
+        htmlBody: rendered.html,
+        textBody: rendered.text,
+        tag: "newsletter_confirmation",
+      });
+      return { status: result.status, messageId: result.messageId };
+    } catch (err: any) {
+      logger.error({ err, to }, "Failed to send newsletter confirmation email");
+      // Fail-soft: subscription is already stored; email failure is non-fatal.
+      return { status: "failed" };
+    }
+  });
 }
