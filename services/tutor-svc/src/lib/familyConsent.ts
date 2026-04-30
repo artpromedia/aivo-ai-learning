@@ -33,12 +33,22 @@ export class ConsentError extends Error {
   }
 }
 
-function devLookup(tenantId: string, learnerId: string): string | null {
-  const raw = process.env.SPEECH_BUDDY_DEV_CONSENTS || "";
-  if (!raw) return null;
-  for (const entry of raw.split(",")) {
-    const [t, l, c] = entry.trim().split(":");
-    if (t === tenantId && l === learnerId && c) return c;
+function devLookup(tenantId: string, learnerId: string, tutorKey?: string): string | null {
+  // SPEECH_BUDDY_DEV_CONSENTS is the legacy single-tutor format kept for
+  // backward compatibility. TUTOR_DEV_CONSENTS adds an optional 4th
+  // segment scoping the consent to a specific tutor key.
+  const buddyRaw = process.env.SPEECH_BUDDY_DEV_CONSENTS || "";
+  const tutorRaw = process.env.TUTOR_DEV_CONSENTS || "";
+  for (const raw of [tutorRaw, buddyRaw]) {
+    if (!raw) continue;
+    for (const entry of raw.split(",")) {
+      const [t, l, c, k] = entry.trim().split(":");
+      if (t === tenantId && l === learnerId && c) {
+        // If the entry pins a tutor key, only honour it for that tutor.
+        if (k && tutorKey && k !== tutorKey) continue;
+        return c;
+      }
+    }
   }
   return null;
 }
@@ -71,3 +81,64 @@ export async function verifyConsent(args: {
   }
   return body.consentRecordId;
 }
+
+/**
+ * Generic per-tutor consent gate.
+ *
+ * Used by the generic `/api/tutors/:tutorKey/plan` route to verify that
+ * a consent-required tutor (Harmony, Compass, Pixel, Vigor, Echo, …)
+ * has an active family consent on file. The contract intentionally
+ * mirrors `verifyConsent` so existing family-svc infra is reused.
+ *
+ * Returns the consent record id on success; throws `ConsentError` on
+ * any failure (the route maps that to HTTP 403/502).
+ *
+ * Dev / test short-circuit: set `TUTOR_DEV_CONSENTS` to a comma-list
+ * of `tenant:learner:consentId[:tutorKey]` entries. The optional 4th
+ * segment scopes a record to a single tutor key.
+ */
+export async function verifyTutorConsent(args: {
+  tenantId: string;
+  learnerId: string;
+  tutorKey: string;
+  ageBand?: "6-9" | "10-12" | "13-15";
+}): Promise<string> {
+  const dev = devLookup(args.tenantId, args.learnerId, args.tutorKey);
+  if (dev) return dev;
+  const url = `${FAMILY_SVC_URL}/api/family/internal/tutor/consent/verify`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-internal-key": INTERNAL_KEY,
+      },
+      body: JSON.stringify(args),
+    });
+  } catch (err) {
+    throw new ConsentError(
+      `Consent check failed: ${err instanceof Error ? err.message : String(err)}`,
+      502,
+    );
+  }
+  if (res.status === 404) {
+    throw new ConsentError(
+      `No consent on file for tutor "${args.tutorKey}".`,
+      403,
+    );
+  }
+  if (!res.ok) {
+    throw new ConsentError(`Consent check failed (status ${res.status})`, 502);
+  }
+  const body = (await res.json()) as { consentRecordId?: string; granted?: boolean };
+  if (!body.granted || !body.consentRecordId) {
+    throw new ConsentError(
+      `Consent for tutor "${args.tutorKey}" has been revoked.`,
+      403,
+    );
+  }
+  return body.consentRecordId;
+}
+
+export const __testing = { devLookup };

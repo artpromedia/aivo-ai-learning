@@ -41,23 +41,43 @@ import {
 import type { ContentPack } from "@aivo/content-pack";
 import type { MasteryRecord, AnswerOutcome } from "@aivo/pedagogy";
 import type { LearnerInterestProfile } from "@aivo/special-interest-engine";
+import type { DapeProfileSummary } from "@aivo/scoring";
 import { getTutorDefinition, listTutorDefinitions } from "../modes/registry.js";
 import {
   buildLearnerContext,
   negotiateFunctioningLevel,
 } from "../lib/learnerContext.js";
+import { getStarterContentPack } from "../content-packs/index.js";
+import { ConsentError, verifyTutorConsent } from "../lib/familyConsent.js";
 
 interface PlanBody {
   learnerId?: string;
+  tenantId?: string;
   functioningLevel?: string;
   learnerAgeYears?: number;
   consentRecordId?: string;
+  consentAgeBand?: "6-9" | "10-12" | "13-15";
   contentPack?: ContentPack;
   masteryRecords?: MasteryRecord[];
   recentOutcomes?: AnswerOutcome[];
   recentlyCovered?: string[];
   interestProfile?: LearnerInterestProfile;
   maxActivities?: number;
+  /** Pre-loaded DAPE summary (used by Vigor). The chat layer attaches
+   *  this to ai-svc `brain_context` so the prompt builder renders the
+   *  DAPE Track block defined in `prompt_builder._build_dape_block`. */
+  dapeProfile?: DapeProfileSummary;
+}
+
+/** Hint to the caller that a tutor delegates part of its session to a
+ *  separate, specialised endpoint. Today only Echo delegates — the live
+ *  voice loop runs through the existing Speech Buddy session API. */
+interface TutorDelegate {
+  kind: "speech-buddy";
+  /** Reason surfaced to logs / UI. */
+  reason: string;
+  /** Endpoint the caller should drive after consuming the plan. */
+  endpoint: string;
 }
 
 interface PlanResponse extends SessionPlan {
@@ -65,6 +85,15 @@ interface PlanResponse extends SessionPlan {
   aiSvcPersonaKey?: string;
   /** The TutorDefinition id that produced this plan (for replay). */
   tutorDefinitionId: string;
+  /** Echoed `dapeProfile` for downstream chat layers. Vigor only. */
+  dapeProfile?: DapeProfileSummary;
+  /** Delegation marker — present only when the tutor partially defers
+   *  its session loop to a specialised endpoint. */
+  delegate?: TutorDelegate;
+  /** Source of the content pack that drove the plan. `request` means the
+   *  caller supplied it; `starter` means tutor-svc fell back to the
+   *  registered starter pack. */
+  contentPackSource: "request" | "starter";
 }
 
 export function registerTutorSessionRoutes(app: FastifyInstance): void {
@@ -118,16 +147,52 @@ export function registerTutorSessionRoutes(app: FastifyInstance): void {
       if (!body.learnerId) {
         return reply.code(400).send({ error: "learnerId is required" });
       }
-      if (!body.contentPack || !Array.isArray(body.contentPack.activities)) {
-        return reply
-          .code(400)
-          .send({ error: "contentPack with activities[] is required" });
+
+      // Phase 4: fall back to the tutor's starter content pack when
+      // the caller hasn't shipped one. This keeps the route functional
+      // end-to-end before the curriculum CMS is online.
+      let contentPackSource: "request" | "starter" = "request";
+      let contentPack = body.contentPack;
+      if (!contentPack || !Array.isArray(contentPack.activities)) {
+        const starter = getStarterContentPack(tutorKey);
+        if (!starter) {
+          return reply
+            .code(400)
+            .send({ error: "contentPack with activities[] is required" });
+        }
+        contentPack = starter;
+        contentPackSource = "starter";
+      }
+
+      // Phase 5: generic family-consent gate. When the tutor's policy
+      // demands consent and the caller hasn't already shipped a record
+      // id, attempt to verify with family-svc (with a dev short-circuit
+      // for tests). Tutor-specific consent flows (Speech Buddy live
+      // voice) still own their own verifier — this gate covers the
+      // text-and-image-first tutors (Harmony, Compass, Pixel, Vigor, …).
+      let consentRecordId = body.consentRecordId;
+      if (def.policy.requiresConsent && !consentRecordId && body.tenantId) {
+        try {
+          consentRecordId = await verifyTutorConsent({
+            tenantId: body.tenantId,
+            learnerId: body.learnerId,
+            tutorKey,
+            ageBand: body.consentAgeBand,
+          });
+        } catch (err) {
+          if (err instanceof ConsentError) {
+            return reply
+              .code(err.status)
+              .send({ error: err.message, code: "consent_check_failed" });
+          }
+          throw err;
+        }
       }
 
       // Policy gates first — fail fast before we build context.
       try {
         checkPolicy(def, {
-          consentRecordId: body.consentRecordId,
+          consentRecordId,
           learnerAgeYears: body.learnerAgeYears,
         });
       } catch (err) {
@@ -158,14 +223,36 @@ export function registerTutorSessionRoutes(app: FastifyInstance): void {
       const ctx: LearnerContext = { ...baseCtx, functioningLevel: negotiated };
 
       try {
-        const plan = planSession(def, ctx, body.contentPack, {
+        const plan = planSession(def, ctx, contentPack, {
           maxActivities: body.maxActivities,
         });
         const response: PlanResponse = {
           ...plan,
           tutorDefinitionId: def.id,
           aiSvcPersonaKey: def.authoringMeta?.aiSvcPersonaKey,
+          contentPackSource,
         };
+
+        // Echo delegates its live voice loop to Speech Buddy. The plan
+        // still carries skill targets so the caller can prime the SB
+        // session with `targetedSkills`, but the audio I/O happens on
+        // the SB endpoint rather than this route.
+        if (tutorKey === "echo") {
+          response.delegate = {
+            kind: "speech-buddy",
+            reason: "Echo delegates the live voice loop to Speech Buddy.",
+            endpoint: "/api/speech-buddy/sessions",
+          };
+        }
+
+        // Vigor consumes a DAPE profile to switch to the adapted-PE
+        // track. We accept the summary in the body and echo it on the
+        // response so the chat layer attaches it to ai-svc
+        // `brain_context.dape_profile`.
+        if (tutorKey === "vigor" && body.dapeProfile) {
+          response.dapeProfile = body.dapeProfile;
+        }
+
         return response;
       } catch (err) {
         if (err instanceof TutorPolicyError) {
