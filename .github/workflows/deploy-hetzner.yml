@@ -249,6 +249,7 @@ jobs:
           for svc in "${SERVICES[@]}"; do
             PORT=3000
             HELM_TIMEOUT=3m
+            HELM_RETRY_TIMEOUT="$HELM_TIMEOUT"
             # Mirror the per-service env fixes applied in production:
             #  - Override K8s-injected <SVC-UPPER>_PORT=tcp://... so
             #    parseInt() receives a numeric value.
@@ -260,7 +261,8 @@ jobs:
               admin-svc)        EXTRA_SETS=(--set env.ADMIN_SVC_PORT=3000) ;;
               billing-svc)      EXTRA_SETS=(--set env.BILLING_SVC_PORT=3000) ;;
               comms-svc)
-                HELM_TIMEOUT=5m
+                HELM_TIMEOUT=8m
+                HELM_RETRY_TIMEOUT=10m
                 EXTRA_SETS=(--set env.COMMS_SVC_PORT=3000)
                 ;;
               i18n-svc)         EXTRA_SETS=(--set env.I18N_SVC_PORT=3000) ;;
@@ -317,9 +319,16 @@ jobs:
                   FAILED=$((FAILED+1))
                 fi
               elif echo "$OUT" | grep -q "context deadline exceeded"; then
-                echo "⚠  $svc exceeded Helm timeout ($HELM_TIMEOUT); deleting Deployment and retrying once"
+                echo "⚠  $svc exceeded Helm timeout ($HELM_TIMEOUT); collecting diagnostics, deleting Deployment, and retrying once"
+                kubectl -n "$NS" get pods -l app.kubernetes.io/name="$svc" -o wide || true
+                kubectl -n "$NS" describe deployment "$svc" || true
+                POD_NAME=$(kubectl -n "$NS" get pods -l app.kubernetes.io/name="$svc" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+                if [ -n "$POD_NAME" ]; then
+                  kubectl -n "$NS" logs "$POD_NAME" --tail=120 || true
+                  kubectl -n "$NS" logs "$POD_NAME" --previous --tail=120 || true
+                fi
                 kubectl -n "$NS" delete deployment "$svc" --ignore-not-found=true >/dev/null 2>&1 || true
-                if ! helm_apply "$svc" "$PORT" "$HELM_TIMEOUT"; then
+                if ! helm_apply "$svc" "$PORT" "$HELM_RETRY_TIMEOUT"; then
                   echo "::warning::$svc deploy incomplete"
                   kubectl -n "$NS" get pods -l app.kubernetes.io/name="$svc" -o wide || true
                   kubectl -n "$NS" describe deployment "$svc" || true
