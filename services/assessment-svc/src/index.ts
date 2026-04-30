@@ -77,14 +77,14 @@ async function start() {
   // (catches anything missed while the service was down) and then daily.
   // Idempotent at the row level, so multiple instances racing is safe.
   setTimeout(() => {
-    checkReviewReminders(db).catch((err) => logger.error(err, "Initial reminder run failed"));
+    checkReviewReminders(db).catch((err) => logger.error("Initial reminder run failed", { err: err?.message || String(err) }));
   }, 30_000);
   setInterval(() => {
-    checkReviewReminders(db).catch((err) => logger.error(err, "Daily reminder run failed"));
+    checkReviewReminders(db).catch((err) => logger.error("Daily reminder run failed", { err: err?.message || String(err) }));
   }, 24 * 60 * 60 * 1000);
 }
 
 start().catch((err) => {
-  logger.error(err, "Failed to start assessment-svc");
+  logger.error("Failed to start assessment-svc", { err: err?.message || String(err) });
   process.exit(1);
 });

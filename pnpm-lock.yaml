@@ -799,6 +799,9 @@ importers:
       '@aivo/security':
         specifier: workspace:*
         version: link:../../packages/security
+      '@aivo/special-interest-engine':
+        specifier: workspace:*
+        version: link:../../packages/special-interest-engine
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
