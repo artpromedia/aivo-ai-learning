@@ -60,6 +60,23 @@ def _build_language_directive(locale: str) -> str:
     return "\n".join(lines)
 
 
+def _should_synthesize_language_profile(
+    tutor_sku: str,
+    language_profile: dict,
+    normalized_locale: str,
+) -> bool:
+    """Lingua's bilingual scaffolding protocol expects a `language_profile`
+    in brain_context. When the caller hasn't supplied a `dominant_language`
+    but the learner has selected a non-English UI locale, treat that locale
+    as the dominant language so the persona's protocol can engage.
+    """
+    return (
+        tutor_sku == "ADDON_TUTOR_LANGUAGES"
+        and not language_profile.get("dominant_language")
+        and normalized_locale != DEFAULT_LOCALE
+    )
+
+
 def build_tutor_system_prompt(
     tutor_sku: str,
     brain_context: dict,
@@ -163,7 +180,7 @@ def build_tutor_system_prompt(
     # supplied one but we know the learner's UI locale, surface that as the
     # dominant_language so the persona's protocol has something to anchor on.
     language_profile = brain_context.get("language_profile") or {}
-    if tutor_sku == "ADDON_TUTOR_LANGUAGES" and not language_profile.get("dominant_language") and normalized_locale != DEFAULT_LOCALE:
+    if _should_synthesize_language_profile(tutor_sku, language_profile, normalized_locale):
         language_profile = {
             **language_profile,
             "dominant_language": LANGUAGE_NAMES[normalized_locale],

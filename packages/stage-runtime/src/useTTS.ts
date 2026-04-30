@@ -67,14 +67,15 @@ export function useTTS(
 ): UseTTSResult {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const basePrefs = TUTOR_VOICE_PREFS[tutorKey] || TUTOR_VOICE_PREFS.nova;
   // Override the tutor's default lang when the learner has selected a
   // non-English UI locale, so the tutor's spoken voice matches the language
-  // the LLM is now responding in.
-  const voicePrefs = useMemo(
-    () => ({ ...basePrefs, lang: resolveVoiceLang(locale, basePrefs.lang) }),
-    [basePrefs, locale],
-  );
+  // the LLM is now responding in. `tutorKey` and `locale` are the only
+  // inputs that change voice prefs — depend on those directly so the memo
+  // doesn't churn on unrelated re-renders.
+  const voicePrefs = useMemo(() => {
+    const base = TUTOR_VOICE_PREFS[tutorKey] || TUTOR_VOICE_PREFS.nova;
+    return { ...base, lang: resolveVoiceLang(locale, base.lang) };
+  }, [tutorKey, locale]);
 
   useEffect(() => {
     return () => {
@@ -99,18 +100,30 @@ export function useTTS(
 
       // Prefer a "natural" voice in the requested language, then any voice
       // that matches the language family, then fall back to the browser
-      // default. The base-language match (e.g. any `es-*`) handles regional
-      // variants when the exact `lang` isn't installed.
+      // default. Single pass through the voices list — categorise as we go
+      // and pick the highest-priority match at the end.
       const voices = window.speechSynthesis.getVoices();
-      const langTag = voicePrefs.lang;
-      const baseLang = langTag.split("-")[0].toLowerCase();
-      const preferred =
-        voices.find(
-          (v) => v.lang.toLowerCase() === langTag.toLowerCase() && v.name.toLowerCase().includes("natural"),
-        ) ||
-        voices.find((v) => v.lang.toLowerCase() === langTag.toLowerCase()) ||
-        voices.find((v) => v.lang.toLowerCase().startsWith(baseLang + "-")) ||
-        voices.find((v) => v.lang.toLowerCase().startsWith(baseLang));
+      const langTag = voicePrefs.lang.toLowerCase();
+      const baseLang = langTag.split("-")[0];
+      let exactNatural: SpeechSynthesisVoice | undefined;
+      let exact: SpeechSynthesisVoice | undefined;
+      let baseRegion: SpeechSynthesisVoice | undefined;
+      let base: SpeechSynthesisVoice | undefined;
+      for (const v of voices) {
+        const vLang = v.lang.toLowerCase();
+        if (vLang === langTag) {
+          if (!exactNatural && v.name.toLowerCase().includes("natural")) {
+            exactNatural = v;
+            break; // best possible match — stop early
+          }
+          exact ??= v;
+        } else if (vLang.startsWith(baseLang + "-")) {
+          baseRegion ??= v;
+        } else if (vLang.startsWith(baseLang)) {
+          base ??= v;
+        }
+      }
+      const preferred = exactNatural || exact || baseRegion || base;
       if (preferred) utterance.voice = preferred;
 
       utterance.onstart = () => setIsSpeaking(true);
