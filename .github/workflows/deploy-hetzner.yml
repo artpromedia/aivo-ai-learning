@@ -297,8 +297,15 @@ jobs:
 
             if [ $RC -ne 0 ]; then
               echo "$OUT"
-              if echo "$OUT" | grep -q "field is immutable"; then
-                echo "⚠  Immutable selector conflict for $svc; deleting Deployment and retrying"
+              if echo "$OUT" | grep -qE "field is immutable|more than 1 handler type|Duplicate value"; then
+                # Stale or malformed resource state in the cluster — delete the
+                # offending resources so Helm can recreate them cleanly.
+                if echo "$OUT" | grep -q "Duplicate value"; then
+                  echo "⚠  $svc has duplicate port names; removing Service and Deployment before retry"
+                  kubectl -n "$NS" delete service "$svc" --ignore-not-found=true >/dev/null 2>&1 || true
+                else
+                  echo "⚠  $svc has immutable/invalid resource state; removing Deployment before retry"
+                fi
                 kubectl -n "$NS" delete deployment "$svc" --ignore-not-found=true >/dev/null 2>&1 || true
                 if ! helm_apply "$svc" "$PORT"; then
                   echo "::warning::$svc deploy incomplete"
