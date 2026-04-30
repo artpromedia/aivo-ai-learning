@@ -446,7 +446,6 @@ export default function ParentAssessmentPage() {
 
   if (submitted && result) return <SubmittedScreen
     result={result}
-    learnerId={learnerId}
     onContinue={() => router.push(`/dashboard/parent`)}
     onContinueToBrain={() => router.push(`/dashboard/parent/learner/${learnerId}/brain-review`)}
     t={t}
@@ -1752,17 +1751,13 @@ function AlreadyCompletedScreen({
 }
 
 function SubmittedScreen({
-  result, learnerId, onContinue, onContinueToBrain, t,
+  result, onContinue, onContinueToBrain, t,
 }: {
   result: any;
-  learnerId: string;
   onContinue: () => void;
   onContinueToBrain: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
-  // void learnerId so future analytics or deep-links can use it without
-  // adding it as a dead unused-warning.
-  void learnerId;
   return (
     <div className="min-h-screen vi-bg flex items-center justify-center px-4 py-8">
       <div className="max-w-lg w-full">

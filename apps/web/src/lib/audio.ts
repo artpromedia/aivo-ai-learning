@@ -24,6 +24,10 @@ function getCtx(): AudioContext | null {
   type AudioContextCtor = typeof AudioContext;
   type WindowWithWebkit = Window & { webkitAudioContext?: AudioContextCtor };
   const w = window as WindowWithWebkit;
+  // `webkitAudioContext` covers iOS Safari < 14.5 / macOS Safari < 14
+  // which still need the prefixed constructor. We've seen real-world
+  // installs of these on classroom-issued iPads, so the fallback stays
+  // until our minimum-supported-browsers matrix moves above those cuts.
   const Ctor: AudioContextCtor | undefined = window.AudioContext ?? w.webkitAudioContext;
   if (!Ctor) return null;
   try {

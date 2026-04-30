@@ -32,28 +32,32 @@ export default tseslint.config(
   // Tier-theme contract: dashboard surfaces must drive colour off the
   // `--tier-*` / `--visual-*` CSS variables (or HSL fragments referencing
   // them) so promoting a learner across age tiers re-skins the UI without
-  // touching components. Raw 6-digit hex literals bypass this contract.
+  // touching components. Raw hex literals — both `#RRGGBB` and the
+  // `#RRGGBBAA` alpha-channel form — bypass this contract.
   //
-  // The rule scans both string literals and template literals for a
-  // standalone `#RRGGBB`. We don't ban CSS-property strings via AST shape
-  // checks because the false-positive surface is too high (many pure-data
-  // imports legitimately store hex). If a violation is intentional (e.g.
-  // a third-party brand colour that should stay constant across tiers),
-  // suppress with `// eslint-disable-next-line aivo/no-raw-hex-in-dashboard`.
+  // The rule scans both string literals and template literals. We don't
+  // ban CSS-property strings via AST shape checks because the false-
+  // positive surface is too high (many pure-data imports legitimately
+  // store hex). If a violation is intentional (e.g. a third-party brand
+  // colour that should stay constant across tiers), suppress with
+  // `// eslint-disable-next-line no-restricted-syntax` and a rationale.
   {
     files: ["src/app/dashboard/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": [
         "warn",
         {
-          selector: "Literal[value=/#[0-9a-fA-F]{6}\\b/]",
+          // {6} matches #RRGGBB, {8} matches #RRGGBBAA. The negative
+          // lookahead on `[0-9a-fA-F]` after the {6,8} run prevents
+          // false matches against e.g. 10+ char hex hashes / IDs.
+          selector: "Literal[value=/#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?(?![0-9a-fA-F])/]",
           message:
-            "Avoid raw #RRGGBB hex in dashboard files. Prefer hsl(var(--visual-*)) / var(--tier-*) so the surface re-skins per age tier. If unavoidable (e.g. third-party brand mark), add an eslint-disable comment with rationale.",
+            "Avoid raw #RRGGBB/#RRGGBBAA hex in dashboard files. Prefer hsl(var(--visual-*)) / var(--tier-*) so the surface re-skins per age tier. If unavoidable (e.g. third-party brand mark), add an eslint-disable comment with rationale.",
         },
         {
-          selector: "TemplateElement[value.raw=/#[0-9a-fA-F]{6}\\b/]",
+          selector: "TemplateElement[value.raw=/#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?(?![0-9a-fA-F])/]",
           message:
-            "Avoid raw #RRGGBB hex in dashboard files. Prefer hsl(var(--visual-*)) / var(--tier-*) so the surface re-skins per age tier. If unavoidable (e.g. third-party brand mark), add an eslint-disable comment with rationale.",
+            "Avoid raw #RRGGBB/#RRGGBBAA hex in dashboard files. Prefer hsl(var(--visual-*)) / var(--tier-*) so the surface re-skins per age tier. If unavoidable (e.g. third-party brand mark), add an eslint-disable comment with rationale.",
         },
       ],
     },

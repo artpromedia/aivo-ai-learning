@@ -28,8 +28,11 @@ test.describe("tier preview showcase", () => {
   test("all three tiers render unauthenticated", async ({ page }) => {
     await page.goto("/showcase/tiers/preview");
 
-    // The page title acts as a synchronous readiness signal — once it's
-    // visible we know hydration ran and the tier providers mounted.
+    // Page-title heading acts as a synchronous readiness signal — once
+    // it's visible we know hydration ran and the tier providers mounted.
+    // 15s timeout is intentional: this spec runs against the dev server
+    // (Turbopack first-load can take ~5–10s in CI runners), so a shorter
+    // bound would flake before the page is genuinely broken.
     await expect(
       page.getByRole("heading", { name: /three age tiers/i }).first(),
     ).toBeVisible({ timeout: 15_000 });
