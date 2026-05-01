@@ -155,7 +155,8 @@
     "coupon_invalid_exhausted": "代码已达到使用上限",
     "coupon_invalid_inactive": "代码不再有效",
     "coupon_invalid_network_error": "无法验证 — 请重试",
-    "coupon_invalid_generic": "无效代码"
+    "coupon_invalid_generic": "无效代码",
+    "coupon_valid_discount": "{code} — {pct}% off your subscription"
   },
   "onboarding": {
     "add_learner_title": "添加新学生",

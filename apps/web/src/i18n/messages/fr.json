@@ -155,7 +155,8 @@
     "coupon_invalid_exhausted": "Le code a atteint sa limite d'utilisation",
     "coupon_invalid_inactive": "Le code n'est plus actif",
     "coupon_invalid_network_error": "Impossible de valider — veuillez réessayer",
-    "coupon_invalid_generic": "Code invalide"
+    "coupon_invalid_generic": "Code invalide",
+    "coupon_valid_discount": "{code} — {pct}% off your subscription"
   },
   "onboarding": {
     "add_learner_title": "Ajouter un nouvel élève",

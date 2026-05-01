@@ -155,7 +155,8 @@
     "coupon_invalid_exhausted": "코드가 사용 한도에 도달했습니다",
     "coupon_invalid_inactive": "코드가 더 이상 활성화되지 않습니다",
     "coupon_invalid_network_error": "확인할 수 없습니다 — 다시 시도해 주세요",
-    "coupon_invalid_generic": "유효하지 않은 코드"
+    "coupon_invalid_generic": "유효하지 않은 코드",
+    "coupon_valid_discount": "{code} — {pct}% off your subscription"
   },
   "onboarding": {
     "add_learner_title": "새 학습자 추가",

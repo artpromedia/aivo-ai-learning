@@ -155,7 +155,8 @@
     "coupon_invalid_exhausted": "コードの使用上限に達しました",
     "coupon_invalid_inactive": "コードはもう有効ではありません",
     "coupon_invalid_network_error": "確認できません — もう一度お試しください",
-    "coupon_invalid_generic": "無効なコード"
+    "coupon_invalid_generic": "無効なコード",
+    "coupon_valid_discount": "{code} — {pct}% off your subscription"
   },
   "onboarding": {
     "add_learner_title": "新しい学習者を追加",

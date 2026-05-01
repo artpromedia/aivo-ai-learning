@@ -155,7 +155,8 @@
     "coupon_invalid_exhausted": "कोड अपनी उपयोग सीमा तक पहुँच गया है",
     "coupon_invalid_inactive": "कोड अब सक्रिय नहीं है",
     "coupon_invalid_network_error": "सत्यापन संभव नहीं — कृपया पुनः प्रयास करें",
-    "coupon_invalid_generic": "अमान्य कोड"
+    "coupon_invalid_generic": "अमान्य कोड",
+    "coupon_valid_discount": "{code} — {pct}% off your subscription"
   },
   "onboarding": {
     "add_learner_title": "नया शिक्षार्थी जोड़ें",
