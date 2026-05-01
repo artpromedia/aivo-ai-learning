@@ -273,7 +273,7 @@ function SignupInner() {
                 className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[hsl(var(--visual-primary))] transition"
               >
                 <Tag className="w-4 h-4" aria-hidden="true" />
-                Have a coupon or access code?
+                {t("coupon_toggle")}
                 {couponExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
 
@@ -290,7 +290,7 @@ function SignupInner() {
                       autoComplete="off"
                       style={{ minHeight: 44 }}
                       className="w-full h-14 pl-12 pr-12 rounded-2xl bg-slate-50 border-2 border-slate-100 text-slate-900 font-body focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.15)] outline-none transition uppercase tracking-widest"
-                      placeholder="ENTER CODE"
+                      placeholder={t("coupon_placeholder")}
                     />
                     {couponChecking && (
                       <Loader2 className="w-5 h-5 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 motion-safe:animate-spin" aria-hidden="true" />
@@ -308,7 +308,7 @@ function SignupInner() {
                             ? ` — ${couponState.discountPct}% off your subscription`
                             : ""}
                           {couponState.couponType === "PROVISIONING" && !couponState.description
-                            ? " — Access code applied"
+                            ? ` — ${t("coupon_valid_provisioning")}`
                             : ""}
                         </span>
                       </div>
@@ -316,12 +316,12 @@ function SignupInner() {
                       <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold">
                         <XCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                         <span>
-                          {couponState.reason === "not_found" && "Code not found"}
-                          {couponState.reason === "expired" && "Code expired"}
-                          {couponState.reason === "exhausted" && "Code has reached its usage limit"}
-                          {couponState.reason === "inactive" && "Code is no longer active"}
-                          {couponState.reason === "network_error" && "Unable to validate — please try again"}
-                          {!["not_found","expired","exhausted","inactive","network_error"].includes(couponState.reason ?? "") && "Invalid code"}
+                          {couponState.reason === "not_found" && t("coupon_invalid_not_found")}
+                          {couponState.reason === "expired" && t("coupon_invalid_expired")}
+                          {couponState.reason === "exhausted" && t("coupon_invalid_exhausted")}
+                          {couponState.reason === "inactive" && t("coupon_invalid_inactive")}
+                          {couponState.reason === "network_error" && t("coupon_invalid_network_error")}
+                          {!["not_found","expired","exhausted","inactive","network_error"].includes(couponState.reason ?? "") && t("coupon_invalid_generic")}
                         </span>
                       </div>
                     )

@@ -146,7 +146,16 @@
     "streak_preview_subtitle_math": "Nova 已为今天的数学挑战做好准备",
     "streak_preview_subtitle_reading": "Sage 已为今天的阅读冒险做好准备",
     "streak_preview_subtitle_science": "Spark 已为今天的科学实验做好准备",
-    "streak_preview_subtitle_sel": "Harmony 已为今天的正念时刻做好准备"
+    "streak_preview_subtitle_sel": "Harmony 已为今天的正念时刻做好准备",
+    "coupon_toggle": "Have a coupon or access code?",
+    "coupon_placeholder": "ENTER CODE",
+    "coupon_valid_provisioning": "Access code applied",
+    "coupon_invalid_not_found": "Code not found",
+    "coupon_invalid_expired": "Code expired",
+    "coupon_invalid_exhausted": "Code has reached its usage limit",
+    "coupon_invalid_inactive": "Code is no longer active",
+    "coupon_invalid_network_error": "Unable to validate — please try again",
+    "coupon_invalid_generic": "Invalid code"
   },
   "onboarding": {
     "add_learner_title": "添加新学生",
@@ -174,7 +183,8 @@
     "step_language": "语言",
     "step_review": "检查",
     "welcome_to_aivo": "欢迎来到AIVO！",
-    "lets_set_up": "让我们为您的孩子设置个性化学习体验。"
+    "lets_set_up": "让我们为您的孩子设置个性化学习体验。",
+    "date_of_birth": "Date of Birth"
   },
   "landing": {
     "hero_title": "每个孩子都值得拥有卓越的教育",

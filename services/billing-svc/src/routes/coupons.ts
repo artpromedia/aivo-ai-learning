@@ -19,6 +19,25 @@ import { sql } from "drizzle-orm";
 import { requirePlatformAdmin } from "./daily-jobs.js";
 import { verifyJWT } from "@aivo/security";
 
+/**
+ * Per-user 10-req/min token bucket on the redeem path to prevent
+ * brute-force coupon code probing.
+ */
+const REDEEM_RATE_BURST = 10;
+const REDEEM_RATE_WINDOW_MS = 60_000;
+const redeemBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function checkRedeemRateLimit(subject: string, now: number): boolean {
+  const b = redeemBuckets.get(subject);
+  if (!b || b.resetAt <= now) {
+    redeemBuckets.set(subject, { count: 1, resetAt: now + REDEEM_RATE_WINDOW_MS });
+    return true;
+  }
+  if (b.count >= REDEEM_RATE_BURST) return false;
+  b.count += 1;
+  return true;
+}
+
 async function lookupCoupon(db: any, code: string): Promise<Record<string, any> | null> {
   const result = (await db.execute(sql`
     SELECT code, description, discount_pct, max_redemptions, redemptions, active,
@@ -183,6 +202,11 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
       return reply.code(401).send({ error: "invalid_token" });
     }
 
+    // Rate-limit: 10 redemption attempts per user per minute
+    if (!checkRedeemRateLimit(jwtPayload.sub as string, Date.now())) {
+      return reply.code(429).send({ error: "too_many_requests" });
+    }
+
     const body = (req.body ?? {}) as Record<string, unknown>;
     const code = typeof body.code === "string" ? body.code.trim() : "";
     const tenantId = typeof body.tenantId === "string" ? body.tenantId.trim() : "";
@@ -223,7 +247,9 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
     const grantsDurationDays: number = row.grants_duration_days;
     const userId: string = jwtPayload.sub;
 
-    // Run the provisioning in a transaction
+    let expiresAt: unknown = null;
+
+    // Run the provisioning in a transaction (including redemption counter)
     await db.transaction(async (tx: any) => {
       await tx.execute(sql`
         UPDATE tenants SET licensing_tier = ${grantsTier}, seat_limit = ${grantsSeatLimit}, updated_at = NOW()
@@ -236,15 +262,14 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
           ${userId},
           ${grantsPlan},
           'ACTIVE',
-          NOW() + (${grantsDurationDays} || ' days')::interval,
+          NOW() + (${String(grantsDurationDays)} || ' days')::interval,
           ${JSON.stringify({ couponCode: row.code, provisionedBy: "coupon" })}
         )
       `);
+      await tx.execute(sql`
+        UPDATE billing_coupons SET redemptions = redemptions + 1 WHERE code = ${row.code}
+      `);
     });
-
-    await db.execute(sql`
-      UPDATE billing_coupons SET redemptions = redemptions + 1 WHERE code = ${row.code}
-    `);
 
     const expiresResult = (await db.execute(sql`
       SELECT current_period_end FROM subscriptions
@@ -252,7 +277,7 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
       ORDER BY id DESC LIMIT 1
     `)) as { rows?: Array<Record<string, any>> } | Array<Record<string, any>>;
     const expiresRows = Array.isArray(expiresResult) ? expiresResult : (expiresResult.rows ?? []);
-    const expiresAt = expiresRows[0]?.current_period_end ?? null;
+    expiresAt = expiresRows[0]?.current_period_end ?? null;
 
     return {
       ok: true,
