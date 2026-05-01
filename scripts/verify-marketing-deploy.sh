@@ -6,8 +6,8 @@
 #   2. The response body contains every required marker substring for that
 #      path (case-insensitive). Coverage today:
 #        /                  Hero "Learning adventures" + Footer COPPA/FERPA/SOC 2
-#        /privacy-policy    COPPA/FERPA + "Children's Online Privacy Protection"
-#        /coppa-compliance  compliance@aivolearning.com + verifiable parental consent
+#        /privacy-policy    COPPA/FERPA + "Online Privacy Protection Act"
+#        /coppa-compliance  "school and district inquiries" + verifiable parental consent
 #        /ferpa-compliance  "FERPA Compliance Statement" + "SOC 2 Type II"
 #
 # Iterates every (path, marker) pair and reports ALL failures at the end so

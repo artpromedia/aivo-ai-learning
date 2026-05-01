@@ -15,14 +15,18 @@
 #                        - apps/marketing/src/components/marketing/Footer.tsx
 #                          ("COPPA · FERPA · SOC 2")
 #   /privacy-policy      apps/marketing/src/app/privacy-policy/page.tsx
-#                        Must keep COPPA + FERPA references and spell out
-#                        "Children's Online Privacy Protection" so a section
-#                        rename or i18n key drop can't silently blank it.
+#                        Must keep COPPA + FERPA references and include
+#                        "Online Privacy Protection Act" (without the
+#                        apostrophe, which React SSR encodes as &#x27;)
+#                        so a section rename or i18n key drop can't
+#                        silently blank it.
 #   /coppa-compliance    apps/marketing/src/app/coppa-compliance/page.tsx
-#                        Must surface the COPPA contact address
-#                        (compliance@aivolearning.com) and the verifiable-
-#                        parental-consent language required by the FTC's
-#                        COPPA Rule.
+#                        Must surface the COPPA compliance contact section
+#                        via "school and district inquiries" (the plain-text
+#                        context around the compliance email, which Cloudflare
+#                        email-obfuscation removes from the raw HTML) and the
+#                        verifiable-parental-consent language required by the
+#                        FTC's COPPA Rule.
 #   /ferpa-compliance    apps/marketing/src/app/ferpa-compliance/page.tsx
 #                        Must keep the page title ("FERPA Compliance
 #                        Statement") and the SOC 2 Type II audit claim that
@@ -63,11 +67,11 @@ marketing_markers_for() {
       printf '%s\n' \
         "COPPA" \
         "FERPA" \
-        "Children's Online Privacy Protection"
+        "Online Privacy Protection Act"
       ;;
     "/coppa-compliance")
       printf '%s\n' \
-        "compliance@aivolearning.com" \
+        "school and district inquiries" \
         "verifiable parental consent"
       ;;
     "/ferpa-compliance")
