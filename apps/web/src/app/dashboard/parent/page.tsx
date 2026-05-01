@@ -85,7 +85,7 @@ export default function ParentDashboard() {
   const [learners, setLearners] = useState<Learner[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newLearner, setNewLearner] = useState({
-    name: "", gradeLevel: "", pin: "", zipCode: "", country: "US", region: "", preferredLanguage: "en",
+    name: "", gradeLevel: "", pin: "", dateOfBirth: "", zipCode: "", country: "US", region: "", preferredLanguage: "en",
   });
   const [curriculumInfo, setCurriculumInfo] = useState<CurriculumInfo | null>(null);
   const [curriculumLoading, setCurriculumLoading] = useState(false);
@@ -222,7 +222,7 @@ export default function ParentDashboard() {
 
       setLearners((prev) => [...prev, createdLearner]);
       setShowAddForm(false);
-      setNewLearner({ name: "", gradeLevel: "", pin: "", zipCode: "", country: "US", region: "", preferredLanguage: currentLocale });
+      setNewLearner({ name: "", gradeLevel: "", pin: "", dateOfBirth: "", zipCode: "", country: "US", region: "", preferredLanguage: currentLocale });
       setCurriculumInfo(null);
       setSubmitSuccess("Learner added successfully. Opening profile...");
       setTimeout(() => {
@@ -289,7 +289,7 @@ export default function ParentDashboard() {
             </StatIconWell>
             <h3 className="font-heading font-bold text-xl vi-text">{t("onboarding.add_learner_title")}</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label htmlFor="learner-name" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.learner_name")}</label>
               <input id="learner-name" type="text" value={newLearner.name} onChange={(e) => setNewLearner({...newLearner, name: e.target.value})} required
@@ -304,6 +304,11 @@ export default function ParentDashboard() {
               <label htmlFor="learner-pin" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.pin")}</label>
               <input id="learner-pin" type="text" value={newLearner.pin} onChange={(e) => setNewLearner({...newLearner, pin: e.target.value})} maxLength={6}
                 className="w-full px-4 py-3 rounded-2xl border-2 vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body" placeholder={t("onboarding.pin_placeholder")} />
+            </div>
+            <div>
+              <label htmlFor="learner-dob" className="block text-sm font-bold text-slate-800 mb-2">{t("onboarding.date_of_birth")}</label>
+              <input id="learner-dob" type="date" value={newLearner.dateOfBirth} onChange={(e) => setNewLearner({...newLearner, dateOfBirth: e.target.value})}
+                className="w-full px-4 py-3 rounded-2xl border-2 vi-border bg-[hsl(var(--visual-surface))] focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.2)] outline-none transition font-body" />
             </div>
           </div>
 

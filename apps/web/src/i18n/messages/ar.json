@@ -146,7 +146,16 @@
     "streak_preview_subtitle_math": "نوفا جاهزة لمهمة الرياضيات اليوم",
     "streak_preview_subtitle_reading": "سيج جاهزة لمغامرة القراءة اليوم",
     "streak_preview_subtitle_science": "سبارك جاهز لتجربة العلوم اليوم",
-    "streak_preview_subtitle_sel": "هارموني جاهزة للحظة التأمل اليوم"
+    "streak_preview_subtitle_sel": "هارموني جاهزة للحظة التأمل اليوم",
+    "coupon_toggle": "هل لديك رمز قسيمة أو وصول؟",
+    "coupon_placeholder": "أدخل الرمز",
+    "coupon_valid_provisioning": "تم تطبيق رمز الوصول",
+    "coupon_invalid_not_found": "الرمز غير موجود",
+    "coupon_invalid_expired": "انتهت صلاحية الرمز",
+    "coupon_invalid_exhausted": "وصل الرمز إلى حد الاستخدام",
+    "coupon_invalid_inactive": "الرمز لم يعد نشطاً",
+    "coupon_invalid_network_error": "تعذّر التحقق — يرجى المحاولة مرة أخرى",
+    "coupon_invalid_generic": "رمز غير صالح"
   },
   "onboarding": {
     "add_learner_title": "إضافة متعلم جديد",
@@ -174,7 +183,8 @@
     "step_language": "اللغة",
     "step_review": "المراجعة",
     "welcome_to_aivo": "مرحباً بك في AIVO!",
-    "lets_set_up": "لنقم بإعداد تجربة التعلم المخصصة لطفلك."
+    "lets_set_up": "لنقم بإعداد تجربة التعلم المخصصة لطفلك.",
+    "date_of_birth": "تاريخ الميلاد"
   },
   "landing": {
     "hero_title": "كل طفل يستحق تعليماً متميزاً",

@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -22,6 +22,10 @@ import {
   Brain,
   Users,
   Zap,
+  Tag,
+  ChevronDown,
+  ChevronUp,
+  XCircle,
 } from "lucide-react";
 
 function SignupInner() {
@@ -37,10 +41,55 @@ function SignupInner() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const [couponCode, setCouponCode] = useState(params.get("coupon") || "");
+  const [couponExpanded, setCouponExpanded] = useState(!!params.get("coupon"));
+  const [couponState, setCouponState] = useState<null | {
+    valid: boolean;
+    couponType?: string;
+    discountPct?: number;
+    grantsPlan?: string;
+    grantsTier?: string;
+    description?: string | null;
+    reason?: string;
+  }>(null);
+  const [couponChecking, setCouponChecking] = useState(false);
+  const couponDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     if (invitedEmail && !email) setEmail(invitedEmail);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invitedEmail]);
+
+  useEffect(() => {
+    if (!couponCode) {
+      setCouponState(null);
+      return;
+    }
+    if (couponCode.length < 3) {
+      setCouponState(null);
+      return;
+    }
+    if (couponDebounceRef.current) clearTimeout(couponDebounceRef.current);
+    couponDebounceRef.current = setTimeout(async () => {
+      setCouponChecking(true);
+      try {
+        const res = await fetch("/api/billing/coupons/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: couponCode }),
+        });
+        const data = await res.json();
+        setCouponState(data);
+      } catch {
+        setCouponState({ valid: false, reason: "network_error" });
+      } finally {
+        setCouponChecking(false);
+      }
+    }, 400);
+    return () => {
+      if (couponDebounceRef.current) clearTimeout(couponDebounceRef.current);
+    };
+  }, [couponCode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +97,15 @@ function SignupInner() {
     setLoading(true);
     try {
       await register(email, password, name, "PARENT");
+      // Store validated coupon for post-registration redemption
+      if (couponState?.valid && couponCode) {
+        try {
+          sessionStorage.setItem("pending_coupon", couponCode);
+          if (couponState.couponType === "PROVISIONING") {
+            sessionStorage.setItem("pending_coupon_type", "PROVISIONING");
+          }
+        } catch {}
+      }
       if (invitedEmail) {
         router.push(`/accept-invite?email=${encodeURIComponent(invitedEmail)}`);
       } else {
@@ -202,12 +260,77 @@ function SignupInner() {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                <p className="text-xs text-slate-500 font-body mt-1.5 ml-1">
-                  {t("password_hint")}
-                </p>
-              </div>
+              <p className="text-xs text-slate-500 font-body mt-1.5 ml-1">
+                {t("password_hint")}
+              </p>
+            </div>
 
+            {/* Coupon / Access Code */}
+            <div>
               <button
+                type="button"
+                onClick={() => setCouponExpanded((v) => !v)}
+                className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[hsl(var(--visual-primary))] transition"
+              >
+                <Tag className="w-4 h-4" aria-hidden="true" />
+                {t("coupon_toggle")}
+                {couponExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+
+              {couponExpanded && (
+                <div className="mt-3 space-y-2">
+                  <div className="relative">
+                    <Tag className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                    <input
+                      id="signup-coupon"
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      autoCapitalize="characters"
+                      autoComplete="off"
+                      style={{ minHeight: 44 }}
+                      className="w-full h-14 pl-12 pr-12 rounded-2xl bg-slate-50 border-2 border-slate-100 text-slate-900 font-body focus:bg-white focus:border-[hsl(var(--visual-primary))] focus:ring-4 focus:ring-[hsl(var(--visual-primary)/0.15)] outline-none transition uppercase tracking-widest"
+                      placeholder={t("coupon_placeholder")}
+                    />
+                    {couponChecking && (
+                      <Loader2 className="w-5 h-5 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 motion-safe:animate-spin" aria-hidden="true" />
+                    )}
+                  </div>
+
+                  {couponState && !couponChecking && (
+                    couponState.valid ? (
+                      <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-bold">
+                        <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                        <span>
+                          {couponCode}
+                          {couponState.description ? ` — ${couponState.description}` : ""}
+                          {couponState.couponType === "DISCOUNT" && couponState.discountPct
+                            ? ` — ${couponState.discountPct}% off your subscription`
+                            : ""}
+                          {couponState.couponType === "PROVISIONING" && !couponState.description
+                            ? ` — ${t("coupon_valid_provisioning")}`
+                            : ""}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold">
+                        <XCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                        <span>
+                          {couponState.reason === "not_found" && t("coupon_invalid_not_found")}
+                          {couponState.reason === "expired" && t("coupon_invalid_expired")}
+                          {couponState.reason === "exhausted" && t("coupon_invalid_exhausted")}
+                          {couponState.reason === "inactive" && t("coupon_invalid_inactive")}
+                          {couponState.reason === "network_error" && t("coupon_invalid_network_error")}
+                          {!["not_found","expired","exhausted","inactive","network_error"].includes(couponState.reason ?? "") && t("coupon_invalid_generic")}
+                        </span>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+
+            <button
                 type="submit"
                 disabled={loading}
                 aria-busy={loading}

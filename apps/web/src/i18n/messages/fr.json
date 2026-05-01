@@ -146,7 +146,16 @@
     "streak_preview_subtitle_math": "Nova est prête pour la quête maths du jour",
     "streak_preview_subtitle_reading": "Sage est prête pour l'aventure lecture du jour",
     "streak_preview_subtitle_science": "Spark est prêt pour l'expérience sciences du jour",
-    "streak_preview_subtitle_sel": "Harmony est prête pour le moment de pleine conscience du jour"
+    "streak_preview_subtitle_sel": "Harmony est prête pour le moment de pleine conscience du jour",
+    "coupon_toggle": "Vous avez un code de coupon ou d'accès ?",
+    "coupon_placeholder": "ENTRER LE CODE",
+    "coupon_valid_provisioning": "Code d'accès appliqué",
+    "coupon_invalid_not_found": "Code introuvable",
+    "coupon_invalid_expired": "Code expiré",
+    "coupon_invalid_exhausted": "Le code a atteint sa limite d'utilisation",
+    "coupon_invalid_inactive": "Le code n'est plus actif",
+    "coupon_invalid_network_error": "Impossible de valider — veuillez réessayer",
+    "coupon_invalid_generic": "Code invalide"
   },
   "onboarding": {
     "add_learner_title": "Ajouter un nouvel élève",
@@ -174,7 +183,8 @@
     "step_language": "Langue",
     "step_review": "Vérification",
     "welcome_to_aivo": "Bienvenue sur AIVO !",
-    "lets_set_up": "Configurons l'expérience d'apprentissage personnalisée de votre enfant."
+    "lets_set_up": "Configurons l'expérience d'apprentissage personnalisée de votre enfant.",
+    "date_of_birth": "Date de naissance"
   },
   "landing": {
     "hero_title": "Chaque enfant mérite une éducation brillante",

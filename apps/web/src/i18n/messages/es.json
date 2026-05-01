@@ -146,7 +146,16 @@
     "streak_preview_subtitle_math": "Nova está lista para la misión de mates de hoy",
     "streak_preview_subtitle_reading": "Sage está lista para la aventura de lectura de hoy",
     "streak_preview_subtitle_science": "Spark está listo para el experimento de ciencias de hoy",
-    "streak_preview_subtitle_sel": "Harmony está lista para el momento consciente de hoy"
+    "streak_preview_subtitle_sel": "Harmony está lista para el momento consciente de hoy",
+    "coupon_toggle": "¿Tienes un código de cupón o acceso?",
+    "coupon_placeholder": "INGRESAR CÓDIGO",
+    "coupon_valid_provisioning": "Código de acceso aplicado",
+    "coupon_invalid_not_found": "Código no encontrado",
+    "coupon_invalid_expired": "Código expirado",
+    "coupon_invalid_exhausted": "El código ha alcanzado su límite de uso",
+    "coupon_invalid_inactive": "El código ya no está activo",
+    "coupon_invalid_network_error": "No se puede validar — inténtalo de nuevo",
+    "coupon_invalid_generic": "Código inválido"
   },
   "onboarding": {
     "add_learner_title": "Agregar un Nuevo Estudiante",
@@ -174,7 +183,8 @@
     "step_language": "Idioma",
     "step_review": "Revisión",
     "welcome_to_aivo": "¡Bienvenido a AIVO!",
-    "lets_set_up": "Configuremos la experiencia de aprendizaje personalizada de tu hijo."
+    "lets_set_up": "Configuremos la experiencia de aprendizaje personalizada de tu hijo.",
+    "date_of_birth": "Fecha de nacimiento"
   },
   "landing": {
     "hero_title": "Cada Niño Merece una Educación Brillante",

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView,
-  Platform, ScrollView, Switch, Image,
+  Platform, ScrollView, Switch, Image, ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,8 +9,20 @@ import { useTranslation } from '@/hooks/useTranslation';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '@/hooks/useAuth';
+import { apiFetch } from '@/lib/api';
+import { API } from '@/constants/api';
 import { colors, spacing, radius } from '@/constants/colors';
 import { AivoButton } from '@aivo/mobile-ui';
+
+async function getAsyncStorage(): Promise<any> {
+  try {
+    // Optional native dep — gracefully degrades when not installed.
+    // eslint-disable-next-line import/no-unresolved
+    return (await import('@react-native-async-storage/async-storage')).default;
+  } catch {
+    return null;
+  }
+}
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -31,6 +43,18 @@ export default function SignupScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const [couponCode, setCouponCode] = useState('');
+  const [couponExpanded, setCouponExpanded] = useState(false);
+  const [couponState, setCouponState] = useState<null | {
+    valid: boolean;
+    couponType?: string;
+    discountPct?: number;
+    description?: string | null;
+    reason?: string;
+  }>(null);
+  const [couponChecking, setCouponChecking] = useState(false);
+  const couponDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const discovery = AuthSession.useAutoDiscovery('https://accounts.google.com');
 
@@ -53,6 +77,33 @@ export default function SignupScreen() {
       }
     }
   }, [response]);
+
+  useEffect(() => {
+    if (!couponCode || couponCode.length < 3) {
+      setCouponState(null);
+      return;
+    }
+    if (couponDebounceRef.current) clearTimeout(couponDebounceRef.current);
+    couponDebounceRef.current = setTimeout(async () => {
+      setCouponChecking(true);
+      try {
+        const res = await apiFetch(API.BILLING, '/api/billing/coupons/validate', {
+          method: 'POST',
+          body: JSON.stringify({ code: couponCode }),
+          skipAuth: true,
+        });
+        const data = await res.json();
+        setCouponState(data);
+      } catch {
+        setCouponState({ valid: false, reason: 'network_error' });
+      } finally {
+        setCouponChecking(false);
+      }
+    }, 400);
+    return () => {
+      if (couponDebounceRef.current) clearTimeout(couponDebounceRef.current);
+    };
+  }, [couponCode]);
 
   const handleGoogleResponse = async (idToken: string) => {
     if (!coppaConsent || !termsAccepted) {
@@ -102,6 +153,17 @@ export default function SignupScreen() {
       password: form.password,
     });
     if (result.success) {
+      if (couponState?.valid && couponCode) {
+        try {
+          const AsyncStorage = await getAsyncStorage();
+          if (AsyncStorage) {
+            await AsyncStorage.setItem('pending_coupon', couponCode);
+            if (couponState.couponType === 'PROVISIONING') {
+              await AsyncStorage.setItem('pending_coupon_type', 'PROVISIONING');
+            }
+          }
+        } catch {}
+      }
       router.replace('/');
     } else {
       setError(result.error || t('auth.registrationFailed'));
@@ -226,6 +288,55 @@ export default function SignupScreen() {
               {t('auth.termsConsent')}
             </Text>
           </View>
+
+          {/* Coupon / Access Code */}
+          <Pressable
+            onPress={() => setCouponExpanded((v) => !v)}
+            style={styles.couponToggle}
+          >
+            <Text style={styles.couponToggleText}>
+              {couponExpanded ? '▴' : '▾'} Have a coupon or access code?
+            </Text>
+          </Pressable>
+
+          {couponExpanded && (
+            <View style={styles.couponSection}>
+              <TextInput
+                style={styles.input}
+                value={couponCode}
+                onChangeText={(v) => setCouponCode(v.toUpperCase())}
+                placeholder="ENTER CODE"
+                placeholderTextColor={colors.textSecondary}
+                autoCapitalize="characters"
+                autoCorrect={false}
+              />
+              {couponChecking && (
+                <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 8 }} />
+              )}
+              {couponState && !couponChecking && (
+                couponState.valid ? (
+                  <Text style={styles.couponValid}>
+                    ✓ {couponCode}{couponState.description ? ` — ${couponState.description}` : ''}
+                    {couponState.couponType === 'DISCOUNT' && couponState.discountPct
+                      ? ` — ${couponState.discountPct}% off`
+                      : ''}
+                    {couponState.couponType === 'PROVISIONING' && !couponState.description
+                      ? ' — Access code applied'
+                      : ''}
+                  </Text>
+                ) : (
+                  <Text style={styles.couponInvalid}>
+                    ✗ {couponState.reason === 'not_found' ? 'Code not found'
+                      : couponState.reason === 'expired' ? 'Code expired'
+                      : couponState.reason === 'exhausted' ? 'Code has reached its usage limit'
+                      : couponState.reason === 'inactive' ? 'Code is no longer active'
+                      : couponState.reason === 'network_error' ? 'Unable to validate — please try again'
+                      : 'Invalid code'}
+                  </Text>
+                )
+              )}
+            </View>
+          )}
 
           <AivoButton
             title={t('auth.createAccountBtn')}
@@ -393,5 +504,35 @@ const styles = StyleSheet.create({
   loginBold: {
     fontFamily: 'Nunito-Bold',
     color: colors.primary,
+  },
+  couponToggle: {
+    marginBottom: spacing.sm,
+    paddingVertical: 6,
+  },
+  couponToggleText: {
+    fontSize: 13,
+    fontFamily: 'Nunito-SemiBold',
+    color: colors.primary,
+  },
+  couponSection: {
+    marginBottom: spacing.md,
+  },
+  couponValid: {
+    marginTop: 6,
+    fontSize: 13,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#059669',
+    backgroundColor: '#d1fae5',
+    padding: 8,
+    borderRadius: radius.md,
+  },
+  couponInvalid: {
+    marginTop: 6,
+    fontSize: 13,
+    fontFamily: 'Nunito-SemiBold',
+    color: '#e11d48',
+    backgroundColor: '#ffe4e6',
+    padding: 8,
+    borderRadius: radius.md,
   },
 });

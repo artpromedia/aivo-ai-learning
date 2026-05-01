@@ -45,6 +45,7 @@ export function useAddLearner() {
       lastName: string;
       gradeLevel: string;
       pin: string;
+      dateOfBirth?: string;
     }) => {
       const res = await apiFetch(API.IDENTITY, '/api/users/learners', {
         method: 'POST',
