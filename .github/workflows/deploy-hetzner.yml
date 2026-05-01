@@ -140,13 +140,15 @@ jobs:
     runs-on: [self-hosted, hetzner, production]
     timeout-minutes: 20
     needs: build
-    permissions:
-      packages: write
     steps:
       - uses: actions/checkout@v4
 
       - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.AIVO_GHCR_PUSH }}
 
       - name: Build and push Python service images
         run: |
