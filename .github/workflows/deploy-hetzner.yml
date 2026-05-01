@@ -129,11 +129,43 @@ jobs:
           esac
 
   # ─────────────────────────────────────────────────────────────────────
+  # Stage 1b — Build & push Python service images.
+  # Runs on the self-hosted runner where Docker and GHCR credentials are
+  # already available. Separated from Stage 1 so the matrix Node builds
+  # can proceed in parallel and we don’t need to pass GHCR tokens to
+  # ephemeral GitHub-hosted runners.
+  # ───────────────────────────────────────────────────────────────────
+  build-push-python-images:
+    name: Build & Push Python Images
+    runs-on: [self-hosted, hetzner, production]
+    timeout-minutes: 20
+    needs: build
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push Python service images
+        run: |
+          set -euo pipefail
+          PYTHON_SERVICES=(brain-svc ai-svc curriculum-svc)
+          for svc in "${PYTHON_SERVICES[@]}"; do
+            echo "═══ Building $svc ═══"
+            DOCKER_BUILDKIT=0 docker build \
+              -f docker/Dockerfile.python-service \
+              --build-arg SERVICE_NAME="$svc" \
+              -t "${{ env.IMAGE_PREFIX }}/$svc:latest" \
+              . 2>&1 | tail -5
+            echo "═══ Pushing $svc ═══"
+            docker push "${{ env.IMAGE_PREFIX }}/$svc:latest" 2>&1 | tail -3
+          done
+
+  # ───────────────────────────────────────────────────────────────────
   # Stage 2 — Deploy to Staging.
-  # ─────────────────────────────────────────────────────────────────────
+  # ───────────────────────────────────────────────────────────────────
   deploy-staging:
     name: Deploy to Staging
-    needs: build
+    needs: [build, build-push-python-images]
     runs-on: [self-hosted, hetzner, production]
     timeout-minutes: 25
     environment: staging
