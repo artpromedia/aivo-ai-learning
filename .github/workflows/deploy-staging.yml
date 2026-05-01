@@ -78,13 +78,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.AIVO_GHCR_PUSH }}
-
       - name: Build and push Python service images
         env:
           IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
