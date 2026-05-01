@@ -52,6 +52,10 @@ RUN if [ -d "/app/services/${SERVICE_NAME}/node_modules/.prisma/client" ]; then 
     fi
 
 # Build the service
+# GIT_COMMIT busts the layer cache on every new commit so stale esbuild
+# outputs from older Dockerfiles are never reused across pushes.
+ARG GIT_COMMIT=unknown
+RUN echo "Building at commit ${GIT_COMMIT}"
 RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
 
 # Use pnpm deploy to create production bundle

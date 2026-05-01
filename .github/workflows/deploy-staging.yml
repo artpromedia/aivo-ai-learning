@@ -95,11 +95,42 @@ jobs:
             docker push "${IMAGE_PREFIX}/$svc:latest" 2>&1 | tail -3
           done
 
+  build-push-node-services:
+    name: Build & Push Node Service Images
+    runs-on: [self-hosted, hetzner, production]
+    timeout-minutes: 60
+    needs: build-node
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push Node service images
+        env:
+          IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
+        run: |
+          set -euo pipefail
+          NODE_SERVICES=(
+            identity-svc assessment-svc learning-svc tutor-svc
+            family-svc engagement-svc billing-svc comms-svc
+            i18n-svc integrations-svc admin-svc status-page-svc research-svc
+          )
+          GIT_COMMIT="${GITHUB_SHA}"
+          for svc in "${NODE_SERVICES[@]}"; do
+            echo "═══ Building $svc ═══"
+            DOCKER_BUILDKIT=0 docker build \
+              -f docker/Dockerfile.service \
+              --build-arg SERVICE_NAME="$svc" \
+              --build-arg GIT_COMMIT="$GIT_COMMIT" \
+              -t "${IMAGE_PREFIX}/$svc:latest" \
+              . 2>&1 | tail -10
+            echo "═══ Pushing $svc ═══"
+            docker push "${IMAGE_PREFIX}/$svc:latest" 2>&1 | tail -3
+          done
+
   deploy:
     name: Deploy to Staging
     runs-on: [self-hosted, hetzner, production]
     timeout-minutes: 20
-    needs: [build-node, build-push-python-images]
+    needs: [build-node, build-push-python-images, build-push-node-services]
     environment: staging
 
     steps:

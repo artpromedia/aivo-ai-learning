@@ -1,3 +1,4 @@
+// @aivo/comms-svc – email dispatch, postmark webhooks
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import swagger from "@fastify/swagger";
