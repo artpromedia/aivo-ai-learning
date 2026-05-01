@@ -147,15 +147,15 @@
     "streak_preview_subtitle_reading": "Sage ist bereit für das heutige Lese-Abenteuer",
     "streak_preview_subtitle_science": "Spark ist bereit für das heutige Wissenschafts-Experiment",
     "streak_preview_subtitle_sel": "Harmony ist bereit für den heutigen Achtsamkeitsmoment",
-    "coupon_toggle": "Have a coupon or access code?",
-    "coupon_placeholder": "ENTER CODE",
-    "coupon_valid_provisioning": "Access code applied",
-    "coupon_invalid_not_found": "Code not found",
-    "coupon_invalid_expired": "Code expired",
-    "coupon_invalid_exhausted": "Code has reached its usage limit",
-    "coupon_invalid_inactive": "Code is no longer active",
-    "coupon_invalid_network_error": "Unable to validate — please try again",
-    "coupon_invalid_generic": "Invalid code"
+    "coupon_toggle": "Haben Sie einen Gutschein- oder Zugangscode?",
+    "coupon_placeholder": "CODE EINGEBEN",
+    "coupon_valid_provisioning": "Zugangscode angewendet",
+    "coupon_invalid_not_found": "Code nicht gefunden",
+    "coupon_invalid_expired": "Code abgelaufen",
+    "coupon_invalid_exhausted": "Code hat sein Nutzungslimit erreicht",
+    "coupon_invalid_inactive": "Code ist nicht mehr aktiv",
+    "coupon_invalid_network_error": "Validierung nicht möglich — bitte erneut versuchen",
+    "coupon_invalid_generic": "Ungültiger Code"
   },
   "onboarding": {
     "add_learner_title": "Neuen Schüler hinzufügen",
@@ -184,7 +184,7 @@
     "step_review": "Überprüfung",
     "welcome_to_aivo": "Willkommen bei AIVO!",
     "lets_set_up": "Lassen Sie uns das personalisierte Lernerlebnis Ihres Kindes einrichten.",
-    "date_of_birth": "Date of Birth"
+    "date_of_birth": "Geburtsdatum"
   },
   "landing": {
     "hero_title": "Jedes Kind verdient eine hervorragende Bildung",

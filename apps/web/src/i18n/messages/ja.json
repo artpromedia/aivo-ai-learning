@@ -147,15 +147,15 @@
     "streak_preview_subtitle_reading": "Sage は今日の読書アドベンチャーの準備ができました",
     "streak_preview_subtitle_science": "Spark は今日の科学実験の準備ができました",
     "streak_preview_subtitle_sel": "Harmony は今日のマインドフルな時間の準備ができました",
-    "coupon_toggle": "Have a coupon or access code?",
-    "coupon_placeholder": "ENTER CODE",
-    "coupon_valid_provisioning": "Access code applied",
-    "coupon_invalid_not_found": "Code not found",
-    "coupon_invalid_expired": "Code expired",
-    "coupon_invalid_exhausted": "Code has reached its usage limit",
-    "coupon_invalid_inactive": "Code is no longer active",
-    "coupon_invalid_network_error": "Unable to validate — please try again",
-    "coupon_invalid_generic": "Invalid code"
+    "coupon_toggle": "クーポンコードまたはアクセスコードをお持ちですか？",
+    "coupon_placeholder": "コードを入力",
+    "coupon_valid_provisioning": "アクセスコードが適用されました",
+    "coupon_invalid_not_found": "コードが見つかりません",
+    "coupon_invalid_expired": "コードの有効期限が切れています",
+    "coupon_invalid_exhausted": "コードの使用上限に達しました",
+    "coupon_invalid_inactive": "コードはもう有効ではありません",
+    "coupon_invalid_network_error": "確認できません — もう一度お試しください",
+    "coupon_invalid_generic": "無効なコード"
   },
   "onboarding": {
     "add_learner_title": "新しい学習者を追加",
@@ -184,7 +184,7 @@
     "step_review": "確認",
     "welcome_to_aivo": "AIVOへようこそ！",
     "lets_set_up": "お子さまのパーソナライズされた学習体験を設定しましょう。",
-    "date_of_birth": "Date of Birth"
+    "date_of_birth": "生年月日"
   },
   "landing": {
     "hero_title": "すべての子どもに素晴らしい教育を",

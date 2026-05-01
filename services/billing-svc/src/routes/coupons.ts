@@ -244,7 +244,12 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
     const grantsTier: string = row.grants_tier;
     const grantsPlan: string = row.grants_plan;
     const grantsSeatLimit: number | null = row.grants_seat_limit ?? null;
-    const grantsDurationDays: number = row.grants_duration_days;
+    // Ensure grantsDurationDays is a safe positive integer (guards against DB corruption)
+    const rawDuration = Number(row.grants_duration_days);
+    if (!Number.isInteger(rawDuration) || rawDuration <= 0 || rawDuration > 3650) {
+      return reply.code(500).send({ error: "invalid_coupon_duration" });
+    }
+    const grantsDurationDays: number = rawDuration;
     const userId: string = jwtPayload.sub;
 
     let expiresAt: unknown = null;
@@ -262,7 +267,7 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
           ${userId},
           ${grantsPlan},
           'ACTIVE',
-          NOW() + (${String(grantsDurationDays)} || ' days')::interval,
+          NOW() + make_interval(days => ${grantsDurationDays}),
           ${JSON.stringify({ couponCode: row.code, provisionedBy: "coupon" })}
         )
       `);

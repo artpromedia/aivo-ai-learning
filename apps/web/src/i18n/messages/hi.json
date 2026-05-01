@@ -147,15 +147,15 @@
     "streak_preview_subtitle_reading": "सेज आज की रीडिंग एडवेंचर के लिए तैयार है",
     "streak_preview_subtitle_science": "स्पार्क आज के साइंस एक्सपेरिमेंट के लिए तैयार है",
     "streak_preview_subtitle_sel": "हार्मनी आज के माइंडफुल पल के लिए तैयार है",
-    "coupon_toggle": "Have a coupon or access code?",
-    "coupon_placeholder": "ENTER CODE",
-    "coupon_valid_provisioning": "Access code applied",
-    "coupon_invalid_not_found": "Code not found",
-    "coupon_invalid_expired": "Code expired",
-    "coupon_invalid_exhausted": "Code has reached its usage limit",
-    "coupon_invalid_inactive": "Code is no longer active",
-    "coupon_invalid_network_error": "Unable to validate — please try again",
-    "coupon_invalid_generic": "Invalid code"
+    "coupon_toggle": "क्या आपके पास कूपन या एक्सेस कोड है?",
+    "coupon_placeholder": "कोड दर्ज करें",
+    "coupon_valid_provisioning": "एक्सेस कोड लागू किया गया",
+    "coupon_invalid_not_found": "कोड नहीं मिला",
+    "coupon_invalid_expired": "कोड की समय सीमा समाप्त हो गई",
+    "coupon_invalid_exhausted": "कोड अपनी उपयोग सीमा तक पहुँच गया है",
+    "coupon_invalid_inactive": "कोड अब सक्रिय नहीं है",
+    "coupon_invalid_network_error": "सत्यापन संभव नहीं — कृपया पुनः प्रयास करें",
+    "coupon_invalid_generic": "अमान्य कोड"
   },
   "onboarding": {
     "add_learner_title": "नया शिक्षार्थी जोड़ें",
@@ -184,7 +184,7 @@
     "step_review": "समीक्षा",
     "welcome_to_aivo": "AIVO में आपका स्वागत है!",
     "lets_set_up": "आइए आपके बच्चे का व्यक्तिगत शिक्षण अनुभव सेट करें।",
-    "date_of_birth": "Date of Birth"
+    "date_of_birth": "जन्म तिथि"
   },
   "landing": {
     "hero_title": "हर बच्चा शानदार शिक्षा का हकदार है",
