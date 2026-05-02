@@ -35,6 +35,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy installed packages from builder
 COPY --from=builder /install /usr/local
 
+# GIT_COMMIT busts the Docker layer cache for the source COPY on every commit.
+# Without this, Docker reuses a cached layer keyed only on the COPY's input
+# digest — fine in theory, but in practice we've seen images ship missing
+# newly-added files (e.g. routes/playground.py) when the source-tree digest
+# briefly matched a prior build. Stamping the commit makes the bust explicit.
+ARG GIT_COMMIT=unknown
+ENV GIT_COMMIT=${GIT_COMMIT}
+
 # Copy service source
 COPY services/${SERVICE_NAME}/src/ ./src/
 

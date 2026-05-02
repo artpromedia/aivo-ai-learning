@@ -22,10 +22,13 @@ const TUTORS = [
 ];
 
 const MODELS = [
-  { id: "gpt-4o", provider: "OpenAI", label: "GPT-4o" },
-  { id: "gpt-4o-mini", provider: "OpenAI", label: "GPT-4o Mini" },
-  { id: "claude-3-5-sonnet", provider: "Anthropic", label: "Claude 3.5 Sonnet" },
-  { id: "gemini-2.0-flash", provider: "Google", label: "Gemini 2.0 Flash" },
+  { id: "claude-opus-4-7", provider: "Anthropic", label: "Claude Opus 4.7" },
+  { id: "claude-sonnet-4-6", provider: "Anthropic", label: "Claude Sonnet 4.6" },
+  { id: "claude-haiku-4-5", provider: "Anthropic", label: "Claude Haiku 4.5" },
+  { id: "gpt-5.5", provider: "OpenAI", label: "GPT-5.5" },
+  { id: "gpt-5.5-mini", provider: "OpenAI", label: "GPT-5.5 Mini" },
+  { id: "gemini-3.0-pro", provider: "Google", label: "Gemini 3.0 Pro" },
+  { id: "gemini-3.0-flash", provider: "Google", label: "Gemini 3.0 Flash" },
 ];
 
 interface Message {
