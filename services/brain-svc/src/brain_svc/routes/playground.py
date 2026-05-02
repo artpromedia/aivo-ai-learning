@@ -87,16 +87,40 @@ async def playground_complete(
     else:
         extra_kwargs["max_tokens"] = completion_budget
 
+    # Some reasoning models (Claude 4 series, GPT-5 series) deprecate
+    # `temperature`. Only pass it for models known to still accept it.
+    supports_temperature = not (
+        litellm_model.startswith("gpt-5")
+        or litellm_model.startswith("openai/gpt-5")
+        or litellm_model.startswith("claude-opus-4")
+        or litellm_model.startswith("claude-sonnet-4")
+        or litellm_model.startswith("claude-haiku-4")
+    )
+    if supports_temperature:
+        extra_kwargs["temperature"] = body.temperature
+
     try:
         response = await litellm.acompletion(
             model=litellm_model,
             messages=chat,
-            temperature=body.temperature,
             **extra_kwargs,
         )
     except Exception as e:
-        logger.warning("Playground model %s failed: %s", litellm_model, e)
-        raise HTTPException(status_code=502, detail=f"Model call failed: {e}")
+        # Retry without temperature if the provider rejected it as deprecated.
+        if "temperature" in str(e).lower() and "temperature" in extra_kwargs:
+            extra_kwargs.pop("temperature", None)
+            try:
+                response = await litellm.acompletion(
+                    model=litellm_model,
+                    messages=chat,
+                    **extra_kwargs,
+                )
+            except Exception as e2:
+                logger.warning("Playground model %s failed: %s", litellm_model, e2)
+                raise HTTPException(status_code=502, detail=f"Model call failed: {e2}")
+        else:
+            logger.warning("Playground model %s failed: %s", litellm_model, e)
+            raise HTTPException(status_code=502, detail=f"Model call failed: {e}")
 
     content = response.choices[0].message.content if response.choices else ""
     usage = getattr(response, "usage", None)
