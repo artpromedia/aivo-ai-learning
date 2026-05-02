@@ -15,7 +15,7 @@ import {
   verifyJWT,
   getPublicKeyPEM,
 } from "@aivo/security";
-import { sql, gte, inArray, and } from "drizzle-orm";
+import { sql, gte, and } from "drizzle-orm";
 
 type ControlStatus = "pass" | "warn" | "fail" | "unknown";
 
@@ -94,15 +94,24 @@ export function registerComplianceRoutes(app: FastifyInstance, db: any) {
     let mfaStatus: ControlStatus = "warn";
     let mfaEvidence = "No internal-role users found";
     try {
+      // drizzle's inArray binds JS arrays as a tuple of parameters
+      // (`IN ($1, $2, …$N)`) which Postgres rejects when comparing enum
+      // columns ("operator does not exist: user_role = text"). Build an
+      // ARRAY[…]::text[] literal at template-substitution time and compare
+      // with `= ANY(…)`. INTERNAL_ROLES is a hard-coded constant, so SQL
+      // injection isn't a concern. Same workaround as soc2-evidence.ts.
       const internalRoles = ["PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
+      const rolesArray = sql.raw(
+        `ARRAY[${internalRoles.map((r) => `'${r}'`).join(",")}]::text[]`,
+      );
       const [tot] = await db
         .select({ c: sql<number>`COUNT(*)::int` })
         .from(users)
-        .where(inArray(users.role, internalRoles));
+        .where(sql`${users.role}::text = ANY(${rolesArray})`);
       const [mfa] = await db
         .select({ c: sql<number>`COUNT(*)::int` })
         .from(users)
-        .where(and(inArray(users.role, internalRoles), sql`${users.mfaEnabled} = true`));
+        .where(and(sql`${users.role}::text = ANY(${rolesArray})`, sql`${users.mfaEnabled} = true`));
       const total = Number(tot?.c ?? 0);
       const enabled = Number(mfa?.c ?? 0);
       const pct = total > 0 ? Math.round((enabled / total) * 100) : 0;
