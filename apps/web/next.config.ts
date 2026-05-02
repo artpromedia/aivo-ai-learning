@@ -61,7 +61,6 @@ const buildConfig = (phase: string): NextConfig => {
         { source: "/api/comms/:path*",        destination: `${COMMS_SVC_URL}/api/comms/:path*` },
         { source: "/api/i18n/:path*",         destination: `${I18N_SVC_URL}/api/i18n/:path*` },
         { source: "/api/integrations/:path*", destination: `${INTEGRATIONS_SVC_URL}/api/integrations/:path*` },
-        { source: "/api/admin-svc/:path*",    destination: `${ADMIN_SVC_URL}/api/admin-svc/:path*` },
         { source: "/api/status/:path*",       destination: `${STATUS_PAGE_SVC_URL}/api/status/:path*` },
         { source: "/api/research/:path*",     destination: `${RESEARCH_SVC_URL}/api/research/:path*` },
         { source: "/mockup-canvas/:path*",    destination: "http://localhost:8000/mockup-canvas/:path*" },
