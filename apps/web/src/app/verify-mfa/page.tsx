@@ -35,7 +35,7 @@ export default function VerifyMfaPage() {
 }
 
 function VerifyMfaContent() {
-  const { refreshToken } = useAuth();
+  const { applySession } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("mfa");
@@ -85,7 +85,9 @@ function VerifyMfaContent() {
         if (mode === "recovery") setRecovery("");
         else setCode("");
       } else {
-        await refreshToken();
+        if (data.user && data.accessToken) {
+          applySession({ user: data.user, accessToken: data.accessToken });
+        }
         router.push(returnTo);
       }
     } catch {
@@ -129,7 +131,9 @@ function VerifyMfaContent() {
       });
       const data = await verifyRes.json();
       if (!verifyRes.ok) throw new Error(data.error || "Passkey verification failed");
-      await refreshToken();
+      if (data.user && data.accessToken) {
+        applySession({ user: data.user, accessToken: data.accessToken });
+      }
       router.push(returnTo);
     } catch (e: any) {
       setError(e.message || "Passkey sign-in failed");

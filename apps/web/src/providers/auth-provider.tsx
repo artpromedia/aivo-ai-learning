@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { fetchWithStepUp } from "@/lib/step-up";
 
@@ -22,6 +23,7 @@ interface AuthContextType {
   pinLogin: (parentId: string, pin: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<string | null>;
+  applySession: (data: { user: User; accessToken: string; mustChangePassword?: boolean }) => void;
   impersonate: (userId: string) => Promise<void>;
   exitImpersonation: () => Promise<void>;
 }
@@ -74,6 +76,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => { refreshToken(); }, [refreshToken]);
+
+  // flushSync so the dashboard layout sees `user` on its first render after
+  // router.push — without it the !user guard races and bounces back to login.
+  const applySession = useCallback((data: { user: User; accessToken: string; mustChangePassword?: boolean }) => {
+    flushSync(() => {
+      setUser(data.user);
+      setAccessToken(data.accessToken);
+      setMustChangePassword(!!data.mustChangePassword);
+      setIsImpersonating(false);
+      setOriginalAdmin(null);
+      setLoading(false);
+    });
+    sessionStorage.removeItem(IMPERSONATION_FLAG_KEY);
+  }, []);
 
   // Sprint 7: enforce mustChangePassword by redirecting to the change-
   // password page from anywhere in the dashboard. We allow the user to
@@ -201,6 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user, accessToken, loading,
       isImpersonating, originalAdmin,
       login, register, pinLogin, logout, refreshToken,
+      applySession,
       impersonate, exitImpersonation,
     }}>
       {children}
