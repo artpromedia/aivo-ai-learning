@@ -147,11 +147,13 @@ jobs:
         run: |
           set -euo pipefail
           PYTHON_SERVICES=(brain-svc ai-svc curriculum-svc)
+          GIT_COMMIT="${GITHUB_SHA}"
           for svc in "${PYTHON_SERVICES[@]}"; do
             echo "═══ Building $svc ═══"
             DOCKER_BUILDKIT=0 docker build \
               -f docker/Dockerfile.python-service \
               --build-arg SERVICE_NAME="$svc" \
+              --build-arg GIT_COMMIT="$GIT_COMMIT" \
               -t "${{ env.IMAGE_PREFIX }}/$svc:latest" \
               . 2>&1 | tail -5
             echo "═══ Pushing $svc ═══"

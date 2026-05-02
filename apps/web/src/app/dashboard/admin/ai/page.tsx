@@ -30,9 +30,11 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 const AI_PROVIDERS = [
-  { name: "Claude Sonnet", provider: "Anthropic", status: "primary", model: "claude-sonnet-4-20250514", color: "text-[hsl(var(--visual-primary))]" },
-  { name: "Gemini Flash", provider: "Google", status: "fallback", model: "gemini-2.0-flash", color: "text-[hsl(var(--visual-reading))]" },
-  { name: "GPT-4o Mini", provider: "OpenAI", status: "fallback", model: "gpt-4o-mini", color: "text-[hsl(var(--visual-science))]" },
+  { name: "Claude Opus 4.7", provider: "Anthropic", status: "primary", model: "claude-opus-4-7", color: "text-[hsl(var(--visual-primary))]" },
+  { name: "Claude Sonnet 4.6", provider: "Anthropic", status: "primary", model: "claude-sonnet-4-6", color: "text-[hsl(var(--visual-primary))]" },
+  { name: "Claude Haiku 4.5", provider: "Anthropic", status: "primary", model: "claude-haiku-4-5", color: "text-[hsl(var(--visual-primary))]" },
+  { name: "Gemini 3.0 Pro", provider: "Google", status: "fallback", model: "gemini-3.0-pro", color: "text-[hsl(var(--visual-reading))]" },
+  { name: "GPT-5.5", provider: "OpenAI", status: "fallback", model: "gpt-5.5", color: "text-[hsl(var(--visual-science))]" },
 ];
 
 export default function AdminAIPage() {
@@ -100,7 +102,7 @@ export default function AdminAIPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="vi-card p-6">
           <h2 className="font-heading font-bold text-lg vi-text mb-4">{t("services")}</h2>
-          <p className="text-xs vi-text-muted mb-4">Priority: Claude Sonnet → Gemini Flash → GPT-4o Mini</p>
+          <p className="text-xs vi-text-muted mb-4">Priority: Claude 4.7 adaptive (Opus → Sonnet → Haiku) → Gemini 3.0 Pro → GPT-5.5</p>
           <div className="space-y-3">
             {AI_PROVIDERS.map((p) => (
               <div key={p.name} className="flex items-center justify-between p-4 rounded-xl border vi-border hover:border-[hsl(var(--visual-primary)/0.3)] transition">

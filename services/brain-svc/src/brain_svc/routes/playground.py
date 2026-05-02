@@ -21,10 +21,13 @@ router = APIRouter()
 # Map the UI's friendly model id -> a concrete litellm model string.
 # Keep this list in sync with apps/web .../ai/playground/page.tsx MODELS.
 MODEL_MAP: dict[str, str] = {
-    "gpt-4o": "openai/gpt-4o",
-    "gpt-4o-mini": "openai/gpt-4o-mini",
-    "claude-3-5-sonnet": "anthropic/claude-3-5-sonnet-20241022",
-    "gemini-2.0-flash": "gemini/gemini-2.0-flash",
+    "gpt-5.5": "openai/gpt-5.5",
+    "gpt-5.5-mini": "openai/gpt-5.5-mini",
+    "claude-opus-4-7": "anthropic/claude-opus-4-7",
+    "claude-sonnet-4-6": "anthropic/claude-sonnet-4-6",
+    "claude-haiku-4-5": "anthropic/claude-haiku-4-5",
+    "gemini-3.0-pro": "gemini/gemini-3.0-pro",
+    "gemini-3.0-flash": "gemini/gemini-3.0-flash",
 }
 
 ADMIN_ROLES = {"PLATFORM_ADMIN", "DISTRICT_ADMIN"}
@@ -36,7 +39,7 @@ class PlaygroundMessage(BaseModel):
 
 
 class PlaygroundRequest(BaseModel):
-    model: str = Field(..., description="UI model id, e.g. 'gpt-4o'")
+    model: str = Field(..., description="UI model id, e.g. 'claude-opus-4-7'")
     tutorKey: Optional[str] = None
     systemPrompt: str = ""
     messages: List[PlaygroundMessage]

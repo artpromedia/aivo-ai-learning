@@ -10,22 +10,28 @@ logger = logging.getLogger("ai-svc.llm_gateway")
 litellm.set_verbose = False
 
 MODEL_PRIORITY = [
-    "anthropic/claude-sonnet-4-20250514",
-    "gemini/gemini-2.0-flash",
-    "openai/gpt-4o-mini",
+    "anthropic/claude-opus-4-7",
+    "anthropic/claude-sonnet-4-6",
+    "anthropic/claude-haiku-4-5",
+    "gemini/gemini-3.0-pro",
+    "openai/gpt-5.5",
 ]
 
 COST_PER_1K_TOKENS = {
-    "anthropic/claude-sonnet-4-20250514": {"prompt": 0.003, "completion": 0.015},
-    "gemini/gemini-2.0-flash": {"prompt": 0.0001, "completion": 0.0004},
-    "openai/gpt-4o-mini": {"prompt": 0.00015, "completion": 0.0006},
+    "anthropic/claude-opus-4-7": {"prompt": 0.015, "completion": 0.075},
+    "anthropic/claude-sonnet-4-6": {"prompt": 0.003, "completion": 0.015},
+    "anthropic/claude-haiku-4-5": {"prompt": 0.0008, "completion": 0.004},
+    "gemini/gemini-3.0-pro": {"prompt": 0.00125, "completion": 0.005},
+    "gemini/gemini-3.0-flash": {"prompt": 0.000075, "completion": 0.0003},
+    "openai/gpt-5.5": {"prompt": 0.0025, "completion": 0.01},
+    "openai/gpt-5.5-mini": {"prompt": 0.00015, "completion": 0.0006},
 }
 
 
 VISION_MODEL_PRIORITY = [
-    "gemini/gemini-2.0-flash",
-    "openai/gpt-4o",
-    "openai/gpt-4o-mini",
+    "anthropic/claude-sonnet-4-6",
+    "gemini/gemini-3.0-pro",
+    "openai/gpt-5.5",
 ]
 
 
