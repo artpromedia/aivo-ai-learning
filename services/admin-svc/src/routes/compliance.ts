@@ -94,7 +94,16 @@ export function registerComplianceRoutes(app: FastifyInstance, db: any) {
     let mfaStatus: ControlStatus = "warn";
     let mfaEvidence = "No internal-role users found";
     try {
-      const internalRoles = ["PLATFORM_ADMIN", "DISTRICT_ADMIN", "SALES", "MARKETING", "CUSTOMER_CARE", "SUPPORT", "FINANCE", "DEVOPS"];
+      const internalRoles = [
+        "PLATFORM_ADMIN",
+        "DISTRICT_ADMIN",
+        "SALES",
+        "MARKETING",
+        "CUSTOMER_CARE",
+        "SUPPORT",
+        "FINANCE",
+        "DEVOPS",
+      ] as const;
       const [tot] = await db
         .select({ c: sql<number>`COUNT(*)::int` })
         .from(users)
