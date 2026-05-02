@@ -25,6 +25,7 @@ function requireUrl(name: string, devDefault: string): string {
   return devDefault;
 }
 const IDENTITY_URL = requireUrl("IDENTITY_SVC_URL", "http://localhost:3001");
+const BRAIN_URL = requireUrl("BRAIN_SVC_URL", "http://localhost:8000");
 
 async function requireAdmin(req: any, reply: any) {
   const auth = req.headers.authorization;
@@ -95,6 +96,33 @@ export function registerPlatformRoutes(app: FastifyInstance, db: any) {
     proxyToIdentity(req, reply, "/api/admin/tenants"));
   app.get("/api/admin-svc/tenants/:id", { preHandler: requireAdmin }, async (req: any, reply) =>
     proxyToIdentity(req, reply, `/api/admin/tenants/${encodeURIComponent(req.params.id)}`));
+
+  // ── AI Prompt Playground (proxy to brain-svc) ─────────────────────
+  // Admin-only test surface for tutor system prompts. Forwards the
+  // full request body + bearer token to brain-svc which calls the
+  // selected LLM provider via litellm.
+  app.post("/api/admin-svc/ai/playground", { preHandler: requireAdmin }, async (req, reply) => {
+    const url = new URL("/api/brain/playground", BRAIN_URL);
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          authorization: req.headers.authorization as string,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(req.body ?? {}),
+        signal: AbortSignal.timeout(60_000),
+      });
+    } catch (e: any) {
+      req.log?.error({ err: e?.message }, "brain-svc playground proxy failed");
+      return reply.status(502).send({ error: "Upstream brain-svc unavailable" });
+    }
+    reply.status(res.status);
+    const ct = res.headers.get("content-type");
+    if (ct) reply.header("content-type", ct);
+    return reply.send(await res.text());
+  });
 
   // ── Platform config (owned by admin-svc; append-only history) ──────
   app.get("/api/admin-svc/config", { preHandler: requireAdmin }, async () => {

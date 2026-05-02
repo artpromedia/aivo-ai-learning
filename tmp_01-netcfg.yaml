@@ -1,0 +1,27 @@
+### Hetzner Online GmbH installimage
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eno1:
+      addresses:
+        - 95.216.245.40/32
+        - 2a01:4f9:2b:2741::2/64
+      routes:
+        - on-link: true
+          to: 0.0.0.0/0
+          via: 95.216.245.1
+        - to: default
+          via: fe80::1
+      nameservers:
+        addresses:
+          - 185.12.64.1
+          - 2a01:4ff:ff00::add:2
+          - 185.12.64.2
+          - 2a01:4ff:ff00::add:1
+  vlans:
+    eno1.4000:
+      id: 4000
+      link: eno1
+      addresses:
+        - 10.0.0.2/24
