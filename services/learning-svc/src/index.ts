@@ -10,7 +10,11 @@ import { registerSessionRoutes } from "./routes/sessions.js";
 import { registerAuthHook } from "./lib/tenant.js";
 
 const logger = createLogger("learning-svc");
-const PORT = parseInt(process.env.LEARNING_PORT || "3005", 10);
+// Read PORT first so the container picks up the value injected by the
+// Dockerfile (ENV PORT=3000) and the Helm deploy (--set env.PORT=$PORT).
+// LEARNING_PORT remains supported as a dev override; the literal default
+// keeps `pnpm dev` working without any env config.
+const PORT = parseInt(process.env.PORT || process.env.LEARNING_PORT || "3005", 10);
 
 async function start() {
   const db = createDb(process.env.DATABASE_URL!);
