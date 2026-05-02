@@ -23,10 +23,11 @@ type Coupon = {
 type CouponForm = {
   code: string;
   description: string;
-  couponType: "DISCOUNT" | "PROVISIONING";
+  couponType: "DISCOUNT" | "SUBSCRIPTION" | "PROVISIONING";
   discountPct: number;
   maxRedemptions: string;
   expiresAt: string;
+  subscriptionDurationDays: string;
   grantsTier: string;
   grantsPlan: string;
   grantsSeatLimit: string;
@@ -36,10 +37,11 @@ type CouponForm = {
 const INITIAL_FORM: CouponForm = {
   code: "",
   description: "",
-  couponType: "PROVISIONING",
+  couponType: "SUBSCRIPTION",
   discountPct: 20,
   maxRedemptions: "",
   expiresAt: "",
+  subscriptionDurationDays: "30",
   grantsTier: "district",
   grantsPlan: "pilot",
   grantsSeatLimit: "",
@@ -101,6 +103,9 @@ export default function AdminCouponsPage() {
 
     if (form.couponType === "DISCOUNT") {
       payload.discountPct = Number(form.discountPct);
+    } else if (form.couponType === "SUBSCRIPTION") {
+      payload.discountPct = 0;
+      payload.grantsDurationDays = form.subscriptionDurationDays ? Number(form.subscriptionDurationDays) : null;
     } else {
       payload.discountPct = 0;
       payload.grantsTier = form.grantsTier.trim();
@@ -161,9 +166,9 @@ export default function AdminCouponsPage() {
 
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-heading font-bold vi-text">Coupons & Pilot Provisioning</h1>
+          <h1 className="text-2xl font-heading font-bold vi-text">Coupons & Subscriptions</h1>
           <p className="text-sm vi-text-muted mt-1">
-            Create coupons for individual families or districts. Provisioning coupons can grant pilot access tiers/plans.
+            Create coupons for subscription access (1-12 months), discounts, or pilot provisioning to districts.
           </p>
         </div>
         <button
@@ -214,11 +219,12 @@ export default function AdminCouponsPage() {
             <select
               id="coupon-type"
               value={form.couponType}
-              onChange={(e) => updateField("couponType", e.target.value as "DISCOUNT" | "PROVISIONING")}
+              onChange={(e) => updateField("couponType", e.target.value as "DISCOUNT" | "SUBSCRIPTION" | "PROVISIONING")}
               className="w-full border vi-border rounded-lg px-3 py-2 text-sm vi-bg"
             >
-              <option value="PROVISIONING">Provisioning (pilot tier/plan)</option>
+              <option value="SUBSCRIPTION">Subscription Duration (1mo, 3mo, 6mo, 12mo)</option>
               <option value="DISCOUNT">Discount (%)</option>
+              <option value="PROVISIONING">Provisioning (district pilot tier/plan)</option>
             </select>
           </div>
 
@@ -271,6 +277,72 @@ export default function AdminCouponsPage() {
                 value={form.discountPct}
                 onChange={(e) => updateField("discountPct", Number(e.target.value || 0))}
                 className="w-full border vi-border rounded-lg px-3 py-2 text-sm vi-bg"
+              />
+            </div>
+          </div>
+        ) : form.couponType === "SUBSCRIPTION" ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium vi-text mb-2">Subscription Duration</label>
+              <div className="grid grid-cols-4 gap-2">
+                <button
+                  type="button"
+                  onClick={() => updateField("subscriptionDurationDays", "30")}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition border ${
+                    form.subscriptionDurationDays === "30"
+                      ? "bg-[hsl(var(--visual-primary))] text-white border-[hsl(var(--visual-primary))]"
+                      : "border-vi-border vi-text-muted hover:vi-text"
+                  }`}
+                >
+                  1 mo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateField("subscriptionDurationDays", "90")}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition border ${
+                    form.subscriptionDurationDays === "90"
+                      ? "bg-[hsl(var(--visual-primary))] text-white border-[hsl(var(--visual-primary))]"
+                      : "border-vi-border vi-text-muted hover:vi-text"
+                  }`}
+                >
+                  3 mo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateField("subscriptionDurationDays", "180")}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition border ${
+                    form.subscriptionDurationDays === "180"
+                      ? "bg-[hsl(var(--visual-primary))] text-white border-[hsl(var(--visual-primary))]"
+                      : "border-vi-border vi-text-muted hover:vi-text"
+                  }`}
+                >
+                  6 mo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateField("subscriptionDurationDays", "365")}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition border ${
+                    form.subscriptionDurationDays === "365"
+                      ? "bg-[hsl(var(--visual-primary))] text-white border-[hsl(var(--visual-primary))]"
+                      : "border-vi-border vi-text-muted hover:vi-text"
+                  }`}
+                >
+                  12 mo
+                </button>
+              </div>
+            </div>
+            <div>
+              <label htmlFor="subscription-custom-days" className="block text-sm font-medium vi-text mb-1">
+                Or enter custom days
+              </label>
+              <input
+                id="subscription-custom-days"
+                type="number"
+                min={1}
+                value={form.subscriptionDurationDays}
+                onChange={(e) => updateField("subscriptionDurationDays", e.target.value)}
+                className="w-full border vi-border rounded-lg px-3 py-2 text-sm vi-bg"
+                placeholder="Custom duration in days"
               />
             </div>
           </div>
@@ -374,24 +446,36 @@ export default function AdminCouponsPage() {
                 </tr>
               ) : (
                 coupons.map((c) => {
-                  const isProvision = (c.coupon_type || "DISCOUNT") === "PROVISIONING";
+                  const couponType = c.coupon_type || "DISCOUNT";
+                  const isSubscription = couponType === "SUBSCRIPTION";
+                  const isProvision = couponType === "PROVISIONING";
+                  const isDiscount = couponType === "DISCOUNT";
+                  
+                  let badgeColor = "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]";
+                  let typeLabel = "Discount";
+                  let details = `${c.discount_pct || 0}% off`;
+                  
+                  if (isSubscription) {
+                    badgeColor = "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]";
+                    typeLabel = "Subscription";
+                    const days = c.grants_duration_days || 0;
+                    const months = Math.round(days / 30);
+                    details = months > 0 ? `${months}mo (${days}d)` : `${days}d`;
+                  } else if (isProvision) {
+                    badgeColor = "bg-[hsl(var(--visual-math)/0.14)] text-[hsl(var(--visual-math))]";
+                    typeLabel = "Provisioning";
+                    details = `${c.grants_tier || "-"} / ${c.grants_plan || "-"} / ${c.grants_duration_days || "-"}d`;
+                  }
+
                   return (
                     <tr key={c.code} className="border-b vi-border hover:vi-bg/50 transition">
                       <td className="px-4 py-3 font-semibold vi-text">{c.code}</td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                          isProvision
-                            ? "bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))]"
-                            : "bg-[hsl(var(--visual-science)/0.14)] text-[hsl(var(--visual-science))]"
-                        }`}>
-                          {isProvision ? "Provisioning" : "Discount"}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${badgeColor}`}>
+                          {typeLabel}
                         </span>
                       </td>
-                      <td className="px-4 py-3 vi-text-muted">
-                        {isProvision
-                          ? `${c.grants_tier || "-"} / ${c.grants_plan || "-"} / ${c.grants_duration_days || "-"}d`
-                          : `${c.discount_pct || 0}% off`}
-                      </td>
+                      <td className="px-4 py-3 vi-text-muted">{details}</td>
                       <td className="px-4 py-3 vi-text-muted">
                         {c.redemptions} / {c.max_redemptions ?? "∞"}
                       </td>

@@ -108,8 +108,8 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
     const body = (req.body ?? {}) as Record<string, unknown>;
     const code = typeof body.code === "string" ? body.code.trim() : "";
     const description = typeof body.description === "string" ? body.description : null;
-    const couponType: "DISCOUNT" | "PROVISIONING" =
-      body.couponType === "PROVISIONING" ? "PROVISIONING" : "DISCOUNT";
+    const couponType: "DISCOUNT" | "SUBSCRIPTION" | "PROVISIONING" =
+      body.couponType === "SUBSCRIPTION" ? "SUBSCRIPTION" : body.couponType === "PROVISIONING" ? "PROVISIONING" : "DISCOUNT";
     const discountPct = Number(body.discountPct ?? 0);
     const maxRedemptions = body.maxRedemptions != null ? Number(body.maxRedemptions) : null;
     const expiresAt = typeof body.expiresAt === "string" ? new Date(body.expiresAt) : null;
@@ -126,6 +126,11 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
     if (couponType === "DISCOUNT") {
       if (!Number.isFinite(discountPct) || discountPct < 1 || discountPct > 100) {
         reply.code(400).send({ error: "invalid_discount" });
+        return;
+      }
+    } else if (couponType === "SUBSCRIPTION") {
+      if (!grantsDurationDays || grantsDurationDays < 1) {
+        reply.code(400).send({ error: "subscription_coupon_missing_duration" });
         return;
       }
     } else {
@@ -240,6 +245,52 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
       };
     }
 
+    // SUBSCRIPTION or PROVISIONING coupon
+    const userId: string = jwtPayload.sub;
+    
+    if (couponType === "SUBSCRIPTION") {
+      // Subscription duration coupon: grants direct subscription time
+      const rawDuration = Number(row.grants_duration_days);
+      if (!Number.isInteger(rawDuration) || rawDuration <= 0 || rawDuration > 3650) {
+        return reply.code(500).send({ error: "invalid_coupon_duration" });
+      }
+      const grantsDurationDays: number = rawDuration;
+
+      let expiresAt: unknown = null;
+      await db.transaction(async (tx: any) => {
+        await tx.execute(sql`
+          INSERT INTO subscriptions (tenant_id, user_id, plan, status, current_period_end, metadata)
+          VALUES (
+            ${tenantId},
+            ${userId},
+            'subscription_duration',
+            'ACTIVE',
+            NOW() + make_interval(days => ${grantsDurationDays}),
+            ${JSON.stringify({ couponCode: row.code, type: 'subscription_duration', grantedDays: grantsDurationDays })}
+          )
+        `);
+        await tx.execute(sql`
+          UPDATE billing_coupons SET redemptions = redemptions + 1 WHERE code = ${row.code}
+        `);
+      });
+
+      const expiresResult = (await db.execute(sql`
+        SELECT current_period_end FROM subscriptions
+        WHERE tenant_id = ${tenantId} AND user_id = ${userId} AND plan = 'subscription_duration'
+        ORDER BY id DESC LIMIT 1
+      `)) as { rows?: Array<Record<string, any>> } | Array<Record<string, any>>;
+      const expiresRows = Array.isArray(expiresResult) ? expiresResult : (expiresResult.rows ?? []);
+      expiresAt = expiresRows[0]?.current_period_end ?? null;
+
+      return {
+        ok: true,
+        couponType: "SUBSCRIPTION",
+        grantsDurationDays,
+        expiresAt,
+        message: `${grantsDurationDays}-day subscription granted`,
+      };
+    }
+
     // PROVISIONING coupon
     const grantsTier: string = row.grants_tier;
     const grantsPlan: string = row.grants_plan;
@@ -250,7 +301,6 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
       return reply.code(500).send({ error: "invalid_coupon_duration" });
     }
     const grantsDurationDays: number = rawDuration;
-    const userId: string = jwtPayload.sub;
 
     let expiresAt: unknown = null;
 
