@@ -8,10 +8,11 @@ on:
         required: true
         type: choice
         options:
-          - gpt-4-turbo
-          - claude-3-opus
-          - claude-3.5-sonnet
-          - gemini-pro
+          - gpt-5.5
+          - claude-opus-4-7
+          - claude-sonnet-4-6
+          - claude-haiku-4-5
+          - gemini-3.0-pro
       version:
         description: 'Model version tag'
         required: true

@@ -9,22 +9,26 @@ const IS_PROD = process.env.NODE_ENV === "production";
 // Per-service: { envKey, healthPath, devDefault }. In production each envKey is
 // required at boot — missing values throw a loud error so the status page never
 // silently reports a backend as "down" because we polled the wrong host.
+// All services expose an unscoped /health endpoint (auth-free, tenant-free)
+// for liveness probes. status-page-svc polls that uniform path because some
+// scoped paths sit behind auth or tenant middleware and 401/404 even when
+// the service is healthy.
 const SERVICE_DEFS: Array<{ name: string; envKey: string; healthPath: string; devDefault: string }> = [
-  { name: "identity-svc",     envKey: "IDENTITY_SVC_URL",     healthPath: "/api/auth/health",         devDefault: "http://localhost:3001" },
-  { name: "brain-svc",        envKey: "BRAIN_SVC_URL",        healthPath: "/api/brain/health",        devDefault: "http://localhost:3002" },
-  { name: "assessment-svc",   envKey: "ASSESSMENT_SVC_URL",   healthPath: "/api/assessments/health",  devDefault: "http://localhost:3003" },
-  { name: "ai-svc",           envKey: "AI_SVC_URL",           healthPath: "/api/ai/health",           devDefault: "http://localhost:3004" },
-  { name: "learning-svc",     envKey: "LEARNING_SVC_URL",     healthPath: "/api/learning/health",     devDefault: "http://localhost:3005" },
-  { name: "tutor-svc",        envKey: "TUTOR_SVC_URL",        healthPath: "/api/tutors/health",       devDefault: "http://localhost:3006" },
-  { name: "family-svc",       envKey: "FAMILY_SVC_URL",       healthPath: "/api/family/health",       devDefault: "http://localhost:3007" },
-  { name: "engagement-svc",   envKey: "ENGAGEMENT_SVC_URL",   healthPath: "/api/engagement/health",   devDefault: "http://localhost:3008" },
-  { name: "billing-svc",      envKey: "BILLING_SVC_URL",      healthPath: "/api/billing/health",      devDefault: "http://localhost:3009" },
-  { name: "comms-svc",        envKey: "COMMS_SVC_URL",        healthPath: "/api/comms/health",        devDefault: "http://localhost:3010" },
-  { name: "i18n-svc",         envKey: "I18N_SVC_URL",         healthPath: "/api/i18n/health",         devDefault: "http://localhost:3011" },
-  { name: "integrations-svc", envKey: "INTEGRATIONS_SVC_URL", healthPath: "/api/integrations/health", devDefault: "http://localhost:3012" },
-  { name: "admin-svc",        envKey: "ADMIN_SVC_URL",        healthPath: "/api/admin-svc/health",    devDefault: "http://localhost:3013" },
-  { name: "status-page-svc",  envKey: "STATUS_PAGE_SVC_URL",  healthPath: "/api/status/health",       devDefault: "http://localhost:3014" },
-  { name: "research-svc",     envKey: "RESEARCH_SVC_URL",     healthPath: "/api/research/health",     devDefault: "http://localhost:3015" },
+  { name: "identity-svc",     envKey: "IDENTITY_SVC_URL",     healthPath: "/health", devDefault: "http://localhost:3001" },
+  { name: "brain-svc",        envKey: "BRAIN_SVC_URL",        healthPath: "/health", devDefault: "http://localhost:3002" },
+  { name: "assessment-svc",   envKey: "ASSESSMENT_SVC_URL",   healthPath: "/health", devDefault: "http://localhost:3003" },
+  { name: "ai-svc",           envKey: "AI_SVC_URL",           healthPath: "/health", devDefault: "http://localhost:3004" },
+  { name: "learning-svc",     envKey: "LEARNING_SVC_URL",     healthPath: "/health", devDefault: "http://localhost:3005" },
+  { name: "tutor-svc",        envKey: "TUTOR_SVC_URL",        healthPath: "/health", devDefault: "http://localhost:3006" },
+  { name: "family-svc",       envKey: "FAMILY_SVC_URL",       healthPath: "/health", devDefault: "http://localhost:3007" },
+  { name: "engagement-svc",   envKey: "ENGAGEMENT_SVC_URL",   healthPath: "/health", devDefault: "http://localhost:3008" },
+  { name: "billing-svc",      envKey: "BILLING_SVC_URL",      healthPath: "/health", devDefault: "http://localhost:3009" },
+  { name: "comms-svc",        envKey: "COMMS_SVC_URL",        healthPath: "/health", devDefault: "http://localhost:3010" },
+  { name: "i18n-svc",         envKey: "I18N_SVC_URL",         healthPath: "/health", devDefault: "http://localhost:3011" },
+  { name: "integrations-svc", envKey: "INTEGRATIONS_SVC_URL", healthPath: "/health", devDefault: "http://localhost:3012" },
+  { name: "admin-svc",        envKey: "ADMIN_SVC_URL",        healthPath: "/health", devDefault: "http://localhost:3013" },
+  { name: "status-page-svc",  envKey: "STATUS_PAGE_SVC_URL",  healthPath: "/health", devDefault: "http://localhost:3014" },
+  { name: "research-svc",     envKey: "RESEARCH_SVC_URL",     healthPath: "/health", devDefault: "http://localhost:3015" },
 ];
 
 const missingProd = IS_PROD ? SERVICE_DEFS.filter((s) => !process.env[s.envKey]).map((s) => s.envKey) : [];

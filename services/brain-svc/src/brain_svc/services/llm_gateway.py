@@ -8,9 +8,11 @@ logger = logging.getLogger("brain-svc.llm_gateway")
 litellm.set_verbose = False
 
 MODEL_PRIORITY = [
-    "anthropic/claude-sonnet-4-20250514",
-    "gemini/gemini-2.0-flash",
-    "openai/gpt-4o-mini",
+    "anthropic/claude-opus-4-7",
+    "anthropic/claude-sonnet-4-6",
+    "anthropic/claude-haiku-4-5",
+    "gemini/gemini-3.0-pro",
+    "openai/gpt-5.5",
 ]
 
 
