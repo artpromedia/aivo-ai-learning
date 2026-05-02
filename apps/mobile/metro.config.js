@@ -10,13 +10,9 @@ const monorepoRoot = path.resolve(projectRoot, '../..');
 const config = getDefaultConfig(projectRoot);
 
 config.watchFolders = [
+  path.resolve(monorepoRoot, 'packages/aac-bridge'),
   path.resolve(monorepoRoot, 'packages/brand'),
   path.resolve(monorepoRoot, 'packages/mobile-ui'),
-  path.resolve(monorepoRoot, 'packages/db'),
-  path.resolve(monorepoRoot, 'packages/events'),
-  path.resolve(monorepoRoot, 'packages/observability'),
-  path.resolve(monorepoRoot, 'packages/security'),
-  path.resolve(monorepoRoot, 'packages/ui'),
 ];
 
 config.resolver.nodeModulesPaths = [
@@ -25,7 +21,7 @@ config.resolver.nodeModulesPaths = [
 ];
 
 config.resolver.unstable_enableSymlinks = true;
-config.resolver.disableHierarchicalLookup = true;
+config.resolver.disableHierarchicalLookup = false;
 
 const singletonPackages = {
   react: path.resolve(projectRoot, 'node_modules/react'),
