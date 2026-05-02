@@ -58,7 +58,7 @@ export default function AIPlaygroundPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/admin-svc/ai/playground", {
+      const res = await fetch("/api/brain/playground", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
