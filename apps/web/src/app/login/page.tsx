@@ -1,9 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import Image from "next/image";
 import Link from "next/link";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { SkipLink } from "@/components/a11y/SkipLink";
@@ -18,31 +17,7 @@ import {
   AlertCircle,
   ArrowRight,
   ShieldCheck,
-  Flame,
-  Calculator,
-  BookOpen,
-  FlaskConical,
-  Heart,
 } from "lucide-react";
-
-const SUBJECT_PILLS = [
-  { key: "MATH", labelKey: "subject_math" as const, Icon: Calculator, bg: "bg-pink-100", text: "text-pink-700", border: "border-pink-300" },
-  { key: "READING", labelKey: "subject_reading" as const, Icon: BookOpen, bg: "bg-cyan-100", text: "text-cyan-700", border: "border-cyan-300" },
-  { key: "SCIENCE", labelKey: "subject_science" as const, Icon: FlaskConical, bg: "bg-emerald-100", text: "text-emerald-700", border: "border-emerald-300" },
-  { key: "SEL", labelKey: "subject_sel" as const, Icon: Heart, bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300" },
-] as const;
-
-const LEARNERS = [
-  { name: "Leo", tutor: "nova", subject: "math", days: 12, bg: "bg-violet-100", border: "border-violet-400", avatarBg: "bg-violet-50" },
-  { name: "Maya", tutor: "sage", subject: "reading", days: 8, bg: "bg-emerald-100", border: "border-emerald-400", avatarBg: "bg-emerald-50" },
-  { name: "Noah", tutor: "spark", subject: "science", days: 21, bg: "bg-amber-100", border: "border-amber-400", avatarBg: "bg-amber-50" },
-  { name: "Aria", tutor: "harmony", subject: "sel", days: 5, bg: "bg-pink-100", border: "border-pink-400", avatarBg: "bg-pink-50" },
-] as const;
-
-function getDailyLearnerIndex(): number {
-  const dayIndex = Math.floor(Date.now() / 86_400_000);
-  return ((dayIndex % LEARNERS.length) + LEARNERS.length) % LEARNERS.length;
-}
 
 export default function LoginPage() {
   const { login, pinLogin } = useAuth();
@@ -57,16 +32,6 @@ export default function LoginPage() {
   const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedLearner, setSelectedLearner] = useState(0);
-  const [activeSubject, setActiveSubject] = useState<string>("MATH");
-  const [streakIdx, setStreakIdx] = useState<number>(0);
-
-  useEffect(() => {
-    setStreakIdx(getDailyLearnerIndex());
-  }, []);
-
-  const previewLearner = LEARNERS[streakIdx];
-  const previewSubtitleKey = `streak_preview_subtitle_${previewLearner.subject}` as const;
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,26 +179,6 @@ export default function LoginPage() {
 
             {mode === "email" ? (
               <div role="tabpanel" id="panel-email" aria-labelledby="tab-email">
-                <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100 rounded-2xl p-4 flex items-center gap-4 mb-6">
-                  <div className="bg-orange-100 p-2.5 rounded-xl text-orange-500 shrink-0">
-                    <Flame className="w-6 h-6 fill-current" aria-hidden="true" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-orange-800">
-                      {t("streak_preview_title", { name: previewLearner.name, days: previewLearner.days })}
-                    </p>
-                    <p className="text-xs font-bold text-orange-600">{t(previewSubtitleKey)}</p>
-                  </div>
-                  <Image
-                    src={`/images/tutors/${previewLearner.tutor}.png`}
-                    alt=""
-                    width={40}
-                    height={40}
-                    className={`rounded-xl ${previewLearner.avatarBg} object-contain`}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                  />
-                </div>
-
                 <form onSubmit={handleEmailLogin} className="space-y-5">
                   <div className="space-y-2">
                     <label htmlFor="login-email" className="block text-sm font-bold text-slate-700 ml-1">
@@ -312,57 +257,6 @@ export default function LoginPage() {
               </div>
             ) : (
               <div role="tabpanel" id="panel-pin" aria-labelledby="tab-pin" className="space-y-7">
-                <div className="text-center">
-                  <p className="font-bold text-slate-700 mb-4 text-sm">{t("whos_learning") ?? "Who's learning today?"}</p>
-                  <div className="flex justify-center gap-3">
-                    {LEARNERS.map((l, idx) => (
-                      <button
-                        key={l.name}
-                        type="button"
-                        onClick={() => setSelectedLearner(idx)}
-                        className={`flex flex-col items-center gap-1.5 transition-all ${
-                          selectedLearner === idx ? "scale-110" : "opacity-70 hover:opacity-100"
-                        }`}
-                        aria-pressed={selectedLearner === idx}
-                      >
-                        <div
-                          className={`w-16 h-16 rounded-2xl ${l.bg} border-4 ${
-                            selectedLearner === idx ? l.border + " shadow-lg" : "border-transparent"
-                          } flex items-center justify-center overflow-hidden`}
-                        >
-                          <Image src={`/images/tutors/${l.tutor}.png`} alt="" width={48} height={48} className="object-contain" />
-                        </div>
-                        <span className={`text-xs font-bold ${selectedLearner === idx ? "text-slate-900" : "text-slate-500"}`}>{l.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="font-bold text-slate-700 mb-3 text-sm text-center">{t("what_sounds_fun") ?? "What sounds fun?"}</p>
-                  <div className="flex justify-center gap-2 flex-wrap">
-                    {SUBJECT_PILLS.map((s) => {
-                      const active = activeSubject === s.key;
-                      return (
-                        <button
-                          key={s.key}
-                          type="button"
-                          onClick={() => setActiveSubject(s.key)}
-                          aria-pressed={active}
-                          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-bold border-2 transition-all ${
-                            active
-                              ? `${s.bg} ${s.text} ${s.border} shadow-sm scale-105`
-                              : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
-                          }`}
-                        >
-                          <s.Icon className="w-4 h-4" aria-hidden="true" />
-                          {t(s.labelKey)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
                 <form onSubmit={handlePinLogin} className="space-y-5">
                   <div>
                     <label htmlFor="parent-id" className="block text-sm font-bold text-slate-700 mb-2 ml-1">
