@@ -11,8 +11,9 @@ function requireUrl(name: string, devDefault: string): string {
 
 const ADMIN_SVC_URL = requireUrl("ADMIN_SVC_URL", "http://localhost:3013");
 
-export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {
-  const pathStr = params.path?.join("/") || "";
+export async function GET(req: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
+  const { path } = await params;
+  const pathStr = path?.join("/") || "";
   const fullPath = `/api/admin-svc/${pathStr}`;
   const url = new URL(fullPath, ADMIN_SVC_URL);
   
@@ -44,8 +45,9 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { path: string[] } }) {
-  const pathStr = params.path?.join("/") || "";
+export async function POST(req: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
+  const { path } = await params;
+  const pathStr = path?.join("/") || "";
   const fullPath = `/api/admin-svc/${pathStr}`;
   const url = new URL(fullPath, ADMIN_SVC_URL);
   
@@ -76,8 +78,9 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { path: string[] } }) {
-  const pathStr = params.path?.join("/") || "";
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
+  const { path } = await params;
+  const pathStr = path?.join("/") || "";
   const fullPath = `/api/admin-svc/${pathStr}`;
   const url = new URL(fullPath, ADMIN_SVC_URL);
   
