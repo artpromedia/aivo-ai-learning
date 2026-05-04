@@ -68,6 +68,11 @@ export async function buildApp() {
 
   const app = Fastify({
     logger: false,
+    // Behind ingress-nginx + Cloudflare, request.ip would otherwise be
+    // the proxy's address — collapsing all users into one rate-limit
+    // bucket and triggering 429 storms on the parent dashboard. Trust
+    // X-Forwarded-For so request.ip resolves to the real client IP.
+    trustProxy: true,
   });
 
   // Structured request logging + /metrics for Prometheus scrape (Supp A).
@@ -94,7 +99,12 @@ export async function buildApp() {
   });
 
   await app.register(rateLimit, {
-    max: 100,
+    // Parent dashboard fans out many independent /api/users/learners
+    // fetches across nested layouts; 100/min was too tight even for a
+    // single user. 300/min still trips on real abuse but lets the
+    // dashboard render without throttling. Combined with trustProxy
+    // above so the bucket is per real client IP.
+    max: 300,
     timeWindow: "1 minute",
   });
 
