@@ -224,7 +224,19 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
     if (!learner) {
       [learner] = await db.select().from(learners).where(eq(learners.userId, learnerId)).limit(1);
     }
-    if (!learner) return reply.status(404).send({ error: "Learner not found" });
+    // No learner row matches this id (stale session, deleted learner, or
+    // parent dashboard iterating with a tenant-id by mistake). Return a
+    // shaped "empty" status with 200 so the dashboard's status-badge UI
+    // renders cleanly instead of spamming the console with 404s.
+    if (!learner) {
+      return reply.send({
+        learnerId: null,
+        baselineCompleted: false,
+        parentAssessmentCompleted: false,
+        assessmentId: null,
+        approvalStatus: null,
+      });
+    }
 
     if (user.role === "LEARNER" && user.sub !== learner.userId) {
       return reply.status(403).send({ error: "Access denied" });

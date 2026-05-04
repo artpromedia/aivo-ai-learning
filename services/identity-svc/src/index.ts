@@ -102,10 +102,22 @@ export async function buildApp() {
     // Parent dashboard fans out many independent /api/users/learners
     // fetches across nested layouts; 100/min was too tight even for a
     // single user. 300/min still trips on real abuse but lets the
-    // dashboard render without throttling. Combined with trustProxy
-    // above so the bucket is per real client IP.
+    // dashboard render without throttling.
+    //
+    // Behind Cloudflare + ingress-nginx, request.ip can collapse to a
+    // Cloudflare POP IP (shared by many users) even with trustProxy,
+    // because ingress-nginx is not configured with the Cloudflare CIDR
+    // set. Cloudflare always sends CF-Connecting-IP with the real
+    // client IP, so use it as the bucket key and fall back to req.ip
+    // for direct-to-cluster calls (smoke tests, in-cluster traffic).
     max: 300,
     timeWindow: "1 minute",
+    keyGenerator: (req: any) => {
+      const cf = req.headers?.["cf-connecting-ip"];
+      if (typeof cf === "string" && cf.length > 0) return cf;
+      if (Array.isArray(cf) && cf[0]) return cf[0];
+      return req.ip;
+    },
   });
 
   // Profile-photo upload pipeline: bound the request size to the avatar
