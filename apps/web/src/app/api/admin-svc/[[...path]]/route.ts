@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
-function requireUrl(name: string, devDefault: string): string {
-  const v = process.env[name];
+export const dynamic = "force-dynamic";
+
+function getAdminSvcUrl(): string {
+  const v = process.env.ADMIN_SVC_URL;
   if (v) return v;
   if (process.env.NODE_ENV === "production") {
-    throw new Error(`web/api/admin-svc: ${name} must be set in production`);
+    throw new Error("web/api/admin-svc: ADMIN_SVC_URL must be set in production");
   }
-  return devDefault;
+  return "http://localhost:3013";
 }
-
-const ADMIN_SVC_URL = requireUrl("ADMIN_SVC_URL", "http://localhost:3013");
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ path?: string[] }> }) {
   const { path } = await params;
   const pathStr = path?.join("/") || "";
   const fullPath = `/api/admin-svc/${pathStr}`;
-  const url = new URL(fullPath, ADMIN_SVC_URL);
+  const url = new URL(fullPath, getAdminSvcUrl());
   
   // Preserve query string
   url.search = req.nextUrl.search;
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pat
   const { path } = await params;
   const pathStr = path?.join("/") || "";
   const fullPath = `/api/admin-svc/${pathStr}`;
-  const url = new URL(fullPath, ADMIN_SVC_URL);
+  const url = new URL(fullPath, getAdminSvcUrl());
   
   try {
     const body = await req.text();
@@ -82,7 +82,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
   const { path } = await params;
   const pathStr = path?.join("/") || "";
   const fullPath = `/api/admin-svc/${pathStr}`;
-  const url = new URL(fullPath, ADMIN_SVC_URL);
+  const url = new URL(fullPath, getAdminSvcUrl());
   
   try {
     const res = await fetch(url.toString(), {
