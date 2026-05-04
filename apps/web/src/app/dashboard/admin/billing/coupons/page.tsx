@@ -13,7 +13,7 @@ type Coupon = {
   active: boolean;
   created_at: string;
   expires_at: string | null;
-  coupon_type?: "DISCOUNT" | "PROVISIONING";
+  coupon_type?: "DISCOUNT" | "PROVISIONING" | "SUBSCRIPTION";
   grants_tier?: string | null;
   grants_plan?: string | null;
   grants_seat_limit?: number | null;
