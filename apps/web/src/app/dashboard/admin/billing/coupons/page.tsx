@@ -283,6 +283,7 @@ export default function AdminCouponsPage() {
         ) : form.couponType === "SUBSCRIPTION" ? (
           <div className="space-y-4">
             <div>
+              {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- group of toggle buttons, no single control */}
               <label className="block text-sm font-medium vi-text mb-2">Subscription Duration</label>
               <div className="grid grid-cols-4 gap-2">
                 <button
