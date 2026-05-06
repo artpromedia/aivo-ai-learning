@@ -183,6 +183,25 @@
     "allCaughtUp": "Todo al Día",
     "noPending": "No hay recomendaciones pendientes en este momento."
   },
+  "parentInbox": {
+    "title": "Bandeja de Entrada",
+    "tabs": {
+      "all": "Todo",
+      "action": "Requiere Acción",
+      "celebrations": "Celebraciones",
+      "archived": "Archivo"
+    },
+    "empty": {
+      "all": "Tu bandeja está vacía. Te avisaremos cuando algo requiera atención.",
+      "action": "No hay elementos de acción.",
+      "celebrations": "No hay celebraciones.",
+      "archived": "No hay elementos archivados."
+    },
+    "markRead": "Marcar Leído",
+    "dismiss": "Descartar",
+    "view": "Ver",
+    "openOnWeb": "Abre esta notificación en la app web para tomar acción."
+  },
   "parentOnboard": {
     "title": "Agregar un Hijo",
     "subtitle": "Configura el perfil de aprendizaje personalizado de tu hijo",

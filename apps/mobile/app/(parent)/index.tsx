@@ -33,9 +33,19 @@ export default function ParentDashboard() {
           <Text style={styles.greeting}>{t('parent.greeting', { name: user?.name || 'Parent' })}</Text>
           <Text style={styles.subGreeting}>{t('parent.learningOverview')}</Text>
         </View>
-        <Pressable onPress={logout} style={styles.logoutBtn}>
-          <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Pressable
+            onPress={() => router.push('/(parent)/inbox' as any)}
+            style={styles.logoutBtn}
+            accessibilityRole="button"
+            accessibilityLabel={t('parentInbox.title')}
+          >
+            <Ionicons name="mail-outline" size={22} color={colors.textSecondary} />
+          </Pressable>
+          <Pressable onPress={logout} style={styles.logoutBtn}>
+            <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.statsRow}>

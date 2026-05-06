@@ -183,6 +183,25 @@
     "allCaughtUp": "All Caught Up",
     "noPending": "No pending recommendations at this time."
   },
+  "parentInbox": {
+    "title": "Inbox",
+    "tabs": {
+      "all": "All",
+      "action": "Action Needed",
+      "celebrations": "Celebrations",
+      "archived": "Archive"
+    },
+    "empty": {
+      "all": "Your inbox is empty. We'll let you know when something needs attention.",
+      "action": "No action items.",
+      "celebrations": "No celebrations.",
+      "archived": "No archived items."
+    },
+    "markRead": "Mark Read",
+    "dismiss": "Dismiss",
+    "view": "View",
+    "openOnWeb": "Open this notification on the web app to take action."
+  },
   "parentOnboard": {
     "title": "Add a Child",
     "subtitle": "Set up your child's personalized learning profile",
