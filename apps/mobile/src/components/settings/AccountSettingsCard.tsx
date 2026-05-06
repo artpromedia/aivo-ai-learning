@@ -29,7 +29,7 @@ import {
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -49,6 +49,18 @@ interface AccountSettingsCardProps {
   enableAvatarUpload?: boolean;
 }
 
+/**
+ * Shape React Native's `FormData.append` accepts for file uploads. The DOM
+ * `Blob`/`File` types do not match what RN's bridge serializes, so we keep
+ * a local interface and `Blob`-cast at the append site rather than reaching
+ * for `as any`.
+ */
+interface RNFormDataFilePart {
+  uri: string;
+  name: string;
+  type: string;
+}
+
 export function AccountSettingsCard({
   avatarInitial,
   enableAvatarUpload = false,
@@ -63,12 +75,12 @@ export function AccountSettingsCard({
 
   // Avatar upload (opt-in)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(
-    ((user as any)?.avatarUrl as string | undefined) ?? null,
+    user?.avatarUrl ?? null,
   );
   const [avatarBusy, setAvatarBusy] = useState(false);
 
   useEffect(() => {
-    setAvatarUrl(((user as any)?.avatarUrl as string | undefined) ?? null);
+    setAvatarUrl(user?.avatarUrl ?? null);
   }, [user]);
 
   const uploadAvatar = useCallback(
@@ -83,15 +95,18 @@ export function AccountSettingsCard({
         const ext =
           mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
         const fd = new FormData();
-        fd.append('file', {
+        const filePart: RNFormDataFilePart = {
           uri,
           name: `avatar.${ext}`,
           type: mime,
-        } as any);
+        };
+        // RN's FormData accepts `{ uri, name, type }` parts; the DOM
+        // typings disagree, so cast to Blob for the append signature only.
+        fd.append('file', filePart as unknown as Blob);
         const res = await fetch(`${API.IDENTITY}/api/users/me/avatar`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
-          body: fd as any,
+          body: fd,
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -308,7 +323,11 @@ export function AccountSettingsCard({
   }, [editName, editEmail, t]);
 
   const handleChangePassword = useCallback(() => {
-    router.push('/(auth)/change-password' as any);
+    // `as Href` is the documented expo-router escape hatch for routes
+    // whose typed-routes entry hasn't been regenerated yet — the
+    // `(auth)/change-password.tsx` file exists, but `.expo/types/router.d.ts`
+    // is regenerated only on dev/build, not on commit.
+    router.push('/(auth)/change-password' as Href);
   }, []);
 
   const handleLogout = useCallback(() => {

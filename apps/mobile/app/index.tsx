@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { colors } from '@/constants/colors';
@@ -19,26 +19,31 @@ export default function Index() {
     // is reachable. Mirrors the web auth-provider redirect to
     // /dashboard/change-password. Learner (PIN) sessions never set this
     // flag because learners don't have rotating passwords.
+    //
+    // The `as Href` is the documented expo-router escape hatch for routes
+    // whose typed-routes entry hasn't been (re)generated yet — the
+    // `(auth)/change-password.tsx` file exists, but `.expo/types/router.d.ts`
+    // is regenerated only on dev/build, not on commit.
     if (mustChangePassword) {
-      router.replace('/(auth)/change-password' as any);
+      router.replace('/(auth)/change-password' as Href);
       return;
     }
 
     switch (user.role) {
       case 'PARENT':
-        router.replace('/(parent)' as any);
+        router.replace('/(parent)' as Href);
         break;
       case 'LEARNER':
-        router.replace('/(learner)' as any);
+        router.replace('/(learner)' as Href);
         break;
       case 'TEACHER':
-        router.replace('/(teacher)' as any);
+        router.replace('/(teacher)' as Href);
         break;
       case 'CAREGIVER':
-        router.replace('/(caregiver)' as any);
+        router.replace('/(caregiver)' as Href);
         break;
       case 'THERAPIST':
-        router.replace('/(therapist)' as any);
+        router.replace('/(therapist)' as Href);
         break;
       default:
         router.replace('/(auth)/login');
