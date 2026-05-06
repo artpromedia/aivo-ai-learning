@@ -4,6 +4,8 @@
  * Provides the standard self-service account actions that every role
  * needs from a Settings screen:
  *   - Read-only profile chip (avatar initial, name, email)
+ *   - Optional avatar upload (opt in via `enableAvatarUpload`) backed by
+ *     POST/DELETE /api/users/me/avatar
  *   - Edit account details (name + email) via PUT /api/auth/profile
  *   - "Change password" link → routes to (auth)/change-password
  *   - Two-factor authentication toggle (email-code MFA)
@@ -11,13 +13,14 @@
  *   - Delete account via DELETE /api/auth/account (password-confirmed)
  *
  * Intentionally excludes role-specific concerns (parent PIN management,
- * avatar upload) so it can be safely reused for teacher, therapist, and
- * caregiver settings. Avatar upload lives in the parent settings screen
- * and can be lifted into this component later without breaking callers.
+ * language selection, data export) so the card can be safely reused across
+ * roles. Roles that need those flows compose them around the shared card.
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -25,21 +28,31 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, getToken } from '@/lib/api';
 import { API } from '@/constants/api';
 import { colors, spacing, radius } from '@/constants/colors';
 
 interface AccountSettingsCardProps {
   /** Single character used for the placeholder avatar (e.g. 'T' for teacher). */
   avatarInitial?: string;
+  /**
+   * When true, the avatar becomes a tap target that lets the user pick a new
+   * profile image (validated for type/size and uploaded to identity-svc). A
+   * long-press removes the image. When false, the avatar is a static initial.
+   */
+  enableAvatarUpload?: boolean;
 }
 
-export function AccountSettingsCard({ avatarInitial }: AccountSettingsCardProps) {
+export function AccountSettingsCard({
+  avatarInitial,
+  enableAvatarUpload = false,
+}: AccountSettingsCardProps) {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
 
@@ -47,6 +60,123 @@ export function AccountSettingsCard({ avatarInitial }: AccountSettingsCardProps)
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
   const [savingAccount, setSavingAccount] = useState(false);
+
+  // Avatar upload (opt-in)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    ((user as any)?.avatarUrl as string | undefined) ?? null,
+  );
+  const [avatarBusy, setAvatarBusy] = useState(false);
+
+  useEffect(() => {
+    setAvatarUrl(((user as any)?.avatarUrl as string | undefined) ?? null);
+  }, [user]);
+
+  const uploadAvatar = useCallback(
+    async (uri: string, mime: string) => {
+      setAvatarBusy(true);
+      try {
+        const token = await getToken();
+        if (!token) {
+          Alert.alert(t('common.error'), t('common.error'));
+          return;
+        }
+        const ext =
+          mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+        const fd = new FormData();
+        fd.append('file', {
+          uri,
+          name: `avatar.${ext}`,
+          type: mime,
+        } as any);
+        const res = await fetch(`${API.IDENTITY}/api/users/me/avatar`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd as any,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          Alert.alert(
+            t('common.error'),
+            data?.error || t('accountSettings.avatarUploadFailed'),
+          );
+          return;
+        }
+        const newUrl: string = data.avatarUrl;
+        // The API returns a path like /api/avatars/...; <Image> needs an
+        // absolute URL pointing at identity-svc.
+        const absolute = newUrl.startsWith('http')
+          ? newUrl
+          : `${API.IDENTITY}${newUrl}`;
+        setAvatarUrl(`${absolute}?v=${Date.now()}`);
+      } catch {
+        Alert.alert(
+          t('common.error'),
+          t('accountSettings.avatarUploadFailed'),
+        );
+      } finally {
+        setAvatarBusy(false);
+      }
+    },
+    [t],
+  );
+
+  const handlePickAvatar = useCallback(async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(
+        t('common.error'),
+        t('accountSettings.avatarPermissionDenied'),
+      );
+      return;
+    }
+    const picked = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (picked.canceled || !picked.assets?.[0]) return;
+    const asset = picked.assets[0];
+    const mime = asset.mimeType || 'image/jpeg';
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) {
+      Alert.alert(t('common.error'), t('accountSettings.avatarInvalidType'));
+      return;
+    }
+    if (asset.fileSize && asset.fileSize > 5 * 1024 * 1024) {
+      Alert.alert(t('common.error'), t('accountSettings.avatarTooLarge'));
+      return;
+    }
+    await uploadAvatar(asset.uri, mime);
+  }, [t, uploadAvatar]);
+
+  const handleRemoveAvatar = useCallback(() => {
+    Alert.alert(
+      t('accountSettings.avatarRemove'),
+      t('accountSettings.avatarRemoveConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('accountSettings.avatarRemove'),
+          style: 'destructive',
+          onPress: async () => {
+            setAvatarBusy(true);
+            try {
+              const res = await apiFetch(
+                API.IDENTITY,
+                '/api/users/me/avatar',
+                { method: 'DELETE' },
+              );
+              if (res.ok || res.status === 204) {
+                setAvatarUrl(null);
+              }
+            } finally {
+              setAvatarBusy(false);
+            }
+          },
+        },
+      ],
+    );
+  }, [t]);
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
@@ -228,13 +358,43 @@ export function AccountSettingsCard({ avatarInitial }: AccountSettingsCardProps)
     <View>
       <AivoCard style={styles.profileCard}>
         <View style={styles.profileRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
-          </View>
+          {enableAvatarUpload ? (
+            <Pressable
+              onPress={handlePickAvatar}
+              onLongPress={avatarUrl ? handleRemoveAvatar : undefined}
+              disabled={avatarBusy}
+              style={styles.avatar}
+              accessibilityLabel={t('accountSettings.avatarChange')}
+            >
+              {avatarBusy ? (
+                <ActivityIndicator color="#FFF" />
+              ) : avatarUrl ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <Text style={styles.avatarText}>{initial}</Text>
+              )}
+            </Pressable>
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initial}</Text>
+            </View>
+          )}
           <View style={{ flex: 1 }}>
             <Text style={styles.name} numberOfLines={1}>{user?.name || ''}</Text>
             {!!user?.email && (
               <Text style={styles.email} numberOfLines={1}>{user.email}</Text>
+            )}
+            {enableAvatarUpload && (
+              <Pressable onPress={handlePickAvatar} disabled={avatarBusy}>
+                <Text style={styles.avatarLink}>
+                  {avatarUrl
+                    ? t('accountSettings.avatarChange')
+                    : t('accountSettings.avatarAdd')}
+                </Text>
+              </Pressable>
             )}
           </View>
         </View>
@@ -503,6 +663,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: { width: '100%', height: '100%' },
+  avatarLink: {
+    color: colors.primary,
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
+    marginTop: 6,
   },
   avatarText: { fontSize: 20, fontFamily: 'Nunito-ExtraBold', color: '#FFF' },
   name: { fontSize: 16, fontFamily: 'Nunito-Bold', color: colors.text },
