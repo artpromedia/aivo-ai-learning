@@ -43,6 +43,13 @@ export default function TeacherLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart" size={size} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: t('tabs.settings'),
+          tabBarIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
+        }}
+      />
       <Tabs.Screen name="student/[id]/index" options={{ href: null }} />
       <Tabs.Screen name="student/[id]/insight" options={{ href: null }} />
       <Tabs.Screen name="student/[id]/iep" options={{ href: null }} />

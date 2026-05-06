@@ -29,6 +29,13 @@ export default function TherapistLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: t('tabs.settings'),
+          tabBarIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
+        }}
+      />
       <Tabs.Screen name="client/[id]/index" options={{ href: null }} />
       <Tabs.Screen name="client/[id]/goals" options={{ href: null }} />
       <Tabs.Screen name="client/[id]/notes" options={{ href: null }} />

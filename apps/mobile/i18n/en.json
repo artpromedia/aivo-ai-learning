@@ -22,7 +22,8 @@
     "on": "On",
     "off": "Off",
     "saving": "Saving...",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "appVersion": "AIVO Learning v1.0.0"
   },
   "auth": {
     "aiPoweredLearning": "AI-Powered Learning",
@@ -573,5 +574,24 @@
     "lessonPlans": "Lesson Plans",
     "alerts": "Alerts",
     "clients": "Clients"
+  },
+  "accountSettings": {
+    "accountDetails": "Account Details",
+    "changePassword": "Change Password",
+    "deleteAccount": "Delete Account",
+    "fullName": "Full Name",
+    "nameRequired": "Name is required.",
+    "accountUpdated": "Account updated.",
+    "accountUpdateFailed": "Failed to update account.",
+    "deletePasswordRequired": "Please enter your password to confirm.",
+    "deleteFailed": "Failed to delete account.",
+    "deleteWarning": "This permanently deletes your account and all associated data. This action cannot be undone. Enter your password to confirm.",
+    "confirmDelete": "Delete Account"
+  },
+  "teacherSettings": {
+    "title": "Settings"
+  },
+  "therapistSettings": {
+    "title": "Settings"
   }
 }
