@@ -32,11 +32,11 @@ const TYPE_META: Record<
   { icon: keyof typeof Ionicons.glyphMap; tint: string }
 > = {
   brain_review: { icon: 'bulb', tint: colors.primary },
-  recommendation: { icon: 'sparkles', tint: '#B45309' },
-  iep_reminder: { icon: 'clipboard', tint: '#1D4ED8' },
-  milestone: { icon: 'trophy', tint: '#B45309' },
-  progress: { icon: 'trending-up', tint: '#166534' },
-  team: { icon: 'people', tint: '#1D4ED8' },
+  recommendation: { icon: 'sparkles', tint: colors.visualSel },
+  iep_reminder: { icon: 'clipboard', tint: colors.visualReading },
+  milestone: { icon: 'trophy', tint: colors.visualSel },
+  progress: { icon: 'trending-up', tint: colors.visualScience },
+  team: { icon: 'people', tint: colors.visualReading },
   system: { icon: 'information-circle', tint: colors.primary },
 };
 
@@ -277,5 +277,5 @@ const styles = StyleSheet.create({
   actionPrimaryText: { fontSize: 12, fontFamily: 'Nunito-Bold', color: colors.primary },
   actionGhost: { backgroundColor: colors.surface },
   actionGhostText: { fontSize: 12, fontFamily: 'Nunito-SemiBold', color: colors.textSecondary },
-  actionDismissText: { fontSize: 12, fontFamily: 'Nunito-SemiBold', color: '#B91C1C' },
+  actionDismissText: { fontSize: 12, fontFamily: 'Nunito-SemiBold', color: colors.error },
 });
