@@ -440,7 +440,17 @@
     "createPlan": "Crear Plan de Lección",
     "recentPlans": "Planes Recientes",
     "noPlansTitle": "Sin Planes de Lección",
-    "noPlansMessage": "Genera tu primer plan de lección basado en el Cerebro arriba."
+    "noPlansMessage": "Genera tu primer plan de lección basado en el Cerebro arriba.",
+    "learner": "Estudiante",
+    "noLearnersHint": "Conéctate con estudiantes para generar planes para ellos.",
+    "noLearnerError": "Selecciona un estudiante antes de generar un plan.",
+    "generateError": "No se pudo generar el plan de lección",
+    "networkError": "Error de red. Inténtalo de nuevo.",
+    "objective": "Objetivo",
+    "overview": "Resumen",
+    "duration": "Duración",
+    "activities": "Actividades",
+    "accommodations": "Adaptaciones"
   },
   "teacherStudent": {
     "brain": "Cerebro de {{name}}",

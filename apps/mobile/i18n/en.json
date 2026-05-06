@@ -440,7 +440,17 @@
     "createPlan": "Create Lesson Plan",
     "recentPlans": "Recent Plans",
     "noPlansTitle": "No Lesson Plans Yet",
-    "noPlansMessage": "Generate your first Brain-informed lesson plan above."
+    "noPlansMessage": "Generate your first Brain-informed lesson plan above.",
+    "learner": "Learner",
+    "noLearnersHint": "Connect with learners to generate plans for them.",
+    "noLearnerError": "Please select a learner before generating a plan.",
+    "generateError": "Failed to generate lesson plan",
+    "networkError": "Network error. Please try again.",
+    "objective": "Objective",
+    "overview": "Overview",
+    "duration": "Duration",
+    "activities": "Activities",
+    "accommodations": "Accommodations"
   },
   "teacherStudent": {
     "brain": "{{name}}'s Brain",

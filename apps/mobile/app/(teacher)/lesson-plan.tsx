@@ -1,11 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, Alert, ActivityIndicator, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
-import { useLearners } from '@/hooks/useLearners';
+import { useConnectedLearners } from '@/hooks/useFamily';
 import { apiFetch } from '@/lib/api';
 import { API } from '@/constants/api';
 import { AivoCard, AivoButton, EmptyState } from '@aivo/mobile-ui';
@@ -33,6 +33,7 @@ interface LessonPlanActivity {
 
 interface LessonPlan {
   id: string;
+  learnerId: string;
   title: string;
   subject: string;
   gradeLevel?: string;
@@ -43,20 +44,42 @@ interface LessonPlan {
   createdAt: string;
 }
 
+interface ConnectedLearner {
+  id: string;
+  name: string;
+  functioningLevel: string | null;
+  gradeLevel: string | null;
+}
+
 export default function LessonPlanScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { data: learners } = useLearners();
+  const { data: learnersRaw } = useConnectedLearners();
+  const learners: ConnectedLearner[] = Array.isArray(learnersRaw) ? learnersRaw : [];
 
+  const [selectedLearnerId, setSelectedLearnerId] = useState<string>('');
   const [subject, setSubject] = useState('Mathematics');
   const [gradeLevel, setGradeLevel] = useState('3rd Grade');
   const [topic, setTopic] = useState('');
   const [accommodationNotes, setAccommodationNotes] = useState('');
   const [generating, setGenerating] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<LessonPlan | null>(null);
+  const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
 
-  const learnerId = learners?.[0]?.id || '';
+  // Default the picker to the first connected learner once they load.
+  useEffect(() => {
+    if (!selectedLearnerId && learners.length > 0) {
+      setSelectedLearnerId(learners[0].id);
+    }
+  }, [learners, selectedLearnerId]);
+
+  const selectedLearner = useMemo(
+    () => learners.find((l) => l.id === selectedLearnerId) || null,
+    [learners, selectedLearnerId],
+  );
+  const getLearnerName = (id: string) =>
+    learners.find((l) => l.id === id)?.name || 'Unknown';
 
   const { data: recentPlans, refetch: refetchPlans } = useQuery<LessonPlan[]>({
     queryKey: ['lesson-plans', user?.id],
@@ -69,8 +92,8 @@ export default function LessonPlanScreen() {
   });
 
   const handleGenerate = useCallback(async () => {
-    if (!learnerId) {
-      Alert.alert(t('common.error'), 'Please add a learner first to generate a lesson plan.');
+    if (!selectedLearnerId) {
+      Alert.alert(t('common.error'), t('teacherLessonPlan.noLearnerError'));
       return;
     }
     setGenerating(true);
@@ -79,10 +102,11 @@ export default function LessonPlanScreen() {
       const res = await apiFetch(API.ENGAGEMENT, '/api/engagement/lesson-plans/generate', {
         method: 'POST',
         body: JSON.stringify({
-          learnerId,
+          learnerId: selectedLearnerId,
           subject,
-          gradeLevel,
+          gradeLevel: gradeLevel || selectedLearner?.gradeLevel || '3rd',
           topic: topic.trim() || undefined,
+          functioningLevel: selectedLearner?.functioningLevel || undefined,
           accommodationNotes: accommodationNotes.trim() || undefined,
         }),
       });
@@ -91,14 +115,14 @@ export default function LessonPlanScreen() {
         setGeneratedPlan(data);
         refetchPlans();
       } else {
-        Alert.alert(t('common.error'), data.error || 'Failed to generate lesson plan');
+        Alert.alert(t('common.error'), data.error || t('teacherLessonPlan.generateError'));
       }
     } catch {
-      Alert.alert(t('common.error'), 'Network error. Please try again.');
+      Alert.alert(t('common.error'), t('teacherLessonPlan.networkError'));
     } finally {
       setGenerating(false);
     }
-  }, [learnerId, subject, gradeLevel, topic, accommodationNotes, t, refetchPlans]);
+  }, [selectedLearnerId, selectedLearner, subject, gradeLevel, topic, accommodationNotes, t, refetchPlans]);
 
   return (
     <ScrollView
@@ -114,6 +138,33 @@ export default function LessonPlanScreen() {
         <Text style={styles.genDesc}>{t('teacherLessonPlan.generateDesc')}</Text>
 
         <View style={styles.formSection}>
+          <Text style={styles.fieldLabel}>{t('teacherLessonPlan.learner')}</Text>
+          {learners.length === 0 ? (
+            <Text style={[styles.genDesc, { textAlign: 'left', marginBottom: 12 }]}>
+              {t('teacherLessonPlan.noLearnersHint')}
+            </Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+              {learners.map((l) => {
+                const active = l.id === selectedLearnerId;
+                return (
+                  <Pressable
+                    key={l.id}
+                    style={[styles.chip, active && styles.chipActive]}
+                    onPress={() => setSelectedLearnerId(l.id)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                      {l.name}
+                      {l.functioningLevel ? ` (${l.functioningLevel})` : ''}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
+
           <Text style={styles.fieldLabel}>Subject</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
             {SUBJECTS.map(s => (
@@ -211,15 +262,107 @@ export default function LessonPlanScreen() {
 
       <Text style={[styles.sectionTitle, { marginBottom: spacing.md }]}>{t('teacherLessonPlan.recentPlans')}</Text>
       {recentPlans && recentPlans.length > 0 ? (
-        recentPlans.map(plan => (
-          <AivoCard key={plan.id} style={{ marginBottom: spacing.sm }}>
-            <Text style={{ fontSize: 15, fontFamily: 'Nunito-Bold', color: colors.text }}>{plan.title}</Text>
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-              <Text style={{ fontSize: 12, fontFamily: 'Nunito-Regular', color: colors.textSecondary }}>{plan.subject}</Text>
-              <Text style={{ fontSize: 12, fontFamily: 'Nunito-SemiBold', color: plan.status === 'DRAFT' ? colors.accent : colors.success }}>{plan.status}</Text>
-            </View>
-          </AivoCard>
-        ))
+        recentPlans.map((plan) => {
+          const expanded = expandedPlanId === plan.id;
+          return (
+            <AivoCard key={plan.id} style={{ marginBottom: spacing.sm }}>
+              <Pressable
+                onPress={() => setExpandedPlanId(expanded ? null : plan.id)}
+                accessibilityRole="button"
+                accessibilityState={{ expanded }}
+                style={styles.planHeader}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.planTitle}>{plan.title}</Text>
+                  <Text style={styles.planMeta}>
+                    {getLearnerName(plan.learnerId)} • {plan.subject} •{' '}
+                    {new Date(plan.createdAt).toLocaleDateString()}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    {
+                      backgroundColor:
+                        (plan.status === 'DRAFT' ? colors.accent : colors.success) + '22',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusBadgeText,
+                      { color: plan.status === 'DRAFT' ? colors.accent : colors.success },
+                    ]}
+                  >
+                    {plan.status}
+                  </Text>
+                </View>
+                <Ionicons
+                  name={expanded ? 'chevron-up' : 'chevron-down'}
+                  size={18}
+                  color={colors.textSecondary}
+                  style={{ marginLeft: 6 }}
+                />
+              </Pressable>
+
+              {expanded && (
+                <View style={styles.planDetails}>
+                  {plan.content?.objective && (
+                    <View style={styles.detailBlock}>
+                      <Text style={styles.detailLabel}>{t('teacherLessonPlan.objective')}</Text>
+                      <Text style={styles.detailText}>{plan.content.objective}</Text>
+                    </View>
+                  )}
+                  {plan.content?.overview && (
+                    <View style={styles.detailBlock}>
+                      <Text style={styles.detailLabel}>{t('teacherLessonPlan.overview')}</Text>
+                      <Text style={styles.detailText}>{plan.content.overview}</Text>
+                    </View>
+                  )}
+                  {plan.content?.duration && (
+                    <View style={styles.detailBlock}>
+                      <Text style={styles.detailLabel}>{t('teacherLessonPlan.duration')}</Text>
+                      <Text style={styles.detailText}>{plan.content.duration}</Text>
+                    </View>
+                  )}
+
+                  {Array.isArray(plan.activities) && plan.activities.length > 0 && (
+                    <View style={styles.detailBlock}>
+                      <Text style={styles.detailLabel}>
+                        {t('teacherLessonPlan.activities')} ({plan.activities.length})
+                      </Text>
+                      {plan.activities.map((a, i) => (
+                        <View key={i} style={styles.activityItem}>
+                          <Text style={styles.activityName}>
+                            {a.name || `${t('teacherLessonPlan.activities')} ${i + 1}`}
+                          </Text>
+                          {a.description ? (
+                            <Text style={styles.activityDesc}>{a.description}</Text>
+                          ) : null}
+                          {a.duration ? (
+                            <Text style={styles.activityDuration}>{a.duration}</Text>
+                          ) : null}
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {Array.isArray(plan.accommodations) && plan.accommodations.length > 0 && (
+                    <View style={styles.detailBlock}>
+                      <Text style={styles.detailLabel}>{t('teacherLessonPlan.accommodations')}</Text>
+                      {plan.accommodations.map((a, i) => (
+                        <Text key={i} style={styles.accommodationLine}>
+                          <Text style={styles.accommodationType}>{a.type ? `${a.type}: ` : ''}</Text>
+                          {a.description || ''}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
+            </AivoCard>
+          );
+        })
       ) : (
         <EmptyState
           icon={<Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />}
@@ -256,4 +399,40 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 12,
   },
+  planHeader: { flexDirection: 'row', alignItems: 'center' },
+  planTitle: { fontSize: 15, fontFamily: 'Nunito-Bold', color: colors.text },
+  planMeta: { fontSize: 12, fontFamily: 'Nunito-Regular', color: colors.textSecondary, marginTop: 2 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full, marginLeft: 8 },
+  statusBadgeText: { fontSize: 11, fontFamily: 'Nunito-Bold', textTransform: 'uppercase' },
+  planDetails: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  detailBlock: { marginBottom: spacing.sm },
+  detailLabel: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Bold',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  detailText: { fontSize: 13, fontFamily: 'Nunito-Regular', color: colors.text },
+  activityItem: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginTop: 6,
+  },
+  activityName: { fontSize: 13, fontFamily: 'Nunito-SemiBold', color: colors.text },
+  activityDesc: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Regular',
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  activityDuration: { fontSize: 11, fontFamily: 'Nunito-SemiBold', color: colors.primary, marginTop: 4 },
+  accommodationLine: { fontSize: 13, fontFamily: 'Nunito-Regular', color: colors.text, marginTop: 4 },
+  accommodationType: { fontFamily: 'Nunito-Bold' },
 });
