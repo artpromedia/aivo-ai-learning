@@ -374,6 +374,17 @@
     "saveChanges": "Save Changes",
     "saved": "Settings saved!"
   },
+  "learnerLeaderboard": {
+    "title": "Leaderboard",
+    "subtitle": "See how you rank against other learners.",
+    "scopeGlobal": "Global",
+    "scopeClass": "Class",
+    "scopeSchool": "School",
+    "empty": "No leaderboard entries yet. Earn XP to climb the ranks!",
+    "youSuffix": "{{name}} (You)",
+    "learnerName": "Learner {{id}}",
+    "weeklyXp": "+{{xp}} this week"
+  },
   "learnerAdventure": {
     "title": "Discovery Adventure",
     "subtitle": "Let's discover what you know!",

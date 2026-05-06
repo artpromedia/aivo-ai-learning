@@ -374,6 +374,17 @@
     "saveChanges": "Guardar Cambios",
     "saved": "¡Configuración guardada!"
   },
+  "learnerLeaderboard": {
+    "title": "Tabla de Clasificación",
+    "subtitle": "Mira cómo te ubicas frente a otros estudiantes.",
+    "scopeGlobal": "Global",
+    "scopeClass": "Clase",
+    "scopeSchool": "Escuela",
+    "empty": "Aún no hay entradas en la tabla. ¡Gana XP para subir de puesto!",
+    "youSuffix": "{{name}} (Tú)",
+    "learnerName": "Estudiante {{id}}",
+    "weeklyXp": "+{{xp}} esta semana"
+  },
   "learnerAdventure": {
     "title": "Aventura de Descubrimiento",
     "subtitle": "¡Descubramos lo que sabes!",

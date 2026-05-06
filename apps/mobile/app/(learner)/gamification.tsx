@@ -101,6 +101,15 @@ export default function GamificationScreen() {
           style={{ flex: 1 }}
         />
       </View>
+      <View style={[styles.quickLinks, { marginTop: 8 }]}>
+        <AivoButton
+          title={t('learnerLeaderboard.title')}
+          onPress={() => router.push('/(learner)/leaderboard' as any)}
+          variant="outline"
+          icon={<Ionicons name="trophy-outline" size={18} color={colors.primary} />}
+          style={{ flex: 1 }}
+        />
+      </View>
     </ScrollView>
   );
 }

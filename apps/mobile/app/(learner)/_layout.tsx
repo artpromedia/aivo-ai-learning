@@ -117,6 +117,7 @@ function ThemedLearnerTabs() {
       <Tabs.Screen name="badges" options={{ href: null }} />
       <Tabs.Screen name="gradebook" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />
+      <Tabs.Screen name="leaderboard" options={{ href: null }} />
     </Tabs>
   );
 }
