@@ -30,6 +30,34 @@ async function start() {
   // Structured request logging + /metrics for Prometheus scrape (Supp A).
   registerObservabilityPlugin(app, "assessment-svc");
 
+  // Surface unhandled errors. Without this, `Fastify({ logger: false })`
+  // silently 500s and the stack disappears.
+  app.setErrorHandler((err: any, req: any, reply: any) => {
+    logger.error("request_error", {
+      method: req.method,
+      path: req.routeOptions?.url ?? req.url,
+      request_id: req.requestId,
+      err_message: err?.message,
+      err_name: err?.name,
+      err_code: err?.code,
+      stack: err?.stack,
+      cause_message: err?.cause?.message,
+      cause_name: err?.cause?.name,
+      cause_code: err?.cause?.code,
+      cause_detail: err?.cause?.detail,
+      cause_hint: err?.cause?.hint,
+      cause_position: err?.cause?.position,
+      cause_where: err?.cause?.where,
+      cause_table: err?.cause?.table,
+      cause_column: err?.cause?.column,
+      cause_dataType: err?.cause?.dataType,
+      cause_constraint: err?.cause?.constraint,
+      cause_stack: err?.cause?.stack,
+    });
+    const status = err?.statusCode && err.statusCode >= 400 ? err.statusCode : 500;
+    reply.status(status).send({ error: err?.message ?? "Internal Server Error" });
+  });
+
   await app.register(cors, { origin: true, credentials: true });
 
   // IEP PDF intake — bound the request size to 10 MB so an oversized

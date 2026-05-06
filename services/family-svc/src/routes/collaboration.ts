@@ -71,6 +71,23 @@ async function loadInviteContext(
   }
 }
 
+// If the invitee already has a registered account we can link the invite
+// to their user id and mark it ACCEPTED immediately, so the learner shows
+// up in their dashboard without an extra accept-invite hop. Returns
+// null when no matching user exists (the normal pending-invite path).
+async function findExistingUser(
+  db: ReturnType<typeof import("@aivo/db").createDb>,
+  emailLower: string,
+): Promise<{ id: string } | null> {
+  try {
+    const [u] = await db.select({ id: users.id })
+      .from(users).where(eq(users.email, emailLower)).limit(1);
+    return u ?? null;
+  } catch {
+    return null;
+  }
+}
+
 interface LearnerId {
   learnerId: string;
 }
@@ -160,12 +177,17 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     if (learnerRows.length === 0) return reply.code(404).send({ error: "Learner not found" });
     const tenantId = learnerRows[0].tenantId;
 
+    const existingUser = await findExistingUser(db, normalizedEmail);
+    const autoAccept = !!existingUser;
+
     const [record] = await db.insert(learnerTeachers).values({
       tenantId,
       learnerId,
       teacherEmail: normalizedEmail,
+      teacherUserId: existingUser?.id ?? null,
       invitedBy: claims.sub,
-      status: "PENDING",
+      status: autoAccept ? "ACCEPTED" : "PENDING",
+      acceptedAt: autoAccept ? new Date() : null,
     }).returning();
 
     const ctx = await loadInviteContext(db, claims.sub, learnerId);
@@ -200,13 +222,18 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     if (learnerRows.length === 0) return reply.code(404).send({ error: "Learner not found" });
     const tenantId = learnerRows[0].tenantId;
 
+    const existingUser = await findExistingUser(db, normalizedEmail);
+    const autoAccept = !!existingUser;
+
     const [record] = await db.insert(learnerCaregivers).values({
       tenantId,
       learnerId,
       caregiverEmail: normalizedEmail,
+      caregiverUserId: existingUser?.id ?? null,
       invitedBy: claims.sub,
       relationship: body.relationship || null,
-      status: "PENDING",
+      status: autoAccept ? "ACCEPTED" : "PENDING",
+      acceptedAt: autoAccept ? new Date() : null,
     }).returning();
 
     const ctx = await loadInviteContext(db, claims.sub, learnerId);
@@ -245,14 +272,19 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     if (learnerRows.length === 0) return reply.code(404).send({ error: "Learner not found" });
     const tenantId = learnerRows[0].tenantId;
 
+    const existingUser = await findExistingUser(db, normalizedEmail);
+    const autoAccept = !!existingUser;
+
     const [record] = await db.insert(learnerTherapists).values({
       tenantId,
       learnerId,
       therapistEmail: normalizedEmail,
+      therapistUserId: existingUser?.id ?? null,
       invitedBy: claims.sub,
       specialty: body.specialty || null,
       credentials: body.credentials || null,
-      status: "PENDING",
+      status: autoAccept ? "ACCEPTED" : "PENDING",
+      acceptedAt: autoAccept ? new Date() : null,
     }).returning();
 
     const ctx = await loadInviteContext(db, claims.sub, learnerId);

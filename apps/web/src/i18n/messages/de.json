@@ -285,6 +285,7 @@
     "submitting": "Wird gesendet...",
     "missing_required": "Bitte beantworten Sie alle Pflichtfragen. {count} ausstehend.",
     "submission_failed": "Übermittlung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "session_expired_retry": "Ihre Sitzung ist abgelaufen. Bitte laden Sie die Seite neu und versuchen Sie es erneut — Ihre Antworten sind gespeichert.",
     "network_error_retry": "Netzwerkfehler. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
     "type_answer": "Geben Sie Ihre Antwort ein...",
     "question_of": "Frage {current} von {total}",

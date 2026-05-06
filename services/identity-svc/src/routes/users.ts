@@ -1,7 +1,16 @@
 import { FastifyInstance } from "fastify";
-import { users, learners, tenants, consentRecords, languageProfiles } from "@aivo/db";
+import {
+  users,
+  learners,
+  tenants,
+  consentRecords,
+  languageProfiles,
+  learnerCaregivers,
+  learnerTeachers,
+  learnerTherapists,
+} from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { lookupCurriculum } from "../services/curriculum-lookup.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -21,6 +30,42 @@ async function authenticate(req: any, reply: any) {
   } catch {
     return reply.status(401).send({ error: "Invalid token" });
   }
+}
+
+// Resolve learners that the given user has been granted access to via an
+// ACCEPTED collaboration invite (caregiver / teacher / therapist). A single
+// user can be connected to many learners across tenants.
+async function fetchConnectedLearners(db: any, userId: string): Promise<any[]> {
+  const [careRows, teachRows, theraRows] = await Promise.all([
+    db.select({ learnerId: learnerCaregivers.learnerId })
+      .from(learnerCaregivers)
+      .where(and(eq(learnerCaregivers.caregiverUserId, userId), eq(learnerCaregivers.status, "ACCEPTED"))),
+    db.select({ learnerId: learnerTeachers.learnerId })
+      .from(learnerTeachers)
+      .where(and(eq(learnerTeachers.teacherUserId, userId), eq(learnerTeachers.status, "ACCEPTED"))),
+    db.select({ learnerId: learnerTherapists.learnerId })
+      .from(learnerTherapists)
+      .where(and(eq(learnerTherapists.therapistUserId, userId), eq(learnerTherapists.status, "ACCEPTED"))),
+  ]);
+
+  const ids = Array.from(new Set<string>([
+    ...careRows.map((r: any) => r.learnerId),
+    ...teachRows.map((r: any) => r.learnerId),
+    ...theraRows.map((r: any) => r.learnerId),
+  ]));
+  if (ids.length === 0) return [];
+  return db.select().from(learners).where(inArray(learners.id, ids));
+}
+
+function mergeLearners(a: any[], b: any[]): any[] {
+  const seen = new Set<string>();
+  const out: any[] = [];
+  for (const row of [...a, ...b]) {
+    if (!row?.id || seen.has(row.id)) continue;
+    seen.add(row.id);
+    out.push(row);
+  }
+  return out;
 }
 
 export async function registerUserRoutes(app: FastifyInstance) {
@@ -72,8 +117,17 @@ export async function registerUserRoutes(app: FastifyInstance) {
           ? and(eq(learners.parentId, user.sub), eq(learners.tenantId, tenantId))
           : eq(learners.parentId, user.sub);
 
-        const results = await db.select().from(learners).where(parentFilter);
-        return results;
+        const owned = await db.select().from(learners).where(parentFilter);
+        const connected = await fetchConnectedLearners(db, user.sub);
+        return mergeLearners(owned, connected);
+      }
+
+      if (user.role === "CAREGIVER" || user.role === "TEACHER" || user.role === "THERAPIST") {
+        if (!isUuid(user.sub)) {
+          return [];
+        }
+        const connected = await fetchConnectedLearners(db, user.sub);
+        return connected;
       }
 
       if (user.role === "PLATFORM_ADMIN") {

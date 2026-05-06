@@ -285,6 +285,7 @@
     "submitting": "제출 중...",
     "missing_required": "모든 필수 질문에 답해 주세요. {count}개 남음.",
     "submission_failed": "제출 실패. 다시 시도해 주세요.",
+    "session_expired_retry": "세션이 만료되었습니다. 페이지를 새로 고치고 다시 시도해 주세요 — 답변은 저장되어 있습니다.",
     "network_error_retry": "네트워크 오류. 연결을 확인하고 다시 시도하세요.",
     "type_answer": "답변을 입력하세요...",
     "question_of": "{total}개 중 {current}번째 질문",
