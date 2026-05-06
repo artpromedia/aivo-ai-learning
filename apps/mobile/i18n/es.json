@@ -481,7 +481,13 @@
       "IN_PROGRESS": "En Progreso",
       "COMPLETED": "¡Completado!",
       "FAILED": "Falló"
-    }
+    },
+    "uploading": "Subiendo…",
+    "uploadFailed": "No pudimos subir esa foto. Inténtalo de nuevo.",
+    "cameraPermissionDenied": "Se necesita permiso de cámara para tomar una foto de la tarea.",
+    "galleryPermissionDenied": "Se necesita permiso de la galería para elegir una imagen de la tarea.",
+    "subscriptionRequiredTitle": "Suscripción requerida",
+    "subscriptionRequiredBody": "Esta tarea parece de {{subject}} — necesitas una suscripción de tutor de {{subject}} para obtener ayuda."
   },
   "learnerQuests": {
     "title": "Mundos de Misiones",

@@ -1,12 +1,18 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import type { Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
-import { useHomeworkAssignments, useStartHomeworkSession, type HomeworkAssignment } from '@/hooks/useHomework';
+import {
+  useHomeworkAssignments,
+  useStartHomeworkSession,
+  useUploadHomework,
+  type HomeworkAssignment,
+} from '@/hooks/useHomework';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
@@ -45,6 +51,8 @@ export default function HomeworkScreen() {
   const { user } = useAuth();
   const { data: assignments, isLoading } = useHomeworkAssignments(user?.id ?? '');
   const startSession = useStartHomeworkSession();
+  const uploadHomework = useUploadHomework();
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const onAssignmentPress = async (a: HomeworkAssignment) => {
     if (a.status !== 'READY' && a.status !== 'IN_PROGRESS') {
@@ -65,7 +73,78 @@ export default function HomeworkScreen() {
     }
   };
 
+  const submitImage = useCallback(
+    async (asset: ImagePicker.ImagePickerAsset) => {
+      if (!user?.id) return;
+      setUploadError(null);
+      const base64 = asset.base64;
+      if (!base64) {
+        setUploadError(t('learnerHomework.uploadFailed'));
+        return;
+      }
+      const mime = asset.mimeType || 'image/jpeg';
+      try {
+        const result = await uploadHomework.mutateAsync({
+          learnerId: user.id,
+          imageBase64: base64,
+          mimeType: mime,
+        });
+        if (result.locked) {
+          Alert.alert(
+            t('learnerHomework.subscriptionRequiredTitle'),
+            t('learnerHomework.subscriptionRequiredBody', {
+              subject: (result.detectedSubject || '').toLowerCase() || '—',
+            }),
+          );
+        }
+      } catch (err: any) {
+        setUploadError(err?.message || t('learnerHomework.uploadFailed'));
+      }
+    },
+    [t, uploadHomework, user?.id],
+  );
+
+  const onTakePhoto = useCallback(async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(
+        t('learnerHomework.title'),
+        t('learnerHomework.cameraPermissionDenied'),
+      );
+      return;
+    }
+    const picked = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+      base64: true,
+    });
+    if (picked.canceled || !picked.assets?.[0]) return;
+    await submitImage(picked.assets[0]);
+  }, [submitImage, t]);
+
+  const onPickFromGallery = useCallback(async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(
+        t('learnerHomework.title'),
+        t('learnerHomework.galleryPermissionDenied'),
+      );
+      return;
+    }
+    const picked = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+      base64: true,
+    });
+    if (picked.canceled || !picked.assets?.[0]) return;
+    await submitImage(picked.assets[0]);
+  }, [submitImage, t]);
+
   const onCapturePress = () => {
+    // Legacy stub — kept for the PDF / "choose file" button until expo-document-picker
+    // + expo-file-system are wired up to read PDFs as base64.
     Alert.alert(t('learnerHomework.title'), t('learnerHomework.comingSoon'));
   };
 
@@ -134,23 +213,38 @@ export default function HomeworkScreen() {
 
       <AivoCard style={styles.captureCard}>
         <View style={styles.cameraPreview}>
-          <Ionicons name="camera" size={48} color={colors.textSecondary} />
-          <Text style={styles.cameraText}>{t('learnerHomework.centerHomework')}</Text>
+          {uploadHomework.isPending ? (
+            <>
+              <ActivityIndicator color={colors.primary} />
+              <Text style={styles.cameraText}>{t('learnerHomework.uploading')}</Text>
+            </>
+          ) : (
+            <>
+              <Ionicons name="camera" size={48} color={colors.textSecondary} />
+              <Text style={styles.cameraText}>{t('learnerHomework.centerHomework')}</Text>
+            </>
+          )}
         </View>
+
+        {uploadError ? (
+          <Text style={styles.uploadErrorText}>{uploadError}</Text>
+        ) : null}
 
         <View style={styles.captureActions}>
           <AivoButton
             title={t('learnerHomework.takePhoto')}
-            onPress={onCapturePress}
+            onPress={onTakePhoto}
             size="lg"
+            disabled={uploadHomework.isPending}
             icon={<Ionicons name="camera-outline" size={20} color="#FFF" />}
             style={{ flex: 1, marginRight: 8 }}
           />
           <AivoButton
             title={t('learnerHomework.gallery')}
-            onPress={onCapturePress}
+            onPress={onPickFromGallery}
             variant="outline"
             size="lg"
+            disabled={uploadHomework.isPending}
             icon={<Ionicons name="images-outline" size={20} color={colors.primary} />}
             style={{ flex: 1 }}
           />
@@ -210,6 +304,13 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   cameraText: { fontSize: 14, fontFamily: 'Nunito-Regular', color: colors.textSecondary, marginTop: 8 },
+  uploadErrorText: {
+    fontSize: 13,
+    fontFamily: 'Nunito-SemiBold',
+    color: colors.error,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
   captureActions: { flexDirection: 'row' },
   uploadCard: { alignItems: 'center' as const, paddingVertical: spacing.lg },
   uploadTitle: { fontSize: 16, fontFamily: 'Nunito-Bold', color: colors.text, marginTop: 8 },

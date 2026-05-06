@@ -74,6 +74,50 @@ export function useStartHomeworkSession() {
   });
 }
 
+/**
+ * Mirrors the web upload flow: POST /api/tutors/homework/upload with
+ * { learnerId, imageBase64, mimeType } (no `data:` prefix on the base64).
+ *
+ * On success the server returns `{ assignment }`; if the learner isn't
+ * subscribed for the detected subject, it returns `{ locked: true,
+ * requiredSku, detectedSubject }` instead — the caller is responsible for
+ * surfacing that to the user.
+ */
+export interface HomeworkUploadResult {
+  assignment?: HomeworkAssignment;
+  locked?: boolean;
+  requiredSku?: string;
+  detectedSubject?: string;
+}
+
+export function useUploadHomework() {
+  const qc = useQueryClient();
+  return useMutation<
+    HomeworkUploadResult,
+    Error,
+    { learnerId: string; imageBase64: string; mimeType: string }
+  >({
+    mutationFn: async ({ learnerId, imageBase64, mimeType }) => {
+      const res = await apiFetch(API.TUTOR, `/api/tutors/homework/upload`, {
+        method: 'POST',
+        body: JSON.stringify({ learnerId, imageBase64, mimeType }),
+      });
+      const data = (await res.json().catch(() => ({}))) as HomeworkUploadResult & {
+        error?: string;
+      };
+      if (!res.ok && !data.locked) {
+        throw new Error(data.error || 'Upload failed');
+      }
+      return data;
+    },
+    onSuccess: (data, vars) => {
+      if (data.assignment) {
+        qc.invalidateQueries({ queryKey: ['homework-assignments', vars.learnerId] });
+      }
+    },
+  });
+}
+
 export function useHomeworkSessionState(sessionId: string) {
   return useQuery<HomeworkSessionState>({
     queryKey: ['homework-session', sessionId],
