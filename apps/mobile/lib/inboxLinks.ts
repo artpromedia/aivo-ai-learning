@@ -22,8 +22,9 @@ export function mapInboxUrlToMobileRoute(input: string | null | undefined): Mobi
       path = u.pathname;
     } else {
       path = input.startsWith('/') ? input : `/${input}`;
-      // Strip query/hash if any.
-      path = path.split('?')[0]!.split('#')[0]!;
+      // Strip query/hash if any. split() always returns ≥1 element.
+      path = path.split('?')[0] ?? path;
+      path = path.split('#')[0] ?? path;
     }
   } catch {
     return null;
@@ -32,7 +33,7 @@ export function mapInboxUrlToMobileRoute(input: string | null | undefined): Mobi
   // /dashboard/parent/learner/:id[/sub]
   const m = path.match(PARENT_LEARNER_RE);
   if (m) {
-    const childId = m[1]!;
+    const childId = m[1] ?? '';
     const sub = m[2];
     switch (sub) {
       case undefined:

@@ -10,6 +10,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
+import type { Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -87,7 +88,7 @@ export default function ParentInboxScreen() {
     if (!n.readAt) markRead.mutate(n.id);
     const target = mapInboxUrlToMobileRoute(n.actionUrl);
     if (target) {
-      router.push({ pathname: target.pathname as any, params: target.params });
+      router.push({ pathname: target.pathname, params: target.params } as Href);
       return;
     }
     Alert.alert(n.title, t('parentInbox.openOnWeb'));
