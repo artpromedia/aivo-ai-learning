@@ -27,6 +27,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { API } from '@/constants/api';
 import { colors, spacing, radius } from '@/constants/colors';
+import { estimatePasswordStrength } from '@/lib/passwordStrength';
 import { AivoButton } from '@aivo/mobile-ui';
 
 const STRENGTH_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981'];
@@ -54,25 +55,9 @@ export default function ResetPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Same strength heuristic as `change-password.tsx`. Kept inline rather
-  // than extracted to avoid a one-off shared module — when this is needed
-  // a third time we should lift it into `lib/passwordStrength.ts`.
-  const { score, reasons } = useMemo(() => {
-    if (!next) return { score: 0, reasons: [] as string[] };
-    const len = next.length;
-    const classes = [/[a-z]/, /[A-Z]/, /\d/, /[^a-zA-Z0-9]/].filter((re) => re.test(next)).length;
-    let entropy = Math.min(len, 32) * 2 + classes * 6;
-    if (/(.)\1{2,}/.test(next)) entropy -= 8;
-    let s = 0;
-    if (entropy >= 18) s = 1;
-    if (entropy >= 30) s = 2;
-    if (entropy >= 42) s = 3;
-    if (entropy >= 56) s = 4;
-    const r: string[] = [];
-    if (len < 12) r.push('too_short');
-    if (s < 3) r.push('too_weak');
-    return { score: s, reasons: r };
-  }, [next]);
+  // Same strength heuristic as `change-password.tsx`, lifted into
+  // `lib/passwordStrength` so the two screens share one source of truth.
+  const { score, reasons } = useMemo(() => estimatePasswordStrength(next), [next]);
 
   const handleSubmit = async () => {
     setError('');
