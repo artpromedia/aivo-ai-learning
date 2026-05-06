@@ -74,7 +74,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     // the content-generation pipeline entirely.
     if (contentType === "THERAPY_SESSION") {
       const subject = tutorSku.startsWith("therapy-") ? tutorSku.slice(8) : "therapy";
-      const at = startedAt ?? new Date();
+      const sessionTimestamp = startedAt ?? new Date();
       const [session] = await db.insert(lessonSessions).values({
         tenantId,
         learnerId,
@@ -90,8 +90,8 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
           notes: typeof topic === "string" ? topic : null,
         },
         durationSeconds,
-        startedAt: at,
-        completedAt: at,
+        startedAt: sessionTimestamp,
+        completedAt: sessionTimestamp,
       }).returning();
       return { sessionId: session.id, status: "COMPLETED" };
     }
