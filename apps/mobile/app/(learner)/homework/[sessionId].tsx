@@ -16,6 +16,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSpeechInput } from '@/hooks/useSpeechInput';
 import {
   useHomeworkSessionState,
   useSendHomeworkMessage,
@@ -27,6 +28,13 @@ import { AivoCard } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 type DisplayMessage = HomeworkChatMessage & { _localId: string };
+
+// Mirror the BCP-47 mapping used by the web homework chat in
+// apps/web/src/app/dashboard/learner/homework/[sessionId]/page.tsx.
+const STT_LOCALE_MAP: Record<string, string> = {
+  en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', pt: 'pt-BR',
+  zh: 'zh-CN', ja: 'ja-JP', ko: 'ko-KR', ar: 'ar-SA', hi: 'hi-IN',
+};
 
 function makeGreeting(problems: AdaptedProblem[], greetingFallback: string, greetingWith: (n: number, first: number) => string): string {
   if (problems.length === 0) return greetingFallback;
@@ -50,6 +58,17 @@ export default function HomeworkSessionScreen() {
   const [showProblems, setShowProblems] = useState(true);
   const listRef = useRef<FlatList<DisplayMessage>>(null);
   const seededRef = useRef(false);
+
+  // Mirror web's BCP-47 mapping in
+  // apps/web/src/app/dashboard/learner/homework/[sessionId]/page.tsx so the
+  // ai-svc transcribe call gets the same locale hint on both platforms.
+  const sttLocale = STT_LOCALE_MAP[i18n.language] || 'en-US';
+  const speech = useSpeechInput({
+    locale: sttLocale,
+    onResult: (text) => {
+      setInput((prev) => (prev ? `${prev} ${text}` : text));
+    },
+  });
 
   const adaptedProblems = data?.adaptedProblems ?? [];
   const subject = (data?.subject || 'other').toLowerCase();
@@ -300,6 +319,43 @@ export default function HomeworkSessionScreen() {
       ) : null}
 
       <View style={styles.composerRow}>
+        <Pressable
+          onPress={() => {
+            if (speech.status === 'listening') {
+              speech.stop().catch(() => undefined);
+            } else if (speech.status === 'processing') {
+              // ignore taps while uploading
+            } else {
+              speech.start().catch(() => undefined);
+            }
+          }}
+          disabled={!speech.isSupported || sendMessage.isPending}
+          style={[
+            styles.micBtn,
+            speech.status === 'listening' && styles.micBtnRecording,
+            (!speech.isSupported || sendMessage.isPending) && styles.micBtnDisabled,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={
+            speech.status === 'listening'
+              ? t('learnerHomeworkSession.stopRecording')
+              : t('learnerHomeworkSession.startRecording')
+          }
+          accessibilityState={{
+            disabled: !speech.isSupported || sendMessage.isPending,
+            busy: speech.status === 'processing',
+          }}
+        >
+          {speech.status === 'processing' ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <Ionicons
+              name={speech.status === 'listening' ? 'square' : 'mic'}
+              size={18}
+              color="#FFF"
+            />
+          )}
+        </Pressable>
         <TextInput
           style={styles.input}
           value={input}
@@ -323,6 +379,12 @@ export default function HomeworkSessionScreen() {
           <Ionicons name="send" size={18} color="#FFF" />
         </Pressable>
       </View>
+
+      {speech.error ? (
+        <Text style={styles.sttError} accessibilityLiveRegion="polite">
+          {t(`learnerHomeworkSession.sttError.${speech.error}`)}
+        </Text>
+      ) : null}
 
       <Pressable
         onPress={onComplete}
@@ -498,6 +560,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendBtnDisabled: { opacity: 0.4 },
+  micBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.secondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  micBtnRecording: {
+    backgroundColor: colors.error,
+  },
+  micBtnDisabled: {
+    opacity: 0.4,
+  },
+  sttError: {
+    fontSize: 12,
+    fontFamily: 'Nunito-SemiBold',
+    color: colors.error,
+    paddingHorizontal: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
   completeBtn: {
     marginBottom: spacing.md,
     paddingVertical: 12,

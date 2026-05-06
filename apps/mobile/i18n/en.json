@@ -812,6 +812,16 @@
     "finish": "Finish session",
     "notFound": "Couldn't load this homework session.",
     "greetingNoProblems": "Hi! I'm here to help with your homework. What would you like to work on?",
-    "greetingWithProblems": "Hi! I see you have {{count}} problems to work on. Let's start with Problem {{first}}. Take a look and tell me what you think the first step is!"
+    "greetingWithProblems": "Hi! I see you have {{count}} problems to work on. Let's start with Problem {{first}}. Take a look and tell me what you think the first step is!",
+    "startRecording": "Start voice input",
+    "stopRecording": "Stop recording",
+    "sttError": {
+      "permission_denied": "Microphone access was denied. Allow microphone access in Settings to use voice input.",
+      "no_speech": "We couldn't hear anything. Try recording again.",
+      "unsupported": "Voice input isn't supported on this device.",
+      "network": "Network problem while sending your audio. Try again.",
+      "transcription_failed": "Couldn't transcribe that. Try again or type your reply.",
+      "audio_capture": "Couldn't record audio. Try again."
+    }
   }
 }

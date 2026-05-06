@@ -812,6 +812,16 @@
     "finish": "Finalizar sesión",
     "notFound": "No se pudo cargar esta sesión de tarea.",
     "greetingNoProblems": "¡Hola! Estoy aquí para ayudarte con tu tarea. ¿En qué quieres trabajar?",
-    "greetingWithProblems": "¡Hola! Veo que tienes {{count}} problemas. Empecemos con el Problema {{first}}. Mira y dime cuál crees que es el primer paso."
+    "greetingWithProblems": "¡Hola! Veo que tienes {{count}} problemas. Empecemos con el Problema {{first}}. Mira y dime cuál crees que es el primer paso.",
+    "startRecording": "Iniciar entrada de voz",
+    "stopRecording": "Detener grabación",
+    "sttError": {
+      "permission_denied": "Se denegó el acceso al micrófono. Permítelo en Ajustes para usar la voz.",
+      "no_speech": "No escuchamos nada. Intenta grabar de nuevo.",
+      "unsupported": "La entrada de voz no es compatible con este dispositivo.",
+      "network": "Problema de red al enviar el audio. Inténtalo de nuevo.",
+      "transcription_failed": "No pudimos transcribir eso. Inténtalo de nuevo o escríbelo.",
+      "audio_capture": "No pudimos grabar audio. Inténtalo de nuevo."
+    }
   }
 }
