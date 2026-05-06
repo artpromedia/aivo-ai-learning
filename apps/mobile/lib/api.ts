@@ -72,6 +72,68 @@ export async function getMustChangePassword(): Promise<boolean> {
 
 interface FetchOptions extends RequestInit {
   skipAuth?: boolean;
+  /**
+   * Internal: when true, `apiFetch` will NOT attempt the refresh-and-retry
+   * dance on a 401. Used by callers that have already handled refresh
+   * themselves (or by the refresh code path itself, should it ever route
+   * through `apiFetch` in the future).
+   */
+  skipRefreshRetry?: boolean;
+}
+
+// Shared in-flight refresh promise so a burst of concurrent 401s only
+// triggers a single POST /api/auth/refresh.
+let inFlightRefresh: Promise<string | null> | null = null;
+
+/**
+ * Identity-svc refresh flow. The refresh token lives in an HTTP-only cookie
+ * set on login/google/verify-mfa; native fetch on iOS / Android automatically
+ * persists and replays cookies, and on web `credentials: 'include'` carries
+ * them through the Next.js rewrite proxy.
+ *
+ * Returns the new access token on success, or `null` if the refresh failed
+ * (which means the caller should let the original 401 propagate to the auth
+ * provider so it can route to the login screen).
+ */
+export async function refreshAccessToken(): Promise<string | null> {
+  if (inFlightRefresh) return inFlightRefresh;
+  // Lazy import to avoid a circular dep with @/constants/api at module init.
+  const { API } = await import('@/constants/api');
+  inFlightRefresh = (async () => {
+    try {
+      const res = await fetch(`${API.IDENTITY}/api/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        // Refresh failed — clear any stale local state so the next render
+        // routes to login. We deliberately do NOT clear the refresh cookie
+        // here; the server already invalidates it on auth failure.
+        await clearTokens();
+        return null;
+      }
+      const data = (await res.json().catch(() => ({}))) as {
+        accessToken?: string;
+        mustChangePassword?: boolean;
+      };
+      if (!data.accessToken) {
+        await clearTokens();
+        return null;
+      }
+      await setToken(data.accessToken);
+      // Mirror the login/verify-mfa flows — keep the SecureStore-backed
+      // mustChangePassword flag in sync with the latest server response.
+      if (typeof data.mustChangePassword === 'boolean') {
+        await setMustChangePassword(data.mustChangePassword);
+      }
+      return data.accessToken;
+    } catch {
+      return null;
+    } finally {
+      inFlightRefresh = null;
+    }
+  })();
+  return inFlightRefresh;
 }
 
 export async function apiFetch(
@@ -79,7 +141,7 @@ export async function apiFetch(
   path: string,
   options: FetchOptions = {}
 ): Promise<Response> {
-  const { skipAuth, ...fetchOptions } = options;
+  const { skipAuth, skipRefreshRetry, ...fetchOptions } = options;
   const callerHeaders = (fetchOptions.headers as Record<string, string>) || {};
   const headers: Record<string, string> = { ...callerHeaders };
 
@@ -106,7 +168,25 @@ export async function apiFetch(
   }
 
   const url = `${baseUrl}${path}`;
-  return fetch(url, { ...fetchOptions, headers });
+  const response = await fetch(url, { ...fetchOptions, headers });
+
+  // Auto-retry on 401: the access token likely expired (identity-svc signs
+  // short-lived JWTs and the refresh cookie is good for much longer). Try
+  // to silently refresh once, then replay the original request with the
+  // new bearer. If we already retried (or the caller opted out of auth),
+  // surface the 401 as-is.
+  if (response.status === 401 && !skipAuth && !skipRefreshRetry) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      const retryHeaders: Record<string, string> = {
+        ...headers,
+        Authorization: `Bearer ${newToken}`,
+      };
+      return fetch(url, { ...fetchOptions, headers: retryHeaders });
+    }
+  }
+
+  return response;
 }
 
 export function decodeJWT(token: string): Record<string, unknown> | null {
