@@ -24,7 +24,8 @@
     "saving": "Saving...",
     "confirm": "Confirm",
     "appVersion": "AIVO Learning v1.0.0",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "done": "Done"
   },
   "auth": {
     "aiPoweredLearning": "AI-Powered Learning",
@@ -825,5 +826,29 @@
       "transcription_failed": "Couldn't transcribe that. Try again or type your reply.",
       "audio_capture": "Couldn't record audio. Try again."
     }
+  },
+  "mfaFactors": {
+    "totpTitle": "Authenticator app",
+    "totpDesc": "Use an authenticator app (Google Authenticator, 1Password, Authy) to generate sign-in codes.",
+    "enroll": "Set up authenticator app",
+    "disable": "Turn off authenticator",
+    "disableConfirm": "Confirm your password to turn off the authenticator app.",
+    "disableFailed": "Couldn't turn off the authenticator app.",
+    "scanQr": "Scan this QR code with your authenticator app, or enter the secret manually.",
+    "qrAlt": "QR code for setting up your authenticator app",
+    "manualEntry": "Manual entry secret (Base32):",
+    "secretCopied": "Secret copied to clipboard.",
+    "enterCode": "Enter the 6-digit code from your authenticator app",
+    "enrollFailed": "Couldn't start authenticator setup.",
+    "confirmFailed": "Code didn't match — try again.",
+    "recoveryTitle": "Recovery codes",
+    "recoveryDesc": "One-time codes you can use if you lose access to your authenticator app.",
+    "recoveryRemaining": "{{remaining}} of {{total}} recovery codes remaining",
+    "regen": "Generate new recovery codes",
+    "regenConfirm": "Confirm your password to generate new recovery codes. Your old codes will stop working.",
+    "regenFailed": "Couldn't generate new recovery codes.",
+    "codesWarning": "Save these codes now — they will not be shown again.",
+    "copyCodes": "Copy all",
+    "codesCopied": "Recovery codes copied to clipboard."
   }
 }

@@ -24,7 +24,8 @@
     "saving": "Guardando...",
     "confirm": "Confirmar",
     "appVersion": "AIVO Learning v1.0.0",
-    "unknownError": "Error desconocido"
+    "unknownError": "Error desconocido",
+    "done": "Listo"
   },
   "auth": {
     "aiPoweredLearning": "Aprendizaje con IA",
@@ -825,5 +826,29 @@
       "transcription_failed": "No pudimos transcribir eso. Inténtalo de nuevo o escríbelo.",
       "audio_capture": "No pudimos grabar audio. Inténtalo de nuevo."
     }
+  },
+  "mfaFactors": {
+    "totpTitle": "App de autenticación",
+    "totpDesc": "Usa una app de autenticación (Google Authenticator, 1Password, Authy) para generar códigos de inicio de sesión.",
+    "enroll": "Configurar app de autenticación",
+    "disable": "Desactivar autenticación",
+    "disableConfirm": "Confirma tu contraseña para desactivar la app de autenticación.",
+    "disableFailed": "No se pudo desactivar la app de autenticación.",
+    "scanQr": "Escanea este código QR con tu app de autenticación, o introduce el secreto manualmente.",
+    "qrAlt": "Código QR para configurar tu app de autenticación",
+    "manualEntry": "Secreto para entrada manual (Base32):",
+    "secretCopied": "Secreto copiado al portapapeles.",
+    "enterCode": "Introduce el código de 6 dígitos de tu app de autenticación",
+    "enrollFailed": "No se pudo iniciar la configuración del autenticador.",
+    "confirmFailed": "El código no coincide. Inténtalo de nuevo.",
+    "recoveryTitle": "Códigos de recuperación",
+    "recoveryDesc": "Códigos de un solo uso que puedes usar si pierdes acceso a tu app de autenticación.",
+    "recoveryRemaining": "Quedan {{remaining}} de {{total}} códigos de recuperación",
+    "regen": "Generar nuevos códigos de recuperación",
+    "regenConfirm": "Confirma tu contraseña para generar nuevos códigos de recuperación. Tus códigos antiguos dejarán de funcionar.",
+    "regenFailed": "No se pudieron generar nuevos códigos de recuperación.",
+    "codesWarning": "Guarda estos códigos ahora; no se volverán a mostrar.",
+    "copyCodes": "Copiar todos",
+    "codesCopied": "Códigos de recuperación copiados al portapapeles."
   }
 }

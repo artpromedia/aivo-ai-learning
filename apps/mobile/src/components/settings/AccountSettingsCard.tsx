@@ -37,6 +37,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { apiFetch, getToken } from '@/lib/api';
 import { API } from '@/constants/api';
 import { colors, spacing, radius } from '@/constants/colors';
+import { MfaFactorsCard } from './MfaFactorsCard';
 
 interface AccountSettingsCardProps {
   /** Single character used for the placeholder avatar (e.g. 'T' for teacher). */
@@ -562,6 +563,8 @@ export function AccountSettingsCard({
           </View>
         )}
       </AivoCard>
+
+      <MfaFactorsCard />
 
       <Pressable style={styles.logoutBtn} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={20} color={colors.error} />
