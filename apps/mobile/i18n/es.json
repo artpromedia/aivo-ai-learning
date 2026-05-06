@@ -399,7 +399,19 @@
     "gallery": "Galería",
     "uploadPDF": "Subir PDF",
     "uploadPDFDesc": "Sube un PDF de tarea para recibir ayuda",
-    "chooseFile": "Elegir Archivo"
+    "chooseFile": "Elegir Archivo",
+    "yourHomework": "Tu Tarea",
+    "noAssignments": "Aún no tienes tareas. ¡Toma una foto o sube un PDF para comenzar!",
+    "problems": "{{count}} problemas",
+    "openOnWeb": "Continúa esta tarea en la app web para conversar con tu tutor de IA.",
+    "comingSoon": "La captura con cámara estará disponible pronto. Por ahora, sube desde la app web.",
+    "status": {
+      "PROCESSING": "Procesando…",
+      "READY": "Listo",
+      "IN_PROGRESS": "En Progreso",
+      "COMPLETED": "¡Completado!",
+      "FAILED": "Falló"
+    }
   },
   "learnerQuests": {
     "title": "Mundos de Misiones",

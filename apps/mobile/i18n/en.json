@@ -399,7 +399,19 @@
     "gallery": "Gallery",
     "uploadPDF": "Upload PDF",
     "uploadPDFDesc": "Upload a homework PDF for help",
-    "chooseFile": "Choose File"
+    "chooseFile": "Choose File",
+    "yourHomework": "Your Homework",
+    "noAssignments": "No homework yet. Snap a photo or upload a PDF to get started!",
+    "problems": "{{count}} problems",
+    "openOnWeb": "Continue this homework on the web app to chat with your AI tutor.",
+    "comingSoon": "Camera capture is coming soon. For now, please upload from the web app.",
+    "status": {
+      "PROCESSING": "Processing…",
+      "READY": "Ready",
+      "IN_PROGRESS": "In Progress",
+      "COMPLETED": "Done!",
+      "FAILED": "Failed"
+    }
   },
   "learnerQuests": {
     "title": "Quest Worlds",

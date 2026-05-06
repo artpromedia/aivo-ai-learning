@@ -1,25 +1,119 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuth } from '@/hooks/useAuth';
+import { useHomeworkAssignments, type HomeworkAssignment } from '@/hooks/useHomework';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
+
+const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
+  PROCESSING: { bg: '#FEF3C7', fg: '#B45309' },
+  READY: { bg: '#DCFCE7', fg: '#166534' },
+  IN_PROGRESS: { bg: '#DBEAFE', fg: '#1D4ED8' },
+  COMPLETED: { bg: '#EDE9FE', fg: '#6D28D9' },
+  FAILED: { bg: '#FEE2E2', fg: '#B91C1C' },
+};
+
+const SUBJECT_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  math: 'calculator',
+  science: 'flask',
+  reading: 'book',
+  writing: 'create',
+  history: 'time',
+  geography: 'earth',
+  art: 'color-palette',
+  music: 'musical-notes',
+  other: 'document-text',
+};
+
+function statusStyle(status: string) {
+  return STATUS_COLORS[status] ?? { bg: colors.surface, fg: colors.textSecondary };
+}
+
+function subjectIconName(subject: string | undefined): keyof typeof Ionicons.glyphMap {
+  if (!subject) return SUBJECT_ICONS.other;
+  return SUBJECT_ICONS[subject.toLowerCase()] ?? SUBJECT_ICONS.other;
+}
 
 export default function HomeworkScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { data: assignments, isLoading } = useHomeworkAssignments(user?.id ?? '');
+
+  const onAssignmentPress = (a: HomeworkAssignment) => {
+    Alert.alert(t('learnerHomework.title'), t('learnerHomework.openOnWeb'));
+  };
+
+  const onCapturePress = () => {
+    Alert.alert(t('learnerHomework.title'), t('learnerHomework.comingSoon'));
+  };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
-      <Pressable onPress={() => router.back()} style={styles.backRow}>
+    <ScrollView
+      style={[styles.container, { paddingTop: insets.top + 16 }]}
+      contentContainerStyle={{ paddingBottom: 32 }}
+    >
+      <Pressable
+        onPress={() => router.back()}
+        style={styles.backRow}
+        accessibilityRole="button"
+        accessibilityLabel={t('common.back')}
+      >
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
         <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
       <Text style={styles.title}>{t('learnerHomework.title')}</Text>
       <Text style={styles.subtitle}>{t('learnerHomework.subtitle')}</Text>
+
+      <Text style={styles.sectionTitle}>{t('learnerHomework.yourHomework')}</Text>
+      {isLoading ? (
+        <AivoCard style={styles.loadingCard}>
+          <ActivityIndicator color={colors.primary} />
+        </AivoCard>
+      ) : !assignments || assignments.length === 0 ? (
+        <AivoCard style={styles.emptyCard}>
+          <Ionicons name="document-outline" size={32} color={colors.textSecondary} />
+          <Text style={styles.emptyText}>{t('learnerHomework.noAssignments')}</Text>
+        </AivoCard>
+      ) : (
+        <View style={{ gap: spacing.sm, marginBottom: spacing.md }}>
+          {assignments.map((a) => {
+            const sub = (a.detectedSubject || a.subject || 'other').toLowerCase();
+            const sStyle = statusStyle(a.status);
+            const statusLabel = t(`learnerHomework.status.${a.status}`, { defaultValue: a.status });
+            return (
+              <Pressable
+                key={a.id}
+                onPress={() => onAssignmentPress(a)}
+                accessibilityRole="button"
+                accessibilityLabel={`${sub} ${statusLabel}`}
+              >
+                <AivoCard style={styles.assignmentCard}>
+                  <View style={styles.assignmentRow}>
+                    <View style={styles.subjectIcon}>
+                      <Ionicons name={subjectIconName(sub)} size={22} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.assignmentSubject}>{sub}</Text>
+                      <Text style={styles.assignmentMeta}>
+                        {t('learnerHomework.problems', { count: a.problemCount })}
+                      </Text>
+                    </View>
+                    <View style={[styles.statusPill, { backgroundColor: sStyle.bg }]}>
+                      <Text style={[styles.statusText, { color: sStyle.fg }]}>{statusLabel}</Text>
+                    </View>
+                  </View>
+                </AivoCard>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
 
       <AivoCard style={styles.captureCard}>
         <View style={styles.cameraPreview}>
@@ -30,14 +124,14 @@ export default function HomeworkScreen() {
         <View style={styles.captureActions}>
           <AivoButton
             title={t('learnerHomework.takePhoto')}
-            onPress={() => Alert.alert('Camera', 'Camera capture coming soon')}
+            onPress={onCapturePress}
             size="lg"
             icon={<Ionicons name="camera-outline" size={20} color="#FFF" />}
             style={{ flex: 1, marginRight: 8 }}
           />
           <AivoButton
             title={t('learnerHomework.gallery')}
-            onPress={() => Alert.alert('Gallery', 'Gallery picker coming soon')}
+            onPress={onCapturePress}
             variant="outline"
             size="lg"
             icon={<Ionicons name="images-outline" size={20} color={colors.primary} />}
@@ -52,13 +146,13 @@ export default function HomeworkScreen() {
         <Text style={styles.uploadDesc}>{t('learnerHomework.uploadPDFDesc')}</Text>
         <AivoButton
           title={t('learnerHomework.chooseFile')}
-          onPress={() => Alert.alert('Upload', 'PDF upload coming soon')}
+          onPress={onCapturePress}
           variant="secondary"
           size="sm"
           style={{ marginTop: spacing.sm }}
         />
       </AivoCard>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -68,6 +162,24 @@ const styles = StyleSheet.create({
   backText: { fontSize: 16, fontFamily: 'Nunito-SemiBold', color: colors.primary },
   title: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', color: colors.text },
   subtitle: { fontSize: 14, fontFamily: 'Nunito-Regular', color: colors.textSecondary, marginBottom: spacing.lg },
+  sectionTitle: { fontSize: 13, fontFamily: 'Nunito-Bold', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: spacing.sm },
+  loadingCard: { alignItems: 'center', paddingVertical: spacing.lg, marginBottom: spacing.md },
+  emptyCard: { alignItems: 'center', paddingVertical: spacing.lg, marginBottom: spacing.md, gap: 8 },
+  emptyText: { fontSize: 13, fontFamily: 'Nunito-SemiBold', color: colors.textSecondary, textAlign: 'center' },
+  assignmentCard: { padding: spacing.sm },
+  assignmentRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  subjectIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.primary + '14',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  assignmentSubject: { fontSize: 15, fontFamily: 'Nunito-Bold', color: colors.text, textTransform: 'capitalize' },
+  assignmentMeta: { fontSize: 12, fontFamily: 'Nunito-Regular', color: colors.textSecondary, marginTop: 2 },
+  statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
+  statusText: { fontSize: 11, fontFamily: 'Nunito-Bold' },
   captureCard: { marginBottom: spacing.md },
   cameraPreview: {
     height: 200,
