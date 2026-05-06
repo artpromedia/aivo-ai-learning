@@ -56,7 +56,7 @@ export interface HomeworkSessionState {
   endedAt?: string | null;
 }
 
-/** Mirrors the web flow: POST /session/start with assignmentId+learnerId returns { sessionId }. */
+/** Mirrors the web flow: POST /session/start with assignmentId + learnerId returns { sessionId }. */
 export function useStartHomeworkSession() {
   return useMutation<
     { sessionId: string },
