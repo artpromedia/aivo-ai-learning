@@ -22,6 +22,7 @@ import {
 } from '@/hooks/useParentInbox';
 import { AivoCard } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
+import { mapInboxUrlToMobileRoute } from '@/lib/inboxLinks';
 
 type TabKey = 'all' | 'action' | 'celebrations' | 'archived';
 
@@ -84,6 +85,11 @@ export default function ParentInboxScreen() {
 
   const onView = (n: InboxNotification) => {
     if (!n.readAt) markRead.mutate(n.id);
+    const target = mapInboxUrlToMobileRoute(n.actionUrl);
+    if (target) {
+      router.push({ pathname: target.pathname as any, params: target.params });
+      return;
+    }
     Alert.alert(n.title, t('parentInbox.openOnWeb'));
   };
 
