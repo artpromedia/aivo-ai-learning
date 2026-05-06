@@ -22,9 +22,19 @@ export default function GamificationScreen() {
     >
       <View style={styles.header}>
         <Text style={styles.title}>{t('learnerGamification.title')}</Text>
-        <Pressable onPress={logout}>
-          <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+          <Pressable
+            onPress={() => router.push('/(learner)/settings' as any)}
+            accessibilityRole="button"
+            accessibilityLabel={t('learnerSettings.title')}
+            hitSlop={8}
+          >
+            <Ionicons name="settings-outline" size={22} color={colors.textSecondary} />
+          </Pressable>
+          <Pressable onPress={logout} accessibilityRole="button" accessibilityLabel={t('common.logOut')} hitSlop={8}>
+            <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
+          </Pressable>
+        </View>
       </View>
 
       <AivoCard style={styles.profileCard}>
