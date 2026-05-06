@@ -280,6 +280,16 @@ async function mfaRequiredFor(db: any, user: { role: string; mfaEnabled?: boolea
   return await isTenantForcingMfa(db, user.tenantId);
 }
 
+/**
+ * Returns true when the given user must change their password before
+ * they're allowed to use any other surface. Mirrors the logic in
+ * `/api/auth/refresh` so SPA and mobile callers can drive a forced-rotation
+ * UX directly off the login response without needing a follow-up refresh.
+ */
+function computeMustChangePassword(user: { mustChangePassword?: boolean | null; passwordChangedAt?: Date | string | null; role: string }): boolean {
+  return !!user.mustChangePassword || isPasswordRotationDue(user.passwordChangedAt as any, user.role);
+}
+
 export async function registerAuthRoutes(app: FastifyInstance) {
   app.get("/api/auth/public-key", async (_req, reply) => {
     const { getPublicKeyPEM } = await import("@aivo/security");
@@ -465,6 +475,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
       accessToken,
+      mustChangePassword: computeMustChangePassword(user),
     };
   });
 
@@ -773,6 +784,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
       accessToken,
+      mustChangePassword: computeMustChangePassword(user),
     };
   });
 
@@ -1410,6 +1422,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
       accessToken,
       usedRecoveryCode: usedRecovery,
+      mustChangePassword: computeMustChangePassword(user),
     };
   });
 
@@ -1998,6 +2011,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
       accessToken,
+      mustChangePassword: computeMustChangePassword(user),
     };
   });
 

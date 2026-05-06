@@ -5,13 +5,22 @@ import { useAuth } from '@/hooks/useAuth';
 import { colors } from '@/constants/colors';
 
 export default function Index() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, mustChangePassword } = useAuth();
 
   useEffect(() => {
     if (isLoading) return;
 
     if (!isAuthenticated || !user) {
       router.replace('/(auth)/login');
+      return;
+    }
+
+    // Forced password rotation must be honored before any other surface
+    // is reachable. Mirrors the web auth-provider redirect to
+    // /dashboard/change-password. Learner (PIN) sessions never set this
+    // flag because learners don't have rotating passwords.
+    if (mustChangePassword) {
+      router.replace('/(auth)/change-password' as any);
       return;
     }
 
@@ -34,7 +43,7 @@ export default function Index() {
       default:
         router.replace('/(auth)/login');
     }
-  }, [isAuthenticated, isLoading, user]);
+  }, [isAuthenticated, isLoading, user, mustChangePassword]);
 
   return (
     <View style={styles.container}>

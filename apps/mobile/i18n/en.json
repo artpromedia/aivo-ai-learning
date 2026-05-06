@@ -92,7 +92,20 @@
     "pleaseEnterEmail": "Please enter your email",
     "somethingWentWrong": "Something went wrong. Please try again.",
     "checkYourEmail": "Check Your Email",
-    "resetEmailSent": "If an account exists for {{email}}, you'll receive a password reset link shortly."
+    "resetEmailSent": "If an account exists for {{email}}, you'll receive a password reset link shortly.",
+    "changePasswordTitle": "Update Your Password",
+    "changePasswordSubtitle": "For your security, you must choose a new password before continuing.",
+    "changePasswordCurrent": "Current Password",
+    "changePasswordNew": "New Password",
+    "changePasswordNewPlaceholder": "At least 12 characters",
+    "changePasswordSubmit": "Update Password",
+    "changePasswordFailed": "Could not update password",
+    "changePasswordFillAll": "Please fill in all fields",
+    "changePasswordReasonTooShort": "Too short — at least 12 characters required (14 for staff)",
+    "changePasswordReasonTooWeak": "Not strong enough — add more length or variety",
+    "changePasswordReasonBreached": "This password has appeared in a public breach",
+    "changePasswordReasonReused": "You've used this password before",
+    "changePasswordReasonMissingDiversity": "Use at least 3 of: lowercase, uppercase, digits, symbols"
   },
   "parent": {
     "greeting": "Hello, {{name}}",

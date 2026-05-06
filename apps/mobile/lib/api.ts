@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import { API } from '@/constants/api';
 
 const TOKEN_KEY = 'aivo_access_token';
+const MUST_CHANGE_PASSWORD_KEY = 'aivo_must_change_password';
 
 let SecureStore: typeof import('expo-secure-store') | null = null;
 if (Platform.OS !== 'web') {
@@ -33,10 +34,40 @@ export async function clearTokens(): Promise<void> {
   if (Platform.OS === 'web') {
     try {
       localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(MUST_CHANGE_PASSWORD_KEY);
     } catch {}
     return;
   }
   await SecureStore!.deleteItemAsync(TOKEN_KEY);
+  await SecureStore!.deleteItemAsync(MUST_CHANGE_PASSWORD_KEY);
+}
+
+/**
+ * Persist the `mustChangePassword` flag returned by the identity-svc
+ * login flows alongside the access token. Stored separately (rather than
+ * derived from the JWT) because the JWT does not carry this claim.
+ */
+export async function setMustChangePassword(value: boolean): Promise<void> {
+  const v = value ? '1' : '0';
+  if (Platform.OS === 'web') {
+    try {
+      localStorage.setItem(MUST_CHANGE_PASSWORD_KEY, v);
+    } catch {}
+    return;
+  }
+  await SecureStore!.setItemAsync(MUST_CHANGE_PASSWORD_KEY, v);
+}
+
+export async function getMustChangePassword(): Promise<boolean> {
+  if (Platform.OS === 'web') {
+    try {
+      return localStorage.getItem(MUST_CHANGE_PASSWORD_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+  const v = await SecureStore!.getItemAsync(MUST_CHANGE_PASSWORD_KEY);
+  return v === '1';
 }
 
 interface FetchOptions extends RequestInit {
