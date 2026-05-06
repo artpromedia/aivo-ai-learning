@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+// SDK 54 ships expo-file-system v19's "next-gen" File API by default;
+// the back-compat readAsStringAsync used here lives at /legacy until we migrate.
 import * as FileSystem from 'expo-file-system/legacy';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
@@ -46,6 +48,8 @@ function subjectIconName(subject: string | undefined): keyof typeof Ionicons.gly
   if (!subject) return SUBJECT_ICONS.other;
   return SUBJECT_ICONS[subject.toLowerCase()] ?? SUBJECT_ICONS.other;
 }
+
+const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
 
 export default function HomeworkScreen() {
   const insets = useSafeAreaInsets();
@@ -154,8 +158,8 @@ export default function HomeworkScreen() {
     });
     if (picked.canceled || !picked.assets?.[0]) return;
     const asset = picked.assets[0];
-    // Cap at 10MB to avoid OOM/oversized base64 payloads on the server.
-    if (typeof asset.size === 'number' && asset.size > 10 * 1024 * 1024) {
+    // Cap to keep base64 payloads small enough for the JSON upload endpoint.
+    if (typeof asset.size === 'number' && asset.size > MAX_PDF_SIZE_BYTES) {
       setUploadError(t('learnerHomework.pdfTooLarge'));
       return;
     }
