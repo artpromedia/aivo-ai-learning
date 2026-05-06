@@ -96,7 +96,7 @@ export function useIEPGoals(learnerId: string) {
   return useQuery({
     queryKey: ['iep-goals', learnerId],
     queryFn: async () => {
-      const res = await apiFetch(API.FAMILY, `/api/family/iep-goals/${learnerId}`);
+      const res = await apiFetch(API.FAMILY, `/api/family/iep/${learnerId}/goals`);
       if (!res.ok) throw new Error('Failed to fetch IEP goals');
       return res.json();
     },
@@ -104,6 +104,10 @@ export function useIEPGoals(learnerId: string) {
   });
 }
 
+// TODO(parity): family-svc exposes IEP goals at `/api/family/iep/:learnerId/goals`
+// (used by `useIEPGoals` above) but does NOT currently expose a therapy-goals
+// route for therapist consumers. Tracked under Phase 4 (backend gaps) of the
+// mobile parity rollout — once the backend route lands, swap this path.
 export function useTherapyGoals(learnerId: string) {
   return useQuery({
     queryKey: ['therapy-goals', learnerId],

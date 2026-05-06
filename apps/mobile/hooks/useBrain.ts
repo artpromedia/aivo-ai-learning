@@ -8,17 +8,16 @@
  * returns the canonical `brain_states` row, camelCased, plus the
  * `xaiExplanation` payload.
  *
- * Endpoints (brain-svc):
- *  - GET  /api/brain/{learnerId}                         → BrainState
- *  - GET  /api/brain/recommendations/{learnerId}         → BrainRecommendation[]
- *  - PUT  /api/brain/recommendations/{recommendationId}/resolve
- *         body: { status: 'APPROVED' | 'DECLINED' | string, parent_notes?: string }
+ * Endpoints:
+ *  - GET  brain-svc   /api/brain/{learnerId}                   → BrainState
+ *  - GET  family-svc  /api/family/recommendations/{learnerId}  → BrainRecommendation[]
+ *  - POST family-svc  /api/family/recommendations/{learnerId}/{recId}/respond
+ *         body: { action: 'APPROVED' | 'DECLINED' | 'ADJUSTED', notes?: string }
  *
- * For UI consumers that previously rendered a per-domain list, this
- * file also exports `deriveDomains(brain, enrolledGrade?)` and the
- * `useBrainDomains(learnerId, opts)` helper, which compute a legacy
- * `BrainDomain[]` shape (with mastery%, accommodations and a derived
- * functioning grade) on top of the real API.
+ * Note: recommendations are read/written through family-svc (which enforces
+ * parent ownership) rather than brain-svc directly, matching the web
+ * parent dashboard. Both services talk to the same `brainRecommendations`
+ * table.
  */
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -69,16 +68,16 @@ export interface BrainState {
 
 export interface BrainRecommendation {
   id: string;
-  learner_id: string;
-  tenant_id: string;
+  learnerId: string;
+  tenantId: string;
   type: string;
-  status: 'PENDING' | 'APPROVED' | 'DECLINED' | string;
+  status: 'PENDING' | 'APPROVED' | 'DECLINED' | 'ADJUSTED' | string;
   title: string;
   description?: string | null;
-  payload?: Record<string, unknown>;
-  parent_notes?: string | null;
-  created_at: string;
-  resolved_at?: string | null;
+  payload?: Record<string, unknown> | null;
+  parentNotes?: string | null;
+  createdAt: string;
+  resolvedAt?: string | null;
 }
 
 /** Legacy per-domain shape used by older screens. Synthesised from
@@ -220,8 +219,8 @@ export function useBrainRecommendations(learnerId: string) {
     queryKey: ['brain', learnerId, 'recommendations'],
     queryFn: async () => {
       const res = await apiFetch(
-        API.BRAIN,
-        `/api/brain/recommendations/${learnerId}`,
+        API.FAMILY,
+        `/api/family/recommendations/${learnerId}`,
       );
       if (!res.ok) throw new Error('Failed to fetch recommendations');
       return res.json();
@@ -235,6 +234,7 @@ export function useRecommendationAction() {
 
   return useMutation({
     mutationFn: async ({
+      learnerId,
       recommendationId,
       action,
       parentNotes,
@@ -244,13 +244,13 @@ export function useRecommendationAction() {
       action: 'approve' | 'decline';
       parentNotes?: string;
     }) => {
-      const status = action === 'approve' ? 'APPROVED' : 'DECLINED';
+      const apiAction = action === 'approve' ? 'APPROVED' : 'DECLINED';
       const res = await apiFetch(
-        API.BRAIN,
-        `/api/brain/recommendations/${recommendationId}/resolve`,
+        API.FAMILY,
+        `/api/family/recommendations/${learnerId}/${recommendationId}/respond`,
         {
-          method: 'PUT',
-          body: JSON.stringify({ status, parent_notes: parentNotes }),
+          method: 'POST',
+          body: JSON.stringify({ action: apiAction, notes: parentNotes }),
         },
       );
       if (!res.ok) throw new Error('Action failed');

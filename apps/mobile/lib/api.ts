@@ -49,10 +49,23 @@ export async function apiFetch(
   options: FetchOptions = {}
 ): Promise<Response> {
   const { skipAuth, ...fetchOptions } = options;
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(fetchOptions.headers as Record<string, string>),
-  };
+  const callerHeaders = (fetchOptions.headers as Record<string, string>) || {};
+  const headers: Record<string, string> = { ...callerHeaders };
+
+  // Only default to JSON when the request actually carries a body and the
+  // caller hasn't already specified a content type. This avoids tagging
+  // GETs with a misleading Content-Type and, more importantly, avoids
+  // breaking multipart/form-data uploads (the boundary header would be
+  // overwritten by `application/json`).
+  const hasBody = fetchOptions.body != null;
+  const hasContentTypeHeader = Object.keys(callerHeaders).some(
+    (k) => k.toLowerCase() === 'content-type'
+  );
+  const isFormData =
+    typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
+  if (hasBody && !hasContentTypeHeader && !isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (!skipAuth) {
     const token = await getToken();

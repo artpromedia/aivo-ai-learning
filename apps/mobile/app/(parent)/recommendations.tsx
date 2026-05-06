@@ -64,7 +64,7 @@ export default function RecommendationsScreen() {
                 </Text>
               </View>
               <Text style={styles.recDate}>
-                {new Date(rec.created_at).toLocaleDateString()}
+                {new Date(rec.createdAt).toLocaleDateString()}
               </Text>
             </View>
             <Text style={styles.recTitle}>{rec.title}</Text>
