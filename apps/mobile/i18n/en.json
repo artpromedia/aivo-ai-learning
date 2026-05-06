@@ -155,7 +155,9 @@
     "pinUpdated": "PIN updated for {{name}}.",
     "pinUpdateFailed": "Failed to update PIN.",
     "exportSummary": "Your account data has been prepared.\n\nName: {{name}}\nEmail: {{email}}\nRole: {{role}}\n\nA full data export has been sent to your email.",
-    "exportFailed": "Failed to export data."
+    "exportFailed": "Failed to export data.",
+    "pinSelectLearner": "Choose learner",
+    "unnamedLearner": "Learner"
   },
   "parentBilling": {
     "title": "Billing & Subscription",

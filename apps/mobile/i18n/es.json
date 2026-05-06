@@ -155,7 +155,9 @@
     "pinUpdated": "PIN actualizado para {{name}}.",
     "pinUpdateFailed": "No se pudo actualizar el PIN.",
     "exportSummary": "Tus datos de cuenta han sido preparados.\n\nNombre: {{name}}\nCorreo: {{email}}\nRol: {{role}}\n\nSe ha enviado una exportación completa a tu correo.",
-    "exportFailed": "No se pudieron exportar los datos."
+    "exportFailed": "No se pudieron exportar los datos.",
+    "pinSelectLearner": "Elige al estudiante",
+    "unnamedLearner": "Estudiante"
   },
   "parentBilling": {
     "title": "Facturación y Suscripción",
