@@ -15,7 +15,7 @@ interface User {
   role: UserRole;
   tenantId: string;
   /**
-   * Optional profile-photo URL. Not present in the JWT today; populated
+   * Optional profile-photo URL. Not part of the JWT payload; populated
    * by callers (e.g. `AccountSettingsCard`) after the user uploads or
    * removes their avatar via identity-svc.
    */
