@@ -148,15 +148,18 @@ export default function ChangePasswordScreen() {
             />
             {next.length > 0 && (
               <View style={styles.strengthRow}>
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.strengthSegment,
-                      { backgroundColor: i < score ? STRENGTH_COLORS[score - 1] : colors.border },
-                    ]}
-                  />
-                ))}
+                {[0, 1, 2, 3, 4].map((i) => {
+                  const filled = score > 0 && i < score;
+                  return (
+                    <View
+                      key={i}
+                      style={[
+                        styles.strengthSegment,
+                        { backgroundColor: filled ? STRENGTH_COLORS[score - 1] : colors.border },
+                      ]}
+                    />
+                  );
+                })}
               </View>
             )}
             {reasons.length > 0 && (
