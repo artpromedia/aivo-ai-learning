@@ -1,152 +1,118 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { ScrollView, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useBrain } from '@/hooks/useBrain';
-import { AivoCard, LoadingState, EmptyState } from '@aivo/mobile-ui';
-import { colors, spacing, radius } from '@/constants/colors';
+import { useLearner } from '@/hooks/useLearners';
+import BrainCloneCard from '@/src/components/brain/BrainCloneCard';
+import { colors, spacing } from '@/constants/colors';
 
 export default function BrainProfileScreen() {
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
-  const { data: brain, isLoading } = useBrain(childId);
   const { t } = useTranslation();
+  const { data: learner } = useLearner(childId);
 
-  if (isLoading) return <LoadingState message={t('common.loading')} />;
+  const learnerName = learner
+    ? `${learner.firstName} ${learner.lastName}`.trim()
+    : 'Learner';
+  const enrolledGrade = learner?.gradeLevel ?? null;
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
+      contentContainerStyle={{
+        paddingTop: insets.top + 16,
+        paddingBottom: 32,
+      }}
     >
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
         <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>{t('parentBrain.title', { name: brain?.learnerName || 'Learner' })}</Text>
+      <Text style={styles.title}>
+        {t('parentBrain.title', { name: learner?.firstName || 'Learner' })}
+      </Text>
       <Text style={styles.subtitle}>{t('parentBrain.subtitle')}</Text>
 
-      <AivoCard style={styles.overviewCard}>
-        <View style={styles.brainVisual}>
-          <View style={styles.brainCircle}>
-            <Ionicons name="bulb" size={40} color={colors.primary} />
-          </View>
-          <Text style={styles.overallLevel}>
-            {t('parentBrain.overallLevel')}: {brain?.overallLevel || 'Standard'}
-          </Text>
-        </View>
-      </AivoCard>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Domain Grade Ladders</Text>
-        <Pressable onPress={() => router.push(`/(parent)/brain/${childId}/history` as any)}>
-          <Text style={styles.historyLink}>{t('parentBrain.viewHistory')}</Text>
-        </Pressable>
+      <View style={styles.cardWrap}>
+        <BrainCloneCard
+          learnerId={childId}
+          learnerName={learnerName}
+          enrolledGrade={enrolledGrade}
+          variant="full"
+          onBuildBrain={() =>
+            router.push(`/(parent)/brain/${childId}/history` as never)
+          }
+        />
       </View>
 
-      {brain?.domains?.map((domain) => (
+      <View style={styles.actionsRow}>
         <Pressable
-          key={domain.domain}
-          onPress={() => router.push(`/(parent)/brain/${childId}/${domain.domain}` as any)}
+          onPress={() =>
+            router.push(`/(parent)/brain/${childId}/history` as never)
+          }
+          style={styles.actionBtn}
         >
-          <AivoCard style={styles.domainCard}>
-            <View style={styles.domainRow}>
-              <View>
-                <Text style={styles.domainName}>{domain.domain}</Text>
-                <Text style={styles.domainGrade}>
-                  {t('parentBrain.enrolledGrade', { grade: domain.enrolledGrade })} | {t('parentBrain.functioningGrade', { grade: domain.functioningGrade })}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-            </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${domain.masteryPercent}%`,
-                    backgroundColor: colors.primary,
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.masteryText}>{t('parentBrain.mastered', { percent: domain.masteryPercent })}</Text>
-            {domain.accommodations.length > 0 && (
-              <View style={styles.accommodations}>
-                {domain.accommodations.map((acc) => (
-                  <View key={acc} style={styles.accBadge}>
-                    <Text style={styles.accText}>{acc}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </AivoCard>
-        </Pressable>
-      ))}
-
-      {brain?.iepGoals && brain.iepGoals.length > 0 && (
-        <>
-          <Text style={[styles.sectionTitle, { marginTop: spacing.lg, marginBottom: spacing.md }]}>
-            IEP Goals
+          <Ionicons name="time-outline" size={16} color={colors.primary} />
+          <Text style={styles.actionText}>
+            {t('parentBrain.viewHistory')}
           </Text>
-          {brain.iepGoals.map((goal) => (
-            <AivoCard key={goal.id} style={styles.goalCard}>
-              <Text style={styles.goalTitle}>{goal.title}</Text>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${goal.progress}%`,
-                      backgroundColor: goal.status === 'met' ? colors.success : colors.info,
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.goalProgress}>{goal.progress}% complete</Text>
-            </AivoCard>
-          ))}
-        </>
-      )}
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.md },
-  backRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: spacing.md },
-  backText: { fontSize: 16, fontFamily: 'Nunito-SemiBold', color: colors.primary },
-  title: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', color: colors.text },
-  subtitle: { fontSize: 14, fontFamily: 'Nunito-Regular', color: colors.textSecondary, marginBottom: spacing.lg },
-  overviewCard: { marginBottom: spacing.lg, alignItems: 'center' as const },
-  brainVisual: { alignItems: 'center', paddingVertical: spacing.md },
-  brainCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.md,
   },
-  overallLevel: { fontSize: 16, fontFamily: 'Nunito-Bold', color: colors.text },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
-  sectionTitle: { fontSize: 18, fontFamily: 'Nunito-Bold', color: colors.text },
-  historyLink: { fontSize: 14, fontFamily: 'Nunito-SemiBold', color: colors.primary },
-  domainCard: { marginBottom: spacing.sm },
-  domainRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  domainName: { fontSize: 16, fontFamily: 'Nunito-Bold', color: colors.text },
-  domainGrade: { fontSize: 12, fontFamily: 'Nunito-Regular', color: colors.textSecondary, marginTop: 2 },
-  progressBar: { height: 8, backgroundColor: colors.border, borderRadius: 4, marginBottom: 4 },
-  progressFill: { height: 8, borderRadius: 4 },
-  masteryText: { fontSize: 12, fontFamily: 'Nunito-SemiBold', color: colors.textSecondary },
-  accommodations: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 8 },
-  accBadge: { backgroundColor: colors.accent + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.full },
-  accText: { fontSize: 11, fontFamily: 'Nunito-SemiBold', color: colors.accent },
-  goalCard: { marginBottom: spacing.sm },
-  goalTitle: { fontSize: 15, fontFamily: 'Nunito-Bold', color: colors.text, marginBottom: 8 },
-  goalProgress: { fontSize: 12, fontFamily: 'Nunito-SemiBold', color: colors.textSecondary },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: spacing.md,
+  },
+  backText: {
+    fontSize: 16,
+    fontFamily: 'Nunito-SemiBold',
+    color: colors.primary,
+  },
+  title: {
+    fontSize: 24,
+    fontFamily: 'Nunito-ExtraBold',
+    color: colors.text,
+  },
+  subtitle: {
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+  },
+  cardWrap: { marginBottom: spacing.lg },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.primary + '60',
+    backgroundColor: colors.primary + '14',
+  },
+  actionText: {
+    fontSize: 13,
+    fontFamily: 'Nunito-Bold',
+    color: colors.primary,
+  },
 });

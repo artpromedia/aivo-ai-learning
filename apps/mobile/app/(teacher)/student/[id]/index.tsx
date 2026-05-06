@@ -1,20 +1,22 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { Text, ScrollView, Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useBrain } from '@/hooks/useBrain';
-import { AivoCard, AivoButton, LoadingState } from '@aivo/mobile-ui';
-import { colors, spacing, radius } from '@/constants/colors';
+import { useLearner } from '@/hooks/useLearners';
+import { AivoCard, AivoButton } from '@aivo/mobile-ui';
+import BrainCloneCard from '@/src/components/brain/BrainCloneCard';
+import { colors, spacing } from '@/constants/colors';
 
 export default function StudentBrainProfile() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const { data: brain, isLoading } = useBrain(id);
-
-  if (isLoading) return <LoadingState />;
+  const { data: learner } = useLearner(id);
+  const learnerName = learner
+    ? `${learner.firstName} ${learner.lastName}`.trim()
+    : 'Student';
 
   return (
     <ScrollView
@@ -26,27 +28,30 @@ export default function StudentBrainProfile() {
         <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>{t('teacherStudent.brain', { name: brain?.learnerName || 'Student' })}</Text>
+      <Text style={styles.title}>
+        {t('teacherStudent.brain', { name: learner?.firstName || 'Student' })}
+      </Text>
       <Text style={styles.subtitle}>{t('teacherStudent.readOnlyProfile')}</Text>
 
       <AivoCard style={styles.overviewCard}>
         <View style={styles.brainCircle}>
           <Ionicons name="bulb" size={36} color={colors.primary} />
         </View>
-        <Text style={styles.levelText}>{t('teacherStudent.level', { level: brain?.overallLevel || 'Standard' })}</Text>
+        <Text style={styles.levelText}>
+          {t('teacherStudent.level', {
+            level: learner?.functioningLevel || 'Standard',
+          })}
+        </Text>
       </AivoCard>
 
-      {brain?.domains?.map((d) => (
-        <AivoCard key={d.domain} style={styles.domainCard}>
-          <Text style={styles.domainName}>{d.domain}</Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${d.masteryPercent}%` }]} />
-          </View>
-          <Text style={styles.gradeInfo}>
-            {t('teacherStudent.enrolled', { grade: d.enrolledGrade })} | {t('teacherStudent.functioning', { grade: d.functioningGrade })}
-          </Text>
-        </AivoCard>
-      ))}
+      <View style={styles.brainWrap}>
+        <BrainCloneCard
+          learnerId={id}
+          learnerName={learnerName}
+          enrolledGrade={learner?.gradeLevel ?? null}
+          variant="full"
+        />
+      </View>
 
       <View style={styles.actions}>
         <AivoButton
@@ -76,10 +81,6 @@ const styles = StyleSheet.create({
   overviewCard: { alignItems: 'center' as const, marginBottom: spacing.lg, paddingVertical: spacing.md },
   brainCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primary + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   levelText: { fontSize: 16, fontFamily: 'Nunito-Bold', color: colors.text },
-  domainCard: { marginBottom: spacing.sm },
-  domainName: { fontSize: 15, fontFamily: 'Nunito-Bold', color: colors.text, marginBottom: 8 },
-  progressBar: { height: 8, backgroundColor: colors.border, borderRadius: 4, marginBottom: 4 },
-  progressFill: { height: 8, borderRadius: 4, backgroundColor: colors.primary },
-  gradeInfo: { fontSize: 12, fontFamily: 'Nunito-Regular', color: colors.textSecondary },
+  brainWrap: { marginBottom: spacing.lg },
   actions: { flexDirection: 'row', marginTop: spacing.md },
 });
