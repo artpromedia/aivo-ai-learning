@@ -150,12 +150,9 @@ export function useSpeechInput({
       const audioBase64 = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      // expo-av writes .m4a on iOS and .m4a/.amr on Android by default; we
-      // pass the matching mime so ai-svc doesn't have to sniff.
-      const mimeType =
-        Platform.OS === 'ios'
-          ? 'audio/m4a'
-          : 'audio/m4a';
+      // expo-av's HIGH_QUALITY preset records to .m4a / AAC on both iOS and
+      // Android, so we hard-code the matching mime type for the upload.
+      const mimeType = 'audio/m4a';
 
       const res = await apiFetch(API.AI, '/api/ai/transcribe', {
         method: 'POST',
