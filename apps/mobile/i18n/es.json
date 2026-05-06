@@ -565,6 +565,32 @@
     "noReportsMessage": "Genera un reporte de progreso cuando estés listo.",
     "generateReport": "Generar Reporte"
   },
+  "therapistSessions": {
+    "title": "Registros de sesiones",
+    "selectClient": "Selecciona cliente",
+    "historyTab": "Historial",
+    "logTab": "Registrar sesión",
+    "noClientsTitle": "Aún no hay clientes conectados",
+    "noClientsMessage": "Conéctate con estudiantes para empezar a registrar sesiones.",
+    "loadError": "No se pudieron cargar los datos",
+    "emptyHistoryTitle": "Sin sesiones aún",
+    "emptyHistoryMessage": "Aún no hay sesiones registradas para {{name}}.",
+    "logFormTitle": "Registrar una sesión de terapia",
+    "category": "Categoría",
+    "category_speech": "Habla y lenguaje",
+    "category_occupational": "Terapia ocupacional",
+    "category_behavioral": "Terapia conductual",
+    "category_physical": "Terapia física",
+    "category_sel": "Socioemocional",
+    "category_other": "Otra",
+    "date": "Fecha",
+    "durationMin": "Duración (min)",
+    "notes": "Notas de la sesión",
+    "notesPlaceholder": "Documenta observaciones, metas trabajadas y notas de progreso...",
+    "logSubmit": "Registrar sesión",
+    "logSuccess": "Sesión registrada correctamente",
+    "logError": "No se pudo registrar la sesión. Inténtalo de nuevo."
+  },
   "tabs": {
     "home": "Inicio",
     "brain": "Cerebro",
@@ -578,7 +604,8 @@
     "analytics": "Analíticas",
     "lessonPlans": "Planes",
     "alerts": "Alertas",
-    "clients": "Clientes"
+    "clients": "Clientes",
+    "sessions": "Sesiones"
   },
   "accountSettings": {
     "accountDetails": "Detalles de Cuenta",

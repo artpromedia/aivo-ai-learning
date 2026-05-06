@@ -30,6 +30,15 @@ export default function TherapistLayout() {
         }}
       />
       <Tabs.Screen
+        name="sessions"
+        options={{
+          title: t('tabs.sessions'),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: t('tabs.settings'),

@@ -565,6 +565,32 @@
     "noReportsMessage": "Generate a progress report when ready.",
     "generateReport": "Generate Report"
   },
+  "therapistSessions": {
+    "title": "Session Logs",
+    "selectClient": "Select client",
+    "historyTab": "History",
+    "logTab": "Log Session",
+    "noClientsTitle": "No clients connected yet",
+    "noClientsMessage": "Connect with learners to start logging sessions.",
+    "loadError": "Unable to load data",
+    "emptyHistoryTitle": "No sessions yet",
+    "emptyHistoryMessage": "No sessions recorded yet for {{name}}.",
+    "logFormTitle": "Log a Therapy Session",
+    "category": "Category",
+    "category_speech": "Speech & Language",
+    "category_occupational": "Occupational Therapy",
+    "category_behavioral": "Behavioral Therapy",
+    "category_physical": "Physical Therapy",
+    "category_sel": "Social-Emotional",
+    "category_other": "Other",
+    "date": "Date",
+    "durationMin": "Duration (min)",
+    "notes": "Session Notes",
+    "notesPlaceholder": "Document session observations, goals worked on, progress notes...",
+    "logSubmit": "Log Session",
+    "logSuccess": "Session logged successfully",
+    "logError": "Failed to log session. Please try again."
+  },
   "tabs": {
     "home": "Home",
     "brain": "Brain",
@@ -578,7 +604,8 @@
     "analytics": "Analytics",
     "lessonPlans": "Lesson Plans",
     "alerts": "Alerts",
-    "clients": "Clients"
+    "clients": "Clients",
+    "sessions": "Sessions"
   },
   "accountSettings": {
     "accountDetails": "Account Details",
