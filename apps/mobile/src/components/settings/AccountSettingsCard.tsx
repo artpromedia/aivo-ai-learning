@@ -6,16 +6,16 @@
  *   - Read-only profile chip (avatar initial, name, email)
  *   - Edit account details (name + email) via PUT /api/auth/profile
  *   - "Change password" link → routes to (auth)/change-password
+ *   - Two-factor authentication toggle (email-code MFA)
  *   - Log out (with confirmation)
  *   - Delete account via DELETE /api/auth/account (password-confirmed)
  *
  * Intentionally excludes role-specific concerns (parent PIN management,
- * MFA toggle, avatar upload) so it can be safely reused for teacher,
- * therapist, and caregiver settings. Those richer flows live in the
- * parent settings screen and can be lifted into this component later
- * without breaking callers.
+ * avatar upload) so it can be safely reused for teacher, therapist, and
+ * caregiver settings. Avatar upload lives in the parent settings screen
+ * and can be lifted into this component later without breaking callers.
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -51,6 +51,100 @@ export function AccountSettingsCard({ avatarInitial }: AccountSettingsCardProps)
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  // Two-factor authentication (email-code MFA) state
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaForced, setMfaForced] = useState(false);
+  const [mfaPassword, setMfaPassword] = useState('');
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaMsg, setMfaMsg] = useState('');
+  const [showMfaInput, setShowMfaInput] = useState(false);
+  const [mfaEnableToken, setMfaEnableToken] = useState('');
+  const [mfaEnableCode, setMfaEnableCode] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiFetch(API.IDENTITY, '/api/auth/mfa/status');
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setMfaEnabled(!!data.mfaEnabled);
+          setMfaForced(!!data.mfaForced);
+        }
+      } catch {
+        // network error — leave MFA section in default off state
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleMfaToggle = useCallback(async () => {
+    if (!mfaPassword) return;
+    setMfaLoading(true);
+    setMfaMsg('');
+    try {
+      if (mfaEnabled) {
+        const res = await apiFetch(API.IDENTITY, '/api/auth/mfa/disable', {
+          method: 'POST',
+          body: JSON.stringify({ password: mfaPassword }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          setMfaEnabled(false);
+          setMfaMsg(t('accountSettings.mfaDisabled'));
+          setShowMfaInput(false);
+          setMfaPassword('');
+        } else {
+          setMfaMsg(data?.error || t('common.error'));
+        }
+      } else {
+        const res = await apiFetch(API.IDENTITY, '/api/auth/mfa/enable', {
+          method: 'POST',
+          body: JSON.stringify({ password: mfaPassword }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          setMfaEnableToken(data.mfaToken);
+          setMfaPassword('');
+        } else {
+          setMfaMsg(data?.error || t('common.error'));
+        }
+      }
+    } catch {
+      setMfaMsg(t('common.error'));
+    }
+    setMfaLoading(false);
+  }, [mfaEnabled, mfaPassword, t]);
+
+  const handleMfaConfirmEnable = useCallback(async () => {
+    if (mfaEnableCode.length !== 6) return;
+    setMfaLoading(true);
+    setMfaMsg('');
+    try {
+      const res = await apiFetch(API.IDENTITY, '/api/auth/mfa/confirm-enable', {
+        method: 'POST',
+        body: JSON.stringify({ mfaToken: mfaEnableToken, code: mfaEnableCode }),
+        skipAuth: true,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setMfaEnabled(true);
+        setMfaMsg(t('accountSettings.mfaEnabled'));
+        setMfaEnableToken('');
+        setMfaEnableCode('');
+        setShowMfaInput(false);
+      } else {
+        setMfaMsg(data?.error || t('common.error'));
+        setMfaEnableCode('');
+      }
+    } catch {
+      setMfaMsg(t('common.error'));
+    }
+    setMfaLoading(false);
+  }, [mfaEnableCode, mfaEnableToken, t]);
 
   const openAccountModal = useCallback(() => {
     setEditName(user?.name || '');
@@ -171,6 +265,124 @@ export function AccountSettingsCard({ avatarInitial }: AccountSettingsCardProps)
           <Ionicons name="chevron-forward" size={18} color={colors.error} />
         </AivoCard>
       </Pressable>
+
+      <AivoCard style={styles.mfaCard}>
+        <View style={styles.mfaHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.mfaTitle}>
+              {t('accountSettings.twoFactorAuth')}
+            </Text>
+            <Text style={styles.mfaDesc}>{t('accountSettings.mfaDesc')}</Text>
+          </View>
+          <View style={[styles.mfaBadge, mfaEnabled && styles.mfaBadgeOn]}>
+            <Text
+              style={[styles.mfaBadgeText, mfaEnabled && styles.mfaBadgeTextOn]}
+            >
+              {mfaEnabled ? t('common.on') : t('common.off')}
+            </Text>
+          </View>
+        </View>
+        {mfaMsg ? <Text style={styles.mfaMsg}>{mfaMsg}</Text> : null}
+        {mfaEnableToken ? (
+          <View style={styles.mfaInputSection}>
+            <Text style={styles.mfaDesc}>
+              {t('accountSettings.enterCode')}
+            </Text>
+            <TextInput
+              style={[
+                styles.mfaInput,
+                {
+                  textAlign: 'center',
+                  letterSpacing: 8,
+                  fontSize: 20,
+                  fontFamily: 'Nunito-Bold',
+                },
+              ]}
+              value={mfaEnableCode}
+              onChangeText={(v) =>
+                setMfaEnableCode(v.replace(/\D/g, '').slice(0, 6))
+              }
+              placeholder="000000"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="number-pad"
+              maxLength={6}
+            />
+            <View style={styles.mfaBtnRow}>
+              <AivoButton
+                title={mfaLoading ? t('common.saving') : t('common.confirm')}
+                onPress={handleMfaConfirmEnable}
+                loading={mfaLoading}
+                disabled={mfaEnableCode.length !== 6}
+                size="sm"
+                style={{ flex: 1 }}
+              />
+              <Pressable
+                style={styles.mfaCancelBtn}
+                onPress={() => {
+                  setMfaEnableToken('');
+                  setMfaEnableCode('');
+                  setShowMfaInput(false);
+                }}
+              >
+                <Text style={styles.mfaCancelText}>{t('common.cancel')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : !showMfaInput ? (
+          <Pressable
+            style={[
+              styles.mfaToggleBtn,
+              mfaEnabled && styles.mfaToggleBtnDanger,
+            ]}
+            onPress={() => setShowMfaInput(true)}
+            disabled={mfaForced && mfaEnabled}
+          >
+            <Text
+              style={[
+                styles.mfaToggleText,
+                mfaEnabled && styles.mfaToggleTextDanger,
+              ]}
+            >
+              {mfaEnabled
+                ? t('accountSettings.disableMfa')
+                : t('accountSettings.enableMfa')}
+            </Text>
+          </Pressable>
+        ) : (
+          <View style={styles.mfaInputSection}>
+            <TextInput
+              style={styles.mfaInput}
+              value={mfaPassword}
+              onChangeText={setMfaPassword}
+              placeholder={t('accountSettings.enterPassword')}
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete="current-password"
+              textContentType="password"
+            />
+            <View style={styles.mfaBtnRow}>
+              <AivoButton
+                title={mfaLoading ? t('common.saving') : t('common.confirm')}
+                onPress={handleMfaToggle}
+                loading={mfaLoading}
+                disabled={!mfaPassword}
+                size="sm"
+                style={{ flex: 1 }}
+              />
+              <Pressable
+                style={styles.mfaCancelBtn}
+                onPress={() => {
+                  setShowMfaInput(false);
+                  setMfaPassword('');
+                }}
+              >
+                <Text style={styles.mfaCancelText}>{t('common.cancel')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+      </AivoCard>
 
       <Pressable style={styles.logoutBtn} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={20} color={colors.error} />
@@ -321,6 +533,78 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   logoutText: { fontSize: 16, fontFamily: 'Nunito-Bold', color: colors.error },
+
+  mfaCard: { marginTop: spacing.sm, padding: 0 },
+  mfaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  mfaTitle: { fontSize: 15, fontFamily: 'Nunito-Bold', color: colors.text },
+  mfaDesc: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Regular',
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  mfaBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    backgroundColor: colors.border,
+  },
+  mfaBadgeOn: { backgroundColor: '#dcfce7' },
+  mfaBadgeText: {
+    fontSize: 11,
+    fontFamily: 'Nunito-Bold',
+    color: colors.textSecondary,
+  },
+  mfaBadgeTextOn: { color: '#16a34a' },
+  mfaMsg: {
+    fontSize: 12,
+    fontFamily: 'Nunito-Regular',
+    color: colors.primary,
+    textAlign: 'center',
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  mfaToggleBtn: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    paddingVertical: 10,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+  },
+  mfaToggleBtnDanger: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: colors.error,
+  },
+  mfaToggleText: { fontSize: 14, fontFamily: 'Nunito-Bold', color: '#fff' },
+  mfaToggleTextDanger: { color: colors.error },
+  mfaInputSection: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    gap: 8,
+  },
+  mfaInput: {
+    height: 44,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    color: colors.text,
+  },
+  mfaBtnRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  mfaCancelBtn: { paddingVertical: 8, paddingHorizontal: 16 },
+  mfaCancelText: {
+    fontSize: 14,
+    fontFamily: 'Nunito-SemiBold',
+    color: colors.textSecondary,
+  },
 
   modalOverlay: {
     flex: 1,

@@ -586,7 +586,15 @@
     "deletePasswordRequired": "Please enter your password to confirm.",
     "deleteFailed": "Failed to delete account.",
     "deleteWarning": "This permanently deletes your account and all associated data. This action cannot be undone. Enter your password to confirm.",
-    "confirmDelete": "Delete Account"
+    "confirmDelete": "Delete Account",
+    "twoFactorAuth": "Two-Factor Authentication",
+    "mfaDesc": "Add extra security with email verification codes.",
+    "enableMfa": "Enable MFA",
+    "disableMfa": "Disable MFA",
+    "enterPassword": "Enter your password",
+    "enterCode": "Enter the 6-digit code sent to your email.",
+    "mfaEnabled": "MFA has been enabled.",
+    "mfaDisabled": "MFA has been disabled."
   },
   "teacherSettings": {
     "title": "Settings"
