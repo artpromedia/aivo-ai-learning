@@ -5,6 +5,8 @@ import type { Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -142,11 +144,35 @@ export default function HomeworkScreen() {
     await submitImage(picked.assets[0]);
   }, [submitImage, t]);
 
-  const onCapturePress = () => {
-    // Legacy stub — kept for the PDF / "choose file" button until expo-document-picker
-    // + expo-file-system are wired up to read PDFs as base64.
-    Alert.alert(t('learnerHomework.title'), t('learnerHomework.comingSoon'));
-  };
+  const onPickPdf = useCallback(async () => {
+    if (!user?.id) return;
+    setUploadError(null);
+    const picked = await DocumentPicker.getDocumentAsync({
+      type: 'application/pdf',
+      multiple: false,
+      copyToCacheDirectory: true,
+    });
+    if (picked.canceled || !picked.assets?.[0]) return;
+    const asset = picked.assets[0];
+    // Cap at 10MB to avoid OOM/oversized base64 payloads on the server.
+    if (typeof asset.size === 'number' && asset.size > 10 * 1024 * 1024) {
+      setUploadError(t('learnerHomework.pdfTooLarge'));
+      return;
+    }
+    try {
+      const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      await uploadHomework.mutateAsync({
+        learnerId: user.id,
+        imageBase64: base64,
+        mimeType: asset.mimeType || 'application/pdf',
+      });
+    } catch (err: any) {
+      setUploadError(err?.message || t('learnerHomework.uploadFailed'));
+    }
+  }, [t, uploadHomework, user?.id]);
+
 
   return (
     <ScrollView
@@ -257,9 +283,10 @@ export default function HomeworkScreen() {
         <Text style={styles.uploadDesc}>{t('learnerHomework.uploadPDFDesc')}</Text>
         <AivoButton
           title={t('learnerHomework.chooseFile')}
-          onPress={onCapturePress}
+          onPress={onPickPdf}
           variant="secondary"
           size="sm"
+          disabled={uploadHomework.isPending}
           style={{ marginTop: spacing.sm }}
         />
       </AivoCard>

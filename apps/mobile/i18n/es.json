@@ -487,7 +487,8 @@
     "cameraPermissionDenied": "Se necesita permiso de cámara para tomar una foto de la tarea.",
     "galleryPermissionDenied": "Se necesita permiso de la galería para elegir una imagen de la tarea.",
     "subscriptionRequiredTitle": "Suscripción requerida",
-    "subscriptionRequiredBody": "Esta tarea parece de {{subject}} — necesitas una suscripción de tutor de {{subject}} para obtener ayuda."
+    "subscriptionRequiredBody": "Esta tarea parece de {{subject}} — necesitas una suscripción de tutor de {{subject}} para obtener ayuda.",
+    "pdfTooLarge": "Ese PDF es demasiado grande. Elige un archivo de menos de 10 MB."
   },
   "learnerQuests": {
     "title": "Mundos de Misiones",

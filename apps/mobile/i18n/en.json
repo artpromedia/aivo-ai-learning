@@ -487,7 +487,8 @@
     "cameraPermissionDenied": "Camera permission is required to take a homework photo.",
     "galleryPermissionDenied": "Photo library permission is required to pick a homework image.",
     "subscriptionRequiredTitle": "Subscription required",
-    "subscriptionRequiredBody": "This homework looks like {{subject}} — you need a {{subject}} tutor subscription to get help."
+    "subscriptionRequiredBody": "This homework looks like {{subject}} — you need a {{subject}} tutor subscription to get help.",
+    "pdfTooLarge": "That PDF is too large. Please choose a file under 10 MB."
   },
   "learnerQuests": {
     "title": "Quest Worlds",
