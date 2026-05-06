@@ -92,6 +92,8 @@ export default function TherapistSessionsPage() {
           tutorSku: `therapy-${logCategory}`,
           topic: logNotes.slice(0, 100) || `${logCategory} session`,
           contentType: "THERAPY_SESSION",
+          sessionDate: logDate,
+          durationMinutes: parseInt(logDuration, 10) || undefined,
         }),
       });
       if (!res.ok) throw new Error("Failed to log session");

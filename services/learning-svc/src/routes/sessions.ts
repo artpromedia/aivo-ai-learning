@@ -27,7 +27,15 @@ async function fetchBrainContext(learnerId: string): Promise<Record<string, unkn
 
 export function registerSessionRoutes(app: FastifyInstance, db: any) {
   app.post("/api/learning/sessions", async (request, reply) => {
-    const { learnerId, tutorSku, topic, contentType } = request.body as any;
+    const body = request.body as {
+      learnerId?: string;
+      tutorSku?: string;
+      topic?: string;
+      contentType?: string;
+      sessionDate?: string;
+      durationMinutes?: number | string;
+    };
+    const { learnerId, tutorSku, topic, contentType } = body;
     if (!learnerId || !tutorSku) {
       return reply.code(400).send({ error: "learnerId and tutorSku required" });
     }
@@ -35,6 +43,58 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     const access = await requireLearnerAccess(request, reply, db, learnerId);
     if (!access) return;
     const tenantId = access.tenantId;
+
+    // ---- Optional manual-entry fields (Phase 4 backend gap) -------------
+    // The web therapist sessions page and mobile (therapist) sessions tab
+    // collect a session date and a duration in minutes; honour them on the
+    // initial insert so the row reflects when the documented session
+    // actually happened, not when the therapist clicked "Log".
+    let startedAt: Date | undefined;
+    if (typeof body.sessionDate === "string" && body.sessionDate.trim()) {
+      const parsed = new Date(body.sessionDate);
+      if (!Number.isNaN(parsed.getTime())) startedAt = parsed;
+    }
+    let durationSeconds = 0;
+    if (body.durationMinutes != null) {
+      const minutes = typeof body.durationMinutes === "string"
+        ? parseFloat(body.durationMinutes)
+        : body.durationMinutes;
+      if (Number.isFinite(minutes) && minutes > 0) {
+        // Clamp to a reasonable cap (8 h) so a typo can't poison reports.
+        durationSeconds = Math.round(Math.min(minutes, 480) * 60);
+      }
+    }
+
+    // ---- Manual therapy-session log path (Phase 4 backend gap) ----------
+    // The dashboards POST `contentType: "THERAPY_SESSION"` to record a
+    // therapist-led session that already happened. That value is not in
+    // the `content_type` enum, and there is no AI lesson to generate, so
+    // short-circuit: store with the LESSON content-type, mark COMPLETED,
+    // stash the original category and notes in `session_data`, and skip
+    // the content-generation pipeline entirely.
+    if (contentType === "THERAPY_SESSION") {
+      const subject = tutorSku.startsWith("therapy-") ? tutorSku.slice(8) : "therapy";
+      const completedAt = startedAt ?? new Date();
+      const [session] = await db.insert(lessonSessions).values({
+        tenantId,
+        learnerId,
+        tutorSku,
+        subject,
+        status: "COMPLETED",
+        contentType: "LESSON",
+        functioningLevel: null,
+        sessionData: {
+          manualLog: true,
+          source: "therapy_session",
+          category: subject,
+          notes: typeof topic === "string" ? topic : null,
+        },
+        durationSeconds,
+        startedAt: startedAt ?? new Date(),
+        completedAt,
+      }).returning();
+      return { sessionId: session.id, status: "COMPLETED" };
+    }
 
     const subject = getSubjectForTutor(tutorSku);
     const brainContext = await fetchBrainContext(learnerId);
@@ -49,6 +109,8 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
       contentType: contentType || "LESSON",
       functioningLevel,
       brainContextSnapshot: brainContext,
+      ...(startedAt ? { startedAt } : {}),
+      ...(durationSeconds > 0 ? { durationSeconds } : {}),
     }).returning();
 
     try {

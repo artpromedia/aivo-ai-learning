@@ -10,13 +10,14 @@
  *   POST /api/learning/sessions
  *        { learnerId, tutorSku: `therapy-${category}`,
  *          topic: notes.slice(0,100) || `${category} session`,
- *          contentType: 'THERAPY_SESSION' }
+ *          contentType: 'THERAPY_SESSION',
+ *          sessionDate: 'YYYY-MM-DD',
+ *          durationMinutes: number }
  *
- * The web form also exposes Date and Duration inputs but, like the web
- * version, we do *not* transmit them — the learning-svc POST schema
- * doesn't accept them today. They're surfaced for the therapist's own
- * record-keeping until the backend grows the fields. Tracked under
- * Phase 4 (backend gaps).
+ * `sessionDate` and `durationMinutes` are honoured by learning-svc as of
+ * Phase 4 (backend gaps) — the row is inserted with `started_at` and
+ * `duration_seconds` set so the history reflects when the documented
+ * session actually happened.
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -135,6 +136,8 @@ export default function TherapistSessionsScreen() {
           tutorSku: `therapy-${logCategory}`,
           topic: logNotes.slice(0, 100) || `${logCategory} session`,
           contentType: 'THERAPY_SESSION',
+          sessionDate: logDate,
+          durationMinutes: parseInt(logDuration, 10) || undefined,
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

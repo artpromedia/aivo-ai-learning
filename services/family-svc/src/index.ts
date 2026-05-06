@@ -17,6 +17,7 @@ import { registerObservationRoutes } from "./routes/observations.js";
 import { registerSpeechBuddyConsentRoutes } from "./routes/speech-buddy-consent.js";
 import { registerWhatsWorkingRoutes } from "./routes/whats-working.js";
 import { registerInterestRoutes } from "./routes/interests.js";
+import { registerFamilyGoalsRoutes } from "./routes/family-goals.js";
 
 const logger = createLogger("family-svc");
 const PORT = parseInt(process.env.FAMILY_PORT || "3007", 10);
@@ -56,6 +57,7 @@ async function start() {
   await registerSpeechBuddyConsentRoutes(app);
   await registerWhatsWorkingRoutes(app);
   await registerInterestRoutes(app);
+  await registerFamilyGoalsRoutes(app);
 
   await bootstrapOpsAlerts({ service: "family-svc", app, beforeExit: () => app.close() });
 
