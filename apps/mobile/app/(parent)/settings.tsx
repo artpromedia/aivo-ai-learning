@@ -47,7 +47,11 @@ export default function ParentSettings() {
     try {
       const res = await apiFetch(API.IDENTITY, '/api/users/learners');
       if (!res.ok) {
-        Alert.alert(t('common.error'), t('parentSettings.pinLoadFailed'));
+        const data = await res.json().catch(() => ({}));
+        Alert.alert(
+          t('common.error'),
+          data?.error || t('parentSettings.pinLoadFailed'),
+        );
         return;
       }
       const learnersList = await res.json();
@@ -99,7 +103,11 @@ export default function ParentSettings() {
           }),
         );
       } else {
-        Alert.alert(t('common.error'), t('parentSettings.exportFailed'));
+        const data = await res.json().catch(() => ({}));
+        Alert.alert(
+          t('common.error'),
+          data?.error || t('parentSettings.exportFailed'),
+        );
       }
     } catch {
       Alert.alert(t('common.error'), t('auth.somethingWentWrong'));
