@@ -211,16 +211,46 @@
     "empty": "Achievements will appear here as your child progresses!",
     "open": "Milestones",
     "badges": {
-      "first_session": { "name": "First Session", "description": "Complete first tutoring session" },
-      "on_fire": { "name": "On Fire", "description": "7-day streak" },
-      "brain_activated": { "name": "Brain Activated", "description": "Brain profile approved" },
-      "bookworm": { "name": "Bookworm", "description": "10 sessions completed" },
-      "mastery_champion": { "name": "Mastery Champion", "description": "Any subject above 75%" },
-      "goal_getter": { "name": "Goal Getter", "description": "IEP goal met" },
-      "team_player": { "name": "Team Player", "description": "Full learning team" },
-      "multi_subject": { "name": "Multi-Subject", "description": "Active in 3+ subjects" },
-      "speed_learner": { "name": "Speed Learner", "description": "Top 25% session time" },
-      "explorer": { "name": "Explorer", "description": "All subject areas explored" }
+      "first_session": {
+        "name": "First Session",
+        "description": "Complete first tutoring session"
+      },
+      "on_fire": {
+        "name": "On Fire",
+        "description": "7-day streak"
+      },
+      "brain_activated": {
+        "name": "Brain Activated",
+        "description": "Brain profile approved"
+      },
+      "bookworm": {
+        "name": "Bookworm",
+        "description": "10 sessions completed"
+      },
+      "mastery_champion": {
+        "name": "Mastery Champion",
+        "description": "Any subject above 75%"
+      },
+      "goal_getter": {
+        "name": "Goal Getter",
+        "description": "IEP goal met"
+      },
+      "team_player": {
+        "name": "Team Player",
+        "description": "Full learning team"
+      },
+      "multi_subject": {
+        "name": "Multi-Subject",
+        "description": "Active in 3+ subjects"
+      },
+      "speed_learner": {
+        "name": "Speed Learner",
+        "description": "Top 25% session time"
+      },
+      "explorer": {
+        "name": "Explorer",
+        "description": "All subject areas explored"
+      }
     }
   },
   "parentOnboard": {
@@ -757,5 +787,24 @@
   },
   "therapistSettings": {
     "title": "Settings"
+  },
+  "learnerHomeworkSession": {
+    "title": "Homework Session",
+    "subjectTitle": "{{subject}} Homework",
+    "progress": "{{done}}/{{total}} done",
+    "showProblems": "Show problems",
+    "hideProblems": "Hide problems",
+    "problemNumber": "Problem {{number}}",
+    "markDone": "Mark done",
+    "done": "Done",
+    "placeholder": "Type your answer or question…",
+    "send": "Send",
+    "thinking": "Thinking…",
+    "sendError": "Sorry, I had trouble thinking about that. Could you try again?",
+    "completeError": "Could not finish the session. Please try again.",
+    "finish": "Finish session",
+    "notFound": "Couldn't load this homework session.",
+    "greetingNoProblems": "Hi! I'm here to help with your homework. What would you like to work on?",
+    "greetingWithProblems": "Hi! I see you have {{count}} problems to work on. Let's start with Problem {{first}}. Take a look and tell me what you think the first step is!"
   }
 }

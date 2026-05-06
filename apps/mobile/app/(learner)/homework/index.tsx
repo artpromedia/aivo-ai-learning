@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
+import type { Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
-import { useHomeworkAssignments, type HomeworkAssignment } from '@/hooks/useHomework';
+import { useHomeworkAssignments, useStartHomeworkSession, type HomeworkAssignment } from '@/hooks/useHomework';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
@@ -43,9 +44,25 @@ export default function HomeworkScreen() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { data: assignments, isLoading } = useHomeworkAssignments(user?.id ?? '');
+  const startSession = useStartHomeworkSession();
 
-  const onAssignmentPress = (a: HomeworkAssignment) => {
-    Alert.alert(t('learnerHomework.title'), t('learnerHomework.openOnWeb'));
+  const onAssignmentPress = async (a: HomeworkAssignment) => {
+    if (a.status !== 'READY' && a.status !== 'IN_PROGRESS') {
+      // Other statuses (PROCESSING/COMPLETED/FAILED) aren't actionable from
+      // the chat view; surface a status alert instead of routing to a stub.
+      Alert.alert(t('learnerHomework.title'), t('learnerHomework.openOnWeb'));
+      return;
+    }
+    if (!user?.id) return;
+    try {
+      const result = await startSession.mutateAsync({
+        assignmentId: a.id,
+        learnerId: user.id,
+      });
+      router.push(`/(learner)/homework/${result.sessionId}` as Href);
+    } catch {
+      Alert.alert(t('learnerHomework.title'), t('learnerHomework.openOnWeb'));
+    }
   };
 
   const onCapturePress = () => {

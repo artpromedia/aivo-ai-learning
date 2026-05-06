@@ -211,16 +211,46 @@
     "empty": "¡Los logros aparecerán aquí a medida que tu hijo progrese!",
     "open": "Logros",
     "badges": {
-      "first_session": { "name": "Primera Sesión", "description": "Completa la primera sesión de tutoría" },
-      "on_fire": { "name": "En Llamas", "description": "Racha de 7 días" },
-      "brain_activated": { "name": "Cerebro Activado", "description": "Perfil cerebral aprobado" },
-      "bookworm": { "name": "Ratón de Biblioteca", "description": "10 sesiones completadas" },
-      "mastery_champion": { "name": "Campeón de Maestría", "description": "Cualquier materia sobre 75%" },
-      "goal_getter": { "name": "Cazador de Metas", "description": "Meta del IEP cumplida" },
-      "team_player": { "name": "Jugador de Equipo", "description": "Equipo de aprendizaje completo" },
-      "multi_subject": { "name": "Multi-Materia", "description": "Activo en 3+ materias" },
-      "speed_learner": { "name": "Aprendiz Veloz", "description": "Top 25% de tiempo de sesión" },
-      "explorer": { "name": "Explorador", "description": "Todas las áreas exploradas" }
+      "first_session": {
+        "name": "Primera Sesión",
+        "description": "Completa la primera sesión de tutoría"
+      },
+      "on_fire": {
+        "name": "En Llamas",
+        "description": "Racha de 7 días"
+      },
+      "brain_activated": {
+        "name": "Cerebro Activado",
+        "description": "Perfil cerebral aprobado"
+      },
+      "bookworm": {
+        "name": "Ratón de Biblioteca",
+        "description": "10 sesiones completadas"
+      },
+      "mastery_champion": {
+        "name": "Campeón de Maestría",
+        "description": "Cualquier materia sobre 75%"
+      },
+      "goal_getter": {
+        "name": "Cazador de Metas",
+        "description": "Meta del IEP cumplida"
+      },
+      "team_player": {
+        "name": "Jugador de Equipo",
+        "description": "Equipo de aprendizaje completo"
+      },
+      "multi_subject": {
+        "name": "Multi-Materia",
+        "description": "Activo en 3+ materias"
+      },
+      "speed_learner": {
+        "name": "Aprendiz Veloz",
+        "description": "Top 25% de tiempo de sesión"
+      },
+      "explorer": {
+        "name": "Explorador",
+        "description": "Todas las áreas exploradas"
+      }
     }
   },
   "parentOnboard": {
@@ -757,5 +787,24 @@
   },
   "therapistSettings": {
     "title": "Configuración"
+  },
+  "learnerHomeworkSession": {
+    "title": "Sesión de tarea",
+    "subjectTitle": "Tarea de {{subject}}",
+    "progress": "{{done}}/{{total}} hechos",
+    "showProblems": "Mostrar problemas",
+    "hideProblems": "Ocultar problemas",
+    "problemNumber": "Problema {{number}}",
+    "markDone": "Marcar como hecho",
+    "done": "Hecho",
+    "placeholder": "Escribe tu respuesta o pregunta…",
+    "send": "Enviar",
+    "thinking": "Pensando…",
+    "sendError": "Lo siento, no pude procesar eso. ¿Puedes intentarlo de nuevo?",
+    "completeError": "No se pudo finalizar la sesión. Inténtalo de nuevo.",
+    "finish": "Finalizar sesión",
+    "notFound": "No se pudo cargar esta sesión de tarea.",
+    "greetingNoProblems": "¡Hola! Estoy aquí para ayudarte con tu tarea. ¿En qué quieres trabajar?",
+    "greetingWithProblems": "¡Hola! Veo que tienes {{count}} problemas. Empecemos con el Problema {{first}}. Mira y dime cuál crees que es el primer paso."
   }
 }
