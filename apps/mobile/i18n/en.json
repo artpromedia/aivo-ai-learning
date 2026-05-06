@@ -420,6 +420,26 @@
     "noStudentsTitle": "No Students Connected",
     "noStudentsMessage": "Parents need to invite you to their child's care team."
   },
+  "teacherReports": {
+    "title": "Reports",
+    "subtitle": "Brain-informed mastery, engagement, and at-risk insights",
+    "weeklyMasteryTitle": "Weekly Mastery Report",
+    "weeklyMasteryDesc": "Track mastery progress across all your learners by subject and skill area.",
+    "atRiskTitle": "At-Risk Alerts",
+    "atRiskDesc": "Identify learners who may need additional support based on engagement and performance patterns.",
+    "engagementTitle": "Session Engagement",
+    "engagementDesc": "Monitor tutor session frequency, duration, and engagement metrics across your learners.",
+    "iepProgressTitle": "IEP Progress",
+    "iepProgressDesc": "Track IEP goal progress for learners with individualized education plans.",
+    "cadenceWeekly": "Generated weekly",
+    "cadenceDaily": "Updated daily",
+    "cadenceMonthly": "Generated monthly",
+    "studentOverview": "Student Overview",
+    "noLearnersTitle": "No Learners Connected",
+    "noLearnersMessage": "Reports will appear once parents invite you to their learner teams.",
+    "pending": "Pending",
+    "gradeLabel": "Grade"
+  },
   "teacherAnalytics": {
     "title": "Class Analytics",
     "subtitle": "Functioning level distribution and progress",
