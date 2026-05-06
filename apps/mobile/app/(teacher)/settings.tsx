@@ -15,7 +15,7 @@ export default function TeacherSettings() {
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
     >
       <Text style={styles.title}>{t('teacherSettings.title')}</Text>
-      <AccountSettingsCard avatarInitial="T" />
+      <AccountSettingsCard />
       <Text style={styles.version}>{t('common.appVersion')}</Text>
     </ScrollView>
   );
