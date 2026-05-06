@@ -106,7 +106,13 @@
     "changePasswordReasonTooWeak": "Not strong enough — add more length or variety",
     "changePasswordReasonBreached": "This password has appeared in a public breach",
     "changePasswordReasonReused": "You've used this password before",
-    "changePasswordReasonMissingDiversity": "Use at least 3 of: lowercase, uppercase, digits, symbols"
+    "changePasswordReasonMissingDiversity": "Use at least 3 of: lowercase, uppercase, digits, symbols",
+    "resetPasswordTitle": "Choose a new password",
+    "resetPasswordSubtitle": "Enter and confirm your new password to finish resetting it.",
+    "resetPasswordMissingToken": "This reset link is invalid or has expired. Please request a new one.",
+    "resetPasswordExpiredLink": "Invalid or expired reset link",
+    "resetPasswordSuccess": "Password updated. You can now sign in.",
+    "resetPasswordSubmit": "Update password"
   },
   "parent": {
     "greeting": "Hello, {{name}}",

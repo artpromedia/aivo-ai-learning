@@ -106,7 +106,13 @@
     "changePasswordReasonTooWeak": "No es lo suficientemente fuerte — añade más longitud o variedad",
     "changePasswordReasonBreached": "Esta contraseña ha aparecido en una filtración pública",
     "changePasswordReasonReused": "Ya has usado esta contraseña antes",
-    "changePasswordReasonMissingDiversity": "Usa al menos 3 de: minúsculas, mayúsculas, dígitos, símbolos"
+    "changePasswordReasonMissingDiversity": "Usa al menos 3 de: minúsculas, mayúsculas, dígitos, símbolos",
+    "resetPasswordTitle": "Elige una contraseña nueva",
+    "resetPasswordSubtitle": "Introduce y confirma tu nueva contraseña para terminar el restablecimiento.",
+    "resetPasswordMissingToken": "Este enlace de restablecimiento es inválido o ha expirado. Solicita uno nuevo.",
+    "resetPasswordExpiredLink": "Enlace de restablecimiento inválido o expirado",
+    "resetPasswordSuccess": "Contraseña actualizada. Ya puedes iniciar sesión.",
+    "resetPasswordSubmit": "Actualizar contraseña"
   },
   "parent": {
     "greeting": "Hola, {{name}}",

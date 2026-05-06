@@ -36,6 +36,19 @@ const DEV_PORTS = {
 // (matching the `apps/web/next.config.ts` rewrites).
 const PROD_BASE = (process.env.EXPO_PUBLIC_API_URL || '').replace(/\/+$/, '');
 
+// Surface an obvious warning at startup when the production build was
+// shipped without the API origin baked in. Without this, every API call
+// silently resolves to a relative path against the empty string and the
+// failure mode is "the app appears broken" with no signal to the operator.
+// We only warn (don't throw) so that web/Metro can still boot for inspection.
+if (!__DEV__ && !PROD_BASE) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[aivo] EXPO_PUBLIC_API_URL is not set for this production build — ' +
+      'all API calls will fail. Set it via EAS env / app.config and rebuild.',
+  );
+}
+
 function svc(port: number): string {
   if (__DEV__) return `${DEV_HOST}:${port}`;
   return PROD_BASE;
