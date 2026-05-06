@@ -22,7 +22,8 @@
     "on": "Activado",
     "off": "Desactivado",
     "saving": "Guardando...",
-    "confirm": "Confirmar"
+    "confirm": "Confirmar",
+    "appVersion": "AIVO Learning v1.0.0"
   },
   "auth": {
     "aiPoweredLearning": "Aprendizaje con IA",
@@ -92,7 +93,20 @@
     "pleaseEnterEmail": "Ingresa tu correo electrónico",
     "somethingWentWrong": "Algo salió mal. Intenta de nuevo.",
     "checkYourEmail": "Revisa Tu Correo",
-    "resetEmailSent": "Si existe una cuenta para {{email}}, recibirás un enlace para restablecer tu contraseña."
+    "resetEmailSent": "Si existe una cuenta para {{email}}, recibirás un enlace para restablecer tu contraseña.",
+    "changePasswordTitle": "Actualiza tu contraseña",
+    "changePasswordSubtitle": "Por seguridad, debes elegir una nueva contraseña antes de continuar.",
+    "changePasswordCurrent": "Contraseña actual",
+    "changePasswordNew": "Nueva contraseña",
+    "changePasswordNewPlaceholder": "Al menos 12 caracteres",
+    "changePasswordSubmit": "Actualizar contraseña",
+    "changePasswordFailed": "No se pudo actualizar la contraseña",
+    "changePasswordFillAll": "Completa todos los campos",
+    "changePasswordReasonTooShort": "Demasiado corta — se requieren al menos 12 caracteres (14 para personal)",
+    "changePasswordReasonTooWeak": "No es lo suficientemente fuerte — añade más longitud o variedad",
+    "changePasswordReasonBreached": "Esta contraseña ha aparecido en una filtración pública",
+    "changePasswordReasonReused": "Ya has usado esta contraseña antes",
+    "changePasswordReasonMissingDiversity": "Usa al menos 3 de: minúsculas, mayúsculas, dígitos, símbolos"
   },
   "parent": {
     "greeting": "Hola, {{name}}",
@@ -113,30 +127,16 @@
   },
   "parentSettings": {
     "title": "Configuración",
-    "accountDetails": "Detalles de Cuenta",
-    "notifications": "Notificaciones",
-    "language": "Idioma",
     "managePins": "Administrar PINs",
     "exportData": "Exportar Datos (RGPD)",
-    "deleteAccount": "Eliminar Cuenta",
-    "deleteAccountConfirm": "Esta acción no se puede deshacer. Por favor contacte a soporte para eliminar su cuenta.",
-    "appVersion": "AIVO Learning v1.0.0",
-    "twoFactorAuth": "Autenticación de dos factores",
-    "mfaDesc": "Agrega seguridad extra con códigos de verificación por correo.",
-    "enableMfa": "Activar MFA",
-    "disableMfa": "Desactivar MFA",
-    "enterPassword": "Ingresa tu contraseña",
-    "mfaEnabled": "MFA ha sido activado.",
-    "mfaDisabled": "MFA ha sido desactivado.",
-    "enterCode": "Ingresa el código de 6 dígitos enviado a tu correo.",
-    "avatarChange": "Cambiar foto",
-    "avatarAdd": "Añadir foto",
-    "avatarRemove": "Quitar foto",
-    "avatarRemoveConfirm": "¿Quitar tu foto de perfil?",
-    "avatarUploadFailed": "No se pudo subir la foto. Inténtalo de nuevo.",
-    "avatarPermissionDenied": "Se necesita permiso para acceder a las fotos.",
-    "avatarInvalidType": "Elige una imagen JPEG, PNG o WebP.",
-    "avatarTooLarge": "La imagen supera los 5 MB."
+    "newPinLabel": "Nuevo PIN de 4 dígitos",
+    "pinLengthError": "El PIN debe tener 4 dígitos.",
+    "pinLoadFailed": "No se pudieron cargar los perfiles de aprendices.",
+    "pinNoLearners": "No se encontraron perfiles de aprendices para actualizar el PIN.",
+    "pinUpdated": "PIN actualizado para {{name}}.",
+    "pinUpdateFailed": "No se pudo actualizar el PIN.",
+    "exportSummary": "Tus datos de cuenta han sido preparados.\n\nNombre: {{name}}\nCorreo: {{email}}\nRol: {{role}}\n\nSe ha enviado una exportación completa a tu correo.",
+    "exportFailed": "No se pudieron exportar los datos."
   },
   "parentBilling": {
     "title": "Facturación y Suscripción",
@@ -560,5 +560,40 @@
     "lessonPlans": "Planes",
     "alerts": "Alertas",
     "clients": "Clientes"
+  },
+  "accountSettings": {
+    "accountDetails": "Detalles de Cuenta",
+    "changePassword": "Cambiar Contraseña",
+    "deleteAccount": "Eliminar Cuenta",
+    "fullName": "Nombre completo",
+    "nameRequired": "El nombre es obligatorio.",
+    "accountUpdated": "Cuenta actualizada.",
+    "accountUpdateFailed": "No se pudo actualizar la cuenta.",
+    "deletePasswordRequired": "Ingresa tu contraseña para confirmar.",
+    "deleteFailed": "No se pudo eliminar la cuenta.",
+    "deleteWarning": "Esto elimina permanentemente tu cuenta y todos los datos asociados. Esta acción no se puede deshacer. Ingresa tu contraseña para confirmar.",
+    "confirmDelete": "Eliminar Cuenta",
+    "twoFactorAuth": "Autenticación de dos factores",
+    "mfaDesc": "Agrega seguridad extra con códigos de verificación por correo.",
+    "enableMfa": "Activar MFA",
+    "disableMfa": "Desactivar MFA",
+    "enterPassword": "Ingresa tu contraseña",
+    "enterCode": "Ingresa el código de 6 dígitos enviado a tu correo.",
+    "mfaEnabled": "MFA ha sido activado.",
+    "mfaDisabled": "MFA ha sido desactivado.",
+    "avatarChange": "Cambiar foto",
+    "avatarAdd": "Añadir foto",
+    "avatarRemove": "Quitar foto",
+    "avatarRemoveConfirm": "¿Quitar tu foto de perfil?",
+    "avatarUploadFailed": "No se pudo subir la foto. Inténtalo de nuevo.",
+    "avatarPermissionDenied": "Se necesita permiso para acceder a las fotos.",
+    "avatarInvalidType": "Elige una imagen JPEG, PNG o WebP.",
+    "avatarTooLarge": "La imagen supera los 5 MB."
+  },
+  "teacherSettings": {
+    "title": "Configuración"
+  },
+  "therapistSettings": {
+    "title": "Configuración"
   }
 }
