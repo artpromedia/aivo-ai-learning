@@ -73,7 +73,14 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     // stash the original category and notes in `session_data`, and skip
     // the content-generation pipeline entirely.
     if (contentType === "THERAPY_SESSION") {
-      const subject = tutorSku.startsWith("therapy-") ? tutorSku.slice(8) : "therapy";
+      // tutorSku follows the `therapy-${category}` convention agreed with
+      // the web + mobile therapist sessions screens; strip the prefix to
+      // recover the raw category (e.g. "speech", "occupational"). Falls
+      // back to "therapy" if the client sent something off-pattern.
+      const THERAPY_SKU_PREFIX = "therapy-";
+      const subject = tutorSku.startsWith(THERAPY_SKU_PREFIX)
+        ? tutorSku.slice(THERAPY_SKU_PREFIX.length)
+        : "therapy";
       const sessionTimestamp = startedAt ?? new Date();
       const [session] = await db.insert(lessonSessions).values({
         tenantId,
