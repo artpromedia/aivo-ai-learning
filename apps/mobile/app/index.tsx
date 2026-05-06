@@ -3,6 +3,10 @@ import { router, type Href } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { colors } from '@/constants/colors';
+import {
+  getPendingDeepLink,
+  clearPendingDeepLink,
+} from '@/lib/pendingDeepLink';
 
 export default function Index() {
   const { isAuthenticated, isLoading, user, mustChangePassword } = useAuth();
@@ -29,25 +33,43 @@ export default function Index() {
       return;
     }
 
-    switch (user.role) {
-      case 'PARENT':
-        router.replace('/(parent)' as Href);
-        break;
-      case 'LEARNER':
-        router.replace('/(learner)' as Href);
-        break;
-      case 'TEACHER':
-        router.replace('/(teacher)' as Href);
-        break;
-      case 'CAREGIVER':
-        router.replace('/(caregiver)' as Href);
-        break;
-      case 'THERAPIST':
-        router.replace('/(therapist)' as Href);
-        break;
-      default:
-        router.replace('/(auth)/login');
-    }
+    // If an unauthenticated deep link (e.g. accept-invite) was stashed
+    // before sign-in, consume it now. We do this *after* the
+    // mustChangePassword gate so a stale invite link can't bypass forced
+    // rotation, and *before* role-routing so the user lands where they
+    // were originally headed instead of a dashboard.
+    let cancelled = false;
+    (async () => {
+      const pending = await getPendingDeepLink();
+      if (cancelled) return;
+      if (pending) {
+        await clearPendingDeepLink();
+        router.replace(pending as Href);
+        return;
+      }
+      switch (user.role) {
+        case 'PARENT':
+          router.replace('/(parent)' as Href);
+          break;
+        case 'LEARNER':
+          router.replace('/(learner)' as Href);
+          break;
+        case 'TEACHER':
+          router.replace('/(teacher)' as Href);
+          break;
+        case 'CAREGIVER':
+          router.replace('/(caregiver)' as Href);
+          break;
+        case 'THERAPIST':
+          router.replace('/(therapist)' as Href);
+          break;
+        default:
+          router.replace('/(auth)/login');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [isAuthenticated, isLoading, user, mustChangePassword]);
 
   return (

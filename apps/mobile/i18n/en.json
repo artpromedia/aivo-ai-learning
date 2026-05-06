@@ -23,7 +23,8 @@
     "off": "Off",
     "saving": "Saving...",
     "confirm": "Confirm",
-    "appVersion": "AIVO Learning v1.0.0"
+    "appVersion": "AIVO Learning v1.0.0",
+    "unknownError": "Unknown error"
   },
   "auth": {
     "aiPoweredLearning": "AI-Powered Learning",
@@ -112,7 +113,19 @@
     "resetPasswordMissingToken": "This reset link is invalid or has expired. Please request a new one.",
     "resetPasswordExpiredLink": "Invalid or expired reset link",
     "resetPasswordSuccess": "Password updated. You can now sign in.",
-    "resetPasswordSubmit": "Update password"
+    "resetPasswordSubmit": "Update password",
+    "acceptInviteTitle": "Accept your invitation",
+    "acceptInviteNeedsLogin": "You've been invited to join a learning team. Sign in or create your account to continue.",
+    "acceptInviteNeedsLoginWithEmail": "You've been invited to join a learning team for {{email}}.",
+    "acceptInviteHaveAccount": "I already have an account",
+    "acceptInviteCreateAccount": "Create a new account",
+    "acceptInviteWrongEmail": "You're signed in as {{current}}, but this invitation is for {{invited}}. Please sign out and sign in with the invited address.",
+    "acceptInviteSwitchAccount": "Sign in with a different account",
+    "acceptInviteAccepting": "Accepting your invitation…",
+    "acceptInviteSuccess": "You've been added to {{count}} learner team(s). Welcome!",
+    "acceptInviteNoneFound": "No pending invitations were found for your account. If you were expecting one, ask the parent to re-send the invite to {{email}}.",
+    "acceptInviteContinue": "Continue to your dashboard",
+    "acceptInviteError": "Something went wrong: {{message}}"
   },
   "parent": {
     "greeting": "Hello, {{name}}",

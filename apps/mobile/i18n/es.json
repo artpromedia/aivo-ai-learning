@@ -23,7 +23,8 @@
     "off": "Desactivado",
     "saving": "Guardando...",
     "confirm": "Confirmar",
-    "appVersion": "AIVO Learning v1.0.0"
+    "appVersion": "AIVO Learning v1.0.0",
+    "unknownError": "Error desconocido"
   },
   "auth": {
     "aiPoweredLearning": "Aprendizaje con IA",
@@ -112,7 +113,19 @@
     "resetPasswordMissingToken": "Este enlace de restablecimiento es inválido o ha expirado. Solicita uno nuevo.",
     "resetPasswordExpiredLink": "Enlace de restablecimiento inválido o expirado",
     "resetPasswordSuccess": "Contraseña actualizada. Ya puedes iniciar sesión.",
-    "resetPasswordSubmit": "Actualizar contraseña"
+    "resetPasswordSubmit": "Actualizar contraseña",
+    "acceptInviteTitle": "Acepta tu invitación",
+    "acceptInviteNeedsLogin": "Te han invitado a unirte a un equipo de aprendizaje. Inicia sesión o crea tu cuenta para continuar.",
+    "acceptInviteNeedsLoginWithEmail": "Te han invitado a unirte a un equipo de aprendizaje para {{email}}.",
+    "acceptInviteHaveAccount": "Ya tengo una cuenta",
+    "acceptInviteCreateAccount": "Crear una cuenta nueva",
+    "acceptInviteWrongEmail": "Has iniciado sesión como {{current}}, pero esta invitación es para {{invited}}. Cierra sesión e inicia con la dirección invitada.",
+    "acceptInviteSwitchAccount": "Iniciar sesión con otra cuenta",
+    "acceptInviteAccepting": "Aceptando tu invitación…",
+    "acceptInviteSuccess": "Te hemos añadido a {{count}} equipo(s) de estudiantes. ¡Bienvenido!",
+    "acceptInviteNoneFound": "No se encontraron invitaciones pendientes para tu cuenta. Si esperabas una, pide al padre o madre que reenvíe la invitación a {{email}}.",
+    "acceptInviteContinue": "Continuar al panel",
+    "acceptInviteError": "Algo salió mal: {{message}}"
   },
   "parent": {
     "greeting": "Hola, {{name}}",
