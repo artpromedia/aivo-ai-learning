@@ -202,6 +202,27 @@
     "view": "View",
     "openOnWeb": "Open this notification on the web app to take action."
   },
+  "parentMilestones": {
+    "title": "Milestones & Badges",
+    "currentStreak": "Current Streak",
+    "longestStreak": "Longest Streak",
+    "badgeCollection": "Badge Collection",
+    "timeline": "Achievement Timeline",
+    "empty": "Achievements will appear here as your child progresses!",
+    "open": "Milestones",
+    "badges": {
+      "first_session": { "name": "First Session", "description": "Complete first tutoring session" },
+      "on_fire": { "name": "On Fire", "description": "7-day streak" },
+      "brain_activated": { "name": "Brain Activated", "description": "Brain profile approved" },
+      "bookworm": { "name": "Bookworm", "description": "10 sessions completed" },
+      "mastery_champion": { "name": "Mastery Champion", "description": "Any subject above 75%" },
+      "goal_getter": { "name": "Goal Getter", "description": "IEP goal met" },
+      "team_player": { "name": "Team Player", "description": "Full learning team" },
+      "multi_subject": { "name": "Multi-Subject", "description": "Active in 3+ subjects" },
+      "speed_learner": { "name": "Speed Learner", "description": "Top 25% session time" },
+      "explorer": { "name": "Explorer", "description": "All subject areas explored" }
+    }
+  },
   "parentOnboard": {
     "title": "Add a Child",
     "subtitle": "Set up your child's personalized learning profile",

@@ -202,6 +202,27 @@
     "view": "Ver",
     "openOnWeb": "Abre esta notificación en la app web para tomar acción."
   },
+  "parentMilestones": {
+    "title": "Logros e Insignias",
+    "currentStreak": "Racha Actual",
+    "longestStreak": "Racha Más Larga",
+    "badgeCollection": "Colección de Insignias",
+    "timeline": "Línea de Logros",
+    "empty": "¡Los logros aparecerán aquí a medida que tu hijo progrese!",
+    "open": "Logros",
+    "badges": {
+      "first_session": { "name": "Primera Sesión", "description": "Completa la primera sesión de tutoría" },
+      "on_fire": { "name": "En Llamas", "description": "Racha de 7 días" },
+      "brain_activated": { "name": "Cerebro Activado", "description": "Perfil cerebral aprobado" },
+      "bookworm": { "name": "Ratón de Biblioteca", "description": "10 sesiones completadas" },
+      "mastery_champion": { "name": "Campeón de Maestría", "description": "Cualquier materia sobre 75%" },
+      "goal_getter": { "name": "Cazador de Metas", "description": "Meta del IEP cumplida" },
+      "team_player": { "name": "Jugador de Equipo", "description": "Equipo de aprendizaje completo" },
+      "multi_subject": { "name": "Multi-Materia", "description": "Activo en 3+ materias" },
+      "speed_learner": { "name": "Aprendiz Veloz", "description": "Top 25% de tiempo de sesión" },
+      "explorer": { "name": "Explorador", "description": "Todas las áreas exploradas" }
+    }
+  },
   "parentOnboard": {
     "title": "Agregar un Hijo",
     "subtitle": "Configura el perfil de aprendizaje personalizado de tu hijo",

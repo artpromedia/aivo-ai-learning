@@ -77,6 +77,7 @@ export default function ParentLayout() {
       <Tabs.Screen name="team/[childId]" options={{ href: null }} />
       <Tabs.Screen name="billing" options={{ href: null }} />
       <Tabs.Screen name="inbox" options={{ href: null }} />
+      <Tabs.Screen name="milestones/[childId]" options={{ href: null }} />
     </Tabs>
   );
 }
