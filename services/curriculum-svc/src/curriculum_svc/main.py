@@ -4,6 +4,8 @@ skill-graphs / content-pack snapshot. See README.md for scope.
 """
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,9 +17,26 @@ app = FastAPI(
     description="Read-only curriculum lookup over the AIVO skill-graphs and content-pack catalogue.",
 )
 
+
+def _parse_cors_origins() -> list[str]:
+    """Parse ``CORS_ORIGINS`` env var; production fails closed (no wildcard)."""
+    raw = os.environ.get("CORS_ORIGINS", "").strip()
+    if raw:
+        return [s.strip() for s in raw.split(",") if s.strip()]
+    if os.environ.get("NODE_ENV") == "production" or os.environ.get("ENV") == "production":
+        return []
+    return [
+        "http://localhost:3000",
+        "http://localhost:5000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5000",
+    ]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_parse_cors_origins(),
     allow_credentials=True,
     allow_methods=["GET"],
     allow_headers=["*"],

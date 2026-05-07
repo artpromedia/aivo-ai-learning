@@ -35,10 +35,16 @@ e2e/test-results/
 e2e/jwt-private.pem
 e2e/jwt-public.pem
 
-# Temporary scripts
+# Temporary / scratch files (any extension, also dirs).
+# These must never be committed: they routinely contain debug PII,
+# operational secrets, build logs, raw network configs, etc.
 scripts/diag-*.mjs
-tmp_*.sql
-tmp_*.sh
+tmp_*
+tmp_*/
+
+# Replit / Nix workspace placeholder kept in repo root by mistake.
+# A real entrypoint lives in apps/marketing (see start.sh).
+/main.py
 
 # Secret scan reports
 gitleaks-report.json

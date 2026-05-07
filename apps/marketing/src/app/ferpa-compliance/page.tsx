@@ -118,8 +118,8 @@ export default function FerpaCompliancePage() {
         {
           title: "12. Data Security Measures",
           content: [
-            "We protect education records with administrative, technical, and physical safeguards that meet or exceed industry norms for student information. These include encryption in transit using TLS 1.3, encryption at rest using AES-256, single-tenant database isolation for student profiles, hardware-backed key management, role-based access control, multi-factor authentication for internal access, mandatory background checks for staff with access to education records, an annual SOC 2 Type II audit, quarterly third-party penetration testing, and a documented incident-response plan.",
-            "AIVO maintains an information-security program that aligns with the NIST Cybersecurity Framework and the controls in NIST SP 800-171. We make our most recent SOC 2 Type II report and our security questionnaire (CAIQ-Lite and HECVAT-Lite) available to current and prospective school customers under NDA.",
+            "We protect education records with administrative, technical, and physical safeguards that meet or exceed industry norms for student information. These include encryption in transit using TLS 1.3, encryption at rest using AES-256, single-tenant database isolation for student profiles, hardware-backed key management, role-based access control, multi-factor authentication for internal access, mandatory background checks for staff with access to education records, controls aligned with the SOC 2 Trust Services Criteria for security and availability, regular third-party penetration testing, and a documented incident-response plan.",
+            "AIVO maintains an information-security program that aligns with the NIST Cybersecurity Framework and the controls in NIST SP 800-171. Our most recent security questionnaire (CAIQ-Lite and HECVAT-Lite), and any SOC 2 attestation when available, are made available to current and prospective school customers under NDA.",
           ],
         },
         {

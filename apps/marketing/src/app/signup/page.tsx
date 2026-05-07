@@ -241,7 +241,7 @@ function SignupInner() {
           <div className="text-center mt-7">
             <div className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 bg-white/70 backdrop-blur px-4 py-2 rounded-full border border-slate-200">
               <ShieldCheck className="w-4 h-4 text-[hsl(var(--visual-primary))]" aria-hidden="true" />
-              COPPA · FERPA · SOC 2 Compliant
+              COPPA &amp; FERPA Compliant
             </div>
             <p className="text-sm font-medium text-slate-500 mt-5">
               Already have an account?{" "}

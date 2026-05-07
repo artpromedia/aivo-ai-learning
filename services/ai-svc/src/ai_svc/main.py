@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routes.health import router as health_router
@@ -18,9 +20,30 @@ app = FastAPI(
 # Structured request logging + /metrics for Prometheus scrape (Supp A).
 add_observability(app, "ai-svc")
 
+
+def _parse_cors_origins() -> list[str]:
+    """Parse the ``CORS_ORIGINS`` env var into an explicit allow-list.
+
+    Mirrors the Node services (see services/identity-svc/src/index.ts).
+    Production fails closed (no wildcard); dev defaults to localhost.
+    """
+    raw = os.environ.get("CORS_ORIGINS", "").strip()
+    if raw:
+        return [s.strip() for s in raw.split(",") if s.strip()]
+    if os.environ.get("NODE_ENV") == "production" or os.environ.get("ENV") == "production":
+        return []
+    return [
+        "http://localhost:3000",
+        "http://localhost:5000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5000",
+    ]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_parse_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

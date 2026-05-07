@@ -5,7 +5,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aivolearning.com";
 export const metadata: Metadata = {
   title: "FERPA Compliance – Student Education Record Protection at AIVO",
   description:
-    "AIVO Learning protects student education records under FERPA. Strict access controls, data encryption, SOC 2 certified infrastructure, and compliance with state privacy laws.",
+    "AIVO Learning protects student education records under FERPA. Strict access controls, data encryption, SOC 2-aligned infrastructure controls, and compliance with state privacy laws.",
   openGraph: {
     title: "AIVO Learning FERPA Compliance",
     description:

@@ -1,9 +1,9 @@
 import { ShieldCheck, Lock, Accessibility, Globe2, Award, FileCheck2 } from "lucide-react";
 
 const BADGES = [
-  { Icon: ShieldCheck, label: "COPPA Safe Harbor", sub: "Children's Online Privacy" },
+  { Icon: ShieldCheck, label: "COPPA Compliant", sub: "Children's Online Privacy" },
   { Icon: FileCheck2, label: "FERPA Compliant", sub: "Student records protected" },
-  { Icon: Lock, label: "SOC 2 Type II", sub: "Security & availability" },
+  { Icon: Lock, label: "SOC 2 Aligned", sub: "Security & availability" },
   { Icon: Accessibility, label: "WCAG 2.2 AA", sub: "Accessible by design" },
   { Icon: Globe2, label: "GDPR Ready", sub: "EU data protection" },
   { Icon: Award, label: "IEP-Aware", sub: "Built for special education" },

@@ -124,11 +124,13 @@ tolerations: []
 # using the resolved serviceName. Set to {} to use only the auto-injected rules.
 affinity: {}
 
-# Liveness probe — use tcpSocket to avoid coupling to per-service HTTP health
-# paths. Individual services may override this to use httpGet when a reliable
-# endpoint exists.
+# Liveness probe — uses the HTTP /health endpoint exposed by every
+# AIVO service (Fastify + FastAPI both register one). TCP-only probes
+# would pass even if the service can't reach Postgres / Redis. Services
+# that need a different path can override `livenessProbe.httpGet.path`.
 livenessProbe:
-  tcpSocket:
+  httpGet:
+    path: /health
     port: http
   initialDelaySeconds: 30
   periodSeconds: 10
@@ -136,9 +138,11 @@ livenessProbe:
   failureThreshold: 3
   successThreshold: 1
 
-# Readiness probe
+# Readiness probe — also uses /health so we don't roll traffic onto a
+# pod that's up but not yet wired to its dependencies.
 readinessProbe:
-  tcpSocket:
+  httpGet:
+    path: /health
     port: http
   initialDelaySeconds: 10
   periodSeconds: 5
@@ -148,7 +152,8 @@ readinessProbe:
 
 # Startup probe (for slow-starting containers)
 startupProbe:
-  tcpSocket:
+  httpGet:
+    path: /health
     port: http
   initialDelaySeconds: 10
   periodSeconds: 5
