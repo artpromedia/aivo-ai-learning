@@ -10,6 +10,7 @@ import {
   startSafeCron,
   createDrizzleAdvisoryLock,
   createDrizzleLedger,
+  type SafeCronHandle,
 } from "@aivo/scheduling";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerPlanRoutes } from "./routes/plans.js";
@@ -22,8 +23,17 @@ import { runExpiryBatchForScheduler } from "./lib/expiryReminderService.js";
 const logger = createLogger("billing-svc");
 const PORT = parseInt(process.env.BILLING_SVC_PORT || "3009", 10);
 
-async function start() {
-  const db = createDb(process.env.DATABASE_URL!);
+/**
+ * Shared between buildApp() and start(). The internal-jobs route closes
+ * over this map by reference, so start() can populate the handles after
+ * the schedulers actually launch in start() — buildApp() just needs the
+ * routes registered for the api-client OpenAPI dump. The dump path
+ * leaves the map empty; live boot fills it.
+ */
+type CronHandles = Record<string, SafeCronHandle>;
+
+export async function buildApp(handles: CronHandles = {}) {
+  const db = createDb(process.env.DATABASE_URL ?? "");
   const app = Fastify({ logger: false });
 
   await app.register(cors, { origin: true, credentials: true });
@@ -40,6 +50,24 @@ async function start() {
   });
   await app.register(swaggerUI, { routePrefix: "/docs" });
 
+  registerHealthRoutes(app);
+  registerPlanRoutes(app, db);
+  registerWebhookRoutes(app);
+  registerDailyJobsRoutes(app, db);
+  registerCouponRoutes(app, db);
+  registerInternalJobRoutes(app, handles);
+
+  return app;
+}
+
+async function start() {
+  const db = createDb(process.env.DATABASE_URL ?? "");
+
+  // Mutable handles map — wired into the internal-jobs route via
+  // closure, then populated below once the schedulers exist.
+  const handles: CronHandles = {};
+  const app = await buildApp(handles);
+
   const lock = createDrizzleAdvisoryLock(db as any);
   const ledger = createDrizzleLedger(db as any);
   const expiryHandle = startSafeCron({
@@ -49,15 +77,7 @@ async function start() {
     log: logger,
     run: () => runExpiryBatchForScheduler(db),
   });
-
-  registerHealthRoutes(app);
-  registerPlanRoutes(app, db);
-  registerWebhookRoutes(app);
-  registerDailyJobsRoutes(app, db);
-  registerCouponRoutes(app, db);
-  registerInternalJobRoutes(app, {
-    "billing.daily-expiry-reminders": expiryHandle,
-  });
+  handles["billing.daily-expiry-reminders"] = expiryHandle;
 
   let sharedSql: ReturnType<typeof postgres> | null = null;
   const opsAlerts = await bootstrapOpsAlerts({
@@ -86,7 +106,14 @@ async function start() {
   logger.info({ port: PORT, outboxKind: opsAlerts.outbox.kind }, "AIVO Billing Service listening");
 }
 
-start().catch((err) => {
-  console.error("Failed to start billing-svc:", err);
-  process.exit(1);
-});
+const isMain = (() => {
+  try {
+    return process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+  } catch { return false; }
+})();
+if (isMain) {
+  start().catch((err) => {
+    console.error("Failed to start billing-svc:", err);
+    process.exit(1);
+  });
+}

@@ -1,6 +1,8 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
+import swagger from "@fastify/swagger";
+import swaggerUI from "@fastify/swagger-ui";
 import { createLogger, registerObservabilityPlugin } from "@aivo/observability";
 import { createDb } from "@aivo/db";
 import { bootstrapOpsAlerts } from "@aivo/ops-alerts";
@@ -22,10 +24,10 @@ import { registerFamilyGoalsRoutes } from "./routes/family-goals.js";
 const logger = createLogger("family-svc");
 const PORT = parseInt(process.env.FAMILY_PORT || "3007", 10);
 
-async function start() {
+export async function buildApp() {
   await initKeys();
 
-  const db = createDb(process.env.DATABASE_URL!);
+  const db = createDb(process.env.DATABASE_URL ?? "");
 
   const app = Fastify({ logger: false });
 
@@ -43,6 +45,19 @@ async function start() {
     timeWindow: "1 minute",
   });
 
+  await app.register(swagger, {
+    openapi: {
+      info: { title: "AIVO Family Service", version: "1.0.0" },
+      servers: process.env.SWAGGER_SERVER_URL
+        ? [{ url: process.env.SWAGGER_SERVER_URL }]
+        : (process.env.NODE_ENV === "production" ? [] : [{ url: `http://localhost:${PORT}` }]),
+      components: {
+        securitySchemes: { bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
+      },
+    },
+  });
+  await app.register(swaggerUI, { routePrefix: "/docs" });
+
   app.decorate("db", db);
 
   await registerHealthRoutes(app);
@@ -59,13 +74,25 @@ async function start() {
   await registerInterestRoutes(app);
   await registerFamilyGoalsRoutes(app);
 
+  return app;
+}
+
+async function start() {
+  const app = await buildApp();
   await bootstrapOpsAlerts({ service: "family-svc", app, beforeExit: () => app.close() });
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Family service listening on port ${PORT}`);
 }
 
-start().catch((err) => {
-  logger.error(err, "Failed to start family-svc");
-  process.exit(1);
-});
+const isMain = (() => {
+  try {
+    return process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+  } catch { return false; }
+})();
+if (isMain) {
+  start().catch((err) => {
+    logger.error(err, "Failed to start family-svc");
+    process.exit(1);
+  });
+}

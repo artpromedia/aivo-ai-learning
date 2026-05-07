@@ -10,6 +10,7 @@ import {
   startSafeCron,
   createDrizzleAdvisoryLock,
   createDrizzleLedger,
+  type SafeCronHandle,
 } from "@aivo/scheduling";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerPlatformRoutes } from "./routes/platform.js";
@@ -33,9 +34,11 @@ import { runAuditRetentionOnce } from "./lib/audit-retention.js";
 const logger = createLogger("admin-svc");
 const PORT = parseInt(process.env.ADMIN_SVC_PORT || "3013", 10);
 
-async function start() {
+type CronHandles = Record<string, SafeCronHandle>;
+
+export async function buildApp(handles: CronHandles = {}) {
   logAdminEnterpriseFlags(logger);
-  const db = createDb(process.env.DATABASE_URL!);
+  const db = createDb(process.env.DATABASE_URL ?? "");
   const app = Fastify({ logger: false });
 
   // Structured request logging + /metrics for Prometheus scrape (Supp A).
@@ -69,6 +72,19 @@ async function start() {
   registerEvidenceRoutes(app, db);
   registerJobsRoutes(app, db);
   registerContentCmsRoutes(app);
+  // Wire the internal-jobs route up with a handle map that is mutated
+  // by `start()` once the schedulers are running. The dump path leaves
+  // it empty, which is safe because the route reads `handles[jobName]`
+  // at request time.
+  registerAdminInternalJobRoutes(app, handles);
+
+  return app;
+}
+
+async function start() {
+  const db = createDb(process.env.DATABASE_URL ?? "");
+  const handles: CronHandles = {};
+  const app = await buildApp(handles);
 
   await bootstrapOpsAlerts({ service: "admin-svc", app, beforeExit: () => app.close() }).then(
     (boot) => {
@@ -97,11 +113,9 @@ async function start() {
     log: logger,
     run: () => runAuditRetentionOnce(db),
   });
-  registerAdminInternalJobRoutes(app, {
-    "admin.soc2-evidence": evidenceHandle,
-    "admin.run-history-janitor": janitorHandle,
-    "admin.audit-retention": retentionHandle,
-  });
+  handles["admin.soc2-evidence"] = evidenceHandle;
+  handles["admin.run-history-janitor"] = janitorHandle;
+  handles["admin.audit-retention"] = retentionHandle;
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`AIVO Admin Service listening on port ${PORT}`);
@@ -109,7 +123,14 @@ async function start() {
   startWatchdog(db, { log: logger });
 }
 
-start().catch((err) => {
-  logger.error(err, "Failed to start admin-svc");
-  process.exit(1);
-});
+const isMain = (() => {
+  try {
+    return process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+  } catch { return false; }
+})();
+if (isMain) {
+  start().catch((err) => {
+    logger.error(err, "Failed to start admin-svc");
+    process.exit(1);
+  });
+}

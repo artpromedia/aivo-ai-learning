@@ -40,6 +40,82 @@ const SERVICES = [
     entry: "services/identity-svc/src/index.ts",
     exportName: "buildApp",
   },
+  {
+    name: "learning-svc",
+    out: "learning-svc.json",
+    entry: "services/learning-svc/src/index.ts",
+    exportName: "buildApp",
+  },
+  {
+    name: "tutor-svc",
+    out: "tutor-svc.json",
+    entry: "services/tutor-svc/src/index.ts",
+    exportName: "buildApp",
+  },
+  {
+    name: "assessment-svc",
+    out: "assessment-svc.json",
+    entry: "services/assessment-svc/src/index.ts",
+    exportName: "buildApp",
+  },
+  {
+    name: "billing-svc",
+    out: "billing-svc.json",
+    entry: "services/billing-svc/src/index.ts",
+    exportName: "buildApp",
+  },
+  {
+    name: "comms-svc",
+    out: "comms-svc.json",
+    entry: "services/comms-svc/src/index.ts",
+    exportName: "buildApp",
+  },
+  {
+    name: "engagement-svc",
+    out: "engagement-svc.json",
+    entry: "services/engagement-svc/src/index.ts",
+    exportName: "buildApp",
+  },
+  {
+    name: "family-svc",
+    out: "family-svc.json",
+    entry: "services/family-svc/src/index.ts",
+    exportName: "buildApp",
+  },
+  {
+    name: "admin-svc",
+    out: "admin-svc.json",
+    entry: "services/admin-svc/src/index.ts",
+    exportName: "buildApp",
+  },
+  {
+    name: "i18n-svc",
+    out: "i18n-svc.json",
+    entry: "services/i18n-svc/src/index.ts",
+    exportName: "buildApp",
+  },
+  {
+    name: "integrations-svc",
+    out: "integrations-svc.json",
+    entry: "services/integrations-svc/src/index.ts",
+    exportName: "buildApp",
+  },
+  {
+    name: "research-svc",
+    out: "research-svc.json",
+    entry: "services/research-svc/src/index.ts",
+    exportName: "buildApp",
+  },
+  {
+    name: "status-page-svc",
+    out: "status-page-svc.json",
+    entry: "services/status-page-svc/src/index.ts",
+    exportName: "buildApp",
+  },
+  // Excluded — not currently HTTP services (no `routes/` dir or
+  // dedicated buildApp). These are event consumers / stubs and should
+  // be onboarded only if they grow a real HTTP surface:
+  //   ai-svc, alerts-proxy-svc, brain-svc, curriculum-svc
 ];
 
 /** Stub env so `buildApp()` can complete without real infra. */

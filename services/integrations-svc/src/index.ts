@@ -17,8 +17,8 @@ import Fastify from "fastify";
   const logger = createLogger("integrations-svc");
   const PORT = parseInt(process.env.INTEGRATIONS_SVC_PORT || "3012", 10);
 
-  async function start() {
-    const db = createDb(process.env.DATABASE_URL!);
+  export async function buildApp() {
+    const db = createDb(process.env.DATABASE_URL ?? "");
     const app = Fastify({ logger: false });
 
     await app.register(cors, { origin: true, credentials: true });
@@ -38,6 +38,13 @@ import Fastify from "fastify";
     registerHealthRoutes(app);
     registerConnectorRoutes(app, db);
 
+    return app;
+  }
+
+  async function start() {
+    const db = createDb(process.env.DATABASE_URL ?? "");
+    const app = await buildApp();
+
     await bootstrapOpsAlerts({ service: "integrations-svc", app, beforeExit: () => app.close() });
 
     startSafeCron({
@@ -52,8 +59,15 @@ import Fastify from "fastify";
     logger.info(`AIVO Integrations Service listening on port ${PORT}`);
   }
 
-  start().catch((err) => {
-    console.error("Failed to start integrations-svc:", err);
-    process.exit(1);
-  });
+  const isMain = (() => {
+    try {
+      return process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+    } catch { return false; }
+  })();
+  if (isMain) {
+    start().catch((err) => {
+      console.error("Failed to start integrations-svc:", err);
+      process.exit(1);
+    });
+  }
   

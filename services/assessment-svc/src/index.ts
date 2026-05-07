@@ -23,8 +23,8 @@ import { registerSensoryProfileRoutes } from "./routes/sensory-profile.js";
 const logger = createLogger("assessment-svc");
 const PORT = parseInt(process.env.ASSESSMENT_PORT || "3003", 10);
 
-async function start() {
-  const db = createDb(process.env.DATABASE_URL!);
+export async function buildApp() {
+  const db = createDb(process.env.DATABASE_URL ?? "");
   const app = Fastify({ logger: false });
 
   // Structured request logging + /metrics for Prometheus scrape (Supp A).
@@ -96,6 +96,13 @@ async function start() {
   await registerLearnerProfileRoutes(app);
   await registerSensoryProfileRoutes(app);
 
+  return app;
+}
+
+async function start() {
+  const db = createDb(process.env.DATABASE_URL ?? "");
+  const app = await buildApp();
+
   await bootstrapOpsAlerts({ service: "assessment-svc", app, beforeExit: () => app.close() });
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
@@ -112,7 +119,14 @@ async function start() {
   }, 24 * 60 * 60 * 1000);
 }
 
-start().catch((err) => {
-  logger.error("Failed to start assessment-svc", { err: err?.message || String(err) });
-  process.exit(1);
-});
+const isMain = (() => {
+  try {
+    return process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+  } catch { return false; }
+})();
+if (isMain) {
+  start().catch((err) => {
+    logger.error("Failed to start assessment-svc", { err: err?.message || String(err) });
+    process.exit(1);
+  });
+}

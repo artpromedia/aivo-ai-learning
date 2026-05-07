@@ -20,8 +20,8 @@ import { registerAuthHook } from "./lib/tenant.js";
 const logger = createLogger("tutor-svc");
 const PORT = parseInt(process.env.TUTOR_PORT || "3006", 10);
 
-async function start() {
-  const db = createDb(process.env.DATABASE_URL!);
+export async function buildApp() {
+  const db = createDb(process.env.DATABASE_URL ?? "");
   const app = Fastify({ logger: false });
 
   // Structured request logging + /metrics for Prometheus scrape (Supp A).
@@ -66,13 +66,25 @@ async function start() {
   registerTutorSessionRoutes(app);
   await registerSpeechBuddyRoutes(app);
 
+  return app;
+}
+
+async function start() {
+  const app = await buildApp();
   await bootstrapOpsAlerts({ service: "tutor-svc", app, beforeExit: () => app.close() });
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
   logger.info(`Tutor service listening on port ${PORT}`);
 }
 
-start().catch((err) => {
-  logger.error(err, "Failed to start tutor-svc");
-  process.exit(1);
-});
+const isMain = (() => {
+  try {
+    return process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+  } catch { return false; }
+})();
+if (isMain) {
+  start().catch((err) => {
+    logger.error(err, "Failed to start tutor-svc");
+    process.exit(1);
+  });
+}
