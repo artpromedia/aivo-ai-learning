@@ -17,7 +17,7 @@ import hashlib
 import logging
 import os
 from dataclasses import dataclass
-from typing import Literal, Optional, Protocol
+from typing import Literal, Protocol
 
 from .types import AgeBand
 

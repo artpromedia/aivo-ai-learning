@@ -73,11 +73,6 @@ class EventEmitter:
         self.emitted: list[tuple[str, dict[str, Any]]] = []
 
     def _emit(self, event_type: str, payload: dict[str, Any]) -> None:
-        record = {
-            "type": event_type,
-            "timestamp": _iso_now(),
-            "payload": payload,
-        }
         self.emitted.append((event_type, payload))
         logger.info("speech_buddy.event", extra={"event": event_type, "payload": payload})
         # In production this would publish to the event bus; for now the

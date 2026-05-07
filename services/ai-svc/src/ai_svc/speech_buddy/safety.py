@@ -23,7 +23,7 @@ import re
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Callable, Iterable, Optional
+from typing import Callable, Optional
 
 from .types import SafetyFlag, SafetyFlagCategory, SafetyFlagSeverity
 

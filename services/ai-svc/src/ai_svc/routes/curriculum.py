@@ -25,7 +25,7 @@ if _INTERNAL_TOKEN is None:
         "INTERNAL_AI_TOKEN must be set in production (shared with tutor-svc)."
     )
 
-from ..services.llm_gateway import generate_completion, VISION_MODEL_PRIORITY
+from ..services.llm_gateway import generate_completion
 from ..vision.ocr_processor import process_ocr
 
 logger = logging.getLogger("ai-svc.curriculum")

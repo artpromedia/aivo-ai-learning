@@ -1,5 +1,4 @@
 import json
-from typing import Optional
 from ..prompts.tutor_personas import TUTOR_PERSONAS, FUNCTIONING_LEVEL_ADAPTATIONS
 
 
@@ -100,7 +99,7 @@ def build_tutor_system_prompt(
     curriculum = brain_context.get("curriculum_alignment", {})
 
     layer2_parts = [
-        f"\n## Learner Context",
+        "\n## Learner Context",
         f"- Functioning Level: {functioning_level}",
         f"- Interaction Mode: {adaptation['interaction_mode']}",
         f"- Session Length: {adaptation['session_length']}",

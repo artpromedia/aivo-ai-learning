@@ -1,5 +1,13 @@
 from .tutor_personas import TUTOR_PERSONAS, FUNCTIONING_LEVEL_ADAPTATIONS
 
+# Re-export persona constants for downstream importers.
+__all__ = [
+    "TUTOR_PERSONAS",
+    "FUNCTIONING_LEVEL_ADAPTATIONS",
+    "PERSONA_REGISTRY",
+    "resolve_persona_sku",
+]
+
 PERSONA_REGISTRY: dict[str, str] = {}
 
 for sku, persona in TUTOR_PERSONAS.items():

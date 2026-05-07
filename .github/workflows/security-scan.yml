@@ -111,10 +111,31 @@ jobs:
             bandit -r services/ai-svc/src --severity-level high --confidence-level high
           fi
 
+  python-lint:
+    name: Python lint (Ruff F,E9 — blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        run: pip install ruff
+      # Blocking subset: pyflakes (F) catches dead code, undefined names,
+      # unused imports/variables; E9 catches syntax/parse errors. The wider
+      # rule set in pyproject.toml is intentionally advisory until the
+      # backlog is cleared.
+      - name: Ruff check (F,E9)
+        run: |
+          ruff check --select=F,E9 \
+            services/brain-svc/src \
+            services/ai-svc/src \
+            services/curriculum-svc/src
+
   security-summary:
     name: Security summary
     runs-on: ubuntu-latest
-    needs: [pnpm-audit, pip-audit, trivy-scan, secret-detection, python-sast]
+    needs: [pnpm-audit, pip-audit, trivy-scan, secret-detection, python-sast, python-lint]
     if: always()
     steps:
       - name: Aggregate results
@@ -128,11 +149,13 @@ jobs:
           echo "| Trivy (CRITICAL) | ${{ needs.trivy-scan.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Secret detection | ${{ needs.secret-detection.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Python SAST (Bandit) | ${{ needs.python-sast.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Python lint (Ruff F,E9) | ${{ needs.python-lint.result }} |" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ needs.pnpm-audit.result }}" != "success" ] || \
              [ "${{ needs.pip-audit.result }}" != "success" ] || \
              [ "${{ needs.trivy-scan.result }}" != "success" ] || \
              [ "${{ needs.secret-detection.result }}" != "success" ] || \
-             [ "${{ needs.python-sast.result }}" != "success" ]; then
+             [ "${{ needs.python-sast.result }}" != "success" ] || \
+             [ "${{ needs.python-lint.result }}" != "success" ]; then
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo ":x: One or more security checks failed. Review the failing job above before merging." >> "$GITHUB_STEP_SUMMARY"
             exit 1

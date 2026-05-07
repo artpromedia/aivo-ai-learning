@@ -18,7 +18,6 @@ import os
 import secrets
 import warnings
 from dataclasses import dataclass
-from typing import Optional
 
 logger = logging.getLogger("ai-svc.speech_buddy.encryption")
 

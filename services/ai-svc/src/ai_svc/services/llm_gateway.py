@@ -1,9 +1,8 @@
-import os
 import json
 import logging
 from typing import Optional
 import litellm
-from .budget_caps import get_ledger, BudgetExceeded
+from .budget_caps import get_ledger
 
 logger = logging.getLogger("ai-svc.llm_gateway")
 

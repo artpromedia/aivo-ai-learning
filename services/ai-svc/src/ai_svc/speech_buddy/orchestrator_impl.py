@@ -29,7 +29,7 @@ from .encryption import EncryptedTranscript, encrypt_transcript
 from .events import EventEmitter, hash_learner_id
 from .safety import HARD_CATEGORIES, SafetyDecision, SafetyFilter
 from .stt import STTAdapter, get_default_stt
-from .tools_impl import DefaultToolset, _SCENARIOS, _FALLBACK_BY_BAND
+from .tools_impl import DefaultToolset
 from .tracing import trace_span
 from .transcript_store import TranscriptStore, get_default_store
 from .tts import TTSAdapter, TTSResult, get_default_tts
