@@ -23,6 +23,23 @@ export default [
     ignores: ["dist/*", ".expo/*", "node_modules/*", "android/*", "ios/*"],
   },
   {
+    files: ["scripts/**/*.{js,cjs,mjs}"],
+    languageOptions: {
+      globals: {
+        __dirname: "readonly",
+        __filename: "readonly",
+        module: "readonly",
+        require: "readonly",
+        process: "readonly",
+        console: "readonly",
+        Buffer: "readonly",
+        global: "readonly",
+        exports: "writable",
+      },
+      sourceType: "commonjs",
+    },
+  },
+  {
     files: ["**/*.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": ["warn", interfaceResponseSelector],
