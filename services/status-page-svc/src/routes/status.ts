@@ -1,6 +1,13 @@
 import { FastifyInstance } from "fastify";
 import { verifyJWT } from "@aivo/security";
 import { createLogger } from "@aivo/observability";
+import {
+  overviewSchema,
+  serviceStatusSchema,
+  listIncidentsSchema,
+  createIncidentSchema,
+  uptimeSchema,
+} from "./schemas.js";
 
 const logger = createLogger("status-page-svc:status");
 
@@ -124,7 +131,7 @@ async function requireAdmin(req: any, reply: any) {
 }
 
 export function registerStatusRoutes(app: FastifyInstance) {
-  app.get("/api/status/overview", async () => {
+  app.get("/api/status/overview", { schema: overviewSchema }, async () => {
     const results = await Promise.all(SERVICES.map(checkService));
 
     for (const r of results) {
@@ -146,18 +153,18 @@ export function registerStatusRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/status/service/:serviceName", async (request, reply) => {
+  app.get("/api/status/service/:serviceName", { schema: serviceStatusSchema }, async (request, reply) => {
     const { serviceName } = request.params as any;
     const svc = SERVICES.find((s) => s.name === serviceName);
     if (!svc) return reply.code(404).send({ error: "Service not found" });
     return await checkService(svc);
   });
 
-  app.get("/api/status/incidents", async () => {
+  app.get("/api/status/incidents", { schema: listIncidentsSchema }, async () => {
     return { incidents: [], total: 0 };
   });
 
-  app.post("/api/status/incidents", { preHandler: requireAdmin }, async (request) => {
+  app.post("/api/status/incidents", { schema: createIncidentSchema, preHandler: requireAdmin }, async (request) => {
     const { title, description, severity, affectedServices } = request.body as any;
     return {
       id: crypto.randomUUID(),
@@ -170,7 +177,7 @@ export function registerStatusRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/status/uptime", async () => {
+  app.get("/api/status/uptime", { schema: uptimeSchema }, async () => {
     return {
       period: "30d",
       uptime: { overall: 99.95, byService: SERVICES.map((s) => ({ name: s.name, uptime: 99.9 + Math.random() * 0.1 })) },

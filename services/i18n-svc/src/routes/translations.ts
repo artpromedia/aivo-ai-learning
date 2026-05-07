@@ -1,13 +1,20 @@
 import { FastifyInstance } from "fastify";
 import { en } from "../translations/en.js";
 import { es } from "../translations/es.js";
+import {
+  listLocalesSchema,
+  getTranslationsSchema,
+  getNamespaceTranslationsSchema,
+  detectLocaleSchema,
+  getLocalizedContentSchema,
+} from "./schemas.js";
 
 const SUPPORTED_LOCALES = ["en", "es", "fr", "de", "pt", "zh", "ja", "ko", "ar", "hi"];
 
 const TRANSLATIONS: Record<string, Record<string, string>> = { en, es };
 
 export function registerTranslationRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/i18n/locales", async () => {
+  app.get("/api/i18n/locales", { schema: listLocalesSchema }, async () => {
     return {
       locales: SUPPORTED_LOCALES,
       default: "en",
@@ -22,7 +29,7 @@ export function registerTranslationRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.get("/api/i18n/translations/:locale", async (request, reply) => {
+  app.get("/api/i18n/translations/:locale", { schema: getTranslationsSchema }, async (request, reply) => {
     const { locale } = request.params as any;
     if (!SUPPORTED_LOCALES.includes(locale)) {
       return reply.code(404).send({ error: "Locale not supported", supported: SUPPORTED_LOCALES });
@@ -30,7 +37,7 @@ export function registerTranslationRoutes(app: FastifyInstance, db: any) {
     return { locale, translations: TRANSLATIONS[locale] || TRANSLATIONS.en, fallback: !TRANSLATIONS[locale] };
   });
 
-  app.get("/api/i18n/translations/:locale/:namespace", async (request, reply) => {
+  app.get("/api/i18n/translations/:locale/:namespace", { schema: getNamespaceTranslationsSchema }, async (request, reply) => {
     const { locale, namespace } = request.params as any;
     const all = TRANSLATIONS[locale] || TRANSLATIONS.en;
     const filtered: Record<string, string> = {};
@@ -40,7 +47,7 @@ export function registerTranslationRoutes(app: FastifyInstance, db: any) {
     return { locale, namespace, translations: filtered };
   });
 
-  app.get("/api/i18n/detect", async (request) => {
+  app.get("/api/i18n/detect", { schema: detectLocaleSchema }, async (request) => {
     const acceptLang = (request.headers["accept-language"] || "en") as string;
     const parsed = acceptLang.split(",").map((part) => {
       const [lang, q] = part.trim().split(";q=");
@@ -59,7 +66,7 @@ export function registerTranslationRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.get("/api/i18n/content/:contentId/:locale", async (request, reply) => {
+  app.get("/api/i18n/content/:contentId/:locale", { schema: getLocalizedContentSchema }, async (request, reply) => {
     const { contentId, locale } = request.params as any;
     return { contentId, locale, status: "original", content: null };
   });

@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { createLogger } from "@aivo/observability";
+import { opsAlertsOutboxSchema } from "./schemas.js";
 
 const logger = createLogger("status-page-svc:ops-alerts-outbox");
 
@@ -208,7 +209,7 @@ async function escalate(tile: OutboxTile, consecutive: number) {
 }
 
 export function registerOpsAlertsOutboxRoutes(app: FastifyInstance) {
-  app.get("/api/status/ops-alerts-outbox", async () => {
+  app.get("/api/status/ops-alerts-outbox", { schema: opsAlertsOutboxSchema }, async () => {
     const sources = loadSources();
     const tiles = await Promise.all(sources.map(fetchTile));
     for (const tile of tiles) {

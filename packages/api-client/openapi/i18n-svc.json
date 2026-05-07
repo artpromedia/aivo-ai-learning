@@ -17,24 +17,109 @@
   "paths": {
     "/api/i18n/health": {
       "get": {
+        "operationId": "i18nHealth",
+        "summary": "Service health probe",
+        "tags": [
+          "Health"
+        ],
         "responses": {
           "200": {
-            "description": "Default Response"
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "service",
+                    "timestamp"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "service": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/i18n/locales": {
       "get": {
+        "operationId": "listLocales",
+        "summary": "List supported locales and human-readable names",
+        "tags": [
+          "I18n"
+        ],
         "responses": {
           "200": {
-            "description": "Default Response"
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "locales",
+                    "default",
+                    "available"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "locales": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "default": {
+                      "type": "string"
+                    },
+                    "available": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "serverTranslations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "note": {
+                      "type": "string"
+                    },
+                    "names": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/i18n/translations/{locale}": {
       "get": {
+        "operationId": "getTranslations",
+        "summary": "Get all translation keys for a locale",
+        "tags": [
+          "I18n"
+        ],
         "parameters": [
           {
             "schema": {
@@ -47,13 +132,70 @@
         ],
         "responses": {
           "200": {
-            "description": "Default Response"
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "locale",
+                    "translations",
+                    "fallback"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "locale": {
+                      "type": "string"
+                    },
+                    "translations": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "fallback": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "supported": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/i18n/translations/{locale}/{namespace}": {
       "get": {
+        "operationId": "getNamespaceTranslations",
+        "summary": "Get translations scoped to a specific namespace",
+        "tags": [
+          "I18n"
+        ],
         "parameters": [
           {
             "schema": {
@@ -74,22 +216,98 @@
         ],
         "responses": {
           "200": {
-            "description": "Default Response"
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "locale",
+                    "namespace",
+                    "translations"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "locale": {
+                      "type": "string"
+                    },
+                    "namespace": {
+                      "type": "string"
+                    },
+                    "translations": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/i18n/detect": {
       "get": {
+        "operationId": "detectLocale",
+        "summary": "Detect best-matching locale from the Accept-Language header",
+        "tags": [
+          "I18n"
+        ],
         "responses": {
           "200": {
-            "description": "Default Response"
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "detected",
+                    "confidence",
+                    "source"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "detected": {
+                      "type": "string"
+                    },
+                    "confidence": {
+                      "type": "number"
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "alternatives": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "locale": {
+                            "type": "string"
+                          },
+                          "confidence": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/i18n/content/{contentId}/{locale}": {
       "get": {
+        "operationId": "getLocalizedContent",
+        "summary": "Look up a localized content payload for a given content id",
+        "tags": [
+          "I18n"
+        ],
         "parameters": [
           {
             "schema": {
@@ -110,7 +328,38 @@
         ],
         "responses": {
           "200": {
-            "description": "Default Response"
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "contentId",
+                    "locale",
+                    "status"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "contentId": {
+                      "type": "string"
+                    },
+                    "locale": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": [
+                        "null",
+                        "object"
+                      ],
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
