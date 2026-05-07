@@ -22,6 +22,7 @@ import { desc, eq } from "drizzle-orm";
 // `verifyJWT` retained above only for `requirePlatformAdmin`.
 import { EVIDENCE_DIR, generateEvidenceBundle } from "../lib/soc2-evidence.js";
 import { logAuditEvent } from "./audit.js";
+import { getAdminSvcComplianceEvidenceSchema, getAdminSvcComplianceEvidenceByDateSchema, adminSvcComplianceEvidenceRunSchema } from "./schemas.js";
 
 async function requirePlatformAdmin(req: any, reply: any) {
   const auth = req.headers.authorization;
@@ -85,12 +86,12 @@ async function requireDataExportStepUp(req: any, reply: any) {
 }
 
 export function registerEvidenceRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/admin-svc/compliance/evidence", { preHandler: requirePlatformAdmin }, async () => {
+  app.get("/api/admin-svc/compliance/evidence", { schema: getAdminSvcComplianceEvidenceSchema, preHandler: requirePlatformAdmin }, async () => {
     const rows = await db.select().from(evidenceBundles).orderBy(desc(evidenceBundles.bundleDate)).limit(30);
     return { bundles: rows };
   });
 
-  app.get("/api/admin-svc/compliance/evidence/:date", {
+  app.get("/api/admin-svc/compliance/evidence/:date", { schema: getAdminSvcComplianceEvidenceByDateSchema,
     preHandler: [requirePlatformAdmin, requireDataExportStepUp],
   }, async (req: any, reply) => {
     const { date } = req.params as { date: string };
@@ -123,7 +124,7 @@ export function registerEvidenceRoutes(app: FastifyInstance, db: any) {
     return reply.send(buf);
   });
 
-  app.post("/api/admin-svc/compliance/evidence/run", {
+  app.post("/api/admin-svc/compliance/evidence/run", { schema: adminSvcComplianceEvidenceRunSchema,
     preHandler: [requirePlatformAdmin, requireDataExportStepUp],
   }, async (req: any) => {
     const result = await generateEvidenceBundle(db);

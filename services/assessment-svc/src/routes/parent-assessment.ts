@@ -48,7 +48,17 @@ export async function registerParentAssessmentRoutes(app: FastifyInstance) {
       .where(eq(learners.id, learnerId))
       .limit(1);
 
-    if (!learner) return reply.status(404).send({ error: "Learner not found" });
+    // No learner row — return shaped empty status with 200 (see
+    // learner-baseline.ts for rationale). The parent dashboard iterates
+    // status fetches across cached learner ids and a stale id should
+    // not surface as a console error.
+    if (!learner) {
+      return {
+        completed: false,
+        completedAt: null,
+        assessmentId: null,
+      };
+    }
     const allowed = await isParentOrAcceptedCaregiver(db, userId, learnerId);
     if (!allowed) return reply.status(403).send({ error: "Forbidden" });
 

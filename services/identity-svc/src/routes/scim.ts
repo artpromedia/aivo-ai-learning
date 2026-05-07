@@ -27,6 +27,7 @@ import { FastifyInstance } from "fastify";
 import crypto from "crypto";
 import { eq, and, or, sql, isNull } from "drizzle-orm";
 import { users, scimTokens, tenants } from "@aivo/db";
+import { getScimV2ServiceProviderConfigSchema, getScimV2SchemasSchema, getScimV2ResourceTypesSchema, getScimV2UsersSchema, getScimV2UsersByIdSchema, scimV2UsersSchema, updateScimV2UsersByIdSchema, patchScimV2UsersByIdSchema, deleteScimV2UsersByIdSchema, getScimV2GroupsSchema, getScimV2GroupsByIdSchema } from "./schemas.js";
 
 const SCIM_PROVISIONABLE_ROLES = new Set([
   "DISTRICT_ADMIN", "TEACHER", "CAREGIVER", "THERAPIST",
@@ -184,7 +185,7 @@ export async function registerScimRoutes(app: FastifyInstance) {
     req.scim = { tenantId: row.tenantId, tokenId: row.id } as ScimContext;
   });
 
-  app.get("/scim/v2/ServiceProviderConfig", async () => ({
+  app.get("/scim/v2/ServiceProviderConfig", { schema: getScimV2ServiceProviderConfigSchema }, async () => ({
     schemas: ["urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"],
     documentationUri: "https://docs.aivolearning.com/integrations/scim",
     patch: { supported: true },
@@ -203,7 +204,7 @@ export async function registerScimRoutes(app: FastifyInstance) {
     ],
   }));
 
-  app.get("/scim/v2/Schemas", async () => ({
+  app.get("/scim/v2/Schemas", { schema: getScimV2SchemasSchema }, async () => ({
     schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
     totalResults: 2,
     Resources: [
@@ -212,7 +213,7 @@ export async function registerScimRoutes(app: FastifyInstance) {
     ],
   }));
 
-  app.get("/scim/v2/ResourceTypes", async () => ({
+  app.get("/scim/v2/ResourceTypes", { schema: getScimV2ResourceTypesSchema }, async () => ({
     schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
     totalResults: 2,
     Resources: [
@@ -232,7 +233,7 @@ export async function registerScimRoutes(app: FastifyInstance) {
   }));
 
   // Users — list
-  app.get("/scim/v2/Users", async (req: any, reply) => {
+  app.get("/scim/v2/Users", { schema: getScimV2UsersSchema }, async (req: any, reply) => {
     const { tenantId } = req.scim as ScimContext;
     const { filter, startIndex = "1", count = "100" } = req.query as any;
     const where = parseFilter(filter, tenantId);
@@ -249,7 +250,7 @@ export async function registerScimRoutes(app: FastifyInstance) {
     });
   });
 
-  app.get("/scim/v2/Users/:id", async (req: any, reply) => {
+  app.get("/scim/v2/Users/:id", { schema: getScimV2UsersByIdSchema }, async (req: any, reply) => {
     const { tenantId } = req.scim as ScimContext;
     const { id } = req.params as { id: string };
     const [u] = await db.select().from(users)
@@ -258,7 +259,7 @@ export async function registerScimRoutes(app: FastifyInstance) {
     reply.type("application/scim+json").send(userToScim(u));
   });
 
-  app.post("/scim/v2/Users", async (req: any, reply) => {
+  app.post("/scim/v2/Users", { schema: scimV2UsersSchema }, async (req: any, reply) => {
     const { tenantId } = req.scim as ScimContext;
     const body = req.body as any;
     const email: string = (body.userName || body.emails?.[0]?.value || "").toLowerCase().trim();
@@ -289,7 +290,7 @@ export async function registerScimRoutes(app: FastifyInstance) {
     reply.status(201).type("application/scim+json").send(userToScim(created));
   });
 
-  app.put("/scim/v2/Users/:id", async (req: any, reply) => {
+  app.put("/scim/v2/Users/:id", { schema: updateScimV2UsersByIdSchema }, async (req: any, reply) => {
     const { tenantId } = req.scim as ScimContext;
     const { id } = req.params as { id: string };
     const body = req.body as any;
@@ -324,7 +325,7 @@ export async function registerScimRoutes(app: FastifyInstance) {
     reply.type("application/scim+json").send(userToScim(updated));
   });
 
-  app.patch("/scim/v2/Users/:id", async (req: any, reply) => {
+  app.patch("/scim/v2/Users/:id", { schema: patchScimV2UsersByIdSchema }, async (req: any, reply) => {
     const { tenantId } = req.scim as ScimContext;
     const { id } = req.params as { id: string };
     const body = req.body as any;
@@ -374,7 +375,7 @@ export async function registerScimRoutes(app: FastifyInstance) {
     reply.type("application/scim+json").send(userToScim(updated));
   });
 
-  app.delete("/scim/v2/Users/:id", async (req: any, reply) => {
+  app.delete("/scim/v2/Users/:id", { schema: deleteScimV2UsersByIdSchema }, async (req: any, reply) => {
     const { tenantId } = req.scim as ScimContext;
     const { id } = req.params as { id: string };
     const [u] = await db.select().from(users)
@@ -392,7 +393,7 @@ export async function registerScimRoutes(app: FastifyInstance) {
   });
 
   // Groups — virtual, derived from AIVO roles. We only support read.
-  app.get("/scim/v2/Groups", async (_req: any, reply) => {
+  app.get("/scim/v2/Groups", { schema: getScimV2GroupsSchema }, async (_req: any, reply) => {
     reply.type("application/scim+json").send({
       schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
       totalResults: SCIM_GROUPS.length,
@@ -405,7 +406,7 @@ export async function registerScimRoutes(app: FastifyInstance) {
     });
   });
 
-  app.get("/scim/v2/Groups/:id", async (req: any, reply) => {
+  app.get("/scim/v2/Groups/:id", { schema: getScimV2GroupsByIdSchema }, async (req: any, reply) => {
     const { tenantId } = req.scim as ScimContext;
     const { id } = req.params as { id: string };
     const g = SCIM_GROUPS.find((x) => x.id === id);

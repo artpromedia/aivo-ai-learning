@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useLearners } from '@/hooks/useLearners';
+import { useParentInbox } from '@/hooks/useParentInbox';
 import { AivoCard, StatCard, AivoButton, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
@@ -13,8 +14,11 @@ export default function ParentDashboard() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { data: learners, isLoading, refetch } = useLearners();
+  const { data: inbox } = useParentInbox(user?.id ?? '');
+  const unreadCount = inbox?.unreadCount ?? 0;
   const [refreshing, setRefreshing] = React.useState(false);
   const { t } = useTranslation();
+
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -33,9 +37,28 @@ export default function ParentDashboard() {
           <Text style={styles.greeting}>{t('parent.greeting', { name: user?.name || 'Parent' })}</Text>
           <Text style={styles.subGreeting}>{t('parent.learningOverview')}</Text>
         </View>
-        <Pressable onPress={logout} style={styles.logoutBtn}>
-          <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Pressable
+            onPress={() => router.push('/(parent)/inbox' as any)}
+            style={styles.logoutBtn}
+            accessibilityRole="button"
+            accessibilityLabel={t('parentInbox.title')}
+          >
+            <View>
+              <Ionicons name="mail-outline" size={22} color={colors.textSecondary} />
+              {unreadCount > 0 ? (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadBadgeText}>
+                    {unreadCount > 9 ? '9+' : String(unreadCount)}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          </Pressable>
+          <Pressable onPress={logout} style={styles.logoutBtn}>
+            <Ionicons name="log-out-outline" size={22} color={colors.textSecondary} />
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.statsRow}>
@@ -126,6 +149,13 @@ export default function ParentDashboard() {
                   <Ionicons name="people-outline" size={18} color={colors.accent} />
                   <Text style={styles.actionText}>{t('parent.team')}</Text>
                 </Pressable>
+                <Pressable
+                  style={styles.actionBtn}
+                  onPress={() => router.push(`/(parent)/milestones/${learner.id}` as any)}
+                >
+                  <Ionicons name="trophy-outline" size={18} color={colors.visualSel} />
+                  <Text style={styles.actionText}>{t('parentMilestones.open')}</Text>
+                </Pressable>
               </View>
             </AivoCard>
           </Pressable>
@@ -163,6 +193,24 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', color: colors.text },
   subGreeting: { fontSize: 14, fontFamily: 'Nunito-Regular', color: colors.textSecondary, marginTop: 2 },
   logoutBtn: { padding: 8 },
+  unreadBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    backgroundColor: colors.error,
+    borderRadius: 9,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadBadgeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontFamily: 'Nunito-Bold',
+    lineHeight: 12,
+  },
   statsRow: { flexDirection: 'row', marginBottom: spacing.lg },
   sectionHeader: {
     flexDirection: 'row',

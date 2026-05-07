@@ -285,6 +285,7 @@
     "submitting": "Submitting...",
     "missing_required": "Please answer all required questions. {count} remaining.",
     "submission_failed": "Submission failed. Please try again.",
+    "session_expired_retry": "Your session expired. Please refresh the page and try again — your answers are saved.",
     "network_error_retry": "Network error. Please check your connection and try again.",
     "type_answer": "Type your answer...",
     "question_of": "Question {current} of {total}",

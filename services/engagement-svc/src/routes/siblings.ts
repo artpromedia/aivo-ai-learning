@@ -2,12 +2,13 @@ import { FastifyInstance } from "fastify";
 import { eq, or, and, desc, sql } from "drizzle-orm";
 import { siblingLinks, leaderboardEntries, xpEvents } from "@aivo/db";
 import { authenticateRequest, requireSelfOrRole } from "../auth.js";
+import { siblingsLinkSchema, getSiblingsByLearnerIdSchema, getSiblingsByLearnerIdLeaderboardSchema, deleteSiblingsUnlinkSchema } from "./schemas.js";
 
 export function registerSiblingRoutes(
   app: FastifyInstance,
   db: ReturnType<typeof import("@aivo/db").createDb>
 ) {
-  app.post("/api/engagement/siblings/link", async (request, reply) => {
+  app.post("/api/engagement/siblings/link", { schema: siblingsLinkSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -47,7 +48,7 @@ export function registerSiblingRoutes(
     return link;
   });
 
-  app.get("/api/engagement/siblings/:learnerId", async (request, reply) => {
+  app.get("/api/engagement/siblings/:learnerId", { schema: getSiblingsByLearnerIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -73,7 +74,7 @@ export function registerSiblingRoutes(
     return { siblings: siblingIds, links };
   });
 
-  app.get("/api/engagement/siblings/:learnerId/leaderboard", async (request, reply) => {
+  app.get("/api/engagement/siblings/:learnerId/leaderboard", { schema: getSiblingsByLearnerIdLeaderboardSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -114,7 +115,7 @@ export function registerSiblingRoutes(
     return results;
   });
 
-  app.delete("/api/engagement/siblings/unlink", async (request, reply) => {
+  app.delete("/api/engagement/siblings/unlink", { schema: deleteSiblingsUnlinkSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 

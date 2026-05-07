@@ -285,6 +285,7 @@
     "submitting": "提出中...",
     "missing_required": "すべての必須質問に回答してください。残り{count}問。",
     "submission_failed": "提出に失敗しました。もう一度お試しください。",
+    "session_expired_retry": "セッションの有効期限が切れました。ページを更新してもう一度お試しください — 回答は保存されています。",
     "network_error_retry": "ネットワークエラー。接続を確認して再試行してください。",
     "type_answer": "回答を入力...",
     "question_of": "{total}問中{current}問目",

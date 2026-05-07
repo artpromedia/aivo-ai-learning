@@ -11,8 +11,8 @@ import Fastify from "fastify";
   const logger = createLogger("i18n-svc");
   const PORT = parseInt(process.env.I18N_SVC_PORT || "3011", 10);
 
-  async function start() {
-    const db = createDb(process.env.DATABASE_URL!);
+  export async function buildApp() {
+    const db = createDb(process.env.DATABASE_URL ?? "");
     const app = Fastify({ logger: false });
 
     await app.register(cors, { origin: true, credentials: true });
@@ -32,14 +32,26 @@ import Fastify from "fastify";
     registerHealthRoutes(app);
     registerTranslationRoutes(app, db);
 
+    return app;
+  }
+
+  async function start() {
+    const app = await buildApp();
     await bootstrapOpsAlerts({ service: "i18n-svc", app, beforeExit: () => app.close() });
 
     await app.listen({ port: PORT, host: "0.0.0.0" });
     logger.info(`AIVO Internationalization Service listening on port ${PORT}`);
   }
 
-  start().catch((err) => {
-    console.error("Failed to start i18n-svc:", err);
-    process.exit(1);
-  });
+  const isMain = (() => {
+    try {
+      return process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+    } catch { return false; }
+  })();
+  if (isMain) {
+    start().catch((err) => {
+      console.error("Failed to start i18n-svc:", err);
+      process.exit(1);
+    });
+  }
   

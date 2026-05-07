@@ -1,4 +1,5 @@
 import { FastifyInstance } from "fastify";
+import { healthRootSchema, healthSchema } from "./schemas.js";
 
 export function registerHealthRoutes(app: FastifyInstance) {
   const handler = async () => ({
@@ -6,6 +7,6 @@ export function registerHealthRoutes(app: FastifyInstance) {
     service: "comms-svc",
     timestamp: new Date().toISOString(),
   });
-  app.get("/health", handler);
-  app.get("/api/comms/health", handler);
+  app.get("/health", { schema: healthRootSchema }, handler);
+  app.get("/api/comms/health", { schema: healthSchema }, handler);
 }

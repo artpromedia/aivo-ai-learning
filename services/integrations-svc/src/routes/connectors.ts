@@ -2,6 +2,22 @@ import { FastifyInstance } from "fastify";
 import { verifyJWT } from "@aivo/security";
 import { eq, and, desc } from "drizzle-orm";
 import { integrationConnections, integrationSyncLogs, integrationRosterMappings } from "@aivo/db";
+import {
+  listConnectorsSchema,
+  getConnectorSchema,
+  joinWaitlistSchema,
+  listWaitlistSchema,
+  oauthAuthorizeSchema,
+  oauthCallbackSchema,
+  connectIntegrationSchema,
+  listConnectionsSchema,
+  getConnectionSchema,
+  disconnectIntegrationSchema,
+  triggerSyncSchema,
+  listSyncLogsSchema,
+  getSyncStatusSchema,
+  listRosterMappingsSchema,
+} from "./schemas.js";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 function requireUrl(name: string, devDefault: string): string {
@@ -170,11 +186,11 @@ export function getWaitlistStore() {
 }
 
 export function registerConnectorRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/integrations/connectors", async () => {
+  app.get("/api/integrations/connectors", { schema: listConnectorsSchema }, async () => {
     return { connectors: CONNECTORS };
   });
 
-  app.post("/api/integrations/waitlist", { preHandler: requireAuth }, async (request, reply) => {
+  app.post("/api/integrations/waitlist", { schema: joinWaitlistSchema, preHandler: requireAuth }, async (request, reply) => {
     const user = (request as any).user;
     const { connectorId, districtId: bodyDistrictId, contactEmail } = (request.body as any) || {};
     const districtId = user.role === "PLATFORM_ADMIN" ? (bodyDistrictId || user.tenantId) : user.tenantId;
@@ -207,7 +223,7 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
     return { entry };
   });
 
-  app.get("/api/integrations/waitlist", { preHandler: requireAdmin }, async (request) => {
+  app.get("/api/integrations/waitlist", { schema: listWaitlistSchema, preHandler: requireAdmin }, async (request) => {
     const user = (request as any).user;
     const entries = user.role === "PLATFORM_ADMIN"
       ? waitlistStore
@@ -215,14 +231,14 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
     return { entries, total: entries.length };
   });
 
-  app.get("/api/integrations/connectors/:connectorId", async (request, reply) => {
+  app.get("/api/integrations/connectors/:connectorId", { schema: getConnectorSchema }, async (request, reply) => {
     const { connectorId } = request.params as any;
     const connector = CONNECTORS.find((c) => c.id === connectorId);
     if (!connector) return reply.code(404).send({ error: "Connector not found" });
     return connector;
   });
 
-  app.get("/api/integrations/oauth/:connectorId/authorize", { preHandler: requireAdmin }, async (request, reply) => {
+  app.get("/api/integrations/oauth/:connectorId/authorize", { schema: oauthAuthorizeSchema, preHandler: requireAdmin }, async (request, reply) => {
     const { connectorId } = request.params as any;
     const { tenantId, redirectUri } = request.query as any;
     const config = getOAuthConfig(connectorId);
@@ -243,7 +259,7 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
     return { authorizationUrl: `${config.authUrl}?${params.toString()}` };
   });
 
-  app.get("/api/integrations/oauth/callback", async (request, reply) => {
+  app.get("/api/integrations/oauth/callback", { schema: oauthCallbackSchema }, async (request, reply) => {
     const { code, state, error: oauthError } = request.query as any;
     if (oauthError) return reply.redirect(`/dashboard/district/integrations?error=${oauthError}`);
 
@@ -295,7 +311,7 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.post("/api/integrations/connect", { preHandler: requireAdmin }, async (request, reply) => {
+  app.post("/api/integrations/connect", { schema: connectIntegrationSchema, preHandler: requireAdmin }, async (request, reply) => {
     const { tenantId, connectorId, credentials, config: connConfig } = request.body as any;
     if (!tenantId || !connectorId) return reply.code(400).send({ error: "tenantId and connectorId required" });
 
@@ -334,7 +350,7 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
     return { connection };
   });
 
-  app.get("/api/integrations/connections/:tenantId", { preHandler: requireAuth }, async (request, reply) => {
+  app.get("/api/integrations/connections/:tenantId", { schema: listConnectionsSchema, preHandler: requireAuth }, async (request, reply) => {
     const { tenantId } = request.params as any;
     const user = (request as any).user;
     if (user.tenantId !== tenantId && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
@@ -354,7 +370,7 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
     return { tenantId, connections: safeConnections };
   });
 
-  app.get("/api/integrations/connection/:connectionId", { preHandler: requireAuth }, async (request, reply) => {
+  app.get("/api/integrations/connection/:connectionId", { schema: getConnectionSchema, preHandler: requireAuth }, async (request, reply) => {
     const { connectionId } = request.params as any;
     const [connection] = await db.select().from(integrationConnections)
       .where(eq(integrationConnections.id, connectionId)).limit(1);
@@ -373,7 +389,7 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.delete("/api/integrations/disconnect/:connectionId", { preHandler: requireAdmin }, async (request, reply) => {
+  app.delete("/api/integrations/disconnect/:connectionId", { schema: disconnectIntegrationSchema, preHandler: requireAdmin }, async (request, reply) => {
     const { connectionId } = request.params as any;
     const user = (request as any).user;
 
@@ -387,7 +403,7 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
     return { status: "disconnected", connectionId };
   });
 
-  app.post("/api/integrations/sync/:connectionId", { preHandler: requireAdmin }, async (request, reply) => {
+  app.post("/api/integrations/sync/:connectionId", { schema: triggerSyncSchema, preHandler: requireAdmin }, async (request, reply) => {
     const { connectionId } = request.params as any;
     const { syncType = "full" } = request.body as any || {};
     const user = (request as any).user;
@@ -420,7 +436,7 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.get("/api/integrations/sync-logs/:connectionId", { preHandler: requireAuth }, async (request, reply) => {
+  app.get("/api/integrations/sync-logs/:connectionId", { schema: listSyncLogsSchema, preHandler: requireAuth }, async (request, reply) => {
     const { connectionId } = request.params as any;
     const user = (request as any).user;
 
@@ -435,7 +451,7 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
     return { logs };
   });
 
-  app.get("/api/integrations/sync/:syncId/status", { preHandler: requireAuth }, async (request, reply) => {
+  app.get("/api/integrations/sync/:syncId/status", { schema: getSyncStatusSchema, preHandler: requireAuth }, async (request, reply) => {
     const { syncId } = request.params as any;
     const [log] = await db.select().from(integrationSyncLogs)
       .where(eq(integrationSyncLogs.id, syncId)).limit(1);
@@ -444,7 +460,7 @@ export function registerConnectorRoutes(app: FastifyInstance, db: any) {
     return log;
   });
 
-  app.get("/api/integrations/roster-mappings/:connectionId", { preHandler: requireAuth }, async (request, reply) => {
+  app.get("/api/integrations/roster-mappings/:connectionId", { schema: listRosterMappingsSchema, preHandler: requireAuth }, async (request, reply) => {
     const { connectionId } = request.params as any;
     const { type } = request.query as any;
     const user = (request as any).user;

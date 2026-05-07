@@ -10,6 +10,7 @@ import { FastifyInstance } from "fastify";
 import { auditEvents, adminAuditLog, districtActivityLog } from "@aivo/db";
 import { computeAuditHash, verifyJWT } from "@aivo/security";
 import { sql } from "drizzle-orm";
+import { getAdminSvcAuditLogVerifySchema } from "./schemas.js";
 
 interface ChainResult {
   table: string;
@@ -76,7 +77,7 @@ async function requirePlatformAdmin(req: any, reply: any) {
 }
 
 export function registerAuditVerifyRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/admin-svc/audit-log/verify", { preHandler: requirePlatformAdmin }, async () => {
+  app.get("/api/admin-svc/audit-log/verify", { schema: getAdminSvcAuditLogVerifySchema, preHandler: requirePlatformAdmin }, async () => {
     return await runAuditChainVerification(db);
   });
 }

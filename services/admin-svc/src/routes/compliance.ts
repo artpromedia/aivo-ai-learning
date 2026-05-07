@@ -15,7 +15,8 @@ import {
   verifyJWT,
   getPublicKeyPEM,
 } from "@aivo/security";
-import { sql, gte } from "drizzle-orm";
+import { sql, gte, inArray, and } from "drizzle-orm";
+import { getAdminSvcComplianceControlsSchema } from "./schemas.js";
 
 type ControlStatus = "pass" | "warn" | "fail" | "unknown";
 
@@ -64,7 +65,7 @@ const STEP_UP_PROTECTED_ROUTES = [
 ];
 
 export function registerComplianceRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/admin-svc/compliance/controls", { preHandler: requireAdmin }, async () => {
+  app.get("/api/admin-svc/compliance/controls", { schema: getAdminSvcComplianceControlsSchema, preHandler: requireAdmin }, async () => {
     const now = new Date().toISOString();
     const controls: ControlResult[] = [];
 
@@ -94,14 +95,24 @@ export function registerComplianceRoutes(app: FastifyInstance, db: any) {
     let mfaStatus: ControlStatus = "warn";
     let mfaEvidence = "No internal-role users found";
     try {
+      const internalRoles = [
+        "PLATFORM_ADMIN",
+        "DISTRICT_ADMIN",
+        "SALES",
+        "MARKETING",
+        "CUSTOMER_CARE",
+        "SUPPORT",
+        "FINANCE",
+        "DEVOPS",
+      ] as const;
       const [tot] = await db
         .select({ c: sql<number>`COUNT(*)::int` })
         .from(users)
-        .where(sql`${users.role} IN ('PLATFORM_ADMIN','DISTRICT_ADMIN','SALES','MARKETING','CUSTOMER_CARE','SUPPORT','FINANCE','DEVOPS')`);
+        .where(inArray(users.role, internalRoles));
       const [mfa] = await db
         .select({ c: sql<number>`COUNT(*)::int` })
         .from(users)
-        .where(sql`${users.role} IN ('PLATFORM_ADMIN','DISTRICT_ADMIN','SALES','MARKETING','CUSTOMER_CARE','SUPPORT','FINANCE','DEVOPS') AND ${users.mfaEnabled} = true`);
+        .where(and(inArray(users.role, internalRoles), sql`${users.mfaEnabled} = true`));
       const total = Number(tot?.c ?? 0);
       const enabled = Number(mfa?.c ?? 0);
       const pct = total > 0 ? Math.round((enabled / total) * 100) : 0;
@@ -145,7 +156,10 @@ export function registerComplianceRoutes(app: FastifyInstance, db: any) {
         .select({ c: sql<number>`COUNT(*)::int` })
         .from(auditEvents)
         .where(
-          sql`${auditEvents.eventType} = 'TENANT_ISOLATION_BLOCKED' AND ${auditEvents.createdAt} >= ${since}`,
+          and(
+            sql`${auditEvents.eventType} = 'TENANT_ISOLATION_BLOCKED'`,
+            gte(auditEvents.createdAt, since),
+          ),
         );
       const n = Number(c ?? 0);
       if (n === 0) {

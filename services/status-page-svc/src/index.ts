@@ -11,7 +11,7 @@ import Fastify from "fastify";
   const logger = createLogger("status-page-svc");
   const PORT = parseInt(process.env.STATUS_PAGE_SVC_PORT || "3014", 10);
 
-  async function start() {
+  export async function buildApp() {
     const app = Fastify({ logger: false });
 
     await app.register(cors, { origin: true, credentials: true });
@@ -32,14 +32,26 @@ import Fastify from "fastify";
     registerStatusRoutes(app);
     registerOpsAlertsOutboxRoutes(app);
 
+    return app;
+  }
+
+  async function start() {
+    const app = await buildApp();
     await bootstrapOpsAlerts({ service: "status-page-svc", app, beforeExit: () => app.close() });
 
     await app.listen({ port: PORT, host: "0.0.0.0" });
     logger.info(`AIVO Status Page Service listening on port ${PORT}`);
   }
 
-  start().catch((err) => {
-    console.error("Failed to start status-page-svc:", err);
-    process.exit(1);
-  });
+  const isMain = (() => {
+    try {
+      return process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+    } catch { return false; }
+  })();
+  if (isMain) {
+    start().catch((err) => {
+      console.error("Failed to start status-page-svc:", err);
+      process.exit(1);
+    });
+  }
   

@@ -21,6 +21,7 @@ import argon2 from "argon2";
 import crypto from "crypto";
 import { apiKeys, adminAuditLog, appendAudit } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
+import { getAdminSvcApiKeysSchema, adminSvcApiKeysSchema, adminSvcApiKeysByIdRotateSchema, adminSvcApiKeysByIdRevokeSchema } from "./schemas.js";
 
 const DEFAULT_EXPIRY_DAYS = 90;
 const ROTATION_GRACE_HOURS = 24;
@@ -68,7 +69,7 @@ async function logKeyAction(
 }
 
 export function registerApiKeyRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/admin-svc/api-keys", { preHandler: requirePlatformAdmin }, async () => {
+  app.get("/api/admin-svc/api-keys", { schema: getAdminSvcApiKeysSchema, preHandler: requirePlatformAdmin }, async () => {
     const rows = await db.select({
       id: apiKeys.id,
       name: apiKeys.name,
@@ -86,7 +87,7 @@ export function registerApiKeyRoutes(app: FastifyInstance, db: any) {
     return { keys: rows };
   });
 
-  app.post("/api/admin-svc/api-keys", { preHandler: requirePlatformAdmin }, async (req: any, reply) => {
+  app.post("/api/admin-svc/api-keys", { schema: adminSvcApiKeysSchema, preHandler: requirePlatformAdmin }, async (req: any, reply) => {
     const { name, scopes, expiresInDays, tenantId } = (req.body || {}) as {
       name?: string; scopes?: string[]; expiresInDays?: number; tenantId?: string;
     };
@@ -116,7 +117,7 @@ export function registerApiKeyRoutes(app: FastifyInstance, db: any) {
     });
   });
 
-  app.post("/api/admin-svc/api-keys/:id/rotate", { preHandler: requirePlatformAdmin }, async (req: any, reply) => {
+  app.post("/api/admin-svc/api-keys/:id/rotate", { schema: adminSvcApiKeysByIdRotateSchema, preHandler: requirePlatformAdmin }, async (req: any, reply) => {
     const { id } = req.params as { id: string };
     const [existing] = await db.select().from(apiKeys).where(eq(apiKeys.id, id)).limit(1);
     if (!existing) return reply.status(404).send({ error: "Key not found" });
@@ -155,7 +156,7 @@ export function registerApiKeyRoutes(app: FastifyInstance, db: any) {
     });
   });
 
-  app.post("/api/admin-svc/api-keys/:id/revoke", { preHandler: requirePlatformAdmin }, async (req: any, reply) => {
+  app.post("/api/admin-svc/api-keys/:id/revoke", { schema: adminSvcApiKeysByIdRevokeSchema, preHandler: requirePlatformAdmin }, async (req: any, reply) => {
     const { id } = req.params as { id: string };
     const [existing] = await db.select().from(apiKeys).where(eq(apiKeys.id, id)).limit(1);
     if (!existing) return reply.status(404).send({ error: "Key not found" });

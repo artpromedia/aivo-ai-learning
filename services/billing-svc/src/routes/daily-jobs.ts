@@ -16,6 +16,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { sql } from "drizzle-orm";
 import { verifyJWT } from "@aivo/security";
+import { dailyJobsStatusSchema, dailyJobsHistoryCsvSchema } from "./schemas.js";
 
 const VALID_STATUSES = new Set(["ok", "partial", "failed", "running"]);
 const DEFAULT_LIMIT = 30;
@@ -82,7 +83,7 @@ export function parseHistoryFilters(query: Record<string, unknown>) {
 }
 
 export function registerDailyJobsRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/billing/admin/daily-jobs/status", async (req, reply) => {
+  app.get("/api/billing/admin/daily-jobs/status", { schema: dailyJobsStatusSchema }, async (req, reply) => {
     const me = await requirePlatformAdmin(req, reply);
     if (!me) return;
 
@@ -154,7 +155,7 @@ export function registerDailyJobsRoutes(app: FastifyInstance, db: any) {
   });
 
   // CSV export — same filters, content-type text/csv. (Sprint 7 export ask.)
-  app.get("/api/billing/admin/daily-jobs/history.csv", async (req, reply) => {
+  app.get("/api/billing/admin/daily-jobs/history.csv", { schema: dailyJobsHistoryCsvSchema }, async (req, reply) => {
     const me = await requirePlatformAdmin(req, reply);
     if (!me) return;
 

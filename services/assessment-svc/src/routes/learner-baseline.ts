@@ -1,13 +1,50 @@
 import { FastifyInstance } from "fastify";
-import { parentAssessments, teacherAssessments, learners, assessmentAttempts, iepProfiles, iepGoals, learnerProfiles, learnerInterestSignals } from "@aivo/db";
+import { parentAssessments, teacherAssessments, learners, assessmentAttempts, iepProfiles, iepGoals, learnerProfiles, learnerInterestSignals, learnerCaregivers, learnerTeachers, learnerTherapists } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import {
   scoreInterests,
   type LearnerInterestProfile,
   type LearnerInterestSignal,
 } from "@aivo/special-interest-engine";
 import { deriveLearningProfile } from "../services/learning-profile.js";
+
+async function verifyConnectedAccess(
+  db: any,
+  userId: string,
+  learnerDbId: string,
+  role: "CAREGIVER" | "TEACHER" | "THERAPIST",
+): Promise<boolean> {
+  try {
+    if (role === "CAREGIVER") {
+      const [row] = await db.select().from(learnerCaregivers).where(and(
+        eq(learnerCaregivers.learnerId, learnerDbId),
+        eq(learnerCaregivers.caregiverUserId, userId),
+        eq(learnerCaregivers.status, "ACCEPTED"),
+      )).limit(1);
+      return !!row;
+    }
+    if (role === "TEACHER") {
+      const [row] = await db.select().from(learnerTeachers).where(and(
+        eq(learnerTeachers.learnerId, learnerDbId),
+        eq(learnerTeachers.teacherUserId, userId),
+        eq(learnerTeachers.status, "ACCEPTED"),
+      )).limit(1);
+      return !!row;
+    }
+    if (role === "THERAPIST") {
+      const [row] = await db.select().from(learnerTherapists).where(and(
+        eq(learnerTherapists.learnerId, learnerDbId),
+        eq(learnerTherapists.therapistUserId, userId),
+        eq(learnerTherapists.status, "ACCEPTED"),
+      )).limit(1);
+      return !!row;
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
 
 async function loadIepContext(db: any, learnerDbId: string) {
   const [profile] = await db
@@ -145,7 +182,7 @@ async function loadTeacherContext(db: any, learnerDbId: string) {
     .orderBy(desc(teacherAssessments.createdAt))
     .limit(1);
 
-  if (!row || !row.completedAt) return null;
+  if (!row?.completedAt) return null;
 
   return {
     teacherRole: row.teacherRole || null,
@@ -224,7 +261,19 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
     if (!learner) {
       [learner] = await db.select().from(learners).where(eq(learners.userId, learnerId)).limit(1);
     }
-    if (!learner) return reply.status(404).send({ error: "Learner not found" });
+    // No learner row matches this id (stale session, deleted learner, or
+    // parent dashboard iterating with a tenant-id by mistake). Return a
+    // shaped "empty" status with 200 so the dashboard's status-badge UI
+    // renders cleanly instead of spamming the console with 404s.
+    if (!learner) {
+      return reply.send({
+        learnerId: null,
+        baselineCompleted: false,
+        parentAssessmentCompleted: false,
+        assessmentId: null,
+        approvalStatus: null,
+      });
+    }
 
     if (user.role === "LEARNER" && user.sub !== learner.userId) {
       return reply.status(403).send({ error: "Access denied" });
@@ -299,11 +348,22 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
     }
     if (!learner) return reply.status(404).send({ error: "Learner not found" });
 
+    app.log.info({ learnerId, learnerDbId: learner.id, userSub: user?.sub, userRole: user?.role, learnerUserId: learner.userId, learnerParentId: learner.parentId }, "[discovery/chapter] received");
+
     if (user.role === "LEARNER" && user.sub !== learner.userId) {
+      app.log.warn({ learnerId, userSub: user.sub, learnerUserId: learner.userId }, "[discovery/chapter] LEARNER access denied");
       return reply.status(403).send({ error: "Access denied" });
     }
     if (user.role === "PARENT" && learner.parentId !== user.sub) {
+      app.log.warn({ learnerId, userSub: user.sub, learnerParentId: learner.parentId }, "[discovery/chapter] PARENT access denied");
       return reply.status(403).send({ error: "Access denied" });
+    }
+    if (user.role === "CAREGIVER" || user.role === "TEACHER" || user.role === "THERAPIST") {
+      const ok = await verifyConnectedAccess(db, user.sub, learner.id, user.role);
+      if (!ok) {
+        app.log.warn({ learnerId, userSub: user.sub, role: user.role }, "[discovery/chapter] connected access denied");
+        return reply.status(403).send({ error: "Access denied" });
+      }
     }
 
     const [parentAssessment] = await db
@@ -314,6 +374,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
       .limit(1);
 
     if (!parentAssessment?.completedAt) {
+      app.log.warn({ learnerId, hasParentRow: !!parentAssessment, completedAt: parentAssessment?.completedAt }, "[discovery/chapter] parent assessment not completed");
       return reply.status(403).send({
         error: "parent_assessment_required",
         message: "Parent assessment must be completed before baseline assessment can begin",

@@ -4,7 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useBrain } from '@/hooks/useBrain';
+import { useLearner } from '@/hooks/useLearners';
 import { AivoCard, StatCard, LoadingState, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
@@ -12,7 +12,7 @@ export default function ChildOverviewScreen() {
   const { t } = useTranslation();
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
-  const { data: brain, isLoading } = useBrain(childId);
+  const { data: learner, isLoading } = useLearner(childId);
   if (isLoading) return <LoadingState />;
 
   const nav = (path: string) => router.push(`/(caregiver)/child/${childId}/${path}` as any);
@@ -23,11 +23,11 @@ export default function ChildOverviewScreen() {
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
         <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
-      <Text style={styles.title}>{t('caregiverChild.overview', { name: brain?.learnerName || 'Child' })}</Text>
+      <Text style={styles.title}>{t('caregiverChild.overview', { name: learner?.firstName || 'Child' })}</Text>
 
       <AivoCard style={styles.brainSummary}>
         <Ionicons name="bulb" size={32} color={colors.primary} />
-        <Text style={styles.brainLevel}>{brain?.overallLevel || 'Standard'}</Text>
+        <Text style={styles.brainLevel}>{learner?.functioningLevel || 'Standard'}</Text>
       </AivoCard>
 
       <View style={styles.statsRow}>

@@ -93,6 +93,9 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
   const chapterTotalRef = useRef(0);
   const chapterLatenciesRef = useRef<number[]>([]);
   const loadingChapterRef = useRef<string | null>(null);
+  // Bumped each time chapter activities are loaded so derived getters
+  // (which read from a ref) trigger a re-render in consumers.
+  const [, setActivitiesVersion] = useState(0);
 
   const loadChapterActivities = useCallback(async (chapter: AdventureChapter): Promise<ChapterActivities> => {
     if (chapterActivitiesRef.current[chapter.id]) {
@@ -102,6 +105,7 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     if (!accessToken) {
       const fallback = FALLBACK_ACTIVITIES[chapter.id] || FALLBACK_ACTIVITIES.sage_story_garden;
       chapterActivitiesRef.current[chapter.id] = fallback;
+      setActivitiesVersion(v => v + 1);
       return fallback;
     }
 
@@ -130,6 +134,7 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
           );
           if (hasActivities) {
             chapterActivitiesRef.current[chapter.id] = activities;
+            setActivitiesVersion(v => v + 1);
             return activities;
           }
         }
@@ -139,6 +144,7 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
 
     const fallback = FALLBACK_ACTIVITIES[chapter.id] || FALLBACK_ACTIVITIES.sage_story_garden;
     chapterActivitiesRef.current[chapter.id] = fallback;
+    setActivitiesVersion(v => v + 1);
     return fallback;
   }, [accessToken, learnerId]);
 

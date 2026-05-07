@@ -4,14 +4,18 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useBrain } from '@/hooks/useBrain';
+import { useLearner } from '@/hooks/useLearners';
+import { useBrainDomains } from '@/hooks/useBrain';
 import { AivoCard, StatCard, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function ProgressScreen() {
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
-  const { data: brain, isLoading } = useBrain(childId);
+  const { data: learner } = useLearner(childId);
+  const { domains, isLoading } = useBrainDomains(childId, {
+    enrolledGrade: learner?.gradeLevel ?? null,
+  });
   const { t } = useTranslation();
 
   if (isLoading) return <LoadingState />;
@@ -26,7 +30,9 @@ export default function ProgressScreen() {
         <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>{t('parentProgress.title', { name: brain?.learnerName || '' })}</Text>
+      <Text style={styles.title}>
+        {t('parentProgress.title', { name: learner?.firstName || '' })}
+      </Text>
       <Text style={styles.subtitle}>{t('parentProgress.subtitle')}</Text>
 
       <View style={styles.statsRow}>
@@ -38,15 +44,25 @@ export default function ProgressScreen() {
       </View>
 
       <Text style={[styles.sectionTitle, { marginBottom: spacing.md }]}>Domain Mastery</Text>
-      {brain?.domains?.map((d) => (
-        <AivoCard key={d.domain} style={styles.domainCard}>
-          <Text style={styles.domainName}>{d.domain}</Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${d.masteryPercent}%` }]} />
-          </View>
-          <Text style={styles.masteryText}>{t('parentBrain.mastered', { percent: d.masteryPercent })}</Text>
+      {domains.length === 0 ? (
+        <AivoCard>
+          <Text style={styles.noData}>
+            Mastery data will appear once {learner?.firstName || 'your learner'} completes the baseline.
+          </Text>
         </AivoCard>
-      ))}
+      ) : (
+        domains.map((d) => (
+          <AivoCard key={d.domain} style={styles.domainCard}>
+            <Text style={styles.domainName}>{d.domain}</Text>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${d.masteryPercent}%` }]} />
+            </View>
+            <Text style={styles.masteryText}>
+              {t('parentBrain.mastered', { percent: d.masteryPercent })}
+            </Text>
+          </AivoCard>
+        ))
+      )}
 
       <Text style={[styles.sectionTitle, { marginTop: spacing.lg, marginBottom: spacing.md }]}>
         Engagement Metrics
@@ -85,4 +101,5 @@ const styles = StyleSheet.create({
   metricRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
   metricLabel: { fontSize: 14, fontFamily: 'Nunito-Regular', color: colors.textSecondary },
   metricValue: { fontSize: 14, fontFamily: 'Nunito-Bold', color: colors.text },
+  noData: { fontSize: 14, fontFamily: 'Nunito-Regular', color: colors.textSecondary, textAlign: 'center', padding: spacing.md },
 });

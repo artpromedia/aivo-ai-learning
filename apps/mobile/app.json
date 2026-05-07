@@ -20,6 +20,9 @@
       "config": {
         "usesNonExemptEncryption": false
       },
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Aivo uses the microphone so learners can answer homework questions and language activities by speaking instead of typing."
+      },
       "splash": {
         "image": "./assets/images/splash-icon.png",
         "backgroundColor": "#7C3AED",

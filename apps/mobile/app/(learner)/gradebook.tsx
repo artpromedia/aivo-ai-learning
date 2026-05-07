@@ -5,14 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
-import { useBrain } from '@/hooks/useBrain';
+import { useBrainDomains } from '@/hooks/useBrain';
 import { AivoCard, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function GradebookScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { data: brain, isLoading } = useBrain(user?.id || '');
+  const { domains, isLoading } = useBrainDomains(user?.id || '');
   const { t } = useTranslation();
 
   if (isLoading) return <LoadingState />;
@@ -29,7 +29,7 @@ export default function GradebookScreen() {
       <Text style={styles.title}>{t('learnerGradebook.title')}</Text>
       <Text style={styles.subtitle}>{t('learnerGradebook.subtitle')}</Text>
 
-      {brain?.domains?.map((domain) => (
+      {domains.map((domain) => (
         <AivoCard key={domain.domain} style={styles.subjectCard}>
           <View style={styles.subjectHeader}>
             <Text style={styles.subjectName}>{domain.domain}</Text>

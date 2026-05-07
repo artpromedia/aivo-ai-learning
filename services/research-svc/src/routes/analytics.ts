@@ -2,6 +2,13 @@ import { FastifyInstance } from "fastify";
 import { learners, tutorSessions, brainStates, xpEvents } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { count, sql, eq } from "drizzle-orm";
+import {
+  listCohortsSchema,
+  engagementMetricsSchema,
+  masteryMetricsSchema,
+  exportAnonymizedSchema,
+  listReportsSchema,
+} from "./schemas.js";
 
 async function requireResearchAccess(req: any, reply: any) {
   const auth = req.headers.authorization;
@@ -20,7 +27,7 @@ async function requireResearchAccess(req: any, reply: any) {
 }
 
 export function registerAnalyticsRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/research/cohorts", { preHandler: requireResearchAccess }, async () => {
+  app.get("/api/research/cohorts", { schema: listCohortsSchema, preHandler: requireResearchAccess }, async () => {
     const [learnerCount] = await db.select({ count: count() }).from(learners);
     return {
       cohorts: [
@@ -34,7 +41,7 @@ export function registerAnalyticsRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.get("/api/research/metrics/engagement", { preHandler: requireResearchAccess }, async () => {
+  app.get("/api/research/metrics/engagement", { schema: engagementMetricsSchema, preHandler: requireResearchAccess }, async () => {
     const [sessionCount] = await db.select({ count: count() }).from(tutorSessions);
     return {
       period: "30d",
@@ -45,7 +52,7 @@ export function registerAnalyticsRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.get("/api/research/metrics/mastery", { preHandler: requireResearchAccess }, async () => {
+  app.get("/api/research/metrics/mastery", { schema: masteryMetricsSchema, preHandler: requireResearchAccess }, async () => {
     return {
       period: "30d",
       avgMasteryGrowth: 0.12,
@@ -57,7 +64,7 @@ export function registerAnalyticsRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.get("/api/research/export/anonymized", { preHandler: requireResearchAccess }, async (request, reply) => {
+  app.get("/api/research/export/anonymized", { schema: exportAnonymizedSchema, preHandler: requireResearchAccess }, async (request, reply) => {
     const { format = "json" } = request.query as any;
     const allLearners = await db.select({
       id: learners.id,
@@ -76,7 +83,7 @@ export function registerAnalyticsRoutes(app: FastifyInstance, db: any) {
     return { format: "AIVO_RESEARCH_EXPORT_v1", exportedAt: new Date().toISOString(), participants: anonymized };
   });
 
-  app.get("/api/research/reports", { preHandler: requireResearchAccess }, async () => {
+  app.get("/api/research/reports", { schema: listReportsSchema, preHandler: requireResearchAccess }, async () => {
     return { reports: [] };
   });
 }

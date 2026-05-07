@@ -4,7 +4,8 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useBrain } from '@/hooks/useBrain';
+import { useBrainDomains } from '@/hooks/useBrain';
+import { useLearner } from '@/hooks/useLearners';
 import { AivoCard, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
@@ -12,7 +13,10 @@ export default function CaregiverGradebook() {
   const { t } = useTranslation();
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
-  const { data: brain, isLoading } = useBrain(childId);
+  const { data: learner } = useLearner(childId);
+  const { domains, isLoading } = useBrainDomains(childId, {
+    enrolledGrade: learner?.gradeLevel ?? null,
+  });
   if (isLoading) return <LoadingState />;
 
   return (
@@ -24,7 +28,7 @@ export default function CaregiverGradebook() {
       <Text style={styles.title}>{t('caregiverGradebook.title')}</Text>
       <Text style={styles.subtitle}>{t('caregiverGradebook.subtitle')}</Text>
 
-      {brain?.domains?.map((d) => (
+      {domains.map((d) => (
         <AivoCard key={d.domain} style={styles.card}>
           <View style={styles.row}>
             <Text style={styles.name}>{d.domain}</Text>

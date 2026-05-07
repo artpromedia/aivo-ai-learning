@@ -39,6 +39,7 @@ import {
   getRpId, getRpName, getExpectedOrigin,
   signWebauthnChallenge, verifyWebauthnChallengeToken,
 } from "../services/mfa-webauthn.js";
+import { getAuthPublicKeySchema, updateAuthSessionHeartbeatSchema } from "./schemas.js";
 
 async function hashPassword(password: string): Promise<string> {
   return argon2.hash(password);
@@ -280,8 +281,30 @@ async function mfaRequiredFor(db: any, user: { role: string; mfaEnabled?: boolea
   return await isTenantForcingMfa(db, user.tenantId);
 }
 
+/**
+ * Drizzle returns timestamp columns as `Date` with the pg driver but as
+ * ISO strings in some test/serialized paths. Normalize to a real `Date`
+ * (or `null`) so password-policy helpers can rely on `.getTime()`.
+ */
+function toDate(value: Date | string | null | undefined): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Returns true when the given user must change their password before
+ * they're allowed to use any other surface. Mirrors the logic in
+ * `/api/auth/refresh` so SPA and mobile callers can drive a forced-rotation
+ * UX directly off the login response without needing a follow-up refresh.
+ */
+function computeMustChangePassword(user: { mustChangePassword?: boolean | null; passwordChangedAt?: Date | string | null; role: string }): boolean {
+  return !!user.mustChangePassword || isPasswordRotationDue(toDate(user.passwordChangedAt), user.role);
+}
+
 export async function registerAuthRoutes(app: FastifyInstance) {
-  app.get("/api/auth/public-key", async (_req, reply) => {
+  app.get("/api/auth/public-key", { schema: getAuthPublicKeySchema }, async (_req, reply) => {
     const { getPublicKeyPEM } = await import("@aivo/security");
     const pem = await getPublicKeyPEM();
     if (!pem) {
@@ -465,6 +488,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
       accessToken,
+      mustChangePassword: computeMustChangePassword(user),
     };
   });
 
@@ -773,6 +797,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
       accessToken,
+      mustChangePassword: computeMustChangePassword(user),
     };
   });
 
@@ -891,7 +916,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     // redirect the user to /dashboard/change-password before doing anything
     // else. We do NOT block refresh on this — the user must be able to
     // load the change-password page itself.
-    const rotationDue = isPasswordRotationDue(user.passwordChangedAt as any, user.role);
+    const rotationDue = isPasswordRotationDue(toDate(user.passwordChangedAt), user.role);
 
     const accessToken = await signJWT({
       sub: user.id,
@@ -914,7 +939,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
    * `adminSessions.lastActivityAt` fresh. Returns the next idle/MFA
    * deadlines so the UI can drive a warning modal.
    */
-  app.put("/api/auth/session/heartbeat", async (req, reply) => {
+  app.put("/api/auth/session/heartbeat", { schema: updateAuthSessionHeartbeatSchema }, async (req, reply) => {
     const auth = req.headers.authorization;
     if (!auth?.startsWith("Bearer ")) return reply.status(401).send({ error: "Missing authorization header" });
     let payload: any;
@@ -1410,6 +1435,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
       accessToken,
       usedRecoveryCode: usedRecovery,
+      mustChangePassword: computeMustChangePassword(user),
     };
   });
 
@@ -1998,6 +2024,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
       accessToken,
+      mustChangePassword: computeMustChangePassword(user),
     };
   });
 

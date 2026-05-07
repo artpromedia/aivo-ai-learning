@@ -285,6 +285,7 @@
     "submitting": "提交中...",
     "missing_required": "请回答所有必填问题。还剩{count}题。",
     "submission_failed": "提交失败。请重试。",
+    "session_expired_retry": "会话已过期。请刷新页面后重试 — 您的答案已保存。",
     "network_error_retry": "网络错误。请检查您的连接后重试。",
     "type_answer": "输入您的回答...",
     "question_of": "第{current}题，共{total}题",

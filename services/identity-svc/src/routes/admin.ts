@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { users, learners, tenants, sensoryProfiles, consentRecords, sessions, adminAuditLog, appendAudit } from "@aivo/db";
 import { signJWT, verifyJWT } from "@aivo/security";
+import { getAdminStatsSchema, getAdminUsersSchema, getAdminUsersByIdSchema, updateAdminUsersByIdSchema, deleteAdminUsersByIdSchema, adminUsersByIdReactivateSchema, adminUsersByIdResetPasswordSchema, getAdminLearnersSchema, getAdminLearnersByIdSchema, getAdminTenantsSchema, getAdminTenantsByIdSchema, updateAdminTenantsByIdSchema, adminImpersonateEndSchema } from "./schemas.js";
 
 function clientIp(req: any): string | null {
   return req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
@@ -60,7 +61,7 @@ async function requirePlatformAdmin(req: any, reply: any) {
 export async function registerAdminRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
-  app.get("/api/admin/stats", {
+  app.get("/api/admin/stats", { schema: getAdminStatsSchema,
     preHandler: [dStats, requireAdmin],
   }, async () => {
     const [userCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(users);
@@ -106,7 +107,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/admin/users", {
+  app.get("/api/admin/users", { schema: getAdminUsersSchema,
     preHandler: [dUsers, requireAdmin],
   }, async (req) => {
     const { role, page: pageStr, pageSize: pageSizeStr, search, sort, order } = req.query as {
@@ -146,7 +147,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     return { users: rows, total: Number(totalResult.count), page, pageSize };
   });
 
-  app.get("/api/admin/users/:id", {
+  app.get("/api/admin/users/:id", { schema: getAdminUsersByIdSchema,
     preHandler: [dUserId, requireAdmin],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -196,7 +197,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     };
   });
 
-  app.put("/api/admin/users/:id", {
+  app.put("/api/admin/users/:id", { schema: updateAdminUsersByIdSchema,
     preHandler: [requirePlatformAdmin, requireStepUp("role:change")],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -222,7 +223,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     return { user: updated };
   });
 
-  app.delete("/api/admin/users/:id", {
+  app.delete("/api/admin/users/:id", { schema: deleteAdminUsersByIdSchema,
     preHandler: [requirePlatformAdmin, requireStepUp("user:delete")],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -247,7 +248,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     return { user: { id: updated.id, deactivatedAt: updated.deactivatedAt } };
   });
 
-  app.post("/api/admin/users/:id/reactivate", {
+  app.post("/api/admin/users/:id/reactivate", { schema: adminUsersByIdReactivateSchema,
     preHandler: requirePlatformAdmin,
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -264,7 +265,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     return { user: { id: updated.id, deactivatedAt: updated.deactivatedAt } };
   });
 
-  app.post("/api/admin/users/:id/reset-password", {
+  app.post("/api/admin/users/:id/reset-password", { schema: adminUsersByIdResetPasswordSchema,
     preHandler: [requirePlatformAdmin, requireStepUp("config:update")],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -282,7 +283,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     return { temporaryPassword: tempPassword, email: existing.email };
   });
 
-  app.get("/api/admin/learners", {
+  app.get("/api/admin/learners", { schema: getAdminLearnersSchema,
     preHandler: [dLearn, requireAdmin],
   }, async (req) => {
     const { page: pageStr, pageSize: pageSizeStr, search, sort, order } = req.query as {
@@ -318,7 +319,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     return { learners: rows, total: Number(totalResult.count), page, pageSize };
   });
 
-  app.get("/api/admin/learners/:id", {
+  app.get("/api/admin/learners/:id", { schema: getAdminLearnersByIdSchema,
     preHandler: [dLearnId, requireAdmin],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -350,7 +351,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/admin/tenants", {
+  app.get("/api/admin/tenants", { schema: getAdminTenantsSchema,
     preHandler: [dTen, requireAdmin],
   }, async (req) => {
     const { page: pageStr, pageSize: pageSizeStr, search, sort, order } = req.query as {
@@ -377,7 +378,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     return { tenants: rows, total: Number(totalResult.count), page, pageSize };
   });
 
-  app.get("/api/admin/tenants/:id", {
+  app.get("/api/admin/tenants/:id", { schema: getAdminTenantsByIdSchema,
     preHandler: [dTenId, requireAdmin],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -410,7 +411,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     };
   });
 
-  app.put("/api/admin/tenants/:id", {
+  app.put("/api/admin/tenants/:id", { schema: updateAdminTenantsByIdSchema,
     preHandler: [requirePlatformAdmin, requireStepUp("tenant:suspend")],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -526,7 +527,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
    * session duration and returns a fresh admin token for the original
    * admin so the UI can keep working without a full re-auth.
    */
-  app.post("/api/admin/impersonate/end", async (req: any, reply: any) => {
+  app.post("/api/admin/impersonate/end", { schema: adminImpersonateEndSchema }, async (req: any, reply: any) => {
     const auth = req.headers.authorization;
     if (!auth?.startsWith("Bearer ")) {
       return reply.status(401).send({ error: "Missing authorization header" });

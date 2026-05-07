@@ -19,8 +19,7 @@ import { runDigestCleanupOnce } from "./lib/digest-cleanup.js";
 const logger = createLogger("comms-svc");
 const PORT = parseInt(process.env.COMMS_SVC_PORT || "3010", 10);
 
-async function start() {
-  const db = createDb(process.env.DATABASE_URL!);
+export async function buildApp(db = createDb(process.env.DATABASE_URL ?? "")) {
   const app = Fastify({ logger: false });
 
   await app.register(cors, { origin: true, credentials: true });
@@ -41,6 +40,13 @@ async function start() {
   registerNotificationRoutes(app, db);
   registerEmailEventsRoutes(app);
 
+  return app;
+}
+
+async function start() {
+  const db = createDb(process.env.DATABASE_URL ?? "");
+  const app = await buildApp(db);
+
   await bootstrapOpsAlerts({ service: "comms-svc", app, beforeExit: () => app.close() });
 
   // Sprint 7: fleet-wide daily digest cleanup via the shared scheduler.
@@ -56,7 +62,14 @@ async function start() {
   logger.info(`AIVO Communications Service listening on port ${PORT}`);
 }
 
-start().catch((err) => {
-  console.error("Failed to start comms-svc:", err);
-  process.exit(1);
-});
+const isMain = (() => {
+  try {
+    return process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+  } catch { return false; }
+})();
+if (isMain) {
+  start().catch((err) => {
+    console.error("Failed to start comms-svc:", err);
+    process.exit(1);
+  });
+}

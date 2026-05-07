@@ -1,10 +1,13 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLearners } from '@/hooks/useLearners';
-import { useBrainRecommendations, useRecommendationAction } from '@/hooks/useBrain';
+import {
+  useBrainRecommendations,
+  useRecommendationAction,
+} from '@/hooks/useBrain';
 import { AivoCard, AivoButton, EmptyState, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
@@ -12,11 +15,13 @@ export default function RecommendationsScreen() {
   const insets = useSafeAreaInsets();
   const { data: learners } = useLearners();
   const firstLearnerId = learners?.[0]?.id || '';
-  const { data: recommendations, isLoading, refetch } = useBrainRecommendations(firstLearnerId);
+  const { data: recommendations, isLoading, refetch } =
+    useBrainRecommendations(firstLearnerId);
   const action = useRecommendationAction();
   const { t } = useTranslation();
 
-  const pending = recommendations?.filter(r => r.status === 'pending') || [];
+  const pending =
+    recommendations?.filter((r) => r.status === 'PENDING') ?? [];
 
   if (isLoading) return <LoadingState />;
 
@@ -24,14 +29,26 @@ export default function RecommendationsScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
-      refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} colors={[colors.primary]} />}
+      refreshControl={
+        <RefreshControl
+          refreshing={false}
+          onRefresh={refetch}
+          colors={[colors.primary]}
+        />
+      }
     >
       <Text style={styles.title}>{t('parentRecommendations.title')}</Text>
       <Text style={styles.subtitle}>{t('parentRecommendations.subtitle')}</Text>
 
       {pending.length === 0 ? (
         <EmptyState
-          icon={<Ionicons name="checkmark-circle-outline" size={48} color={colors.success} />}
+          icon={
+            <Ionicons
+              name="checkmark-circle-outline"
+              size={48}
+              color={colors.success}
+            />
+          }
           title={t('parentRecommendations.allCaughtUp')}
           message={t('parentRecommendations.noPending')}
         />
@@ -39,33 +56,43 @@ export default function RecommendationsScreen() {
         pending.map((rec) => (
           <AivoCard key={rec.id} style={styles.recCard}>
             <View style={styles.recHeader}>
-              <View style={[styles.typeBadge, { backgroundColor: colors.info + '20' }]}>
-                <Text style={[styles.typeText, { color: colors.info }]}>{rec.type}</Text>
+              <View
+                style={[styles.typeBadge, { backgroundColor: colors.info + '20' }]}
+              >
+                <Text style={[styles.typeText, { color: colors.info }]}>
+                  {rec.type}
+                </Text>
               </View>
               <Text style={styles.recDate}>
                 {new Date(rec.createdAt).toLocaleDateString()}
               </Text>
             </View>
             <Text style={styles.recTitle}>{rec.title}</Text>
-            <Text style={styles.recDesc}>{rec.description}</Text>
+            {rec.description && (
+              <Text style={styles.recDesc}>{rec.description}</Text>
+            )}
             <View style={styles.recActions}>
               <AivoButton
                 title={t('common.approve')}
-                onPress={() => action.mutate({
-                  learnerId: firstLearnerId,
-                  recommendationId: rec.id,
-                  action: 'approve',
-                })}
+                onPress={() =>
+                  action.mutate({
+                    learnerId: firstLearnerId,
+                    recommendationId: rec.id,
+                    action: 'approve',
+                  })
+                }
                 size="sm"
                 style={{ flex: 1, marginRight: 8 }}
               />
               <AivoButton
                 title={t('common.decline')}
-                onPress={() => action.mutate({
-                  learnerId: firstLearnerId,
-                  recommendationId: rec.id,
-                  action: 'decline',
-                })}
+                onPress={() =>
+                  action.mutate({
+                    learnerId: firstLearnerId,
+                    recommendationId: rec.id,
+                    action: 'decline',
+                  })
+                }
                 variant="outline"
                 size="sm"
                 style={{ flex: 1 }}

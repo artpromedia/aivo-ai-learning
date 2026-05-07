@@ -21,6 +21,7 @@ import {
   CreditCard,
   Wallet,
   Receipt,
+  Tag,
   Shield,
   ScrollText,
   ClipboardList,
@@ -68,6 +69,7 @@ const NAV_SECTIONS: { label: string; items: { href: string; label: string; Icon:
     label: "Operations",
     items: [
       { href: "/dashboard/admin/billing", label: "Billing & Licensing", Icon: CreditCard },
+      { href: "/dashboard/admin/billing/coupons", label: "Coupons", Icon: Tag },
       { href: "/dashboard/admin/billing/revenue", label: "Revenue", Icon: Wallet },
       { href: "/dashboard/admin/billing/invoices", label: "Invoices", Icon: Receipt },
       { href: "/dashboard/admin/compliance", label: "Compliance & Audit", Icon: Shield },

@@ -1,6 +1,7 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { IconWell } from "@/components/discovery/_vi";
 import { CreditCard, Building2, User, GraduationCap, Smartphone, Check, type LucideIcon } from "lucide-react";
@@ -63,6 +64,14 @@ export default function AdminBillingPage() {
         <div>
           <h1 className="text-2xl font-heading font-bold vi-text">{tp("services")}</h1>
           <p className="text-sm vi-text-muted mt-1">Manage subscription plans, payment gateways, and licensing.</p>
+        </div>
+        <div className="ml-auto">
+          <Link
+            href="/dashboard/admin/billing/coupons"
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-[hsl(var(--visual-primary)/0.12)] text-[hsl(var(--visual-primary))] border border-[hsl(var(--visual-primary)/0.25)] hover:bg-[hsl(var(--visual-primary)/0.2)] transition"
+          >
+            Manage Coupons
+          </Link>
         </div>
       </div>
 

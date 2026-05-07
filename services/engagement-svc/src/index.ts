@@ -23,8 +23,7 @@ import { registerSiblingRoutes } from "./routes/siblings.js";
 const logger = createLogger("engagement-svc");
 const PORT = parseInt(process.env.ENGAGEMENT_PORT || "3008", 10);
 
-async function start() {
-  const db = createDb(process.env.DATABASE_URL!);
+export async function buildApp(db = createDb(process.env.DATABASE_URL ?? "")) {
   const app = Fastify({ logger: false });
 
   await app.register(cors, { origin: true, credentials: true });
@@ -50,6 +49,13 @@ async function start() {
   registerLessonPlanRoutes(app, db);
   registerSiblingRoutes(app, db);
 
+  return app;
+}
+
+async function start() {
+  const db = createDb(process.env.DATABASE_URL ?? "");
+  const app = await buildApp(db);
+
   await bootstrapOpsAlerts({ service: "engagement-svc", app, beforeExit: () => app.close() });
 
   startSafeCron({
@@ -65,7 +71,14 @@ async function start() {
   logger.info(`Engagement service listening on port ${PORT}`);
 }
 
-start().catch((err) => {
-  console.error("Failed to start engagement-svc:", err);
-  process.exit(1);
-});
+const isMain = (() => {
+  try {
+    return process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+  } catch { return false; }
+})();
+if (isMain) {
+  start().catch((err) => {
+    console.error("Failed to start engagement-svc:", err);
+    process.exit(1);
+  });
+}

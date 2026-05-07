@@ -96,7 +96,7 @@ export function useIEPGoals(learnerId: string) {
   return useQuery({
     queryKey: ['iep-goals', learnerId],
     queryFn: async () => {
-      const res = await apiFetch(API.FAMILY, `/api/family/iep-goals/${learnerId}`);
+      const res = await apiFetch(API.FAMILY, `/api/family/iep/${learnerId}/goals`);
       if (!res.ok) throw new Error('Failed to fetch IEP goals');
       return res.json();
     },
@@ -104,13 +104,20 @@ export function useIEPGoals(learnerId: string) {
   });
 }
 
+// Therapy-goals listing across the caller's accessible learners. The
+// family-svc endpoint returns `{ goals: TherapyGoal[] }` aggregated across
+// every learner the caller can see (parent ownership, accepted teacher /
+// caregiver / therapist links). We filter to the requested learner here so
+// each consumer only sees the slice it cares about.
 export function useTherapyGoals(learnerId: string) {
   return useQuery({
     queryKey: ['therapy-goals', learnerId],
     queryFn: async () => {
-      const res = await apiFetch(API.FAMILY, `/api/family/therapy-goals/${learnerId}`);
+      const res = await apiFetch(API.FAMILY, '/api/family/therapy-goals');
       if (!res.ok) throw new Error('Failed to fetch therapy goals');
-      return res.json();
+      const data = (await res.json()) as { goals?: Array<{ learnerId: string }> };
+      const goals = Array.isArray(data?.goals) ? data.goals : [];
+      return { goals: goals.filter((g) => g.learnerId === learnerId) };
     },
     enabled: !!learnerId,
   });

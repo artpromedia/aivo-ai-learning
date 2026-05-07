@@ -23,6 +23,7 @@ import {
   computeWhatsWorking,
   type SessionRow,
 } from "../services/whats-working.js";
+import { getWhatsWorkingByLearnerIdSchema, whatsWorkingByLearnerIdSchema } from "./schemas.js";
 
 interface WhatsWorkingBody {
   rows?: SessionRow[];
@@ -93,7 +94,7 @@ async function loadDbRows(
 export async function registerWhatsWorkingRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
-  app.get("/api/family/whats-working/:learnerId", async (req: any, reply: any) => {
+  app.get("/api/family/whats-working/:learnerId", { schema: getWhatsWorkingByLearnerIdSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     if (!rateLimit(auth.sub, Date.now())) {
@@ -113,7 +114,7 @@ export async function registerWhatsWorkingRoutes(app: FastifyInstance) {
     return computeWhatsWorking(rows, { windowDays });
   });
 
-  app.post("/api/family/whats-working/:learnerId", async (req: any, reply: any) => {
+  app.post("/api/family/whats-working/:learnerId", { schema: whatsWorkingByLearnerIdSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     if (!rateLimit(auth.sub, Date.now())) {

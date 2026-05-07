@@ -1,8 +1,10 @@
 import { FastifyInstance } from "fastify";
 import crypto from "crypto";
+import { stripeWebhookSchema } from "./schemas.js";
 
 export function registerWebhookRoutes(app: FastifyInstance) {
   app.post("/api/billing/webhooks/stripe", {
+    schema: stripeWebhookSchema,
     config: { rawBody: true },
   }, async (request, reply) => {
     const sig = request.headers["stripe-signature"] as string;

@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { eq, and, desc } from "drizzle-orm";
 import { challenges, challengeParticipants } from "@aivo/db";
 import { authenticateRequest } from "../auth.js";
+import { challengesCreateSchema, challengesJoinSchema, challengesByChallengeIdAnswerSchema, getChallengesByChallengeIdSchema, getChallengesLearnerByLearnerIdSchema } from "./schemas.js";
 
 function generateInviteCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -16,7 +17,7 @@ export function registerChallengeRoutes(
   app: FastifyInstance,
   db: ReturnType<typeof import("@aivo/db").createDb>
 ) {
-  app.post("/api/engagement/challenges/create", async (request, reply) => {
+  app.post("/api/engagement/challenges/create", { schema: challengesCreateSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -51,7 +52,7 @@ export function registerChallengeRoutes(
     return challenge;
   });
 
-  app.post("/api/engagement/challenges/join", async (request, reply) => {
+  app.post("/api/engagement/challenges/join", { schema: challengesJoinSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -97,7 +98,7 @@ export function registerChallengeRoutes(
     return { joined: true, challengeId: challenge.id };
   });
 
-  app.post("/api/engagement/challenges/:challengeId/answer", async (request, reply) => {
+  app.post("/api/engagement/challenges/:challengeId/answer", { schema: challengesByChallengeIdAnswerSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -162,7 +163,7 @@ export function registerChallengeRoutes(
     return { scored: points, newScore: updateData.score, challengeCompleted: allDone };
   });
 
-  app.get("/api/engagement/challenges/:challengeId", async (request, reply) => {
+  app.get("/api/engagement/challenges/:challengeId", { schema: getChallengesByChallengeIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -183,7 +184,7 @@ export function registerChallengeRoutes(
     return { challenge, participants };
   });
 
-  app.get("/api/engagement/challenges/learner/:learnerId", async (request, reply) => {
+  app.get("/api/engagement/challenges/learner/:learnerId", { schema: getChallengesLearnerByLearnerIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 

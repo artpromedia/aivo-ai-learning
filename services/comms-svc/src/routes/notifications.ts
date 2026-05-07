@@ -3,6 +3,31 @@ import { verifyJWT } from "@aivo/security";
 import { sendEmail, sendBatchEmails, isConfigured } from "../lib/postmark.js";
 import { renderTemplate, AVAILABLE_TEMPLATES } from "../lib/templates.js";
 import { createLogger } from "@aivo/observability";
+import {
+  sendNotificationSchema,
+  sendEmailSchema,
+  sendBatchEmailSchema,
+  sendPushSchema,
+  getPreferencesSchema,
+  updatePreferencesSchema,
+  listTemplatesSchema,
+  internalMfaCodeSchema,
+  internalInAppNotifySchema,
+  internalIepNotifySchema,
+  internalTeamInviteSchema,
+  internalPasswordResetSchema,
+  internalDistrictAdminInviteSchema,
+  internalAdminAlertSchema,
+  internalSpeechBuddySafetySchema,
+  internalBillingAlertSchema,
+  internalNewsletterConfirmSchema,
+  listInAppNotificationsSchema,
+  markInAppNotificationsReadSchema,
+  publicContactSchema,
+  publicDemoRequestSchema,
+  publicNewsletterSchema,
+  commsStatusSchema,
+} from "./schemas.js";
 
 const logger = createLogger("comms-svc:notifications");
 
@@ -35,7 +60,7 @@ async function requireAdmin(req: any, reply: any) {
 }
 
 export function registerNotificationRoutes(app: FastifyInstance, db: any) {
-  app.post("/api/comms/send", { preHandler: requireAuth }, async (request, reply) => {
+  app.post("/api/comms/send", { schema: sendNotificationSchema, preHandler: requireAuth }, async (request, reply) => {
     const { channel, recipient, template, data } = request.body as any;
     if (!channel || !recipient || !template) {
       return reply.code(400).send({ error: "channel, recipient, and template required" });
@@ -72,7 +97,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.post("/api/comms/email", { preHandler: requireAuth }, async (request, reply) => {
+  app.post("/api/comms/email", { schema: sendEmailSchema, preHandler: requireAuth }, async (request, reply) => {
     const { to, subject, template, data, htmlBody, textBody } = request.body as any;
     if (!to || (!subject && !template)) {
       return reply.code(400).send({ error: "to and (subject or template) required" });
@@ -108,7 +133,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.post("/api/comms/email/batch", { preHandler: requireAdmin }, async (request, reply) => {
+  app.post("/api/comms/email/batch", { schema: sendBatchEmailSchema, preHandler: requireAdmin }, async (request, reply) => {
     const { emails } = request.body as any;
     if (!Array.isArray(emails) || emails.length === 0) {
       return reply.code(400).send({ error: "emails array required" });
@@ -144,13 +169,13 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.post("/api/comms/push", { preHandler: requireAdmin }, async (request, reply) => {
+  app.post("/api/comms/push", { schema: sendPushSchema, preHandler: requireAdmin }, async (request, reply) => {
     const { userId, title, body, data } = request.body as any;
     if (!userId || !title) return reply.code(400).send({ error: "userId and title required" });
     return { status: "queued", messageId: crypto.randomUUID(), userId, title };
   });
 
-  app.get("/api/comms/preferences/:userId", { preHandler: requireAuth }, async (request, reply) => {
+  app.get("/api/comms/preferences/:userId", { schema: getPreferencesSchema, preHandler: requireAuth }, async (request, reply) => {
     const { userId } = request.params as any;
     const user = (request as any).user;
     if (user.sub !== userId && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
@@ -164,7 +189,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.put("/api/comms/preferences/:userId", { preHandler: requireAuth }, async (request, reply) => {
+  app.put("/api/comms/preferences/:userId", { schema: updatePreferencesSchema, preHandler: requireAuth }, async (request, reply) => {
     const { userId } = request.params as any;
     const user = (request as any).user;
     if (user.sub !== userId && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
@@ -174,11 +199,11 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     return { status: "updated", userId, preferences: prefs };
   });
 
-  app.get("/api/comms/templates", { preHandler: requireAuth }, async () => {
+  app.get("/api/comms/templates", { schema: listTemplatesSchema, preHandler: requireAuth }, async () => {
     return { templates: AVAILABLE_TEMPLATES };
   });
 
-  app.post("/api/comms/internal/mfa-code", async (request, reply) => {
+  app.post("/api/comms/internal/mfa-code", { schema: internalMfaCodeSchema }, async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
     if (!internalKey || !expectedKey || internalKey !== expectedKey) {
@@ -213,7 +238,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
   // IEP-related event fires AND the parent has `inApp: true` in their
   // preferences. The parent dashboard polls the list/unread endpoints
   // below to show an unread badge that decrements when items are viewed.
-  app.post("/api/comms/internal/in-app-notify", async (request, reply) => {
+  app.post("/api/comms/internal/in-app-notify", { schema: internalInAppNotifySchema }, async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
     if (!internalKey || !expectedKey || internalKey !== expectedKey) {
@@ -243,7 +268,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
 
   // Authenticated reads/writes for the signed-in parent on their own
   // notifications. We never let one user read another's inbox.
-  app.get("/api/comms/in-app-notifications", { preHandler: requireAuth }, async (request) => {
+  app.get("/api/comms/in-app-notifications", { schema: listInAppNotificationsSchema, preHandler: requireAuth }, async (request) => {
     const user = (request as any).user;
     const { parentInAppNotifications } = await import("@aivo/db");
     const { desc, eq, and, isNull, sql } = await import("drizzle-orm");
@@ -271,7 +296,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
   // rows, or `{ all: true, learnerId? }` to mark every unread notification
   // (optionally scoped to one learner). Always scoped to the caller — no
   // cross-user mutation possible.
-  app.post("/api/comms/in-app-notifications/mark-read", { preHandler: requireAuth }, async (request, reply) => {
+  app.post("/api/comms/in-app-notifications/mark-read", { schema: markInAppNotificationsReadSchema, preHandler: requireAuth }, async (request, reply) => {
     const user = (request as any).user;
     const { parentInAppNotifications } = await import("@aivo/db");
     const { eq, and, inArray, isNull } = await import("drizzle-orm");
@@ -295,7 +320,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     return { status: "ok", updated: updated.length };
   });
 
-  app.post("/api/comms/internal/iep-notify", async (request, reply) => {
+  app.post("/api/comms/internal/iep-notify", { schema: internalIepNotifySchema }, async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
     if (!internalKey || !expectedKey || internalKey !== expectedKey) {
@@ -339,7 +364,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
   // Sends a "you've been invited to a learning team" email when a parent
   // invites a caregiver / co-parent / teacher / therapist via family-svc.
   // Internal-key auth — same pattern as the other /internal/* endpoints.
-  app.post("/api/comms/internal/team-invite", async (request, reply) => {
+  app.post("/api/comms/internal/team-invite", { schema: internalTeamInviteSchema }, async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
     if (!internalKey || !expectedKey || internalKey !== expectedKey) {
@@ -374,7 +399,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.post("/api/comms/internal/password-reset", async (request, reply) => {
+  app.post("/api/comms/internal/password-reset", { schema: internalPasswordResetSchema }, async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
     if (!internalKey || !expectedKey || internalKey !== expectedKey) {
@@ -404,7 +429,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.post("/api/comms/internal/district-admin-invite", async (request, reply) => {
+  app.post("/api/comms/internal/district-admin-invite", { schema: internalDistrictAdminInviteSchema }, async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
     if (!internalKey || !expectedKey || internalKey !== expectedKey) {
@@ -434,7 +459,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.post("/api/comms/internal/admin-alert", async (request, reply) => {
+  app.post("/api/comms/internal/admin-alert", { schema: internalAdminAlertSchema }, async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
     if (!internalKey || !expectedKey || internalKey !== expectedKey) {
@@ -482,7 +507,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
   // anonymised learner hash, and ageBand. The guardian is paged through
   // their preferred channel; on-call moderators are CC'd for self_harm
   // and abuse_disclosure (15-minute SLA per the safety policy).
-  app.post("/api/comms/internal/speech-buddy-safety", async (request, reply) => {
+  app.post("/api/comms/internal/speech-buddy-safety", { schema: internalSpeechBuddySafetySchema }, async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
     if (!internalKey || !expectedKey || internalKey !== expectedKey) {
@@ -562,7 +587,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
   // for more seats. Same internal-key auth as the other /internal/*
   // endpoints, dedicated payload shape so we don't piggy-back on the
   // safety-alert handler.
-  app.post("/api/comms/internal/billing-alert", async (request, reply) => {
+  app.post("/api/comms/internal/billing-alert", { schema: internalBillingAlertSchema }, async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
     if (!internalKey || !expectedKey || internalKey !== expectedKey) {
@@ -600,7 +625,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.get("/api/comms/status", async () => {
+  app.get("/api/comms/status", { schema: commsStatusSchema }, async () => {
     return {
       postmark: isConfigured() ? "connected" : "not_configured",
       push: "stub",
@@ -608,21 +633,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.post("/api/comms/public/contact", {
-    schema: {
-      tags: ["Public"],
-      body: {
-        type: "object",
-        required: ["email", "message"],
-        properties: {
-          name: { type: "string", maxLength: 255 },
-          email: { type: "string", format: "email", maxLength: 255 },
-          message: { type: "string", maxLength: 5000 },
-          source: { type: "string", maxLength: 100 },
-        },
-      },
-    },
-  }, async (request, reply) => {
+  app.post("/api/comms/public/contact", { schema: publicContactSchema }, async (request, reply) => {
     const { name, email, message, source } = request.body as any;
     try {
       const { contactSubmissions } = await import("@aivo/db");
@@ -641,23 +652,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.post("/api/comms/public/demo-request", {
-    schema: {
-      tags: ["Public"],
-      body: {
-        type: "object",
-        required: ["email", "name"],
-        properties: {
-          name: { type: "string", maxLength: 255 },
-          email: { type: "string", format: "email", maxLength: 255 },
-          company: { type: "string", maxLength: 255 },
-          role: { type: "string", maxLength: 100 },
-          schoolSize: { type: "string", maxLength: 50 },
-          message: { type: "string", maxLength: 5000 },
-        },
-      },
-    },
-  }, async (request, reply) => {
+  app.post("/api/comms/public/demo-request", { schema: publicDemoRequestSchema }, async (request, reply) => {
     const { name, email, company, role, schoolSize, message } = request.body as any;
     try {
       const { contactSubmissions } = await import("@aivo/db");
@@ -679,19 +674,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.post("/api/comms/public/newsletter", {
-    schema: {
-      tags: ["Public"],
-      body: {
-        type: "object",
-        required: ["email"],
-        properties: {
-          email: { type: "string", format: "email", maxLength: 255 },
-          source: { type: "string", maxLength: 100 },
-        },
-      },
-    },
-  }, async (request, reply) => {
+  app.post("/api/comms/public/newsletter", { schema: publicNewsletterSchema }, async (request, reply) => {
     const { email, source } = request.body as any;
     try {
       const { contactSubmissions } = await import("@aivo/db");
@@ -711,7 +694,7 @@ export function registerNotificationRoutes(app: FastifyInstance, db: any) {
   // Sends a subscription confirmation email via Postmark.
   // Called by admin-svc after persisting the newsletter lead — internal-key
   // auth matches all other /internal/* endpoints.
-  app.post("/api/comms/internal/newsletter-confirm", async (request, reply) => {
+  app.post("/api/comms/internal/newsletter-confirm", { schema: internalNewsletterConfirmSchema }, async (request, reply) => {
     const internalKey = request.headers["x-internal-key"];
     const expectedKey = process.env.INTERNAL_SERVICE_KEY || (process.env.NODE_ENV === "production" ? "" : "aivo-internal-dev-key");
     if (!internalKey || !expectedKey || internalKey !== expectedKey) {

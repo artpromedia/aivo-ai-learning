@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { eq, and, desc } from "drizzle-orm";
 import { caregiverObservations, learnerCaregivers } from "@aivo/db";
 import { authenticateRequest, verifyParentOwnership } from "../auth.js";
+import { getObservationsSchema, observationsSchema } from "./schemas.js";
 
 async function verifyLearnerAccess(
   db: ReturnType<typeof import("@aivo/db").createDb>,
@@ -30,7 +31,7 @@ async function verifyLearnerAccess(
 export async function registerObservationRoutes(app: FastifyInstance) {
   const db = (app as unknown as { db: ReturnType<typeof import("@aivo/db").createDb> }).db;
 
-  app.get("/api/family/observations", async (request, reply) => {
+  app.get("/api/family/observations", { schema: getObservationsSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -54,7 +55,7 @@ export async function registerObservationRoutes(app: FastifyInstance) {
     return { observations: obs };
   });
 
-  app.post("/api/family/observations", async (request, reply) => {
+  app.post("/api/family/observations", { schema: observationsSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 

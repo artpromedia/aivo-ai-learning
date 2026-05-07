@@ -30,6 +30,7 @@ import {
   isInternalRole, refreshTtlMs, recordAdminLogin,
 } from "../services/admin-session.js";
 import { setSurfaceCookie } from "../lib/surface-cookie.js";
+import { getSsoSamlBySlugMetadataSchema, getSsoSamlBySlugLoginSchema, ssoSamlBySlugAcsSchema, getSsoSamlBySlugSloSchema, ssoSamlBySlugSloSchema } from "./schemas.js";
 
 /** SAML JIT provisioning is restricted to non-platform district roles. */
 const SAML_PROVISIONABLE_ROLES = new Set([
@@ -113,7 +114,7 @@ export async function registerSsoRoutes(app: FastifyInstance) {
     return { mode: "password" as const };
   });
 
-  app.get("/api/sso/saml/:slug/metadata", async (req, reply) => {
+  app.get("/api/sso/saml/:slug/metadata", { schema: getSsoSamlBySlugMetadataSchema }, async (req, reply) => {
     const { slug } = req.params as { slug: string };
     const loaded = await loadTenantConfig(db, slug);
     if (!loaded) return reply.status(404).send({ error: "SSO not configured for this tenant" });
@@ -127,7 +128,7 @@ export async function registerSsoRoutes(app: FastifyInstance) {
     return xml;
   });
 
-  app.get("/api/sso/saml/:slug/login", async (req, reply) => {
+  app.get("/api/sso/saml/:slug/login", { schema: getSsoSamlBySlugLoginSchema }, async (req, reply) => {
     const { slug } = req.params as { slug: string };
     const { returnTo } = req.query as { returnTo?: string };
     const loaded = await loadTenantConfig(db, slug);
@@ -146,7 +147,7 @@ export async function registerSsoRoutes(app: FastifyInstance) {
     }
   });
 
-  app.post("/api/sso/saml/:slug/acs", async (req, reply) => {
+  app.post("/api/sso/saml/:slug/acs", { schema: ssoSamlBySlugAcsSchema }, async (req, reply) => {
     const { slug } = req.params as { slug: string };
     const loaded = await loadTenantConfig(db, slug);
     if (!loaded) return reply.status(404).send({ error: "SSO not configured for this tenant" });
@@ -285,6 +286,6 @@ export async function registerSsoRoutes(app: FastifyInstance) {
     reply.clearCookie("refreshToken", { path: "/" });
     reply.redirect("/district/login");
   };
-  app.get("/api/sso/saml/:slug/slo", sloHandler);
-  app.post("/api/sso/saml/:slug/slo", sloHandler);
+  app.get("/api/sso/saml/:slug/slo", { schema: getSsoSamlBySlugSloSchema }, sloHandler);
+  app.post("/api/sso/saml/:slug/slo", { schema: ssoSamlBySlugSloSchema }, sloHandler);
 }

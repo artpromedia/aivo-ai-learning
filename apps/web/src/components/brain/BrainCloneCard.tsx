@@ -110,7 +110,21 @@ export default function BrainCloneCard({
         if (cancelled) return;
         if (res.ok) {
           const data = await res.json();
-          setState((data?.state ?? data) as BrainState);
+          // The brain API returns the canonical fields at the top level
+          // (camelCased). A legacy `state` jsonb column also rides along
+          // but is typically `{}`. Prefer top-level when it has the
+          // canonical fields; only fall back to nested `state` if the
+          // top-level row is missing them.
+          const nested = data?.state;
+          const hasTopLevel =
+            data && (data.masteryLevels || data.version || data.updatedAt);
+          const hasNested =
+            nested && (nested.masteryLevels || nested.version || nested.updatedAt);
+          let chosen: BrainState;
+          if (hasTopLevel) chosen = data as BrainState;
+          else if (hasNested) chosen = nested as BrainState;
+          else chosen = (data ?? {}) as BrainState;
+          setState(chosen);
           setExists(true);
         } else if (res.status === 404) {
           setExists(false);

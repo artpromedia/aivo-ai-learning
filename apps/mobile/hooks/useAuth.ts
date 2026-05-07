@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { getToken, setToken, clearTokens, decodeJWT, apiFetch } from '@/lib/api';
+import {
+  getToken, setToken, clearTokens, decodeJWT, apiFetch,
+  setMustChangePassword as persistMustChangePassword,
+  getMustChangePassword,
+} from '@/lib/api';
 import { API } from '@/constants/api';
 import type { UserRole } from '@aivo/brand';
 
@@ -10,22 +14,30 @@ interface User {
   name: string;
   role: UserRole;
   tenantId: string;
+  /**
+   * Optional profile-photo URL. Not part of the JWT payload; populated
+   * by callers (e.g. `AccountSettingsCard`) after the user uploads or
+   * removes their avatar via identity-svc.
+   */
+  avatarUrl?: string | null;
 }
 
 interface AuthState {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  mustChangePassword: boolean;
 }
 
 interface AuthContextValue extends AuthState {
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; mfaPending?: boolean; mfaToken?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; mfaPending?: boolean; mfaToken?: string; mustChangePassword?: boolean }>;
   loginWithPin: (pin: string, parentId: string) => Promise<{ success: boolean; error?: string }>;
   signup: (data: SignupData) => Promise<{ success: boolean; error?: string }>;
-  loginWithGoogle: (idToken: string, consent?: { coppaConsent: boolean; termsAccepted: boolean }) => Promise<{ success: boolean; error?: string; requiresConsent?: boolean; mfaPending?: boolean; mfaToken?: string }>;
-  verifyMfa: (mfaToken: string, code: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: (idToken: string, consent?: { coppaConsent: boolean; termsAccepted: boolean }) => Promise<{ success: boolean; error?: string; requiresConsent?: boolean; mfaPending?: boolean; mfaToken?: string; mustChangePassword?: boolean }>;
+  verifyMfa: (mfaToken: string, code: string) => Promise<{ success: boolean; error?: string; mustChangePassword?: boolean }>;
   resendMfa: (mfaToken: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  clearMustChangePassword: () => Promise<void>;
 }
 
 interface SignupData {
@@ -49,6 +61,7 @@ export function useAuthState(): AuthContextValue {
     user: null,
     isLoading: true,
     isAuthenticated: false,
+    mustChangePassword: false,
   });
 
   const extractUser = (token: string): User | null => {
@@ -72,13 +85,14 @@ export function useAuthState(): AuthContextValue {
         if (Date.now() < expiresAt) {
           const user = extractUser(token);
           if (user) {
-            setState({ user, isLoading: false, isAuthenticated: true });
+            const mustChange = await getMustChangePassword();
+            setState({ user, isLoading: false, isAuthenticated: true, mustChangePassword: mustChange });
             return;
           }
         }
       }
     }
-    setState({ user: null, isLoading: false, isAuthenticated: false });
+    setState({ user: null, isLoading: false, isAuthenticated: false, mustChangePassword: false });
   }, []);
 
   useEffect(() => {
@@ -108,10 +122,12 @@ export function useAuthState(): AuthContextValue {
           return { success: false, mfaPending: true, mfaToken: data.mfaToken };
         }
         await setToken(data.accessToken);
+        const mustChange = !!data.mustChangePassword;
+        await persistMustChangePassword(mustChange);
         const user = extractUser(data.accessToken);
         if (user) {
-          setState({ user, isLoading: false, isAuthenticated: true });
-          return { success: true };
+          setState({ user, isLoading: false, isAuthenticated: true, mustChangePassword: mustChange });
+          return { success: true, mustChangePassword: mustChange };
         }
       }
       return { success: false, error: data.error || data.message || 'Login failed' };
@@ -131,9 +147,11 @@ export function useAuthState(): AuthContextValue {
       if (response.ok) {
         const data = await response.json();
         await setToken(data.accessToken);
+        // Learners (PIN flow) are never subject to forced password rotation.
+        await persistMustChangePassword(false);
         const user = extractUser(data.accessToken);
         if (user) {
-          setState({ user, isLoading: false, isAuthenticated: true });
+          setState({ user, isLoading: false, isAuthenticated: true, mustChangePassword: false });
           return { success: true };
         }
       }
@@ -154,9 +172,13 @@ export function useAuthState(): AuthContextValue {
       if (response.ok) {
         const result = await response.json();
         await setToken(result.accessToken);
+        // A user who just chose their own password isn't being forced to
+        // change it again. The register endpoint also does not return the
+        // flag, so default to false.
+        await persistMustChangePassword(false);
         const user = extractUser(result.accessToken);
         if (user) {
-          setState({ user, isLoading: false, isAuthenticated: true });
+          setState({ user, isLoading: false, isAuthenticated: true, mustChangePassword: false });
           return { success: true };
         }
       }
@@ -187,10 +209,12 @@ export function useAuthState(): AuthContextValue {
           return { success: false, mfaPending: true, mfaToken: data.mfaToken };
         }
         await setToken(data.accessToken);
+        const mustChange = !!data.mustChangePassword;
+        await persistMustChangePassword(mustChange);
         const user = extractUser(data.accessToken);
         if (user) {
-          setState({ user, isLoading: false, isAuthenticated: true });
-          return { success: true };
+          setState({ user, isLoading: false, isAuthenticated: true, mustChangePassword: mustChange });
+          return { success: true, mustChangePassword: mustChange };
         }
       }
       if (data.requiresConsent) {
@@ -212,10 +236,12 @@ export function useAuthState(): AuthContextValue {
       if (response.ok) {
         const data = await response.json();
         await setToken(data.accessToken);
+        const mustChange = !!data.mustChangePassword;
+        await persistMustChangePassword(mustChange);
         const user = extractUser(data.accessToken);
         if (user) {
-          setState({ user, isLoading: false, isAuthenticated: true });
-          return { success: true };
+          setState({ user, isLoading: false, isAuthenticated: true, mustChangePassword: mustChange });
+          return { success: true, mustChangePassword: mustChange };
         }
       }
       const error = await response.json().catch(() => ({}));
@@ -247,7 +273,12 @@ export function useAuthState(): AuthContextValue {
       await apiFetch(API.IDENTITY, '/api/auth/logout', { method: 'POST' });
     } catch {}
     await clearTokens();
-    setState({ user: null, isLoading: false, isAuthenticated: false });
+    setState({ user: null, isLoading: false, isAuthenticated: false, mustChangePassword: false });
+  }, []);
+
+  const clearMustChangePassword = useCallback(async () => {
+    await persistMustChangePassword(false);
+    setState((prev) => ({ ...prev, mustChangePassword: false }));
   }, []);
 
   return {
@@ -259,5 +290,6 @@ export function useAuthState(): AuthContextValue {
     verifyMfa,
     resendMfa,
     logout,
+    clearMustChangePassword,
   };
 }

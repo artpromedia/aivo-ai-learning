@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { eq, sql, and } from "drizzle-orm";
 import { avatarItems, avatarInventory, virtualCurrency, currencyTransactions, xpEvents } from "@aivo/db";
 import { authenticateRequest, requireSelfOrRole } from "../auth.js";
+import { getShopItemsSchema, getShopInventoryByLearnerIdSchema, shopPurchaseSchema, shopEquipSchema } from "./schemas.js";
 
 function calculateLevel(totalXp: number): number {
   let level = 1;
@@ -17,7 +18,7 @@ export function registerShopRoutes(
   app: FastifyInstance,
   db: ReturnType<typeof import("@aivo/db").createDb>
 ) {
-  app.get("/api/engagement/shop/items", async (request, reply) => {
+  app.get("/api/engagement/shop/items", { schema: getShopItemsSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -25,7 +26,7 @@ export function registerShopRoutes(
     return items;
   });
 
-  app.get("/api/engagement/shop/inventory/:learnerId", async (request, reply) => {
+  app.get("/api/engagement/shop/inventory/:learnerId", { schema: getShopInventoryByLearnerIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -42,7 +43,7 @@ export function registerShopRoutes(
     return inventory;
   });
 
-  app.post("/api/engagement/shop/purchase", async (request, reply) => {
+  app.post("/api/engagement/shop/purchase", { schema: shopPurchaseSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -123,7 +124,7 @@ export function registerShopRoutes(
     return { purchased: true, item, inventory: inv };
   });
 
-  app.post("/api/engagement/shop/equip", async (request, reply) => {
+  app.post("/api/engagement/shop/equip", { schema: shopEquipSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 

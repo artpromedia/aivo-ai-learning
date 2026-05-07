@@ -9,6 +9,7 @@ import {
   leaderboardEntries,
 } from "@aivo/db";
 import { authenticateRequest, requireSelfOrRole } from "../auth.js";
+import { xpAwardSchema, getProfileByLearnerIdSchema, streakUpdateSchema, streakFreezeSchema, badgeAwardSchema, getLeaderboardByScopeSchema, getCurrencyByLearnerIdSchema } from "./schemas.js";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 function requireUrl(name: string, devDefault: string): string {
@@ -98,7 +99,7 @@ export function registerXpRoutes(
   app: FastifyInstance,
   db: ReturnType<typeof import("@aivo/db").createDb>
 ) {
-  app.post("/api/engagement/xp/award", async (request, reply) => {
+  app.post("/api/engagement/xp/award", { schema: xpAwardSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -253,7 +254,7 @@ export function registerXpRoutes(
     };
   });
 
-  app.get("/api/engagement/profile/:learnerId", async (request, reply) => {
+  app.get("/api/engagement/profile/:learnerId", { schema: getProfileByLearnerIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -314,7 +315,7 @@ export function registerXpRoutes(
     };
   });
 
-  app.post("/api/engagement/streak/update", async (request, reply) => {
+  app.post("/api/engagement/streak/update", { schema: streakUpdateSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -371,7 +372,7 @@ export function registerXpRoutes(
     return { currentStreak: newStreak, longest: newLongest, tier, frozen: false };
   });
 
-  app.post("/api/engagement/streak/freeze", async (request, reply) => {
+  app.post("/api/engagement/streak/freeze", { schema: streakFreezeSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -395,7 +396,7 @@ export function registerXpRoutes(
     return { frozen: true, freezesRemaining: 2 - (existing.freezesUsed || 0) - 1 };
   });
 
-  app.post("/api/engagement/badge/award", async (request, reply) => {
+  app.post("/api/engagement/badge/award", { schema: badgeAwardSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -446,7 +447,7 @@ export function registerXpRoutes(
   //     tenantId so a learner cannot accidentally see another tenant's
   //     leaderboard. When supplied, must match the caller's tenantId
   //     unless the caller is an admin.
-  app.get("/api/engagement/leaderboard/:scope", async (request, reply) => {
+  app.get("/api/engagement/leaderboard/:scope", { schema: getLeaderboardByScopeSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -495,7 +496,7 @@ export function registerXpRoutes(
     return entries;
   });
 
-  app.get("/api/engagement/currency/:learnerId", async (request, reply) => {
+  app.get("/api/engagement/currency/:learnerId", { schema: getCurrencyByLearnerIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 

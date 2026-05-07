@@ -22,7 +22,10 @@
     "on": "On",
     "off": "Off",
     "saving": "Saving...",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "appVersion": "AIVO Learning v1.0.0",
+    "unknownError": "Unknown error",
+    "done": "Done"
   },
   "auth": {
     "aiPoweredLearning": "AI-Powered Learning",
@@ -92,7 +95,38 @@
     "pleaseEnterEmail": "Please enter your email",
     "somethingWentWrong": "Something went wrong. Please try again.",
     "checkYourEmail": "Check Your Email",
-    "resetEmailSent": "If an account exists for {{email}}, you'll receive a password reset link shortly."
+    "resetEmailSent": "If an account exists for {{email}}, you'll receive a password reset link shortly.",
+    "changePasswordTitle": "Update Your Password",
+    "changePasswordSubtitle": "For your security, you must choose a new password before continuing.",
+    "changePasswordCurrent": "Current Password",
+    "changePasswordNew": "New Password",
+    "changePasswordNewPlaceholder": "At least 12 characters",
+    "changePasswordSubmit": "Update Password",
+    "changePasswordFailed": "Could not update password",
+    "changePasswordFillAll": "Please fill in all fields",
+    "changePasswordReasonTooShort": "Too short — at least 12 characters required (14 for staff)",
+    "changePasswordReasonTooWeak": "Not strong enough — add more length or variety",
+    "changePasswordReasonBreached": "This password has appeared in a public breach",
+    "changePasswordReasonReused": "You've used this password before",
+    "changePasswordReasonMissingDiversity": "Use at least 3 of: lowercase, uppercase, digits, symbols",
+    "resetPasswordTitle": "Choose a new password",
+    "resetPasswordSubtitle": "Enter and confirm your new password to finish resetting it.",
+    "resetPasswordMissingToken": "This reset link is invalid or has expired. Please request a new one.",
+    "resetPasswordExpiredLink": "Invalid or expired reset link",
+    "resetPasswordSuccess": "Password updated. You can now sign in.",
+    "resetPasswordSubmit": "Update password",
+    "acceptInviteTitle": "Accept your invitation",
+    "acceptInviteNeedsLogin": "You've been invited to join a learning team. Sign in or create your account to continue.",
+    "acceptInviteNeedsLoginWithEmail": "You've been invited to join a learning team for {{email}}.",
+    "acceptInviteHaveAccount": "I already have an account",
+    "acceptInviteCreateAccount": "Create a new account",
+    "acceptInviteWrongEmail": "You're signed in as {{current}}, but this invitation is for {{invited}}. Please sign out and sign in with the invited address.",
+    "acceptInviteSwitchAccount": "Sign in with a different account",
+    "acceptInviteAccepting": "Accepting your invitation…",
+    "acceptInviteSuccess": "You've been added to {{count}} learner team(s). Welcome!",
+    "acceptInviteNoneFound": "No pending invitations were found for your account. If you were expecting one, ask the parent to re-send the invite to {{email}}.",
+    "acceptInviteContinue": "Continue to your dashboard",
+    "acceptInviteError": "Something went wrong: {{message}}"
   },
   "parent": {
     "greeting": "Hello, {{name}}",
@@ -113,30 +147,18 @@
   },
   "parentSettings": {
     "title": "Settings",
-    "accountDetails": "Account Details",
-    "notifications": "Notifications",
-    "language": "Language",
     "managePins": "Manage PINs",
     "exportData": "Export Data (GDPR)",
-    "deleteAccount": "Delete Account",
-    "deleteAccountConfirm": "This action cannot be undone. Please contact support to delete your account.",
-    "appVersion": "AIVO Learning v1.0.0",
-    "twoFactorAuth": "Two-Factor Authentication",
-    "mfaDesc": "Add extra security with email verification codes.",
-    "enableMfa": "Enable MFA",
-    "disableMfa": "Disable MFA",
-    "enterPassword": "Enter your password",
-    "mfaEnabled": "MFA has been enabled.",
-    "mfaDisabled": "MFA has been disabled.",
-    "enterCode": "Enter the 6-digit code sent to your email.",
-    "avatarChange": "Change photo",
-    "avatarAdd": "Add photo",
-    "avatarRemove": "Remove photo",
-    "avatarRemoveConfirm": "Remove your profile photo?",
-    "avatarUploadFailed": "Could not upload photo. Try again.",
-    "avatarPermissionDenied": "Photo access permission is required.",
-    "avatarInvalidType": "Choose a JPEG, PNG, or WebP image.",
-    "avatarTooLarge": "Image is larger than 5 MB."
+    "newPinLabel": "New 4-digit PIN",
+    "pinLengthError": "PIN must be 4 digits.",
+    "pinLoadFailed": "Failed to load learner profiles.",
+    "pinNoLearners": "No learner profiles found to update PIN.",
+    "pinUpdated": "PIN updated for {{name}}.",
+    "pinUpdateFailed": "Failed to update PIN.",
+    "exportSummary": "Your account data has been prepared.\n\nName: {{name}}\nEmail: {{email}}\nRole: {{role}}\n\nA full data export has been sent to your email.",
+    "exportFailed": "Failed to export data.",
+    "pinSelectLearner": "Choose learner",
+    "unnamedLearner": "Learner"
   },
   "parentBilling": {
     "title": "Billing & Subscription",
@@ -163,6 +185,76 @@
     "subtitle": "Review and respond to AI learning recommendations",
     "allCaughtUp": "All Caught Up",
     "noPending": "No pending recommendations at this time."
+  },
+  "parentInbox": {
+    "title": "Inbox",
+    "tabs": {
+      "all": "All",
+      "action": "Action Needed",
+      "celebrations": "Celebrations",
+      "archived": "Archive"
+    },
+    "empty": {
+      "all": "Your inbox is empty. We'll let you know when something needs attention.",
+      "action": "No action items.",
+      "celebrations": "No celebrations.",
+      "archived": "No archived items."
+    },
+    "markRead": "Mark Read",
+    "dismiss": "Dismiss",
+    "view": "View",
+    "openOnWeb": "Open this notification on the web app to take action."
+  },
+  "parentMilestones": {
+    "title": "Milestones & Badges",
+    "currentStreak": "Current Streak",
+    "longestStreak": "Longest Streak",
+    "badgeCollection": "Badge Collection",
+    "timeline": "Achievement Timeline",
+    "empty": "Achievements will appear here as your child progresses!",
+    "open": "Milestones",
+    "badges": {
+      "first_session": {
+        "name": "First Session",
+        "description": "Complete first tutoring session"
+      },
+      "on_fire": {
+        "name": "On Fire",
+        "description": "7-day streak"
+      },
+      "brain_activated": {
+        "name": "Brain Activated",
+        "description": "Brain profile approved"
+      },
+      "bookworm": {
+        "name": "Bookworm",
+        "description": "10 sessions completed"
+      },
+      "mastery_champion": {
+        "name": "Mastery Champion",
+        "description": "Any subject above 75%"
+      },
+      "goal_getter": {
+        "name": "Goal Getter",
+        "description": "IEP goal met"
+      },
+      "team_player": {
+        "name": "Team Player",
+        "description": "Full learning team"
+      },
+      "multi_subject": {
+        "name": "Multi-Subject",
+        "description": "Active in 3+ subjects"
+      },
+      "speed_learner": {
+        "name": "Speed Learner",
+        "description": "Top 25% session time"
+      },
+      "explorer": {
+        "name": "Explorer",
+        "description": "All subject areas explored"
+      }
+    }
   },
   "parentOnboard": {
     "title": "Add a Child",
@@ -332,6 +424,40 @@
     "noChallenges": "No active challenges. Check back soon!",
     "gradebook": "Gradebook"
   },
+  "learnerSettings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "name": "Name",
+    "role": "Role",
+    "learner": "Learner",
+    "soundAndMotion": "Sound & Motion",
+    "soundEffects": "Sound Effects",
+    "soundEffectsDesc": "Play sound effects when interacting with games and lessons.",
+    "music": "Background Music",
+    "musicDesc": "Play music in the background while learning.",
+    "animations": "Animations",
+    "animationsDesc": "Show fun animations and transitions.",
+    "accessibility": "Accessibility",
+    "highContrast": "High Contrast",
+    "highContrastDesc": "Increase color contrast for easier reading.",
+    "largeText": "Larger Text",
+    "largeTextDesc": "Increase text size throughout the app.",
+    "reducedMotion": "Reduced Motion",
+    "reducedMotionDesc": "Minimize animations and motion effects.",
+    "saveChanges": "Save Changes",
+    "saved": "Settings saved!"
+  },
+  "learnerLeaderboard": {
+    "title": "Leaderboard",
+    "subtitle": "See how you rank against other learners.",
+    "scopeGlobal": "Global",
+    "scopeClass": "Class",
+    "scopeSchool": "School",
+    "empty": "No leaderboard entries yet. Earn XP to climb the ranks!",
+    "youSuffix": "{{name}} (You)",
+    "learnerName": "Learner {{id}}",
+    "weeklyXp": "+{{xp}} this week"
+  },
   "learnerAdventure": {
     "title": "Discovery Adventure",
     "subtitle": "Let's discover what you know!",
@@ -346,7 +472,26 @@
     "gallery": "Gallery",
     "uploadPDF": "Upload PDF",
     "uploadPDFDesc": "Upload a homework PDF for help",
-    "chooseFile": "Choose File"
+    "chooseFile": "Choose File",
+    "yourHomework": "Your Homework",
+    "noAssignments": "No homework yet. Snap a photo or upload a PDF to get started!",
+    "problems": "{{count}} problems",
+    "openOnWeb": "Continue this homework on the web app to chat with your AI tutor.",
+    "comingSoon": "Camera capture is coming soon. For now, please upload from the web app.",
+    "status": {
+      "PROCESSING": "Processing…",
+      "READY": "Ready",
+      "IN_PROGRESS": "In Progress",
+      "COMPLETED": "Done!",
+      "FAILED": "Failed"
+    },
+    "uploading": "Uploading…",
+    "uploadFailed": "We couldn't upload that photo. Please try again.",
+    "cameraPermissionDenied": "Camera permission is required to take a homework photo.",
+    "galleryPermissionDenied": "Photo library permission is required to pick a homework image.",
+    "subscriptionRequiredTitle": "Subscription required",
+    "subscriptionRequiredBody": "This homework looks like {{subject}} — you need a {{subject}} tutor subscription to get help.",
+    "pdfTooLarge": "That PDF is too large. Please choose a file under 10 MB."
   },
   "learnerQuests": {
     "title": "Quest Worlds",
@@ -401,6 +546,26 @@
     "noStudentsTitle": "No Students Connected",
     "noStudentsMessage": "Parents need to invite you to their child's care team."
   },
+  "teacherReports": {
+    "title": "Reports",
+    "subtitle": "Brain-informed mastery, engagement, and at-risk insights",
+    "weeklyMasteryTitle": "Weekly Mastery Report",
+    "weeklyMasteryDesc": "Track mastery progress across all your learners by subject and skill area.",
+    "atRiskTitle": "At-Risk Alerts",
+    "atRiskDesc": "Identify learners who may need additional support based on engagement and performance patterns.",
+    "engagementTitle": "Session Engagement",
+    "engagementDesc": "Monitor tutor session frequency, duration, and engagement metrics across your learners.",
+    "iepProgressTitle": "IEP Progress",
+    "iepProgressDesc": "Track IEP goal progress for learners with individualized education plans.",
+    "cadenceWeekly": "Generated weekly",
+    "cadenceDaily": "Updated daily",
+    "cadenceMonthly": "Generated monthly",
+    "studentOverview": "Student Overview",
+    "noLearnersTitle": "No Learners Connected",
+    "noLearnersMessage": "Reports will appear once parents invite you to their learner teams.",
+    "pending": "Pending",
+    "gradeLabel": "Grade"
+  },
   "teacherAnalytics": {
     "title": "Class Analytics",
     "subtitle": "Functioning level distribution and progress",
@@ -421,7 +586,17 @@
     "createPlan": "Create Lesson Plan",
     "recentPlans": "Recent Plans",
     "noPlansTitle": "No Lesson Plans Yet",
-    "noPlansMessage": "Generate your first Brain-informed lesson plan above."
+    "noPlansMessage": "Generate your first Brain-informed lesson plan above.",
+    "learner": "Learner",
+    "noLearnersHint": "Connect with learners to generate plans for them.",
+    "noLearnerError": "Please select a learner before generating a plan.",
+    "generateError": "Failed to generate lesson plan",
+    "networkError": "Network error. Please try again.",
+    "objective": "Objective",
+    "overview": "Overview",
+    "duration": "Duration",
+    "activities": "Activities",
+    "accommodations": "Accommodations"
   },
   "teacherStudent": {
     "brain": "{{name}}'s Brain",
@@ -546,6 +721,32 @@
     "noReportsMessage": "Generate a progress report when ready.",
     "generateReport": "Generate Report"
   },
+  "therapistSessions": {
+    "title": "Session Logs",
+    "selectClient": "Select client",
+    "historyTab": "History",
+    "logTab": "Log Session",
+    "noClientsTitle": "No clients connected yet",
+    "noClientsMessage": "Connect with learners to start logging sessions.",
+    "loadError": "Unable to load data",
+    "emptyHistoryTitle": "No sessions yet",
+    "emptyHistoryMessage": "No sessions recorded yet for {{name}}.",
+    "logFormTitle": "Log a Therapy Session",
+    "category": "Category",
+    "category_speech": "Speech & Language",
+    "category_occupational": "Occupational Therapy",
+    "category_behavioral": "Behavioral Therapy",
+    "category_physical": "Physical Therapy",
+    "category_sel": "Social-Emotional",
+    "category_other": "Other",
+    "date": "Date",
+    "durationMin": "Duration (min)",
+    "notes": "Session Notes",
+    "notesPlaceholder": "Document session observations, goals worked on, progress notes...",
+    "logSubmit": "Log Session",
+    "logSuccess": "Session logged successfully",
+    "logError": "Failed to log session. Please try again."
+  },
   "tabs": {
     "home": "Home",
     "brain": "Brain",
@@ -559,6 +760,95 @@
     "analytics": "Analytics",
     "lessonPlans": "Lesson Plans",
     "alerts": "Alerts",
-    "clients": "Clients"
+    "clients": "Clients",
+    "sessions": "Sessions"
+  },
+  "accountSettings": {
+    "accountDetails": "Account Details",
+    "changePassword": "Change Password",
+    "deleteAccount": "Delete Account",
+    "fullName": "Full Name",
+    "nameRequired": "Name is required.",
+    "accountUpdated": "Account updated.",
+    "accountUpdateFailed": "Failed to update account.",
+    "deletePasswordRequired": "Please enter your password to confirm.",
+    "deleteFailed": "Failed to delete account.",
+    "deleteWarning": "This permanently deletes your account and all associated data. This action cannot be undone. Enter your password to confirm.",
+    "confirmDelete": "Delete Account",
+    "twoFactorAuth": "Two-Factor Authentication",
+    "mfaDesc": "Add extra security with email verification codes.",
+    "enableMfa": "Enable MFA",
+    "disableMfa": "Disable MFA",
+    "enterPassword": "Enter your password",
+    "enterCode": "Enter the 6-digit code sent to your email.",
+    "mfaEnabled": "MFA has been enabled.",
+    "mfaDisabled": "MFA has been disabled.",
+    "avatarChange": "Change photo",
+    "avatarAdd": "Add photo",
+    "avatarRemove": "Remove photo",
+    "avatarRemoveConfirm": "Remove your profile photo?",
+    "avatarUploadFailed": "Could not upload photo. Try again.",
+    "avatarPermissionDenied": "Photo access permission is required.",
+    "avatarInvalidType": "Choose a JPEG, PNG, or WebP image.",
+    "avatarTooLarge": "Image is larger than 5 MB."
+  },
+  "teacherSettings": {
+    "title": "Settings"
+  },
+  "therapistSettings": {
+    "title": "Settings"
+  },
+  "learnerHomeworkSession": {
+    "title": "Homework Session",
+    "subjectTitle": "{{subject}} Homework",
+    "progress": "{{done}}/{{total}} done",
+    "showProblems": "Show problems",
+    "hideProblems": "Hide problems",
+    "problemNumber": "Problem {{number}}",
+    "markDone": "Mark done",
+    "done": "Done",
+    "placeholder": "Type your answer or question…",
+    "send": "Send",
+    "thinking": "Thinking…",
+    "sendError": "Sorry, I had trouble thinking about that. Could you try again?",
+    "completeError": "Could not finish the session. Please try again.",
+    "finish": "Finish session",
+    "notFound": "Couldn't load this homework session.",
+    "greetingNoProblems": "Hi! I'm here to help with your homework. What would you like to work on?",
+    "greetingWithProblems": "Hi! I see you have {{count}} problems to work on. Let's start with Problem {{first}}. Take a look and tell me what you think the first step is!",
+    "startRecording": "Start voice input",
+    "stopRecording": "Stop recording",
+    "sttError": {
+      "permission_denied": "Microphone access was denied. Allow microphone access in Settings to use voice input.",
+      "no_speech": "We couldn't hear anything. Try recording again.",
+      "unsupported": "Voice input isn't supported on this device.",
+      "network": "Network problem while sending your audio. Try again.",
+      "transcription_failed": "Couldn't transcribe that. Try again or type your reply.",
+      "audio_capture": "Couldn't record audio. Try again."
+    }
+  },
+  "mfaFactors": {
+    "totpTitle": "Authenticator app",
+    "totpDesc": "Use an authenticator app (Google Authenticator, 1Password, Authy) to generate sign-in codes.",
+    "enroll": "Set up authenticator app",
+    "disable": "Turn off authenticator",
+    "disableConfirm": "Confirm your password to turn off the authenticator app.",
+    "disableFailed": "Couldn't turn off the authenticator app.",
+    "scanQr": "Scan this QR code with your authenticator app, or enter the secret manually.",
+    "qrAlt": "QR code for setting up your authenticator app",
+    "manualEntry": "Manual entry secret (Base32):",
+    "secretCopied": "Secret copied to clipboard.",
+    "enterCode": "Enter the 6-digit code from your authenticator app",
+    "enrollFailed": "Couldn't start authenticator setup.",
+    "confirmFailed": "Code didn't match — try again.",
+    "recoveryTitle": "Recovery codes",
+    "recoveryDesc": "One-time codes you can use if you lose access to your authenticator app.",
+    "recoveryRemaining": "{{remaining}} of {{total}} recovery codes remaining",
+    "regen": "Generate new recovery codes",
+    "regenConfirm": "Confirm your password to generate new recovery codes. Your old codes will stop working.",
+    "regenFailed": "Couldn't generate new recovery codes.",
+    "codesWarning": "Save these codes now — they will not be shown again.",
+    "copyCodes": "Copy all",
+    "codesCopied": "Recovery codes copied to clipboard."
   }
 }

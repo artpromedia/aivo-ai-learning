@@ -24,6 +24,7 @@ import {
 } from "@aivo/db";
 import { eq, and, sql } from "drizzle-orm";
 import argon2 from "argon2";
+import { getTestLastMfaCodeByEmailSchema, testSeedDistrictAdminSchema, testSeedIepTimelineFixtureSchema, testSeedIepEvaluationFixtureSchema, testSeedIepAuthoringFixtureSchema } from "./schemas.js";
 
 function testModeEnabled(): boolean {
   return process.env.IDENTITY_TEST_MODE === "1" && process.env.NODE_ENV !== "production";
@@ -40,7 +41,7 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
   // happy-path specs to complete the MFA challenge for forced-MFA roles.
   app.get<{ Params: { email: string } }>(
     "/api/__test__/last-mfa-code/:email",
-    async (req, reply) => {
+    { schema: getTestLastMfaCodeByEmailSchema }, async (req, reply) => {
       if (!testModeEnabled()) return reply.status(404).send({ error: "Not found" });
       const db = (app as any).db;
       const email = decodeURIComponent(req.params.email).toLowerCase();
@@ -66,7 +67,7 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
   // Idempotent seeding for a DISTRICT_ADMIN test fixture used by e2e specs.
   app.post<{
     Body: { email: string; password: string; tenantName?: string; mfaEnabled?: boolean };
-  }>("/api/__test__/seed-district-admin", async (req, reply) => {
+  }>("/api/__test__/seed-district-admin", { schema: testSeedDistrictAdminSchema }, async (req, reply) => {
     if (!testModeEnabled()) return reply.status(404).send({ error: "Not found" });
     const db = (app as any).db;
     const { email, password, tenantName = "E2E District Tenant", mfaEnabled = false } = req.body;
@@ -137,7 +138,7 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
       seedInAppUnread?: boolean;
       inAppTitle?: string;
     };
-  }>("/api/__test__/seed-iep-timeline-fixture", async (req, reply) => {
+  }>("/api/__test__/seed-iep-timeline-fixture", { schema: testSeedIepTimelineFixtureSchema }, async (req, reply) => {
     if (!testModeEnabled()) return reply.status(404).send({ error: "Not found" });
     const db = (app as any).db;
     const {
@@ -417,7 +418,7 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
   }
 
   // Idempotent seeding for eligibility-evaluation e2e tests.
-  app.post<{ Body: SeedFixtureBody }>("/api/__test__/seed-iep-evaluation-fixture", async (req, reply) => {
+  app.post<{ Body: SeedFixtureBody }>("/api/__test__/seed-iep-evaluation-fixture", { schema: testSeedIepEvaluationFixtureSchema }, async (req, reply) => {
     if (!testModeEnabled()) return reply.status(404).send({ error: "Not found" });
     const result = await seedTeacherParentLearnerFixture(
       req.body,
@@ -436,7 +437,7 @@ export function registerTestHelperRoutes(app: FastifyInstance) {
   });
 
   // Idempotent seeding for IEP authoring e2e tests.
-  app.post<{ Body: SeedFixtureBody }>("/api/__test__/seed-iep-authoring-fixture", async (req, reply) => {
+  app.post<{ Body: SeedFixtureBody }>("/api/__test__/seed-iep-authoring-fixture", { schema: testSeedIepAuthoringFixtureSchema }, async (req, reply) => {
     if (!testModeEnabled()) return reply.status(404).send({ error: "Not found" });
     const result = await seedTeacherParentLearnerFixture(
       req.body,

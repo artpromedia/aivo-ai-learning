@@ -23,12 +23,39 @@ import { registerSensoryProfileRoutes } from "./routes/sensory-profile.js";
 const logger = createLogger("assessment-svc");
 const PORT = parseInt(process.env.ASSESSMENT_PORT || "3003", 10);
 
-async function start() {
-  const db = createDb(process.env.DATABASE_URL!);
+export async function buildApp(db = createDb(process.env.DATABASE_URL ?? "")) {
   const app = Fastify({ logger: false });
 
   // Structured request logging + /metrics for Prometheus scrape (Supp A).
   registerObservabilityPlugin(app, "assessment-svc");
+
+  // Surface unhandled errors. Without this, `Fastify({ logger: false })`
+  // silently 500s and the stack disappears.
+  app.setErrorHandler((err: any, req: any, reply: any) => {
+    logger.error("request_error", {
+      method: req.method,
+      path: req.routeOptions?.url ?? req.url,
+      request_id: req.requestId,
+      err_message: err?.message,
+      err_name: err?.name,
+      err_code: err?.code,
+      stack: err?.stack,
+      cause_message: err?.cause?.message,
+      cause_name: err?.cause?.name,
+      cause_code: err?.cause?.code,
+      cause_detail: err?.cause?.detail,
+      cause_hint: err?.cause?.hint,
+      cause_position: err?.cause?.position,
+      cause_where: err?.cause?.where,
+      cause_table: err?.cause?.table,
+      cause_column: err?.cause?.column,
+      cause_dataType: err?.cause?.dataType,
+      cause_constraint: err?.cause?.constraint,
+      cause_stack: err?.cause?.stack,
+    });
+    const status = err?.statusCode && err.statusCode >= 400 ? err.statusCode : 500;
+    reply.status(status).send({ error: err?.message ?? "Internal Server Error" });
+  });
 
   await app.register(cors, { origin: true, credentials: true });
 
@@ -68,6 +95,13 @@ async function start() {
   await registerLearnerProfileRoutes(app);
   await registerSensoryProfileRoutes(app);
 
+  return app;
+}
+
+async function start() {
+  const db = createDb(process.env.DATABASE_URL ?? "");
+  const app = await buildApp(db);
+
   await bootstrapOpsAlerts({ service: "assessment-svc", app, beforeExit: () => app.close() });
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
@@ -84,7 +118,14 @@ async function start() {
   }, 24 * 60 * 60 * 1000);
 }
 
-start().catch((err) => {
-  logger.error("Failed to start assessment-svc", { err: err?.message || String(err) });
-  process.exit(1);
-});
+const isMain = (() => {
+  try {
+    return process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+  } catch { return false; }
+})();
+if (isMain) {
+  start().catch((err) => {
+    logger.error("Failed to start assessment-svc", { err: err?.message || String(err) });
+    process.exit(1);
+  });
+}

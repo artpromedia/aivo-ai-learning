@@ -53,6 +53,7 @@ export default function RootLayout() {
               }}
             >
               <Stack.Screen name="index" />
+              <Stack.Screen name="accept-invite" />
               <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
               <Stack.Screen name="(parent)" />
               <Stack.Screen name="(learner)" />

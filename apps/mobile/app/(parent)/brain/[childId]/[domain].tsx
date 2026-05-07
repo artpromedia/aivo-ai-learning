@@ -1,20 +1,30 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useBrain } from '@/hooks/useBrain';
+import { useLearner } from '@/hooks/useLearners';
+import { useBrainDomains, labelForDomain } from '@/hooks/useBrain';
 import { AivoCard, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function DomainDrillDown() {
-  const { childId, domain } = useLocalSearchParams<{ childId: string; domain: string }>();
+  const { childId, domain } = useLocalSearchParams<{
+    childId: string;
+    domain: string;
+  }>();
   const insets = useSafeAreaInsets();
-  const { data: brain, isLoading } = useBrain(childId);
+  const { data: learner } = useLearner(childId);
+  const { domains, isLoading } = useBrainDomains(childId, {
+    enrolledGrade: learner?.gradeLevel ?? null,
+  });
   const { t } = useTranslation();
 
-  const domainData = brain?.domains?.find(d => d.domain === domain);
+  const targetLabel = useMemo(() => labelForDomain(domain || ''), [domain]);
+  const domainData = domains.find(
+    (d) => d.domain.toLowerCase() === targetLabel.toLowerCase(),
+  );
 
   if (isLoading) return <LoadingState />;
 
@@ -28,27 +38,44 @@ export default function DomainDrillDown() {
         <Text style={styles.backText}>{t('common.back')}</Text>
       </Pressable>
 
-      <Text style={styles.title}>{domain}</Text>
+      <Text style={styles.title}>{targetLabel}</Text>
       <Text style={styles.subtitle}>Grade Ladder & Skill Breakdown</Text>
 
       <AivoCard style={styles.ladderCard}>
         <View style={styles.ladderHeader}>
-          <Text style={styles.ladderLabel}>{t('parentBrain.enrolledGrade', { grade: '' }).trim()}</Text>
-          <Text style={styles.ladderValue}>{domainData?.enrolledGrade || 'N/A'}</Text>
+          <Text style={styles.ladderLabel}>
+            {t('parentBrain.enrolledGrade', { grade: '' }).trim()}
+          </Text>
+          <Text style={styles.ladderValue}>
+            {domainData?.enrolledGrade || 'N/A'}
+          </Text>
         </View>
         <View style={styles.ladderBar}>
-          <View style={[styles.ladderFill, { height: `${domainData?.masteryPercent || 0}%` }]} />
+          <View
+            style={[
+              styles.ladderFill,
+              { height: `${domainData?.masteryPercent || 0}%` },
+            ]}
+          />
           <View style={styles.ladderMarker}>
-            <Text style={styles.markerText}>{domainData?.functioningGrade || 'N/A'}</Text>
+            <Text style={styles.markerText}>
+              {domainData?.functioningGrade || 'N/A'}
+            </Text>
           </View>
         </View>
         <View style={styles.ladderFooter}>
-          <Text style={styles.ladderLabel}>{t('parentBrain.functioningGrade', { grade: '' }).trim()}</Text>
-          <Text style={styles.ladderValue}>{domainData?.functioningGrade || 'N/A'}</Text>
+          <Text style={styles.ladderLabel}>
+            {t('parentBrain.functioningGrade', { grade: '' }).trim()}
+          </Text>
+          <Text style={styles.ladderValue}>
+            {domainData?.functioningGrade || 'N/A'}
+          </Text>
         </View>
       </AivoCard>
 
-      <Text style={[styles.sectionTitle, { marginBottom: spacing.md }]}>Accommodations</Text>
+      <Text style={[styles.sectionTitle, { marginBottom: spacing.md }]}>
+        Accommodations
+      </Text>
       {domainData?.accommodations?.length ? (
         domainData.accommodations.map((acc) => (
           <AivoCard key={acc} style={styles.accCard}>
@@ -60,11 +87,27 @@ export default function DomainDrillDown() {
         <Text style={styles.noData}>No accommodations for this domain</Text>
       )}
 
+      {domainData && domainData.tutors.length > 0 && (
+        <>
+          <Text style={[styles.sectionTitle, { marginTop: spacing.lg, marginBottom: spacing.md }]}>
+            Recommended Tutors
+          </Text>
+          {domainData.tutors.map((tutor) => (
+            <AivoCard key={tutor} style={styles.accCard}>
+              <Ionicons name="school-outline" size={20} color={colors.primary} />
+              <Text style={styles.accText}>{tutor}</Text>
+            </AivoCard>
+          ))}
+        </>
+      )}
+
       <Text style={[styles.sectionTitle, { marginTop: spacing.lg, marginBottom: spacing.md }]}>
         Session History
       </Text>
       <AivoCard>
-        <Text style={styles.noData}>Session history will appear after learning sessions</Text>
+        <Text style={styles.noData}>
+          Session history will appear after learning sessions
+        </Text>
       </AivoCard>
     </ScrollView>
   );

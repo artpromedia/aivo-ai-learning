@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { eq, desc } from "drizzle-orm";
 import { selCheckins, breakActivities } from "@aivo/db";
 import { authenticateRequest, requireSelfOrRole } from "../auth.js";
+import { selCheckinSchema, getSelCheckinsByLearnerIdSchema, getSelExercisesByEmotionSchema, getBreaksCatalogSchema, breakLogSchema, getBreaksByLearnerIdSchema } from "./schemas.js";
 
 const GUIDED_EXERCISES: Record<string, { title: string; steps: string[]; durationMinutes: number }[]> = {
   sad: [
@@ -44,7 +45,7 @@ export function registerSelRoutes(
   app: FastifyInstance,
   db: ReturnType<typeof import("@aivo/db").createDb>
 ) {
-  app.post("/api/engagement/sel/checkin", async (request, reply) => {
+  app.post("/api/engagement/sel/checkin", { schema: selCheckinSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -75,7 +76,7 @@ export function registerSelRoutes(
     return { checkin, suggestedExercises: exercises };
   });
 
-  app.get("/api/engagement/sel/checkins/:learnerId", async (request, reply) => {
+  app.get("/api/engagement/sel/checkins/:learnerId", { schema: getSelCheckinsByLearnerIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -94,7 +95,7 @@ export function registerSelRoutes(
     return checkins;
   });
 
-  app.get("/api/engagement/sel/exercises/:emotion", async (request, reply) => {
+  app.get("/api/engagement/sel/exercises/:emotion", { schema: getSelExercisesByEmotionSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -103,7 +104,7 @@ export function registerSelRoutes(
     return exercises;
   });
 
-  app.get("/api/engagement/breaks/catalog", async (request, reply) => {
+  app.get("/api/engagement/breaks/catalog", { schema: getBreaksCatalogSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -114,7 +115,7 @@ export function registerSelRoutes(
     return BREAK_ACTIVITIES_CATALOG;
   });
 
-  app.post("/api/engagement/break/log", async (request, reply) => {
+  app.post("/api/engagement/break/log", { schema: breakLogSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -143,7 +144,7 @@ export function registerSelRoutes(
     return activity;
   });
 
-  app.get("/api/engagement/breaks/:learnerId", async (request, reply) => {
+  app.get("/api/engagement/breaks/:learnerId", { schema: getBreaksByLearnerIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 

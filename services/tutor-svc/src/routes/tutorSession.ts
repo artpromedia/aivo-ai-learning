@@ -49,6 +49,7 @@ import {
 } from "../lib/learnerContext.js";
 import { getStarterContentPack } from "../content-packs/index.js";
 import { ConsentError, verifyTutorConsent } from "../lib/familyConsent.js";
+import { getTutorsSchema, getTutorsByTutorKeySchema, tutorsByTutorKeyPlanSchema } from "./schemas.js";
 
 interface PlanBody {
   learnerId?: string;
@@ -105,7 +106,7 @@ export function registerTutorSessionRoutes(app: FastifyInstance): void {
   // ── GET /api/tutors ────────────────────────────────────────────────
   // Lightweight catalog endpoint so the UI / admin can verify which
   // tutors the runtime knows about and what they support.
-  app.get("/api/tutors", async () => {
+  app.get("/api/tutors", { schema: getTutorsSchema }, async () => {
     return {
       tutors: listTutorDefinitions().map(([key, def]) => ({
         key,
@@ -126,7 +127,7 @@ export function registerTutorSessionRoutes(app: FastifyInstance): void {
   // ── GET /api/tutors/:tutorKey ─────────────────────────────────────
   app.get<{ Params: { tutorKey: string } }>(
     "/api/tutors/:tutorKey",
-    async (req: FastifyRequest<{ Params: { tutorKey: string } }>, reply: FastifyReply) => {
+    { schema: getTutorsByTutorKeySchema }, async (req: FastifyRequest<{ Params: { tutorKey: string } }>, reply: FastifyReply) => {
       const def = getTutorDefinition(req.params.tutorKey);
       if (!def) {
         return reply.code(404).send({ error: `unknown tutor "${req.params.tutorKey}"` });
@@ -138,7 +139,7 @@ export function registerTutorSessionRoutes(app: FastifyInstance): void {
   // ── POST /api/tutors/:tutorKey/plan ───────────────────────────────
   app.post<{ Params: { tutorKey: string }; Body: PlanBody }>(
     "/api/tutors/:tutorKey/plan",
-    async (
+    { schema: tutorsByTutorKeyPlanSchema }, async (
       req: FastifyRequest<{ Params: { tutorKey: string }; Body: PlanBody }>,
       reply: FastifyReply,
     ) => {

@@ -195,7 +195,7 @@ function mapDiagnoses(answers: Answers): string[] {
 type Screen = "welcome" | "section" | "wrap_up";
 
 export default function ParentAssessmentPage() {
-  const { user, accessToken, loading } = useAuth();
+  const { user, accessToken, loading, refreshToken } = useAuth();
   const router = useRouter();
   const params = useParams();
   const t = useTranslations("assessment");
@@ -404,24 +404,41 @@ export default function ParentAssessmentPage() {
         }
       }
 
-      const res = await fetch("/api/assessments/parent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({
-          learnerId,
-          communicationMode: mapCommunicationMode(enriched),
-          deviceInteraction: mapDeviceInteraction(enriched),
-          responseMethod: mapResponseMethod(enriched),
-          attentionSpan: mapAttentionSpan(enriched),
-          diagnoses: mapDiagnoses(enriched),
-          additionalResponses: enriched,
-        }),
-      });
+      // Long-form completion can outlive the access token. If the POST
+      // fails 401 (token expired), refresh once via the auth-provider's
+      // refresh-cookie hop and retry before surfacing an error to the parent.
+      const doSubmit = async (token: string | null) =>
+        fetch("/api/assessments/parent", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            learnerId,
+            communicationMode: mapCommunicationMode(enriched),
+            deviceInteraction: mapDeviceInteraction(enriched),
+            responseMethod: mapResponseMethod(enriched),
+            attentionSpan: mapAttentionSpan(enriched),
+            diagnoses: mapDiagnoses(enriched),
+            additionalResponses: enriched,
+          }),
+        });
+
+      let res = await doSubmit(accessToken);
+      if (res.status === 401) {
+        const fresh = await refreshToken();
+        if (fresh) {
+          res = await doSubmit(fresh);
+        }
+      }
       if (res.ok) {
         const data = await res.json();
         setResult(data);
         setSubmitted(true);
         try { localStorage.removeItem(draftKey(learnerId)); } catch { /* ignore */ }
+      } else if (res.status === 401) {
+        setSubmitError(t("session_expired_retry"));
       } else {
         const err = await res.json().catch(() => null);
         setSubmitError(err?.message || t("submission_failed"));

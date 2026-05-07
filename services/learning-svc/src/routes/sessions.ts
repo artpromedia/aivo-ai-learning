@@ -4,6 +4,17 @@ import { lessonSessions, lessonContent, gradebookEntries, learningPaths } from "
 import { generateLessonContent, getSubjectForTutor, fetchPersonalizedTopics } from "../services/content-generator.js";
 import { computeLessonXp, computeCompletionQuality, type LessonSignals } from "../services/scoring.js";
 import { resolveTenantId, requireLearnerAccess } from "../lib/tenant.js";
+import {
+  createSessionSchema,
+  completeSessionSchema,
+  updateGradebookSchema,
+  listSessionsSchema,
+  getGradebookSchema,
+  getLearningPathSchema,
+  initLearningPathSchema,
+  refreshLearningPathTopicsSchema,
+  advanceLearningPathSchema,
+} from "./schemas.js";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 function requireUrl(name: string, devDefault: string): string {
@@ -26,8 +37,16 @@ async function fetchBrainContext(learnerId: string): Promise<Record<string, unkn
 }
 
 export function registerSessionRoutes(app: FastifyInstance, db: any) {
-  app.post("/api/learning/sessions", async (request, reply) => {
-    const { learnerId, tutorSku, topic, contentType } = request.body as any;
+  app.post("/api/learning/sessions", { schema: createSessionSchema }, async (request, reply) => {
+    const body = request.body as {
+      learnerId?: string;
+      tutorSku?: string;
+      topic?: string;
+      contentType?: string;
+      sessionDate?: string;
+      durationMinutes?: number | string;
+    };
+    const { learnerId, tutorSku, topic, contentType } = body;
     if (!learnerId || !tutorSku) {
       return reply.code(400).send({ error: "learnerId and tutorSku required" });
     }
@@ -35,6 +54,65 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     const access = await requireLearnerAccess(request, reply, db, learnerId);
     if (!access) return;
     const tenantId = access.tenantId;
+
+    // ---- Optional manual-entry fields (Phase 4 backend gap) -------------
+    // The web therapist sessions page and mobile (therapist) sessions tab
+    // collect a session date and a duration in minutes; honour them on the
+    // initial insert so the row reflects when the documented session
+    // actually happened, not when the therapist clicked "Log".
+    let startedAt: Date | undefined;
+    if (typeof body.sessionDate === "string" && body.sessionDate.trim()) {
+      const parsed = new Date(body.sessionDate);
+      if (!Number.isNaN(parsed.getTime())) startedAt = parsed;
+    }
+    let durationSeconds = 0;
+    if (body.durationMinutes != null) {
+      const minutes = typeof body.durationMinutes === "string"
+        ? parseFloat(body.durationMinutes)
+        : body.durationMinutes;
+      if (Number.isFinite(minutes) && minutes > 0) {
+        // Clamp to a reasonable cap (8 h) so a typo can't poison reports.
+        durationSeconds = Math.round(Math.min(minutes, 480) * 60);
+      }
+    }
+
+    // ---- Manual therapy-session log path (Phase 4 backend gap) ----------
+    // The dashboards POST `contentType: "THERAPY_SESSION"` to record a
+    // therapist-led session that already happened. That value is not in
+    // the `content_type` enum, and there is no AI lesson to generate, so
+    // short-circuit: store with the LESSON content-type, mark COMPLETED,
+    // stash the original category and notes in `session_data`, and skip
+    // the content-generation pipeline entirely.
+    if (contentType === "THERAPY_SESSION") {
+      // tutorSku follows the `therapy-${category}` convention agreed with
+      // the web + mobile therapist sessions screens; strip the prefix to
+      // recover the raw category (e.g. "speech", "occupational"). Falls
+      // back to "therapy" if the client sent something off-pattern.
+      const THERAPY_SKU_PREFIX = "therapy-";
+      const subject = tutorSku.startsWith(THERAPY_SKU_PREFIX)
+        ? tutorSku.slice(THERAPY_SKU_PREFIX.length)
+        : "therapy";
+      const sessionTimestamp = startedAt ?? new Date();
+      const [session] = await db.insert(lessonSessions).values({
+        tenantId,
+        learnerId,
+        tutorSku,
+        subject,
+        status: "COMPLETED",
+        contentType: "LESSON",
+        functioningLevel: null,
+        sessionData: {
+          manualLog: true,
+          source: "therapy_session",
+          category: subject,
+          notes: typeof topic === "string" ? topic : null,
+        },
+        durationSeconds,
+        startedAt: sessionTimestamp,
+        completedAt: sessionTimestamp,
+      }).returning();
+      return { sessionId: session.id, status: "COMPLETED" };
+    }
 
     const subject = getSubjectForTutor(tutorSku);
     const brainContext = await fetchBrainContext(learnerId);
@@ -49,6 +127,8 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
       contentType: contentType || "LESSON",
       functioningLevel,
       brainContextSnapshot: brainContext,
+      ...(startedAt ? { startedAt } : {}),
+      ...(durationSeconds > 0 ? { durationSeconds } : {}),
     }).returning();
 
     try {
@@ -97,7 +177,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.post("/api/learning/sessions/:sessionId/complete", async (request, reply) => {
+  app.post("/api/learning/sessions/:sessionId/complete", { schema: completeSessionSchema }, async (request, reply) => {
     const { sessionId } = request.params as any;
     const body = (request.body as any) || {};
     const { masteryUpdates, xpEarned } = body;
@@ -172,7 +252,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     return { status: "COMPLETED", sessionId, xpEarned: finalXp, completionQuality };
   });
 
-  app.post("/api/learning/gradebook/update", async (request, reply) => {
+  app.post("/api/learning/gradebook/update", { schema: updateGradebookSchema }, async (request, reply) => {
     // Authentication is enforced by the global onRequest hook
     // (registerAuthHook): JWT or x-service-token. Authorization
     // (tenant match) is enforced per-call below via requireLearnerAccess.
@@ -212,7 +292,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     return { status: "updated", skill, masteryScore };
   });
 
-  app.get("/api/learning/sessions", async (request, reply) => {
+  app.get("/api/learning/sessions", { schema: listSessionsSchema }, async (request, reply) => {
     const { learnerId } = request.query as any;
     if (!learnerId) return reply.code(400).send({ error: "learnerId required" });
 
@@ -226,7 +306,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     return sessions;
   });
 
-  app.get("/api/learning/gradebook/:learnerId", async (request, reply) => {
+  app.get("/api/learning/gradebook/:learnerId", { schema: getGradebookSchema }, async (request, reply) => {
     const { learnerId } = request.params as any;
 
     const access = await requireLearnerAccess(request, reply, db, learnerId);
@@ -238,7 +318,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     return entries;
   });
 
-  app.get("/api/learning/path/:learnerId/:subject", async (request, reply) => {
+  app.get("/api/learning/path/:learnerId/:subject", { schema: getLearningPathSchema }, async (request, reply) => {
     const { learnerId, subject } = request.params as any;
 
     const access = await requireLearnerAccess(request, reply, db, learnerId);
@@ -262,7 +342,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     return path;
   });
 
-  app.post("/api/learning/path/:learnerId/:subject/init", async (request, reply) => {
+  app.post("/api/learning/path/:learnerId/:subject/init", { schema: initLearningPathSchema }, async (request, reply) => {
     const { learnerId, subject } = request.params as any;
 
     const access = await requireLearnerAccess(request, reply, db, learnerId);
@@ -311,7 +391,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     return { status: "created", path: newPath, personalized: false };
   });
 
-  app.post("/api/learning/path/:learnerId/:subject/refresh-topics", async (request, reply) => {
+  app.post("/api/learning/path/:learnerId/:subject/refresh-topics", { schema: refreshLearningPathTopicsSchema }, async (request, reply) => {
     const { learnerId, subject } = request.params as any;
 
     const access = await requireLearnerAccess(request, reply, db, learnerId);
@@ -359,7 +439,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     return { status: "refreshed", path: updated, topicCount: topicNames.length };
   });
 
-  app.post("/api/learning/path/:learnerId/:subject/advance", async (request, reply) => {
+  app.post("/api/learning/path/:learnerId/:subject/advance", { schema: advanceLearningPathSchema }, async (request, reply) => {
     const { learnerId, subject } = request.params as any;
 
     const access = await requireLearnerAccess(request, reply, db, learnerId);

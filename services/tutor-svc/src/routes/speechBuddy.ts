@@ -25,6 +25,7 @@ import {
 } from "@aivo/security";
 import { aiSvc } from "../lib/aiSvc.js";
 import { ConsentError, verifyConsent } from "../lib/familyConsent.js";
+import { speechBuddySessionsSchema, speechBuddySessionsByIdTurnSchema, speechBuddySessionsByIdEndSchema, getSpeechBuddySessionsByIdStreamSchema } from "./schemas.js";
 
 interface ChildJWT {
   sub: string;
@@ -107,7 +108,7 @@ function isAgeBand(v: unknown): v is SpeechBuddyAgeBand {
 
 export async function registerSpeechBuddyRoutes(app: FastifyInstance) {
   // ── POST /speech-buddy/sessions ─────────────────────────────────────────
-  app.post<{ Body: StartSessionBody }>("/speech-buddy/sessions", async (req, reply) => {
+  app.post<{ Body: StartSessionBody }>("/speech-buddy/sessions", { schema: speechBuddySessionsSchema }, async (req, reply) => {
     const user = await requireChildAuth(req, reply);
     if (!user) return;
     const body: StartSessionBody = req.body ?? {};
@@ -148,7 +149,7 @@ export async function registerSpeechBuddyRoutes(app: FastifyInstance) {
   });
 
   // ── POST /speech-buddy/sessions/:id/turn ────────────────────────────────
-  app.post<{ Params: { id: string }; Body: TurnBody }>("/speech-buddy/sessions/:id/turn", async (req, reply) => {
+  app.post<{ Params: { id: string }; Body: TurnBody }>("/speech-buddy/sessions/:id/turn", { schema: speechBuddySessionsByIdTurnSchema }, async (req, reply) => {
     const user = await requireChildAuth(req, reply);
     if (!user) return;
     const { id } = req.params;
@@ -175,7 +176,7 @@ export async function registerSpeechBuddyRoutes(app: FastifyInstance) {
   });
 
   // ── POST /speech-buddy/sessions/:id/end ─────────────────────────────────
-  app.post<{ Params: { id: string }; Body: EndBody }>("/speech-buddy/sessions/:id/end", async (req, reply) => {
+  app.post<{ Params: { id: string }; Body: EndBody }>("/speech-buddy/sessions/:id/end", { schema: speechBuddySessionsByIdEndSchema }, async (req, reply) => {
     const user = await requireChildAuth(req, reply);
     if (!user) return;
     const { id } = req.params;
@@ -208,7 +209,7 @@ export async function registerSpeechBuddyRoutes(app: FastifyInstance) {
   // boot rather than silently dropping the WS contract here.
   app.get<{ Params: { id: string }; Querystring: { token?: string } }>(
     "/speech-buddy/sessions/:id/stream",
-    { websocket: true },
+    { schema: getSpeechBuddySessionsByIdStreamSchema, websocket: true },
     async (conn, req) => {
       const { id } = req.params;
       const send = (msg: Record<string, unknown>) => {

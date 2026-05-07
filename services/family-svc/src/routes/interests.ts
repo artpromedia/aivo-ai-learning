@@ -22,6 +22,7 @@ import {
   type LearnerInterestProfile,
 } from "@aivo/special-interest-engine";
 import { authenticateRequest, verifyParentOwnership } from "../auth.js";
+import { getInterestsByLearnerIdSchema, interestsByLearnerIdSchema, deleteInterestsByLearnerIdBySignalIdSchema } from "./schemas.js";
 
 const VALID_SOURCES = new Set([
   "caregiver_intake",
@@ -55,7 +56,7 @@ function rateLimit(subject: string, now: number): boolean {
 export async function registerInterestRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
-  app.get("/api/family/interests/:learnerId", async (req: any, reply: any) => {
+  app.get("/api/family/interests/:learnerId", { schema: getInterestsByLearnerIdSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { learnerId } = req.params as { learnerId: string };
@@ -97,7 +98,7 @@ export async function registerInterestRoutes(app: FastifyInstance) {
     };
   });
 
-  app.post("/api/family/interests/:learnerId", async (req: any, reply: any) => {
+  app.post("/api/family/interests/:learnerId", { schema: interestsByLearnerIdSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     if (!rateLimit(auth.sub, Date.now())) {
@@ -167,7 +168,7 @@ export async function registerInterestRoutes(app: FastifyInstance) {
 
   app.delete(
     "/api/family/interests/:learnerId/:signalId",
-    async (req: any, reply: any) => {
+    { schema: deleteInterestsByLearnerIdBySignalIdSchema }, async (req: any, reply: any) => {
       const auth = await authenticateRequest(req, reply);
       if (!auth) return;
       if (!rateLimit(auth.sub, Date.now())) {

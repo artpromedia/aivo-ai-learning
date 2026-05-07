@@ -285,6 +285,7 @@
     "submitting": "Envoi en cours...",
     "missing_required": "Veuillez répondre à toutes les questions requises. {count} restantes.",
     "submission_failed": "Échec de l'envoi. Veuillez réessayer.",
+    "session_expired_retry": "Votre session a expiré. Actualisez la page et réessayez — vos réponses sont enregistrées.",
     "network_error_retry": "Erreur réseau. Vérifiez votre connexion et réessayez.",
     "type_answer": "Tapez votre réponse...",
     "question_of": "Question {current} sur {total}",
