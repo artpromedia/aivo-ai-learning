@@ -1,0 +1,62 @@
+name: api-client drift
+
+on:
+  pull_request:
+    paths:
+      - "services/**"
+      - "packages/api-client/**"
+      - "scripts/dump-openapi.mjs"
+      - "scripts/generate-api-client.mjs"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/api-client-drift.yml"
+
+concurrency:
+  group: api-client-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  drift:
+    name: Detect generated client drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Phase 5.0: this is a non-blocking signal. Once 5.1+ lands and the
+    # apps actually depend on the generated types, flip
+    # `continue-on-error` to `false` (or remove it) so drift becomes a
+    # hard gate.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The dump shim imports each service via tsx, which still
+      # resolves transitive `@aivo/*` workspace deps from their `dist/`
+      # output. Build the workspace once so those resolutions succeed.
+      - name: Build workspace packages and services
+        run: pnpm build
+
+      - name: Regenerate OpenAPI specs and typed client
+        run: pnpm api:generate
+
+      - name: Fail if generated output drifted from committed output
+        run: |
+          if ! git diff --exit-code -- packages/api-client/openapi packages/api-client/src; then
+            echo ""
+            echo "::error::Generated api-client output is out of sync with the committed copy."
+            echo "Run 'pnpm api:generate' locally and commit the result."
+            exit 1
+          fi
