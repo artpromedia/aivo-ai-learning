@@ -2,11 +2,12 @@ import { FastifyInstance } from "fastify";
 import { authenticateRequest, verifyParentOwnership } from "../auth.js";
 import { transitionPlans } from "@aivo/db";
 import { eq } from "drizzle-orm";
+import { transitionByLearnerIdSchema, getTransitionByLearnerIdSchema } from "./schemas.js";
 
 export async function registerTransitionRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
-  app.post("/api/family/transition/:learnerId", async (req, reply) => {
+  app.post("/api/family/transition/:learnerId", { schema: transitionByLearnerIdSchema }, async (req, reply) => {
     const claims = await authenticateRequest(req, reply);
     if (!claims) return;
 
@@ -52,7 +53,7 @@ export async function registerTransitionRoutes(app: FastifyInstance) {
     return { status: "created", plan };
   });
 
-  app.get("/api/family/transition/:learnerId", async (req, reply) => {
+  app.get("/api/family/transition/:learnerId", { schema: getTransitionByLearnerIdSchema }, async (req, reply) => {
     const claims = await authenticateRequest(req, reply);
     if (!claims) return;
 

@@ -5,6 +5,7 @@ import {
   learnerStreaks, learnerBadges, users, parentInAppNotifications,
 } from "@aivo/db";
 import { authenticateRequest, verifyParentOwnership } from "../auth.js";
+import { getLearnerSettingsByLearnerIdSchema, updateLearnerSettingsByLearnerIdSchema, getInboxByParentIdSchema, updateInboxByNotificationIdReadSchema, updateInboxByNotificationIdDismissSchema, getActivityFeedByParentIdSchema, getMilestonesByLearnerIdSchema, getStreaksByLearnerIdSchema, getSummaryByParentIdSchema } from "./schemas.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -15,7 +16,7 @@ function isUuid(value: unknown): value is string {
 export async function registerParentDashboardRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
-  app.get("/api/family/learner-settings/:learnerId", async (req: any, reply: any) => {
+  app.get("/api/family/learner-settings/:learnerId", { schema: getLearnerSettingsByLearnerIdSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { learnerId } = req.params as { learnerId: string };
@@ -34,7 +35,7 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     };
   });
 
-  app.put("/api/family/learner-settings/:learnerId", async (req: any, reply: any) => {
+  app.put("/api/family/learner-settings/:learnerId", { schema: updateLearnerSettingsByLearnerIdSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { learnerId } = req.params as { learnerId: string };
@@ -74,7 +75,7 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
   // creates when a parent has `inApp: true` for a category. This way the
   // bell badge in the dashboard header reflects every unread item across
   // every learner, not just the per-learner Updates tab.
-  app.get("/api/family/inbox/:parentId", async (req: any, reply: any) => {
+  app.get("/api/family/inbox/:parentId", { schema: getInboxByParentIdSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { parentId } = req.params as { parentId: string };
@@ -180,7 +181,7 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     return null;
   }
 
-  app.put("/api/family/inbox/:notificationId/read", async (req: any, reply: any) => {
+  app.put("/api/family/inbox/:notificationId/read", { schema: updateInboxByNotificationIdReadSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { notificationId } = req.params as { notificationId: string };
@@ -201,7 +202,7 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     return { success: true };
   });
 
-  app.put("/api/family/inbox/:notificationId/dismiss", async (req: any, reply: any) => {
+  app.put("/api/family/inbox/:notificationId/dismiss", { schema: updateInboxByNotificationIdDismissSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { notificationId } = req.params as { notificationId: string };
@@ -224,7 +225,7 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     return { success: true };
   });
 
-  app.get("/api/family/activity-feed/:parentId", async (req: any, reply: any) => {
+  app.get("/api/family/activity-feed/:parentId", { schema: getActivityFeedByParentIdSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { parentId } = req.params as { parentId: string };
@@ -268,7 +269,7 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     return { activities: milestones.slice(0, 20), learners: parentLearners };
   });
 
-  app.get("/api/family/milestones/:learnerId", async (req: any, reply: any) => {
+  app.get("/api/family/milestones/:learnerId", { schema: getMilestonesByLearnerIdSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { learnerId } = req.params as { learnerId: string };
@@ -289,7 +290,7 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     return { milestones, badges, streak: streak || { currentStreak: 0, longestStreak: 0 } };
   });
 
-  app.get("/api/family/streaks/:learnerId", async (req: any, reply: any) => {
+  app.get("/api/family/streaks/:learnerId", { schema: getStreaksByLearnerIdSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { learnerId } = req.params as { learnerId: string };
@@ -300,7 +301,7 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     return streak || { learnerId, currentStreak: 0, longestStreak: 0, lastActiveDate: null };
   });
 
-  app.get("/api/family/summary/:parentId", async (req: any, reply: any) => {
+  app.get("/api/family/summary/:parentId", { schema: getSummaryByParentIdSchema }, async (req: any, reply: any) => {
     const auth = await authenticateRequest(req, reply);
     if (!auth) return;
     const { parentId } = req.params as { parentId: string };

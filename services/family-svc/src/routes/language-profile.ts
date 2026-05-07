@@ -5,11 +5,12 @@ import { eq, and } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "@aivo/security";
 import { CoughDropSync } from "@aivo/aac-bridge";
 import type { SymbolBoard } from "@aivo/aac-bridge";
+import { languageProfileByLearnerIdSchema, getLanguageProfileByLearnerIdSchema, languageProfileByLearnerIdCoughdropSyncSchema, getLanguageProfileByLearnerIdCoughdropSyncStatusSchema } from "./schemas.js";
 
 export async function registerLanguageProfileRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
-  app.post("/api/family/language-profile/:learnerId", async (req, reply) => {
+  app.post("/api/family/language-profile/:learnerId", { schema: languageProfileByLearnerIdSchema }, async (req, reply) => {
     const claims = await authenticateRequest(req, reply);
     if (!claims) return;
 
@@ -52,7 +53,7 @@ export async function registerLanguageProfileRoutes(app: FastifyInstance) {
     return { status: "created", profile };
   });
 
-  app.get("/api/family/language-profile/:learnerId", async (req, reply) => {
+  app.get("/api/family/language-profile/:learnerId", { schema: getLanguageProfileByLearnerIdSchema }, async (req, reply) => {
     const claims = await authenticateRequest(req, reply);
     if (!claims) return;
 
@@ -69,7 +70,7 @@ export async function registerLanguageProfileRoutes(app: FastifyInstance) {
 
   // ── CoughDrop Sync ─────────────────────────────────────────────────────────
 
-  app.post("/api/family/language-profile/:learnerId/coughdrop-sync", async (req, reply) => {
+  app.post("/api/family/language-profile/:learnerId/coughdrop-sync", { schema: languageProfileByLearnerIdCoughdropSyncSchema }, async (req, reply) => {
     const claims = await authenticateRequest(req, reply);
     if (!claims) return;
 
@@ -146,7 +147,7 @@ export async function registerLanguageProfileRoutes(app: FastifyInstance) {
     }
   });
 
-  app.get("/api/family/language-profile/:learnerId/coughdrop-sync/status", async (req, reply) => {
+  app.get("/api/family/language-profile/:learnerId/coughdrop-sync/status", { schema: getLanguageProfileByLearnerIdCoughdropSyncStatusSchema }, async (req, reply) => {
     const claims = await authenticateRequest(req, reply);
     if (!claims) return;
 

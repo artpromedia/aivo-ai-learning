@@ -8,11 +8,12 @@ import {
   xpEvents, badges, streaks, virtualCurrency,
 } from "@aivo/db";
 import { eq } from "drizzle-orm";
+import { getDataExportByLearnerIdSchema } from "./schemas.js";
 
 export async function registerDataExportRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
-  app.get("/api/family/data-export/:learnerId", async (req, reply) => {
+  app.get("/api/family/data-export/:learnerId", { schema: getDataExportByLearnerIdSchema }, async (req, reply) => {
     const auth = await verifyJWT(req.headers.authorization?.replace("Bearer ", "") || "");
     if (!auth) return reply.status(401).send({ error: "Unauthorized" });
 

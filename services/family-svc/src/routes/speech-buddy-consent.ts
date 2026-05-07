@@ -17,6 +17,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { internalSpeechBuddyConsentVerifySchema } from "./schemas.js";
 
 function devLookup(tenantId: string, learnerId: string): string | null {
   const raw = process.env.SPEECH_BUDDY_DEV_CONSENTS || "";
@@ -29,7 +30,7 @@ function devLookup(tenantId: string, learnerId: string): string | null {
 }
 
 export async function registerSpeechBuddyConsentRoutes(app: FastifyInstance) {
-  app.post("/api/family/internal/speech-buddy/consent/verify", async (req, reply) => {
+  app.post("/api/family/internal/speech-buddy/consent/verify", { schema: internalSpeechBuddyConsentVerifySchema }, async (req, reply) => {
     const internalKey = req.headers["x-internal-key"];
     const expectedKey =
       process.env.INTERNAL_SERVICE_KEY ||

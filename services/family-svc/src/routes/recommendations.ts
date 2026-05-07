@@ -5,6 +5,7 @@ import {
   brainInsights,
 } from "@aivo/db";
 import { authenticateRequest, verifyParentOwnership } from "../auth.js";
+import { getRecommendationsByLearnerIdSchema, recommendationsByLearnerIdByRecIdRespondSchema, getRecommendationsByLearnerIdHistorySchema, getRecommendationsByLearnerIdConflictsSchema } from "./schemas.js";
 
 interface LearnerId {
   learnerId: string;
@@ -26,7 +27,7 @@ interface QueryStatus {
 export async function registerRecommendationRoutes(app: FastifyInstance) {
   const db = (app as unknown as { db: ReturnType<typeof import("@aivo/db").createDb> }).db;
 
-  app.get("/api/family/recommendations/:learnerId", async (request, reply) => {
+  app.get("/api/family/recommendations/:learnerId", { schema: getRecommendationsByLearnerIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -49,7 +50,7 @@ export async function registerRecommendationRoutes(app: FastifyInstance) {
     return allRecs;
   });
 
-  app.post("/api/family/recommendations/:learnerId/:recId/respond", async (request, reply) => {
+  app.post("/api/family/recommendations/:learnerId/:recId/respond", { schema: recommendationsByLearnerIdByRecIdRespondSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -76,7 +77,7 @@ export async function registerRecommendationRoutes(app: FastifyInstance) {
     return { status: "updated", action: body.action };
   });
 
-  app.get("/api/family/recommendations/:learnerId/history", async (request, reply) => {
+  app.get("/api/family/recommendations/:learnerId/history", { schema: getRecommendationsByLearnerIdHistorySchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -96,7 +97,7 @@ export async function registerRecommendationRoutes(app: FastifyInstance) {
     return { pending, acted, total: allRecs.length };
   });
 
-  app.get("/api/family/recommendations/:learnerId/conflicts", async (request, reply) => {
+  app.get("/api/family/recommendations/:learnerId/conflicts", { schema: getRecommendationsByLearnerIdConflictsSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 

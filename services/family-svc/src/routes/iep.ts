@@ -19,6 +19,7 @@ import {
   type DapeCategory,
   type DapeFunctioningTier,
 } from "../dape-library.js";
+import { getIepByLearnerIdGoalsSchema, getIepByLearnerIdGoalsByGoalIdSchema, getIepByLearnerIdProfileSchema, getIepByLearnerIdDocumentsSchema, getIepByLearnerIdProgressSchema, getIepByLearnerIdReportSchema, getIepByLearnerIdDapeProfileSchema, getIepByLearnerIdDapeActivitySchema, getIepByLearnerIdDapeProgressSchema } from "./schemas.js";
 
 interface LearnerId {
   learnerId: string;
@@ -49,7 +50,7 @@ function extractBrainMastery(brainState: { masteryLevels: unknown } | undefined)
 export async function registerIepRoutes(app: FastifyInstance) {
   const db = (app as unknown as { db: ReturnType<typeof import("@aivo/db").createDb> }).db;
 
-  app.get("/api/family/iep/:learnerId/goals", async (request, reply) => {
+  app.get("/api/family/iep/:learnerId/goals", { schema: getIepByLearnerIdGoalsSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -64,7 +65,7 @@ export async function registerIepRoutes(app: FastifyInstance) {
       .orderBy(desc(iepGoals.createdAt));
   });
 
-  app.get("/api/family/iep/:learnerId/goals/:goalId", async (request, reply) => {
+  app.get("/api/family/iep/:learnerId/goals/:goalId", { schema: getIepByLearnerIdGoalsByGoalIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -82,7 +83,7 @@ export async function registerIepRoutes(app: FastifyInstance) {
     return goal[0];
   });
 
-  app.get("/api/family/iep/:learnerId/profile", async (request, reply) => {
+  app.get("/api/family/iep/:learnerId/profile", { schema: getIepByLearnerIdProfileSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -99,7 +100,7 @@ export async function registerIepRoutes(app: FastifyInstance) {
     return profiles[0] || null;
   });
 
-  app.get("/api/family/iep/:learnerId/documents", async (request, reply) => {
+  app.get("/api/family/iep/:learnerId/documents", { schema: getIepByLearnerIdDocumentsSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -114,7 +115,7 @@ export async function registerIepRoutes(app: FastifyInstance) {
       .orderBy(desc(iepDocuments.uploadedAt));
   });
 
-  app.get("/api/family/iep/:learnerId/progress", async (request, reply) => {
+  app.get("/api/family/iep/:learnerId/progress", { schema: getIepByLearnerIdProgressSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -169,7 +170,7 @@ export async function registerIepRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/family/iep/:learnerId/report", async (request, reply) => {
+  app.get("/api/family/iep/:learnerId/report", { schema: getIepByLearnerIdReportSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -298,7 +299,7 @@ export async function registerIepRoutes(app: FastifyInstance) {
   // grouped by skill category, plus the catalogue of categories Vigor's
   // DAPE track exposes. No DAPE goals → empty `categories` so the UI can
   // hide the track gracefully.
-  app.get("/api/family/iep/:learnerId/dape/profile", async (request, reply) => {
+  app.get("/api/family/iep/:learnerId/dape/profile", { schema: getIepByLearnerIdDapeProfileSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -340,7 +341,7 @@ export async function registerIepRoutes(app: FastifyInstance) {
 
   // Generate a single DAPE activity for the learner. Picks from the curated
   // library, filtered by category (optional) and adapted to functioning level.
-  app.get("/api/family/iep/:learnerId/dape/activity", async (request, reply) => {
+  app.get("/api/family/iep/:learnerId/dape/activity", { schema: getIepByLearnerIdDapeActivitySchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -380,7 +381,7 @@ export async function registerIepRoutes(app: FastifyInstance) {
   // Motor Progress aggregate for the parent/therapist report. Per-category
   // tally of goal counts, average mastery, and trend (improving/stable/
   // declining) using the same brain-mastery extraction as /progress.
-  app.get("/api/family/iep/:learnerId/dape/progress", async (request, reply) => {
+  app.get("/api/family/iep/:learnerId/dape/progress", { schema: getIepByLearnerIdDapeProgressSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 

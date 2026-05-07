@@ -12,6 +12,7 @@ import {
   therapyGoals,
 } from "@aivo/db";
 import { authenticateRequest, verifyParentOwnership } from "../auth.js";
+import { getCollaborationByLearnerIdMembersSchema, collaborationByLearnerIdInviteTeacherSchema, collaborationByLearnerIdInviteCaregiverSchema, collaborationByLearnerIdInviteTherapistSchema, deleteCollaborationByLearnerIdMemberByMemberIdSchema, collaborationByLearnerIdInsightSchema, getCollaborationByLearnerIdBrainTeacherSchema, getCollaborationByLearnerIdBrainCaregiverSchema, getCollaborationByLearnerIdBrainTherapistSchema, getCollaborationConnectedLearnersSchema, collaborationAcceptInviteSchema, getCollaborationPendingInvitesSchema } from "./schemas.js";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 function requireUrl(name: string, devDefault: string): string {
@@ -125,7 +126,7 @@ interface InsightBody {
 export async function registerCollaborationRoutes(app: FastifyInstance) {
   const db = (app as unknown as { db: ReturnType<typeof import("@aivo/db").createDb> }).db;
 
-  app.get("/api/family/collaboration/:learnerId/members", async (request, reply) => {
+  app.get("/api/family/collaboration/:learnerId/members", { schema: getCollaborationByLearnerIdMembersSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -151,7 +152,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     };
   });
 
-  app.post("/api/family/collaboration/:learnerId/invite/teacher", async (request, reply) => {
+  app.post("/api/family/collaboration/:learnerId/invite/teacher", { schema: collaborationByLearnerIdInviteTeacherSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -196,7 +197,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     return reply.code(201).send(record);
   });
 
-  app.post("/api/family/collaboration/:learnerId/invite/caregiver", async (request, reply) => {
+  app.post("/api/family/collaboration/:learnerId/invite/caregiver", { schema: collaborationByLearnerIdInviteCaregiverSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -246,7 +247,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     return reply.code(201).send(record);
   });
 
-  app.post("/api/family/collaboration/:learnerId/invite/therapist", async (request, reply) => {
+  app.post("/api/family/collaboration/:learnerId/invite/therapist", { schema: collaborationByLearnerIdInviteTherapistSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -297,7 +298,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     return reply.code(201).send(record);
   });
 
-  app.delete("/api/family/collaboration/:learnerId/member/:memberId", async (request, reply) => {
+  app.delete("/api/family/collaboration/:learnerId/member/:memberId", { schema: deleteCollaborationByLearnerIdMemberByMemberIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -320,7 +321,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     return { status: "removed" };
   });
 
-  app.post("/api/family/collaboration/:learnerId/insight", async (request, reply) => {
+  app.post("/api/family/collaboration/:learnerId/insight", { schema: collaborationByLearnerIdInsightSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -357,7 +358,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     return reply.code(201).send(record);
   });
 
-  app.get("/api/family/collaboration/:learnerId/brain/teacher", async (request, reply) => {
+  app.get("/api/family/collaboration/:learnerId/brain/teacher", { schema: getCollaborationByLearnerIdBrainTeacherSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -388,7 +389,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/family/collaboration/:learnerId/brain/caregiver", async (request, reply) => {
+  app.get("/api/family/collaboration/:learnerId/brain/caregiver", { schema: getCollaborationByLearnerIdBrainCaregiverSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -427,7 +428,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/family/collaboration/:learnerId/brain/therapist", async (request, reply) => {
+  app.get("/api/family/collaboration/:learnerId/brain/therapist", { schema: getCollaborationByLearnerIdBrainTherapistSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -464,7 +465,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/family/collaboration/connected-learners", async (request, reply) => {
+  app.get("/api/family/collaboration/connected-learners", { schema: getCollaborationConnectedLearnersSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -527,7 +528,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     return results;
   });
 
-  app.post("/api/family/collaboration/accept-invite", async (request, reply) => {
+  app.post("/api/family/collaboration/accept-invite", { schema: collaborationAcceptInviteSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -576,7 +577,7 @@ export async function registerCollaborationRoutes(app: FastifyInstance) {
     return { accepted, count: accepted.length };
   });
 
-  app.get("/api/family/collaboration/pending-invites", async (request, reply) => {
+  app.get("/api/family/collaboration/pending-invites", { schema: getCollaborationPendingInvitesSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 

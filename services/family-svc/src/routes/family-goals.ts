@@ -9,6 +9,7 @@ import {
   learnerTherapists,
 } from "@aivo/db";
 import { authenticateRequest } from "../auth.js";
+import { getIepGoalsSchema, getTherapyGoalsSchema } from "./schemas.js";
 
 /**
  * Top-level "across all my learners" read endpoints used by the web
@@ -82,7 +83,7 @@ export async function registerFamilyGoalsRoutes(app: FastifyInstance) {
     return Array.from(ids);
   }
 
-  app.get("/api/family/iep-goals", async (request, reply) => {
+  app.get("/api/family/iep-goals", { schema: getIepGoalsSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -113,7 +114,7 @@ export async function registerFamilyGoalsRoutes(app: FastifyInstance) {
     return { goals };
   });
 
-  app.get("/api/family/therapy-goals", async (request, reply) => {
+  app.get("/api/family/therapy-goals", { schema: getTherapyGoalsSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
