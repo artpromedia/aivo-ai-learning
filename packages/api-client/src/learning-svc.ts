@@ -11,8 +11,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Service health probe */
-        get: operations["learningHealth"];
+        /** Service health probe (root) */
+        get: operations["learningHealthRoot"];
         put?: never;
         post?: never;
         delete?: never;
@@ -199,7 +199,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    learningHealth: {
+    learningHealthRoot: {
         parameters: {
             query?: never;
             header?: never;

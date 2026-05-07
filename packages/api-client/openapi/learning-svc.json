@@ -17,8 +17,8 @@
   "paths": {
     "/health": {
       "get": {
-        "operationId": "learningHealth",
-        "summary": "Service health probe",
+        "operationId": "learningHealthRoot",
+        "summary": "Service health probe (root)",
         "tags": [
           "Health"
         ],

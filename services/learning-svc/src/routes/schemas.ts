@@ -354,20 +354,27 @@ export const advanceLearningPathSchema = {
   },
 } as const;
 
+const healthResponseSchema = {
+  type: "object",
+  required: ["status", "service", "timestamp"],
+  additionalProperties: true,
+  properties: {
+    status: { type: "string" },
+    service: { type: "string" },
+    timestamp: { type: "string", format: "date-time" },
+  },
+} as const;
+
 export const healthSchema = {
   tags: ["Health"],
   operationId: "learningHealth",
   summary: "Service health probe",
-  response: {
-    200: {
-      type: "object",
-      required: ["status", "service", "timestamp"],
-      additionalProperties: true,
-      properties: {
-        status: { type: "string" },
-        service: { type: "string" },
-        timestamp: { type: "string", format: "date-time" },
-      },
-    },
-  },
+  response: { 200: healthResponseSchema },
+} as const;
+
+export const healthRootSchema = {
+  tags: ["Health"],
+  operationId: "learningHealthRoot",
+  summary: "Service health probe (root)",
+  response: { 200: healthResponseSchema },
 } as const;
