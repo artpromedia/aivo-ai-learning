@@ -39,6 +39,7 @@ import {
   getRpId, getRpName, getExpectedOrigin,
   signWebauthnChallenge, verifyWebauthnChallengeToken,
 } from "../services/mfa-webauthn.js";
+import { getAuthPublicKeySchema, updateAuthSessionHeartbeatSchema } from "./schemas.js";
 
 async function hashPassword(password: string): Promise<string> {
   return argon2.hash(password);
@@ -303,7 +304,7 @@ function computeMustChangePassword(user: { mustChangePassword?: boolean | null; 
 }
 
 export async function registerAuthRoutes(app: FastifyInstance) {
-  app.get("/api/auth/public-key", async (_req, reply) => {
+  app.get("/api/auth/public-key", { schema: getAuthPublicKeySchema }, async (_req, reply) => {
     const { getPublicKeyPEM } = await import("@aivo/security");
     const pem = await getPublicKeyPEM();
     if (!pem) {
@@ -938,7 +939,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
    * `adminSessions.lastActivityAt` fresh. Returns the next idle/MFA
    * deadlines so the UI can drive a warning modal.
    */
-  app.put("/api/auth/session/heartbeat", async (req, reply) => {
+  app.put("/api/auth/session/heartbeat", { schema: updateAuthSessionHeartbeatSchema }, async (req, reply) => {
     const auth = req.headers.authorization;
     if (!auth?.startsWith("Bearer ")) return reply.status(401).send({ error: "Missing authorization header" });
     let payload: any;

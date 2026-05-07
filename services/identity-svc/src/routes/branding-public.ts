@@ -15,13 +15,14 @@
 import { FastifyInstance } from "fastify";
 import { tenants, districtSettings } from "@aivo/db";
 import { eq } from "drizzle-orm";
+import { getBrandingPublicByTenantIdSchema } from "./schemas.js";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function registerPublicBrandingRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
-  app.get("/api/branding/public/:tenantId", async (req: any, reply: any) => {
+  app.get("/api/branding/public/:tenantId", { schema: getBrandingPublicByTenantIdSchema }, async (req: any, reply: any) => {
     const { tenantId } = req.params as { tenantId: string };
     if (!tenantId || !UUID_RE.test(tenantId)) {
       return reply.status(404).send({ error: "Not found" });

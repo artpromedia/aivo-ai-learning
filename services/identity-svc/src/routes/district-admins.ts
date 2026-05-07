@@ -24,6 +24,7 @@ import argon2 from "argon2";
 import crypto from "crypto";
 import { createLogger } from "@aivo/observability";
 import { requireStepUp } from "./step-up.js";
+import { getDistrictAdminsSchema, districtAdminsSchema, districtAdminsInvitesByIdResendSchema, deleteDistrictAdminsInvitesByIdSchema, districtAdminsByIdDeactivateSchema, districtAdminsByIdReactivateSchema, districtAdminsByIdResetPasswordSchema, getDistrictAdminsMfaStatsSchema, updateDistrictAdminsForceMfaSchema } from "./schemas.js";
 
 const logger = createLogger("identity-svc.district-admins");
 
@@ -103,7 +104,7 @@ export async function registerDistrictAdminRoutes(app: FastifyInstance) {
   const stepUp = requireStepUp(STEP_UP_SCOPE);
 
   // --- LIST --------------------------------------------------------
-  app.get("/api/district/admins", async (req: any) => {
+  app.get("/api/district/admins", { schema: getDistrictAdminsSchema }, async (req: any) => {
     const tid = req.tenantId;
     const rows = await db.select({
       id: users.id, email: users.email, name: users.name,
@@ -130,7 +131,7 @@ export async function registerDistrictAdminRoutes(app: FastifyInstance) {
   });
 
   // --- INVITE ------------------------------------------------------
-  app.post("/api/district/admins", { preHandler: stepUp }, async (req: any, reply: any) => {
+  app.post("/api/district/admins", { schema: districtAdminsSchema, preHandler: stepUp }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const { email, name } = (req.body || {}) as { email?: string; name?: string };
     if (!email || !name) {
@@ -181,7 +182,7 @@ export async function registerDistrictAdminRoutes(app: FastifyInstance) {
   });
 
   // --- RESEND INVITE ----------------------------------------------
-  app.post("/api/district/admins/invites/:id/resend", { preHandler: stepUp }, async (req: any, reply: any) => {
+  app.post("/api/district/admins/invites/:id/resend", { schema: districtAdminsInvitesByIdResendSchema, preHandler: stepUp }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const { id } = req.params as { id: string };
     const [invite] = await db.select().from(districtAdminInvites)
@@ -211,7 +212,7 @@ export async function registerDistrictAdminRoutes(app: FastifyInstance) {
   });
 
   // --- REVOKE INVITE ----------------------------------------------
-  app.delete("/api/district/admins/invites/:id", { preHandler: stepUp }, async (req: any, reply: any) => {
+  app.delete("/api/district/admins/invites/:id", { schema: deleteDistrictAdminsInvitesByIdSchema, preHandler: stepUp }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const { id } = req.params as { id: string };
     const [invite] = await db.select().from(districtAdminInvites)
@@ -233,7 +234,7 @@ export async function registerDistrictAdminRoutes(app: FastifyInstance) {
   });
 
   // --- DEACTIVATE --------------------------------------------------
-  app.post("/api/district/admins/:id/deactivate", { preHandler: stepUp }, async (req: any, reply: any) => {
+  app.post("/api/district/admins/:id/deactivate", { schema: districtAdminsByIdDeactivateSchema, preHandler: stepUp }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const { id } = req.params as { id: string };
     const [target] = await db.select().from(users)
@@ -269,7 +270,7 @@ export async function registerDistrictAdminRoutes(app: FastifyInstance) {
   });
 
   // --- REACTIVATE --------------------------------------------------
-  app.post("/api/district/admins/:id/reactivate", { preHandler: stepUp }, async (req: any, reply: any) => {
+  app.post("/api/district/admins/:id/reactivate", { schema: districtAdminsByIdReactivateSchema, preHandler: stepUp }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const { id } = req.params as { id: string };
     const [target] = await db.select().from(users)
@@ -294,7 +295,7 @@ export async function registerDistrictAdminRoutes(app: FastifyInstance) {
   // Generates a temporary password, returns it once, and forces a
   // change on next login. Caller should display it inside the step-up
   // confirmation modal and instruct the admin to share it out-of-band.
-  app.post("/api/district/admins/:id/reset-password", { preHandler: stepUp }, async (req: any, reply: any) => {
+  app.post("/api/district/admins/:id/reset-password", { schema: districtAdminsByIdResetPasswordSchema, preHandler: stepUp }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const { id } = req.params as { id: string };
     const [target] = await db.select().from(users)
@@ -328,7 +329,7 @@ export async function registerDistrictAdminRoutes(app: FastifyInstance) {
   // therapists + caregivers), how many have MFA enrolled, and whether
   // the tenant-level forceMfa override is on. Powers the widget on the
   // district settings page.
-  app.get("/api/district/admins/mfa-stats", async (req: any) => {
+  app.get("/api/district/admins/mfa-stats", { schema: getDistrictAdminsMfaStatsSchema }, async (req: any) => {
     const tid = req.tenantId;
     const STAFF_ROLES = ["DISTRICT_ADMIN", "TEACHER", "THERAPIST", "CAREGIVER"] as const;
     const { inArray } = await import("drizzle-orm");
@@ -368,7 +369,7 @@ export async function registerDistrictAdminRoutes(app: FastifyInstance) {
   });
 
   // --- TOGGLE FORCE-MFA -------------------------------------------
-  app.put("/api/district/admins/force-mfa", { preHandler: stepUp }, async (req: any, reply: any) => {
+  app.put("/api/district/admins/force-mfa", { schema: updateDistrictAdminsForceMfaSchema, preHandler: stepUp }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const { enabled } = (req.body || {}) as { enabled?: boolean };
     if (typeof enabled !== "boolean") {

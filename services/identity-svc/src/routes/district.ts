@@ -12,6 +12,7 @@ import crypto from "crypto";
 import { requireDistrictAdmin } from "../hooks/require-district-admin.js";
 import { requireStepUp } from "./step-up.js";
 import { parseLogoDataUrl, wcagContrastRatio, WCAG_AA_NORMAL } from "../lib/branding-validation.js";
+import { getDistrictStatsSchema, getDistrictTenantSchema, getDistrictSchoolsSchema, districtSchoolsSchema, getDistrictSchoolsByIdSchema, updateDistrictSchoolsByIdSchema, getDistrictLearnersSchema, getDistrictLearnersByIdSchema, getDistrictStaffSchema, districtStaffSchema, getDistrictStaffByIdSchema, updateDistrictStaffByIdSchema, deleteDistrictStaffByIdSchema, getDistrictFamiliesSchema, getDistrictClassroomsSchema, districtClassroomsSchema, getDistrictUsageSchema, getDistrictSettingsSchema, updateDistrictSettingsSchema, getDistrictSsoSchema, updateDistrictSsoSchema, getDistrictActivitySchema, getDistrictAnalyticsCohortsSchema, getDistrictAnalyticsEngagementSchema, getDistrictAnalyticsMasterySchema, getDistrictIepSummarySchema, getDistrictIepEvaluationsInProgressSchema, getDistrictIepLearnersSchema, getDistrictInterventionsSchema, districtIepSchema, districtInterventionsSchema, districtSettingsBrandingLogoSchema, districtSeatsRequestSchema, getDistrictRosterCsvSchema, getDistrictActivityExportSchema, getDistrictSeatsRequestsSchema } from "./schemas.js";
 void verifyJWT; // kept for potential token introspection helpers
 
 const IS_PROD = process.env.NODE_ENV === "production";
@@ -52,7 +53,7 @@ async function logActivity(db: any, tenantId: string, action: string, actorId: s
 export async function registerDistrictRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
-  app.get("/api/district/stats", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/stats", { schema: getDistrictStatsSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const [userCount] = await db.select({ count: count() }).from(users).where(eq(users.tenantId, tid));
     const [learnerCount] = await db.select({ count: count() }).from(learners).where(eq(learners.tenantId, tid));
@@ -92,7 +93,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/district/tenant", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/tenant", { schema: getDistrictTenantSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const [tenant] = await db.select().from(tenants).where(eq(tenants.id, req.tenantId)).limit(1);
     if (!tenant) return { error: "Tenant not found" };
 
@@ -100,7 +101,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { ...tenant, districtSettings: settings || null };
   });
 
-  app.get("/api/district/schools", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/schools", { schema: getDistrictSchoolsSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const { search } = req.query as any;
 
@@ -121,7 +122,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { schools: enriched };
   });
 
-  app.post("/api/district/schools", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.post("/api/district/schools", { schema: districtSchoolsSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const { name, address, city, state, zip, phone, principalName, principalEmail, enrollmentCapacity, gradeLevels } = req.body as any;
     if (!name) return reply.status(400).send({ error: "School name is required" });
@@ -136,7 +137,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { school };
   });
 
-  app.get("/api/district/schools/:id", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.get("/api/district/schools/:id", { schema: getDistrictSchoolsByIdSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const { id } = req.params as { id: string };
     const [school] = await db.select().from(schools).where(and(eq(schools.id, id), eq(schools.tenantId, req.tenantId))).limit(1);
     if (!school) return reply.status(404).send({ error: "School not found" });
@@ -160,7 +161,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { school, learners: schoolLearners, staff: staffList, classrooms: schoolClassrooms, learnerCount: lCount.count };
   });
 
-  app.put("/api/district/schools/:id", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.put("/api/district/schools/:id", { schema: updateDistrictSchoolsByIdSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const { id } = req.params as { id: string };
     const [existing] = await db.select().from(schools).where(and(eq(schools.id, id), eq(schools.tenantId, req.tenantId))).limit(1);
     if (!existing) return reply.status(404).send({ error: "School not found" });
@@ -177,7 +178,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { school: updated };
   });
 
-  app.get("/api/district/learners", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/learners", { schema: getDistrictLearnersSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const { page: pageStr, pageSize: pageSizeStr, search, school: schoolId, grade, fl } = req.query as any;
     const page = safePage(pageStr);
@@ -211,7 +212,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { learners: enriched, total: totalRow.count, page, pageSize };
   });
 
-  app.get("/api/district/learners/:id", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.get("/api/district/learners/:id", { schema: getDistrictLearnersByIdSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const { id } = req.params as { id: string };
     const [learner] = await db.select().from(learners).where(and(eq(learners.id, id), eq(learners.tenantId, req.tenantId))).limit(1);
     if (!learner) return reply.status(404).send({ error: "Learner not found" });
@@ -227,7 +228,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { learner, parent: parent || null, school: school || null, sensoryProfile: sensory || null, ieps, interventions: learnerInterventions };
   });
 
-  app.get("/api/district/staff", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/staff", { schema: getDistrictStaffSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const { page: pageStr, pageSize: pageSizeStr, search, role, school: schoolId } = req.query as any;
     const page = safePage(pageStr);
@@ -270,7 +271,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { staff: result, total: totalRow.count, page, pageSize };
   });
 
-  app.post("/api/district/staff", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.post("/api/district/staff", { schema: districtStaffSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const { name, email, role, schoolId: assignSchoolId } = req.body as any;
     if (!name || !email || !role) return reply.status(400).send({ error: "Name, email, and role are required" });
@@ -303,7 +304,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/district/staff/:id", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.get("/api/district/staff/:id", { schema: getDistrictStaffByIdSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const { id } = req.params as { id: string };
     const [user] = await db.select({
       id: users.id, name: users.name, email: users.email, role: users.role,
@@ -322,7 +323,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { user, schoolAssignments: assignments };
   });
 
-  app.put("/api/district/staff/:id", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.put("/api/district/staff/:id", { schema: updateDistrictStaffByIdSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const { id } = req.params as { id: string };
     const [existing] = await db.select().from(users).where(and(eq(users.id, id), eq(users.tenantId, req.tenantId))).limit(1);
     if (!existing) return reply.status(404).send({ error: "Staff member not found" });
@@ -338,7 +339,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { user: { id: updated.id, name: updated.name, email: updated.email, role: updated.role } };
   });
 
-  app.delete("/api/district/staff/:id", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.delete("/api/district/staff/:id", { schema: deleteDistrictStaffByIdSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const { id } = req.params as { id: string };
     const [existing] = await db.select().from(users).where(and(eq(users.id, id), eq(users.tenantId, req.tenantId))).limit(1);
     if (!existing) return reply.status(404).send({ error: "Staff member not found" });
@@ -349,7 +350,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { success: true };
   });
 
-  app.get("/api/district/families", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/families", { schema: getDistrictFamiliesSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const { search } = req.query as any;
 
@@ -369,7 +370,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { families: enriched };
   });
 
-  app.get("/api/district/classrooms", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/classrooms", { schema: getDistrictClassroomsSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const { schoolId } = req.query as any;
 
@@ -392,7 +393,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { classrooms: rows };
   });
 
-  app.post("/api/district/classrooms", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.post("/api/district/classrooms", { schema: districtClassroomsSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const { schoolId, name, gradeLevel, subject, teacherId, capacity } = req.body as any;
     if (!schoolId || !name) return reply.status(400).send({ error: "School and name are required" });
 
@@ -404,7 +405,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { classroom };
   });
 
-  app.get("/api/district/usage", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/usage", { schema: getDistrictUsageSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tid)).limit(1);
     const limits = (tenant?.settings as any)?.subscription?.limits || {};
@@ -426,12 +427,12 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/district/settings", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/settings", { schema: getDistrictSettingsSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const [settings] = await db.select().from(districtSettings).where(eq(districtSettings.tenantId, req.tenantId)).limit(1);
     return settings || { notificationPrefs: {}, ssoConfig: {}, branding: {}, featureOverrides: {} };
   });
 
-  app.put("/api/district/settings", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.put("/api/district/settings", { schema: updateDistrictSettingsSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const body = req.body as any;
     const updates: any = { updatedAt: new Date() };
@@ -479,7 +480,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
   // IdP cert + SP private key. Reading the config never returns plaintext
   // — the UI gets `*Set: true` markers instead so it can render "stored,
   // paste a new value to replace" placeholders.
-  app.get("/api/district/sso", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/sso", { schema: getDistrictSsoSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const [settings] = await db.select().from(districtSettings)
       .where(eq(districtSettings.tenantId, req.tenantId)).limit(1);
     const stored = (settings?.ssoConfig || {}) as any;
@@ -493,7 +494,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     };
   });
 
-  app.put("/api/district/sso", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.put("/api/district/sso", { schema: updateDistrictSsoSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const body = req.body as any;
     const { encryptSsoConfig, IDP_PRESETS } = await import("@aivo/sso");
@@ -555,7 +556,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { ok: true, config: { ...safe, idpCertSet: !!encrypted.idpCertEnvelope, spPrivateKeySet: !!encrypted.spPrivateKeyEnvelope } };
   });
 
-  app.get("/api/district/activity", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/activity", { schema: getDistrictActivitySchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const { page: pageStr, pageSize: pageSizeStr, action, resourceType } = req.query as any;
     const page = safePage(pageStr);
     const pageSize = safePageSize(pageSizeStr, 30);
@@ -574,7 +575,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { activities: rows, total: totalRow.count, page, pageSize };
   });
 
-  app.get("/api/district/analytics/cohorts", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/analytics/cohorts", { schema: getDistrictAnalyticsCohortsSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const flCounts = await db.select({
       level: learners.functioningLevel,
@@ -594,7 +595,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/district/analytics/engagement", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/analytics/engagement", { schema: getDistrictAnalyticsEngagementSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const [learnerCount] = await db.select({ count: count() }).from(learners).where(eq(learners.tenantId, tid));
     return {
@@ -605,7 +606,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/district/analytics/mastery", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/analytics/mastery", { schema: getDistrictAnalyticsMasterySchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     return {
       bySubject: [],
       byGrade: [],
@@ -613,7 +614,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/district/iep/summary", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/iep/summary", { schema: getDistrictIepSummarySchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const [activeCount] = await db.select({ count: count() }).from(iepRecords)
       .innerJoin(learners, eq(iepRecords.learnerId, learners.id))
@@ -714,7 +715,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get("/api/district/iep/evaluations-in-progress", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/iep/evaluations-in-progress", { schema: getDistrictIepEvaluationsInProgressSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const rows = await db.select({
       id: iepEvaluations.id,
@@ -735,7 +736,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { evaluations: rows };
   });
 
-  app.get("/api/district/iep/learners", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/iep/learners", { schema: getDistrictIepLearnersSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const rows = await db.select({
       iepId: iepRecords.id, status: iepRecords.status,
@@ -752,7 +753,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { iepLearners: rows };
   });
 
-  app.get("/api/district/interventions", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/interventions", { schema: getDistrictInterventionsSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const tid = req.tenantId;
     const { status: filterStatus } = req.query as any;
 
@@ -773,7 +774,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { interventions: rows };
   });
 
-  app.post("/api/district/iep", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.post("/api/district/iep", { schema: districtIepSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const body = req.body as any;
     if (!body.learnerId || !body.startDate || !body.reviewDate) {
       return reply.status(400).send({ error: "learnerId, startDate, and reviewDate are required" });
@@ -793,7 +794,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
     return { iep };
   });
 
-  app.post("/api/district/interventions", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.post("/api/district/interventions", { schema: districtInterventionsSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const body = req.body as any;
     if (!body.learnerId || !body.type || !body.startDate) {
       return reply.status(400).send({ error: "learnerId, type, and startDate are required" });
@@ -819,7 +820,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
   // because we deliberately don't pull in @fastify/multipart for one
   // small endpoint, and because logos are stored inline (no S3) anyway.
   // Validation enforces PNG/SVG, ≤200KB, and ≥512×128 pixels.
-  app.post("/api/district/settings/branding/logo", { preHandler: requireDistrictAdmin },
+  app.post("/api/district/settings/branding/logo", { schema: districtSettingsBrandingLogoSchema, preHandler: requireDistrictAdmin },
     async (req: any, reply: any) => {
       const { dataUrl } = (req.body || {}) as { dataUrl?: string };
       if (!dataUrl) return reply.status(400).send({ error: "dataUrl is required" });
@@ -843,7 +844,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
 
   // Seat self-service — district admin asks billing for more seats. The
   // request row is the source of truth; comms-svc just notifies billing.
-  app.post("/api/district/seats/request", { preHandler: requireDistrictAdmin },
+  app.post("/api/district/seats/request", { schema: districtSeatsRequestSchema, preHandler: requireDistrictAdmin },
     async (req: any, reply: any) => {
       const body = (req.body || {}) as { requestedSeats?: number; justification?: string };
       const requested = Number(body.requestedSeats);
@@ -894,7 +895,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
 
   // Roster CSV — current seat usage vs contracted limits, suitable for
   // download from the usage dashboard.
-  app.get("/api/district/roster.csv", { preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
+  app.get("/api/district/roster.csv", { schema: getDistrictRosterCsvSchema, preHandler: requireDistrictAdmin }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tid)).limit(1);
     const limits = ((tenant?.settings as any)?.subscription?.limits) || {};
@@ -922,7 +923,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
   // who pulled which slice of activity history. Supports `csv` or
   // `json` (NDJSON) formats and an optional date range.
   const exportStepUp = requireStepUp("data:export");
-  app.get("/api/district/activity/export", { preHandler: exportStepUp }, async (req: any, reply: any) => {
+  app.get("/api/district/activity/export", { schema: getDistrictActivityExportSchema, preHandler: exportStepUp }, async (req: any, reply: any) => {
     const tid = req.tenantId;
     const { from, to, format } = (req.query as any) || {};
     const fmt: "csv" | "json" = format === "json" ? "json" : "csv";
@@ -972,7 +973,7 @@ export async function registerDistrictRoutes(app: FastifyInstance) {
   });
 
   // Seat-request list (so the dashboard can show pending requests).
-  app.get("/api/district/seats/requests", { preHandler: requireDistrictAdmin }, async (req: any) => {
+  app.get("/api/district/seats/requests", { schema: getDistrictSeatsRequestsSchema, preHandler: requireDistrictAdmin }, async (req: any) => {
     const rows = await db.select().from(seatRequests)
       .where(eq(seatRequests.tenantId, req.tenantId))
       .orderBy(desc(seatRequests.createdAt)).limit(50);

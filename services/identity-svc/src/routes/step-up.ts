@@ -36,6 +36,7 @@ import {
 } from "../services/step-up.js";
 import { isMfaLocked, recordMfaFailure, clearMfaFailures } from "../services/mfa-lockout.js";
 import { getRpId, getExpectedOrigin, signWebauthnChallenge, verifyWebauthnChallengeToken } from "../services/mfa-webauthn.js";
+import { authStepUpVerifyInternalSchema } from "./schemas.js";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 function requireUrl(name: string, devDefault: string): string {
@@ -394,7 +395,7 @@ export async function registerStepUpRoutes(app: FastifyInstance) {
    * `requireStepUp` checks (purpose, sub match, scope match, jti single-
    * use). Authenticated with the shared `x-internal-key`.
    */
-  app.post("/api/auth/step-up/verify-internal", async (req: any, reply) => {
+  app.post("/api/auth/step-up/verify-internal", { schema: authStepUpVerifyInternalSchema }, async (req: any, reply) => {
     const internalKey = req.headers["x-internal-key"];
     if (!INTERNAL_KEY || internalKey !== INTERNAL_KEY) {
       return reply.status(401).send({ valid: false, reason: "internal-key-mismatch" });
