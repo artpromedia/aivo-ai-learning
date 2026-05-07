@@ -17,8 +17,7 @@ import Fastify from "fastify";
   const logger = createLogger("integrations-svc");
   const PORT = parseInt(process.env.INTEGRATIONS_SVC_PORT || "3012", 10);
 
-  export async function buildApp() {
-    const db = createDb(process.env.DATABASE_URL ?? "");
+  export async function buildApp(db = createDb(process.env.DATABASE_URL ?? "")) {
     const app = Fastify({ logger: false });
 
     await app.register(cors, { origin: true, credentials: true });
@@ -43,7 +42,7 @@ import Fastify from "fastify";
 
   async function start() {
     const db = createDb(process.env.DATABASE_URL ?? "");
-    const app = await buildApp();
+    const app = await buildApp(db);
 
     await bootstrapOpsAlerts({ service: "integrations-svc", app, beforeExit: () => app.close() });
 

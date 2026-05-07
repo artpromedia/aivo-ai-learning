@@ -19,7 +19,7 @@ import { runDigestCleanupOnce } from "./lib/digest-cleanup.js";
 const logger = createLogger("comms-svc");
 const PORT = parseInt(process.env.COMMS_SVC_PORT || "3010", 10);
 
-export async function buildApp() {
+export async function buildApp(db = createDb(process.env.DATABASE_URL ?? "")) {
   const app = Fastify({ logger: false });
 
   await app.register(cors, { origin: true, credentials: true });
@@ -36,7 +36,6 @@ export async function buildApp() {
   });
   await app.register(swaggerUI, { routePrefix: "/docs" });
 
-  const db = createDb(process.env.DATABASE_URL ?? "");
   registerHealthRoutes(app);
   registerNotificationRoutes(app, db);
   registerEmailEventsRoutes(app);
@@ -46,7 +45,7 @@ export async function buildApp() {
 
 async function start() {
   const db = createDb(process.env.DATABASE_URL ?? "");
-  const app = await buildApp();
+  const app = await buildApp(db);
 
   await bootstrapOpsAlerts({ service: "comms-svc", app, beforeExit: () => app.close() });
 

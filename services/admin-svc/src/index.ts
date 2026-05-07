@@ -36,9 +36,8 @@ const PORT = parseInt(process.env.ADMIN_SVC_PORT || "3013", 10);
 
 type CronHandles = Record<string, SafeCronHandle>;
 
-export async function buildApp(handles: CronHandles = {}) {
+export async function buildApp(handles: CronHandles = {}, db = createDb(process.env.DATABASE_URL ?? "")) {
   logAdminEnterpriseFlags(logger);
-  const db = createDb(process.env.DATABASE_URL ?? "");
   const app = Fastify({ logger: false });
 
   // Structured request logging + /metrics for Prometheus scrape (Supp A).
@@ -84,7 +83,7 @@ export async function buildApp(handles: CronHandles = {}) {
 async function start() {
   const db = createDb(process.env.DATABASE_URL ?? "");
   const handles: CronHandles = {};
-  const app = await buildApp(handles);
+  const app = await buildApp(handles, db);
 
   await bootstrapOpsAlerts({ service: "admin-svc", app, beforeExit: () => app.close() }).then(
     (boot) => {

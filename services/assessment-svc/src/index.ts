@@ -23,8 +23,7 @@ import { registerSensoryProfileRoutes } from "./routes/sensory-profile.js";
 const logger = createLogger("assessment-svc");
 const PORT = parseInt(process.env.ASSESSMENT_PORT || "3003", 10);
 
-export async function buildApp() {
-  const db = createDb(process.env.DATABASE_URL ?? "");
+export async function buildApp(db = createDb(process.env.DATABASE_URL ?? "")) {
   const app = Fastify({ logger: false });
 
   // Structured request logging + /metrics for Prometheus scrape (Supp A).
@@ -101,7 +100,7 @@ export async function buildApp() {
 
 async function start() {
   const db = createDb(process.env.DATABASE_URL ?? "");
-  const app = await buildApp();
+  const app = await buildApp(db);
 
   await bootstrapOpsAlerts({ service: "assessment-svc", app, beforeExit: () => app.close() });
 

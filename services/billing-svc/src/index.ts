@@ -32,8 +32,7 @@ const PORT = parseInt(process.env.BILLING_SVC_PORT || "3009", 10);
  */
 type CronHandles = Record<string, SafeCronHandle>;
 
-export async function buildApp(handles: CronHandles = {}) {
-  const db = createDb(process.env.DATABASE_URL ?? "");
+export async function buildApp(handles: CronHandles = {}, db = createDb(process.env.DATABASE_URL ?? "")) {
   const app = Fastify({ logger: false });
 
   await app.register(cors, { origin: true, credentials: true });
@@ -66,7 +65,7 @@ async function start() {
   // Mutable handles map — wired into the internal-jobs route via
   // closure, then populated below once the schedulers exist.
   const handles: CronHandles = {};
-  const app = await buildApp(handles);
+  const app = await buildApp(handles, db);
 
   const lock = createDrizzleAdvisoryLock(db as any);
   const ledger = createDrizzleLedger(db as any);

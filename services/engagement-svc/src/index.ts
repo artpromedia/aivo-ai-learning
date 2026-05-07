@@ -23,8 +23,7 @@ import { registerSiblingRoutes } from "./routes/siblings.js";
 const logger = createLogger("engagement-svc");
 const PORT = parseInt(process.env.ENGAGEMENT_PORT || "3008", 10);
 
-export async function buildApp() {
-  const db = createDb(process.env.DATABASE_URL ?? "");
+export async function buildApp(db = createDb(process.env.DATABASE_URL ?? "")) {
   const app = Fastify({ logger: false });
 
   await app.register(cors, { origin: true, credentials: true });
@@ -55,7 +54,7 @@ export async function buildApp() {
 
 async function start() {
   const db = createDb(process.env.DATABASE_URL ?? "");
-  const app = await buildApp();
+  const app = await buildApp(db);
 
   await bootstrapOpsAlerts({ service: "engagement-svc", app, beforeExit: () => app.close() });
 
