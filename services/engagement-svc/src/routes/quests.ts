@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { eq, and, asc } from "drizzle-orm";
 import { quests, questProgress } from "@aivo/db";
 import { authenticateRequest } from "../auth.js";
+import { getQuestsWorldsSchema, getQuestsByWorldKeySchema, getQuestsProgressByLearnerIdSchema, questsStartSchema, questsCompleteSchema } from "./schemas.js";
 
 const QUEST_WORLDS = [
   {
@@ -50,13 +51,13 @@ export function registerQuestRoutes(
   app: FastifyInstance,
   db: ReturnType<typeof import("@aivo/db").createDb>
 ) {
-  app.get("/api/engagement/quests/worlds", async (request, reply) => {
+  app.get("/api/engagement/quests/worlds", { schema: getQuestsWorldsSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
     return QUEST_WORLDS;
   });
 
-  app.get("/api/engagement/quests/:worldKey", async (request, reply) => {
+  app.get("/api/engagement/quests/:worldKey", { schema: getQuestsByWorldKeySchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -70,7 +71,7 @@ export function registerQuestRoutes(
     return { world: QUEST_WORLDS.find((w) => w.key === worldKey), quests: worldQuests };
   });
 
-  app.get("/api/engagement/quests/progress/:learnerId", async (request, reply) => {
+  app.get("/api/engagement/quests/progress/:learnerId", { schema: getQuestsProgressByLearnerIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -83,7 +84,7 @@ export function registerQuestRoutes(
     return progress;
   });
 
-  app.post("/api/engagement/quests/start", async (request, reply) => {
+  app.post("/api/engagement/quests/start", { schema: questsStartSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -109,7 +110,7 @@ export function registerQuestRoutes(
     return { progress };
   });
 
-  app.post("/api/engagement/quests/complete", async (request, reply) => {
+  app.post("/api/engagement/quests/complete", { schema: questsCompleteSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 

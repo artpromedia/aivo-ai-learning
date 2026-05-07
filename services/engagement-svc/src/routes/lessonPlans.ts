@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { eq, and, desc } from "drizzle-orm";
 import { lessonPlans } from "@aivo/db";
 import { authenticateRequest, requireRole } from "../auth.js";
+import { lessonPlansCreateSchema, lessonPlansGenerateSchema, getLessonPlansTeacherSchema, getLessonPlansLearnerByLearnerIdSchema, getLessonPlansByPlanIdSchema, updateLessonPlansByPlanIdSchema } from "./schemas.js";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 function requireUrl(name: string, devDefault: string): string {
@@ -17,7 +18,7 @@ export function registerLessonPlanRoutes(
   app: FastifyInstance,
   db: ReturnType<typeof import("@aivo/db").createDb>
 ) {
-  app.post("/api/engagement/lesson-plans/create", async (request, reply) => {
+  app.post("/api/engagement/lesson-plans/create", { schema: lessonPlansCreateSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -58,7 +59,7 @@ export function registerLessonPlanRoutes(
     return plan;
   });
 
-  app.post("/api/engagement/lesson-plans/generate", async (request, reply) => {
+  app.post("/api/engagement/lesson-plans/generate", { schema: lessonPlansGenerateSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -163,7 +164,7 @@ export function registerLessonPlanRoutes(
     return plan;
   });
 
-  app.get("/api/engagement/lesson-plans/teacher", async (request, reply) => {
+  app.get("/api/engagement/lesson-plans/teacher", { schema: getLessonPlansTeacherSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -176,7 +177,7 @@ export function registerLessonPlanRoutes(
     return plans;
   });
 
-  app.get("/api/engagement/lesson-plans/learner/:learnerId", async (request, reply) => {
+  app.get("/api/engagement/lesson-plans/learner/:learnerId", { schema: getLessonPlansLearnerByLearnerIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -190,7 +191,7 @@ export function registerLessonPlanRoutes(
     return plans;
   });
 
-  app.get("/api/engagement/lesson-plans/:planId", async (request, reply) => {
+  app.get("/api/engagement/lesson-plans/:planId", { schema: getLessonPlansByPlanIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
@@ -204,7 +205,7 @@ export function registerLessonPlanRoutes(
     return plan;
   });
 
-  app.put("/api/engagement/lesson-plans/:planId", async (request, reply) => {
+  app.put("/api/engagement/lesson-plans/:planId", { schema: updateLessonPlansByPlanIdSchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
