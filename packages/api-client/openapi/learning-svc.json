@@ -31,7 +31,8 @@
                   "type": "object",
                   "required": [
                     "status",
-                    "service"
+                    "service",
+                    "timestamp"
                   ],
                   "additionalProperties": true,
                   "properties": {
@@ -69,7 +70,8 @@
                   "type": "object",
                   "required": [
                     "status",
-                    "service"
+                    "service",
+                    "timestamp"
                   ],
                   "additionalProperties": true,
                   "properties": {

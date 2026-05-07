@@ -218,7 +218,7 @@ export interface operations {
                         status: string;
                         service: string;
                         /** Format: date-time */
-                        timestamp?: string;
+                        timestamp: string;
                     } & {
                         [key: string]: unknown;
                     };
@@ -245,7 +245,7 @@ export interface operations {
                         status: string;
                         service: string;
                         /** Format: date-time */
-                        timestamp?: string;
+                        timestamp: string;
                     } & {
                         [key: string]: unknown;
                     };

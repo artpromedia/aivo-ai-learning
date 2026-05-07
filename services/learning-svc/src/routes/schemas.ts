@@ -361,7 +361,7 @@ export const healthSchema = {
   response: {
     200: {
       type: "object",
-      required: ["status", "service"],
+      required: ["status", "service", "timestamp"],
       additionalProperties: true,
       properties: {
         status: { type: "string" },
