@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { users, learners, tenants } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { or, ilike } from "drizzle-orm";
+import { getAdminSvcSearchSchema } from "./schemas.js";
 
 async function requireAdmin(req: any, reply: any) {
   const auth = req.headers.authorization;
@@ -15,7 +16,7 @@ async function requireAdmin(req: any, reply: any) {
 }
 
 export function registerSearchRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/admin-svc/search", { preHandler: requireAdmin }, async (request) => {
+  app.get("/api/admin-svc/search", { schema: getAdminSvcSearchSchema, preHandler: requireAdmin }, async (request) => {
     const { q } = request.query as any;
     if (!q || typeof q !== "string" || q.trim().length === 0) {
       return { users: [], learners: [], tenants: [] };

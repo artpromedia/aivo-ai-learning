@@ -16,6 +16,7 @@ import {
   getPublicKeyPEM,
 } from "@aivo/security";
 import { sql, gte, inArray, and } from "drizzle-orm";
+import { getAdminSvcComplianceControlsSchema } from "./schemas.js";
 
 type ControlStatus = "pass" | "warn" | "fail" | "unknown";
 
@@ -64,7 +65,7 @@ const STEP_UP_PROTECTED_ROUTES = [
 ];
 
 export function registerComplianceRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/admin-svc/compliance/controls", { preHandler: requireAdmin }, async () => {
+  app.get("/api/admin-svc/compliance/controls", { schema: getAdminSvcComplianceControlsSchema, preHandler: requireAdmin }, async () => {
     const now = new Date().toISOString();
     const controls: ControlResult[] = [];
 

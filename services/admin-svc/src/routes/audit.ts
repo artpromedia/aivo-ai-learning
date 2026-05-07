@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { adminAuditLog, appendAudit } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { eq, desc, sql, and, gte, lte, or, count, ilike } from "drizzle-orm";
+import { getAdminSvcAuditLogSchema, getAdminSvcActivitySchema } from "./schemas.js";
 
 async function requireAdmin(req: any, reply: any) {
   const auth = req.headers.authorization;
@@ -46,7 +47,7 @@ export async function logAuditEvent(db: any, event: {
 }
 
 export function registerAuditRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/admin-svc/audit-log", { preHandler: requireAdmin }, async (request) => {
+  app.get("/api/admin-svc/audit-log", { schema: getAdminSvcAuditLogSchema, preHandler: requireAdmin }, async (request) => {
     const {
       action, actorId, resourceType, resourceId,
       from, to, page = "1", pageSize = "50", search
@@ -85,7 +86,7 @@ export function registerAuditRoutes(app: FastifyInstance, db: any) {
     return { entries, total: totalResult.count, page: pageNum, pageSize: size };
   });
 
-  app.get("/api/admin-svc/activity", { preHandler: requireAdmin }, async () => {
+  app.get("/api/admin-svc/activity", { schema: getAdminSvcActivitySchema, preHandler: requireAdmin }, async () => {
     const entries = await db.select().from(adminAuditLog)
       .orderBy(desc(adminAuditLog.createdAt))
       .limit(20);

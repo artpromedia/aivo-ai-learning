@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { leadSubmissions } from "@aivo/db";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@aivo/observability";
+import { adminSvcLeadsSchema, adminSvcNewsletterSchema } from "./schemas.js";
 
 const logger = createLogger("admin-svc:leads");
 
@@ -30,7 +31,7 @@ async function sendNewsletterConfirmation(email: string): Promise<void> {
 }
 
 export function registerLeadRoutes(app: FastifyInstance, db: any) {
-  app.post("/api/admin-svc/leads", async (request, reply) => {
+  app.post("/api/admin-svc/leads", { schema: adminSvcLeadsSchema }, async (request, reply) => {
     const body = request.body as {
       type?: string;
       name?: string;
@@ -71,7 +72,7 @@ export function registerLeadRoutes(app: FastifyInstance, db: any) {
     return { success: true, id: submission.id };
   });
 
-  app.post("/api/admin-svc/newsletter", async (request, reply) => {
+  app.post("/api/admin-svc/newsletter", { schema: adminSvcNewsletterSchema }, async (request, reply) => {
     const body = request.body as { email?: string };
 
     if (!body.email) {

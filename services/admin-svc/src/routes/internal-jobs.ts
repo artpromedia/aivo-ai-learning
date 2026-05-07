@@ -6,6 +6,7 @@
  */
 import type { FastifyInstance } from "fastify";
 import type { SafeCronHandle } from "@aivo/scheduling";
+import { internalJobsByJobNameRunNowSchema } from "./schemas.js";
 
 const INTERNAL_HEADER = "x-aivo-internal-secret";
 
@@ -16,7 +17,7 @@ export function registerAdminInternalJobRoutes(
   const expected = process.env.AIVO_INTERNAL_SECRET ?? null;
   app.post<{ Params: { jobName: string } }>(
     "/internal/jobs/:jobName/run-now",
-    async (req, reply) => {
+    { schema: internalJobsByJobNameRunNowSchema }, async (req, reply) => {
       if (expected) {
         const got = req.headers[INTERNAL_HEADER];
         if (got !== expected) {

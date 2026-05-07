@@ -14,6 +14,7 @@ import crypto from "crypto";
 import { eq, and, desc } from "drizzle-orm";
 import { scimTokens, adminAuditLog, appendAudit } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
+import { getAdminSvcScimTokensSchema, adminSvcScimTokensSchema, adminSvcScimTokensByIdRevokeSchema } from "./schemas.js";
 
 function clientIp(req: any): string | null {
   return req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip || null;
@@ -38,7 +39,7 @@ function ensureTenantScope(req: any, tenantId: string): boolean {
 }
 
 export function registerScimTokenRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/admin-svc/scim-tokens", { preHandler: requireTenantAdmin }, async (req: any, reply) => {
+  app.get("/api/admin-svc/scim-tokens", { schema: getAdminSvcScimTokensSchema, preHandler: requireTenantAdmin }, async (req: any, reply) => {
     const tenantId = req.user.role === "PLATFORM_ADMIN"
       ? (req.query?.tenantId as string) || req.user.tenantId
       : req.user.tenantId;
@@ -51,7 +52,7 @@ export function registerScimTokenRoutes(app: FastifyInstance, db: any) {
     return { tokens: rows };
   });
 
-  app.post("/api/admin-svc/scim-tokens", { preHandler: requireTenantAdmin }, async (req: any, reply) => {
+  app.post("/api/admin-svc/scim-tokens", { schema: adminSvcScimTokensSchema, preHandler: requireTenantAdmin }, async (req: any, reply) => {
     const { name, tenantId: bodyTenant } = (req.body || {}) as { name?: string; tenantId?: string };
     if (!name) return reply.status(400).send({ error: "name required" });
     const tenantId = bodyTenant || req.user.tenantId;
@@ -89,7 +90,7 @@ export function registerScimTokenRoutes(app: FastifyInstance, db: any) {
     });
   });
 
-  app.post("/api/admin-svc/scim-tokens/:id/revoke", { preHandler: requireTenantAdmin }, async (req: any, reply) => {
+  app.post("/api/admin-svc/scim-tokens/:id/revoke", { schema: adminSvcScimTokensByIdRevokeSchema, preHandler: requireTenantAdmin }, async (req: any, reply) => {
     const { id } = req.params as { id: string };
     const [existing] = await db.select().from(scimTokens).where(eq(scimTokens.id, id)).limit(1);
     if (!existing) return reply.status(404).send({ error: "Token not found" });

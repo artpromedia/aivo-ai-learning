@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { contentModerationLog } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
 import { sql, eq, and, desc, count, gte, lte } from "drizzle-orm";
+import { adminSvcInternalModerationSchema, getAdminSvcModerationSchema, getAdminSvcModerationByIdSchema, patchAdminSvcModerationByIdSchema, getAdminSvcModerationStatsSchema } from "./schemas.js";
 
 const INTERNAL_KEY =
   process.env.INTERNAL_SERVICE_KEY ||
@@ -32,7 +33,7 @@ async function requireInternalKey(req: any, reply: any) {
 
 export function registerModerationRoutes(app: FastifyInstance, db: any) {
   // Internal: AI service posts flagged content here.
-  app.post("/api/admin-svc/internal/moderation", { preHandler: requireInternalKey }, async (request, reply) => {
+  app.post("/api/admin-svc/internal/moderation", { schema: adminSvcInternalModerationSchema, preHandler: requireInternalKey }, async (request, reply) => {
     const body = request.body as any;
     if (!body?.content || !body?.flagReason || !body?.contentType) {
       return reply.code(400).send({ error: "content, flagReason, contentType required" });
@@ -54,7 +55,7 @@ export function registerModerationRoutes(app: FastifyInstance, db: any) {
   });
 
   // List with filters + pagination
-  app.get("/api/admin-svc/moderation", { preHandler: requirePlatformAdmin }, async (request) => {
+  app.get("/api/admin-svc/moderation", { schema: getAdminSvcModerationSchema, preHandler: requirePlatformAdmin }, async (request) => {
     const q = request.query as any;
     const page = Math.max(1, parseInt(q.page || "1", 10));
     const perPage = Math.min(200, Math.max(1, parseInt(q.perPage || "25", 10)));
@@ -81,7 +82,7 @@ export function registerModerationRoutes(app: FastifyInstance, db: any) {
   });
 
   // Single record
-  app.get("/api/admin-svc/moderation/:id", { preHandler: requirePlatformAdmin }, async (request, reply) => {
+  app.get("/api/admin-svc/moderation/:id", { schema: getAdminSvcModerationByIdSchema, preHandler: requirePlatformAdmin }, async (request, reply) => {
     const { id } = request.params as any;
     const [row] = await db.select().from(contentModerationLog).where(eq(contentModerationLog.id, id)).limit(1);
     if (!row) return reply.code(404).send({ error: "Not found" });
@@ -89,7 +90,7 @@ export function registerModerationRoutes(app: FastifyInstance, db: any) {
   });
 
   // Update status / review notes
-  app.patch("/api/admin-svc/moderation/:id", { preHandler: requirePlatformAdmin }, async (request, reply) => {
+  app.patch("/api/admin-svc/moderation/:id", { schema: patchAdminSvcModerationByIdSchema, preHandler: requirePlatformAdmin }, async (request, reply) => {
     const { id } = request.params as any;
     const { status, reviewNotes } = request.body as any;
     const allowed = ["APPROVED", "REJECTED", "ESCALATED", "PENDING"];
@@ -109,7 +110,7 @@ export function registerModerationRoutes(app: FastifyInstance, db: any) {
   });
 
   // Aggregate stats
-  app.get("/api/admin-svc/moderation/stats", { preHandler: requirePlatformAdmin }, async () => {
+  app.get("/api/admin-svc/moderation/stats", { schema: getAdminSvcModerationStatsSchema, preHandler: requirePlatformAdmin }, async () => {
     const byStatus = await db.execute(sql`
       SELECT status::text AS status, COUNT(*)::int AS count
       FROM content_moderation_log GROUP BY status

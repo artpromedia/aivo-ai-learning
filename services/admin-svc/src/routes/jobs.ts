@@ -42,6 +42,7 @@ import type { JobRegistryEntry } from "@aivo/scheduling";
 import { freshnessWatchdogDiscoveries } from "@aivo/db";
 import { requirePlatformAdmin } from "../lib/auth.js";
 import { eq, lt, and, notInArray } from "drizzle-orm";
+import { getAdminSvcJobsSchema, getAdminSvcJobsByJobNameRunsSchema, getAdminSvcJobsByJobNameRunsCsvSchema, getAdminSvcJobsRunsCsvSchema, adminSvcJobsByJobNameRunNowSchema, getAdminSvcJobsFreshnessSchema, deleteAdminSvcJobsDiscoveryByJobNameSchema } from "./schemas.js";
 
 interface RunNowRequester {
   request(jobName: string, owner: JobRegistryEntry): Promise<{ ok: boolean; status?: string; error?: string }>;
@@ -75,7 +76,7 @@ export interface JobsRoutesDeps {
 export function registerJobsRoutes(app: FastifyInstance, db: any, deps: JobsRoutesDeps = {}) {
   const runNow = deps.runNow ?? defaultRunNowRequester;
 
-  app.get("/api/admin-svc/jobs", async (req, reply) => {
+  app.get("/api/admin-svc/jobs", { schema: getAdminSvcJobsSchema }, async (req, reply) => {
     const me = await requirePlatformAdmin(req, reply);
     if (!me) return;
 
@@ -166,7 +167,7 @@ export function registerJobsRoutes(app: FastifyInstance, db: any, deps: JobsRout
     return { jobs: out };
   });
 
-  app.get("/api/admin-svc/jobs/:jobName/runs", async (req, reply) => {
+  app.get("/api/admin-svc/jobs/:jobName/runs", { schema: getAdminSvcJobsByJobNameRunsSchema }, async (req, reply) => {
     const me = await requirePlatformAdmin(req, reply);
     if (!me) return;
 
@@ -193,7 +194,7 @@ export function registerJobsRoutes(app: FastifyInstance, db: any, deps: JobsRout
   // Per-job CSV export with time-range filtering (#205). Same query shape
   // as /runs but the response is text/csv with a content-disposition so the
   // browser downloads it.
-  app.get("/api/admin-svc/jobs/:jobName/runs.csv", async (req, reply) => {
+  app.get("/api/admin-svc/jobs/:jobName/runs.csv", { schema: getAdminSvcJobsByJobNameRunsCsvSchema }, async (req, reply) => {
     const me = await requirePlatformAdmin(req, reply);
     if (!me) return;
 
@@ -208,7 +209,7 @@ export function registerJobsRoutes(app: FastifyInstance, db: any, deps: JobsRout
   // Bulk export across every retained run for every job (#206). Quarterly
   // review write-ups need a single sheet covering "all watchdog activity in
   // Q1"; without this, on-call has to click each per-job download in turn.
-  app.get("/api/admin-svc/jobs/runs.csv", async (req, reply) => {
+  app.get("/api/admin-svc/jobs/runs.csv", { schema: getAdminSvcJobsRunsCsvSchema }, async (req, reply) => {
     const me = await requirePlatformAdmin(req, reply);
     if (!me) return;
 
@@ -241,7 +242,7 @@ export function registerJobsRoutes(app: FastifyInstance, db: any, deps: JobsRout
     return runsToCsv(null, rows);
   });
 
-  app.post("/api/admin-svc/jobs/:jobName/run-now", async (req, reply) => {
+  app.post("/api/admin-svc/jobs/:jobName/run-now", { schema: adminSvcJobsByJobNameRunNowSchema }, async (req, reply) => {
     const me = await requirePlatformAdmin(req, reply);
     if (!me) return;
     const params = req.params as { jobName: string };
@@ -258,7 +259,7 @@ export function registerJobsRoutes(app: FastifyInstance, db: any, deps: JobsRout
     return { ok: true, status: result.status ?? "queued" };
   });
 
-  app.get("/api/admin-svc/jobs/freshness", async (req, reply) => {
+  app.get("/api/admin-svc/jobs/freshness", { schema: getAdminSvcJobsFreshnessSchema }, async (req, reply) => {
     const me = await requirePlatformAdmin(req, reply);
     if (!me) return;
 
@@ -295,7 +296,7 @@ export function registerJobsRoutes(app: FastifyInstance, db: any, deps: JobsRout
   // (service, jobName) pair and never shrinks; when a watchdog is removed
   // from a service, its row sticks around forever with a stale lastSeenAt.
   // On-call uses this DELETE to retire those rows manually.
-  app.delete("/api/admin-svc/jobs/discovery/:jobName", async (req, reply) => {
+  app.delete("/api/admin-svc/jobs/discovery/:jobName", { schema: deleteAdminSvcJobsDiscoveryByJobNameSchema }, async (req, reply) => {
     const me = await requirePlatformAdmin(req, reply);
     if (!me) return;
     const params = req.params as { jobName: string };
