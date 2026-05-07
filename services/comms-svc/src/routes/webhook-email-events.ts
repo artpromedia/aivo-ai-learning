@@ -15,6 +15,7 @@
  */
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { emailEventsWebhookSchema } from "./schemas.js";
 
 export type EmailProvider = "postmark" | "mailgun" | "ses";
 export type EmailEventType = "delivered" | "bounced" | "complained" | "opened" | "clicked";
@@ -156,7 +157,7 @@ export function registerEmailEventsRoutes(app: FastifyInstance, deps: EmailEvent
     done(null, payload);
   });
 
-  app.post("/api/comms/webhook/email-events", async (req: FastifyRequest, reply) => {
+  app.post("/api/comms/webhook/email-events", { schema: emailEventsWebhookSchema }, async (req: FastifyRequest, reply) => {
     const raw = (req as any).rawBody as string | undefined;
     const provider = (req.headers["x-email-provider"] as string | undefined) ?? "postmark";
 
