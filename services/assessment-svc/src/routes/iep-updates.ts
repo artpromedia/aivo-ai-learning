@@ -20,6 +20,7 @@ import {
 import { verifyJWT } from "@aivo/security";
 import { createLogger } from "@aivo/observability";
 import { and, eq, desc, asc, inArray, sql } from "drizzle-orm";
+import { getIepDraftsByIdNotesSchema, getIepDraftsByIdReportsSchema, iepDraftsByIdReportsByRidSendSchema, getIepDraftsByIdAmendmentsSchema, getIepLearnersByLearnerIdTimelineSchema, getIepPreferencesSchema, getIepInternalUnreadParentUpdatesSchema, iepInternalRunReviewRemindersSchema, getIepDraftsByIdReportsSeedSchema } from "./schemas.js";
 
 const logger = createLogger("assessment-svc:iep-updates");
 
@@ -321,7 +322,7 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
 
   // ───────── PROGRESS NOTES ─────────
   // Team-side: list + create against a specific draft/profile.
-  app.get("/api/iep/drafts/:id/notes", async (req, reply) => {
+  app.get("/api/iep/drafts/:id/notes", { schema: getIepDraftsByIdNotesSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     const { id } = req.params as any;
     const profile = await loadProfile(db, id);
@@ -411,7 +412,7 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
   });
 
   // ───────── PROGRESS REPORTS ─────────
-  app.get("/api/iep/drafts/:id/reports", async (req, reply) => {
+  app.get("/api/iep/drafts/:id/reports", { schema: getIepDraftsByIdReportsSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     const { id } = req.params as any;
     const profile = await loadProfile(db, id);
@@ -492,7 +493,7 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
     return row;
   });
 
-  app.post("/api/iep/drafts/:id/reports/:rid/send", async (req, reply) => {
+  app.post("/api/iep/drafts/:id/reports/:rid/send", { schema: iepDraftsByIdReportsByRidSendSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     const { id, rid } = req.params as any;
     const profile = await loadProfile(db, id);
@@ -523,7 +524,7 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
   });
 
   // ───────── AMENDMENTS ─────────
-  app.get("/api/iep/drafts/:id/amendments", async (req, reply) => {
+  app.get("/api/iep/drafts/:id/amendments", { schema: getIepDraftsByIdAmendmentsSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     const { id } = req.params as any;
     const profile = await loadProfile(db, id);
@@ -774,7 +775,7 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
   // Pulls notes/reports/amendments/reminders for the learner's active IEP,
   // collates them into a single chronological feed. Parents only see
   // visibility=parent notes and status=sent reports.
-  app.get("/api/iep/learners/:learnerId/timeline", async (req, reply) => {
+  app.get("/api/iep/learners/:learnerId/timeline", { schema: getIepLearnersByLearnerIdTimelineSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     const { learnerId } = req.params as any;
     if (!isUuid(learnerId)) return reply.code(400).send({ error: "Invalid id" });
@@ -890,7 +891,7 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
   });
 
   // ───────── NOTIFICATION PREFERENCES ─────────
-  app.get("/api/iep/preferences", async (req, reply) => {
+  app.get("/api/iep/preferences", { schema: getIepPreferencesSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     return getParentPrefs(db, claims.sub);
   });
@@ -943,7 +944,7 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
   // Returns the count of parent-visible items added across all finalised
   // IEPs in the tenant in the last 14 days. Used by the district summary
   // tile so admins see the outbound communication volume.
-  app.get("/api/iep/internal/unread-parent-updates", async (req, reply) => {
+  app.get("/api/iep/internal/unread-parent-updates", { schema: getIepInternalUnreadParentUpdatesSchema }, async (req, reply) => {
     const internalKey = req.headers["x-internal-key"];
     if (!internalKey || internalKey !== INTERNAL_KEY) {
       return reply.code(401).send({ error: "Unauthorized" });
@@ -984,7 +985,7 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
 
   // Manual trigger for the reminder cron (also wired from a setInterval in
   // the service entrypoint). Internal-key gated.
-  app.post("/api/iep/internal/run-review-reminders", async (req, reply) => {
+  app.post("/api/iep/internal/run-review-reminders", { schema: iepInternalRunReviewRemindersSchema }, async (req, reply) => {
     const internalKey = req.headers["x-internal-key"];
     if (!internalKey || internalKey !== INTERNAL_KEY) {
       return reply.code(401).send({ error: "Unauthorized" });
@@ -997,7 +998,7 @@ export async function registerIepUpdatesRoutes(app: FastifyInstance) {
   // family-svc report endpoint via its public route and condenses to a short
   // narrative the case manager can edit. Best-effort — failure returns 200
   // with `seeded: false` so the UI can still create an empty draft.
-  app.get("/api/iep/drafts/:id/reports/seed", async (req, reply) => {
+  app.get("/api/iep/drafts/:id/reports/seed", { schema: getIepDraftsByIdReportsSeedSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     const { id } = req.params as any;
     const profile = await loadProfile(db, id);

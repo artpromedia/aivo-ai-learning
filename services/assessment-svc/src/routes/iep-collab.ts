@@ -16,6 +16,7 @@ import {
 import { verifyJWT } from "@aivo/security";
 import { and, eq, desc, asc, isNull } from "drizzle-orm";
 import crypto from "crypto";
+import { getIepDraftsByIdTeamSchema, deleteIepDraftsByIdTeamByMemberIdSchema, getIepDraftsByIdCommentsSchema, getIepDraftsByIdRevisionsSchema, getIepDraftsByIdSignaturesSchema, iepDraftsByIdNotifyInReviewSchema } from "./schemas.js";
 
 interface AuthClaims {
   sub: string;
@@ -153,7 +154,7 @@ async function notifyTeamOnEvent(
 
 export async function registerIepCollabRoutes(app: FastifyInstance) {
   // ───────── TEAM MEMBERSHIP ─────────
-  app.get("/api/iep/drafts/:id/team", async (req, reply) => {
+  app.get("/api/iep/drafts/:id/team", { schema: getIepDraftsByIdTeamSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     const db = (app as any).db;
     const { id } = req.params as any;
@@ -232,7 +233,7 @@ export async function registerIepCollabRoutes(app: FastifyInstance) {
     }
   });
 
-  app.delete("/api/iep/drafts/:id/team/:memberId", async (req, reply) => {
+  app.delete("/api/iep/drafts/:id/team/:memberId", { schema: deleteIepDraftsByIdTeamByMemberIdSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     const db = (app as any).db;
     const { id, memberId } = req.params as any;
@@ -250,7 +251,7 @@ export async function registerIepCollabRoutes(app: FastifyInstance) {
   });
 
   // ───────── COMMENTS ─────────
-  app.get("/api/iep/drafts/:id/comments", async (req, reply) => {
+  app.get("/api/iep/drafts/:id/comments", { schema: getIepDraftsByIdCommentsSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     const db = (app as any).db;
     const { id } = req.params as any;
@@ -370,7 +371,7 @@ export async function registerIepCollabRoutes(app: FastifyInstance) {
   });
 
   // ───────── REVISIONS ─────────
-  app.get("/api/iep/drafts/:id/revisions", async (req, reply) => {
+  app.get("/api/iep/drafts/:id/revisions", { schema: getIepDraftsByIdRevisionsSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     const db = (app as any).db;
     const { id } = req.params as any;
@@ -420,7 +421,7 @@ export async function registerIepCollabRoutes(app: FastifyInstance) {
   });
 
   // ───────── SIGNATURES ─────────
-  app.get("/api/iep/drafts/:id/signatures", async (req, reply) => {
+  app.get("/api/iep/drafts/:id/signatures", { schema: getIepDraftsByIdSignaturesSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     const db = (app as any).db;
     const { id } = req.params as any;
@@ -536,7 +537,7 @@ export async function registerIepCollabRoutes(app: FastifyInstance) {
   // The base draft→in_review transition lives in iep-authoring. We expose
   // a parent-notification trigger here so the editor can ping us after a
   // successful transition without weaving comms-svc through that route.
-  app.post("/api/iep/drafts/:id/notify-in-review", async (req, reply) => {
+  app.post("/api/iep/drafts/:id/notify-in-review", { schema: iepDraftsByIdNotifyInReviewSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply); if (!claims) return;
     const db = (app as any).db;
     const { id } = req.params as any;

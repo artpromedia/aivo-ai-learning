@@ -7,6 +7,7 @@ import {
   users,
 } from "@aivo/db";
 import { verifyJWT } from "@aivo/security";
+import { getIepEvaluationsLearnerByLearnerIdSchema, getIepEvaluationsByIdSchema, patchIepEvaluationsByIdSchema, iepEvaluationsByIdSuggestSchema, iepEvaluationsByIdSubmitSchema } from "./schemas.js";
 
 const COMMS_URL = process.env.COMMS_SVC_URL || "http://localhost:3010";
 const INTERNAL_KEY = process.env.INTERNAL_SERVICE_KEY
@@ -207,7 +208,7 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
   });
 
   // List evaluations for a learner
-  app.get("/api/iep/evaluations/learner/:learnerId", async (req, reply) => {
+  app.get("/api/iep/evaluations/learner/:learnerId", { schema: getIepEvaluationsLearnerByLearnerIdSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply);
     if (!claims) return;
     const { learnerId } = req.params as { learnerId: string };
@@ -227,7 +228,7 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
   });
 
   // Get single evaluation
-  app.get("/api/iep/evaluations/:id", async (req, reply) => {
+  app.get("/api/iep/evaluations/:id", { schema: getIepEvaluationsByIdSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply);
     if (!claims) return;
     const { id } = req.params as { id: string };
@@ -247,7 +248,7 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
   });
 
   // Update a draft/submitted evaluation
-  app.patch("/api/iep/evaluations/:id", async (req, reply) => {
+  app.patch("/api/iep/evaluations/:id", { schema: patchIepEvaluationsByIdSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply);
     if (!claims) return;
     const { id } = req.params as { id: string };
@@ -278,7 +279,7 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
   });
 
   // Request AI eligibility suggestion
-  app.post("/api/iep/evaluations/:id/suggest", async (req, reply) => {
+  app.post("/api/iep/evaluations/:id/suggest", { schema: iepEvaluationsByIdSuggestSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply);
     if (!claims) return;
     const { id } = req.params as { id: string };
@@ -317,7 +318,7 @@ export async function registerIepEvaluationRoutes(app: FastifyInstance) {
   // Submit (move from draft → submitted). Fires parent + district-admin
   // notifications exactly once per evaluation via the submit_notified_at
   // latch — a retried submit cannot duplicate the alert.
-  app.post("/api/iep/evaluations/:id/submit", async (req, reply) => {
+  app.post("/api/iep/evaluations/:id/submit", { schema: iepEvaluationsByIdSubmitSchema }, async (req, reply) => {
     const claims = await authenticate(req, reply);
     if (!claims) return;
     const { id } = req.params as { id: string };
