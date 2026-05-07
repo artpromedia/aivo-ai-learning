@@ -144,11 +144,12 @@ jobs:
       - name: Clean self-hosted workspace
         run: |
           set -eu
-          # actions/checkout cannot remove root-owned leftovers from
-          # previous Docker-based jobs. Take ownership before checkout.
-          sudo -n chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" 2>/dev/null || true
-          sudo -n rm -rf "$GITHUB_WORKSPACE"/.git "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* 2>/dev/null || true
+          # actions/checkout cannot remove root-owned leftovers written
+          # by previous Docker-based jobs. Use the rootful Docker daemon
+          # to take ownership so the next checkout can clean cleanly.
           mkdir -p "$GITHUB_WORKSPACE"
+          docker run --rm -v "$GITHUB_WORKSPACE":/work alpine \
+            sh -c "chown -R $(id -u):$(id -g) /work"
 
       - uses: actions/checkout@v4
 
@@ -184,9 +185,9 @@ jobs:
       - name: Clean self-hosted workspace
         run: |
           set -eu
-          sudo -n chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" 2>/dev/null || true
-          sudo -n rm -rf "$GITHUB_WORKSPACE"/.git "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* 2>/dev/null || true
           mkdir -p "$GITHUB_WORKSPACE"
+          docker run --rm -v "$GITHUB_WORKSPACE":/work alpine \
+            sh -c "chown -R $(id -u):$(id -g) /work"
 
       - uses: actions/checkout@v4
 
@@ -226,9 +227,9 @@ jobs:
       - name: Clean self-hosted workspace
         run: |
           set -eu
-          sudo -n chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" 2>/dev/null || true
-          sudo -n rm -rf "$GITHUB_WORKSPACE"/.git "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* 2>/dev/null || true
           mkdir -p "$GITHUB_WORKSPACE"
+          docker run --rm -v "$GITHUB_WORKSPACE":/work alpine \
+            sh -c "chown -R $(id -u):$(id -g) /work"
 
       - uses: actions/checkout@v4
 
@@ -469,9 +470,9 @@ jobs:
       - name: Clean self-hosted workspace
         run: |
           set -eu
-          sudo -n chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" 2>/dev/null || true
-          sudo -n rm -rf "$GITHUB_WORKSPACE"/.git "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* 2>/dev/null || true
           mkdir -p "$GITHUB_WORKSPACE"
+          docker run --rm -v "$GITHUB_WORKSPACE":/work alpine \
+            sh -c "chown -R $(id -u):$(id -g) /work"
 
       - uses: actions/checkout@v4
 
@@ -619,9 +620,9 @@ jobs:
       - name: Clean self-hosted workspace
         run: |
           set -eu
-          sudo -n chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" 2>/dev/null || true
-          sudo -n rm -rf "$GITHUB_WORKSPACE"/.git "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* 2>/dev/null || true
           mkdir -p "$GITHUB_WORKSPACE"
+          docker run --rm -v "$GITHUB_WORKSPACE":/work alpine \
+            sh -c "chown -R $(id -u):$(id -g) /work"
 
       - uses: actions/checkout@v4
 
