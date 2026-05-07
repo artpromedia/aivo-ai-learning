@@ -18,6 +18,13 @@ import type { FastifyInstance } from "fastify";
 import { sql } from "drizzle-orm";
 import { requirePlatformAdmin } from "./daily-jobs.js";
 import { verifyJWT } from "@aivo/security";
+import {
+  listCouponsSchema,
+  createCouponSchema,
+  deactivateCouponSchema,
+  validateCouponSchema,
+  redeemCouponSchema,
+} from "./schemas.js";
 
 /**
  * Per-user 10-req/min token bucket on the redeem path to prevent
@@ -87,7 +94,7 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
     )
     .catch(() => {});
 
-  app.get("/api/billing/admin/coupons", async (req, reply) => {
+  app.get("/api/billing/admin/coupons", { schema: listCouponsSchema }, async (req, reply) => {
     const me = await requirePlatformAdmin(req, reply);
     if (!me) return;
     const result = (await db.execute(sql`
@@ -102,7 +109,7 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
     return { coupons: rows };
   });
 
-  app.post("/api/billing/admin/coupons", async (req, reply) => {
+  app.post("/api/billing/admin/coupons", { schema: createCouponSchema }, async (req, reply) => {
     const me = await requirePlatformAdmin(req, reply);
     if (!me) return;
     const body = (req.body ?? {}) as Record<string, unknown>;
@@ -158,7 +165,7 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
     reply.code(201).send({ ok: true, code });
   });
 
-  app.delete("/api/billing/admin/coupons/:code", async (req, reply) => {
+  app.delete("/api/billing/admin/coupons/:code", { schema: deactivateCouponSchema }, async (req, reply) => {
     const me = await requirePlatformAdmin(req, reply);
     if (!me) return;
     const params = req.params as { code: string };
@@ -169,7 +176,7 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
   });
 
   // ── Public: validate a coupon code (no auth required) ──────────────────────
-  app.post("/api/billing/coupons/validate", async (req, reply) => {
+  app.post("/api/billing/coupons/validate", { schema: validateCouponSchema }, async (req, reply) => {
     const body = (req.body ?? {}) as Record<string, unknown>;
     const code = typeof body.code === "string" ? body.code.trim() : "";
     if (!code) {
@@ -195,7 +202,7 @@ export function registerCouponRoutes(app: FastifyInstance, db: any) {
   });
 
   // ── Authenticated: redeem a coupon (PARENT minimum) ────────────────────────
-  app.post("/api/billing/coupons/redeem", async (req, reply) => {
+  app.post("/api/billing/coupons/redeem", { schema: redeemCouponSchema }, async (req, reply) => {
     const auth = req.headers.authorization;
     if (!auth?.startsWith("Bearer ")) {
       return reply.code(401).send({ error: "missing_bearer_token" });

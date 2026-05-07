@@ -1,5 +1,16 @@
 import { FastifyInstance } from "fastify";
 import { verifyJWT } from "@aivo/security";
+import {
+  listPlansSchema,
+  getSubscriptionSchema,
+  createSubscriptionSchema,
+  cancelSubscriptionSchema,
+  getUsageSchema,
+  listAddonsSchema,
+  addAddonSchema,
+  removeAddonSchema,
+  listInvoicesSchema,
+} from "./schemas.js";
 
 async function requireAuth(req: any, reply: any) {
   const auth = req.headers.authorization;
@@ -14,7 +25,7 @@ async function requireAuth(req: any, reply: any) {
 }
 
 export function registerPlanRoutes(app: FastifyInstance, db: any) {
-  app.get("/api/billing/plans", async () => {
+  app.get("/api/billing/plans", { schema: listPlansSchema }, async () => {
     return {
       plans: [
         {
@@ -60,7 +71,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.get("/api/billing/subscription/:tenantId", { preHandler: requireAuth }, async (request, reply) => {
+  app.get("/api/billing/subscription/:tenantId", { schema: getSubscriptionSchema, preHandler: requireAuth }, async (request, reply) => {
     const { tenantId } = request.params as any;
     const user = (request as any).user;
     if (user.tenantId !== tenantId && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
@@ -76,7 +87,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.post("/api/billing/subscription", { preHandler: requireAuth }, async (request, reply) => {
+  app.post("/api/billing/subscription", { schema: createSubscriptionSchema, preHandler: requireAuth }, async (request, reply) => {
     const { tenantId, planId, paymentMethodId } = request.body as any;
     const user = (request as any).user;
     if (!tenantId || !planId) return reply.code(400).send({ error: "tenantId and planId required" });
@@ -89,7 +100,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.post("/api/billing/subscription/:tenantId/cancel", { preHandler: requireAuth }, async (request, reply) => {
+  app.post("/api/billing/subscription/:tenantId/cancel", { schema: cancelSubscriptionSchema, preHandler: requireAuth }, async (request, reply) => {
     const { tenantId } = request.params as any;
     const user = (request as any).user;
     if (user.tenantId !== tenantId && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
@@ -98,7 +109,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
     return { status: "cancelled", tenantId, cancelAtPeriodEnd: true };
   });
 
-  app.get("/api/billing/usage/:tenantId", { preHandler: requireAuth }, async (request, reply) => {
+  app.get("/api/billing/usage/:tenantId", { schema: getUsageSchema, preHandler: requireAuth }, async (request, reply) => {
     const { tenantId } = request.params as any;
     const user = (request as any).user;
     if (user.tenantId !== tenantId && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
@@ -111,7 +122,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.get("/api/billing/addons/:tenantId", { preHandler: requireAuth }, async (request, reply) => {
+  app.get("/api/billing/addons/:tenantId", { schema: listAddonsSchema, preHandler: requireAuth }, async (request, reply) => {
     const { tenantId } = request.params as any;
     const user = (request as any).user;
     if (user.tenantId !== tenantId && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
@@ -120,7 +131,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
     return { tenantId, addons: [] };
   });
 
-  app.post("/api/billing/addons", { preHandler: requireAuth }, async (request, reply) => {
+  app.post("/api/billing/addons", { schema: addAddonSchema, preHandler: requireAuth }, async (request, reply) => {
     const { tenantId, tutorId } = request.body as any;
     const user = (request as any).user;
     if (!tenantId || !tutorId) return reply.code(400).send({ error: "tenantId and tutorId required" });
@@ -133,7 +144,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.delete("/api/billing/addons/:tenantId/:tutorId", { preHandler: requireAuth }, async (request, reply) => {
+  app.delete("/api/billing/addons/:tenantId/:tutorId", { schema: removeAddonSchema, preHandler: requireAuth }, async (request, reply) => {
     const { tenantId, tutorId } = request.params as any;
     const user = (request as any).user;
     if (user.tenantId !== tenantId && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
@@ -142,7 +153,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
     return { status: "removed", tenantId, tutorId };
   });
 
-  app.get("/api/billing/invoices/:tenantId", { preHandler: requireAuth }, async (request, reply) => {
+  app.get("/api/billing/invoices/:tenantId", { schema: listInvoicesSchema, preHandler: requireAuth }, async (request, reply) => {
     const { tenantId } = request.params as any;
     const user = (request as any).user;
     if (user.tenantId !== tenantId && !["PLATFORM_ADMIN", "DISTRICT_ADMIN"].includes(user.role)) {
