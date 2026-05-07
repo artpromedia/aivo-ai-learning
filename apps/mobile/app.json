@@ -3,7 +3,7 @@
     "name": "AIVO Learning",
     "slug": "aivo-learning",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "aivo",
     "userInterfaceStyle": "light",
@@ -15,6 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
+      "requireFullScreen": false,
       "bundleIdentifier": "com.artpromedia.aivo",
       "config": {
         "usesNonExemptEncryption": false
