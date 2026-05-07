@@ -141,6 +141,15 @@ jobs:
     timeout-minutes: 20
     needs: build
     steps:
+      - name: Clean self-hosted workspace
+        run: |
+          set -eu
+          # actions/checkout cannot remove root-owned leftovers from
+          # previous Docker-based jobs. Take ownership before checkout.
+          sudo -n chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" 2>/dev/null || true
+          sudo -n rm -rf "$GITHUB_WORKSPACE"/.git "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* 2>/dev/null || true
+          mkdir -p "$GITHUB_WORKSPACE"
+
       - uses: actions/checkout@v4
 
       - name: Build and push Python service images
@@ -172,6 +181,13 @@ jobs:
     timeout-minutes: 60
     needs: build
     steps:
+      - name: Clean self-hosted workspace
+        run: |
+          set -eu
+          sudo -n chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" 2>/dev/null || true
+          sudo -n rm -rf "$GITHUB_WORKSPACE"/.git "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* 2>/dev/null || true
+          mkdir -p "$GITHUB_WORKSPACE"
+
       - uses: actions/checkout@v4
 
       - name: Build and push Node service images
@@ -207,6 +223,13 @@ jobs:
     outputs:
       version: ${{ steps.tag.outputs.version }}
     steps:
+      - name: Clean self-hosted workspace
+        run: |
+          set -eu
+          sudo -n chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" 2>/dev/null || true
+          sudo -n rm -rf "$GITHUB_WORKSPACE"/.git "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* 2>/dev/null || true
+          mkdir -p "$GITHUB_WORKSPACE"
+
       - uses: actions/checkout@v4
 
       - id: tag
@@ -443,6 +466,13 @@ jobs:
       PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
       FALLBACK_DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
+      - name: Clean self-hosted workspace
+        run: |
+          set -eu
+          sudo -n chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" 2>/dev/null || true
+          sudo -n rm -rf "$GITHUB_WORKSPACE"/.git "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* 2>/dev/null || true
+          mkdir -p "$GITHUB_WORKSPACE"
+
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
@@ -586,6 +616,13 @@ jobs:
     timeout-minutes: 30
     environment: production
     steps:
+      - name: Clean self-hosted workspace
+        run: |
+          set -eu
+          sudo -n chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" 2>/dev/null || true
+          sudo -n rm -rf "$GITHUB_WORKSPACE"/.git "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* 2>/dev/null || true
+          mkdir -p "$GITHUB_WORKSPACE"
+
       - uses: actions/checkout@v4
 
       - name: Verify cluster reachable
