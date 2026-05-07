@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest } from "fastify";
 import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { curriculumUploads, learners, learnerTeachers } from "@aivo/db";
 import { verifyJWT, JWTPayload } from "@aivo/security";
+import { tutorsCurriculumParsePreviewSchema, tutorsCurriculumUploadSchema, getTutorsCurriculumLearnerByLearnerIdSchema, getTutorsCurriculumMineSchema, getTutorsCurriculumLearnerByLearnerIdActiveSchema, deleteTutorsCurriculumByIdSchema } from "./schemas.js";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 function requireUrl(name: string, devDefault: string): string {
@@ -216,7 +217,7 @@ export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
   // Parses raw text or an image with the AI and returns the structured focus
   // WITHOUT persisting anything. The client then lets the user edit the
   // result and POSTs the cleaned-up focus to /upload to actually save it.
-  app.post("/api/tutors/curriculum/parse-preview", async (request, reply) => {
+  app.post("/api/tutors/curriculum/parse-preview", { schema: tutorsCurriculumParsePreviewSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
@@ -260,7 +261,7 @@ export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
   // POST /api/tutors/curriculum/upload
   // Body: { learnerId? | applyToLearnerIds?, subject, title?, text?, imageBase64?,
   //         mimeType?, fileName?, weekStart?, weekEnd?, notes? }
-  app.post("/api/tutors/curriculum/upload", async (request, reply) => {
+  app.post("/api/tutors/curriculum/upload", { schema: tutorsCurriculumUploadSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
@@ -462,7 +463,7 @@ export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
   });
 
   // GET /api/tutors/curriculum/learner/:learnerId?subject=&status=
-  app.get("/api/tutors/curriculum/learner/:learnerId", async (request, reply) => {
+  app.get("/api/tutors/curriculum/learner/:learnerId", { schema: getTutorsCurriculumLearnerByLearnerIdSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
@@ -505,7 +506,7 @@ export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
   // GET /api/tutors/curriculum/mine?limit= — recent uploads by the
   // authenticated user (teacher upload history). Each row includes
   // learnerId so the UI can display which learners received it.
-  app.get("/api/tutors/curriculum/mine", async (request, reply) => {
+  app.get("/api/tutors/curriculum/mine", { schema: getTutorsCurriculumMineSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
     const limit = Math.min(50, Math.max(1, parseInt((request.query as any)?.limit, 10) || 20));
@@ -531,7 +532,7 @@ export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
   });
 
   // GET /api/tutors/curriculum/learner/:learnerId/active?subject=
-  app.get("/api/tutors/curriculum/learner/:learnerId/active", async (request, reply) => {
+  app.get("/api/tutors/curriculum/learner/:learnerId/active", { schema: getTutorsCurriculumLearnerByLearnerIdActiveSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
@@ -545,7 +546,7 @@ export function registerCurriculumRoutes(app: FastifyInstance, db: any) {
   });
 
   // DELETE /api/tutors/curriculum/:id
-  app.delete("/api/tutors/curriculum/:id", async (request, reply) => {
+  app.delete("/api/tutors/curriculum/:id", { schema: deleteTutorsCurriculumByIdSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 

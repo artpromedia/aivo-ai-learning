@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { TUTORS } from "@aivo/brand";
 import { tutorSubscriptions } from "@aivo/db";
 import { resolveTenantIdForUser } from "../lib/tenant.js";
+import { getTutorsCatalogSchema, getTutorsActiveByUserIdSchema, tutorsSubscribeSchema, tutorsSubscribeBundleSchema, tutorsUnsubscribeSchema } from "./schemas.js";
 
 const TUTOR_SKU_MAP: Record<string, string> = {
   nova: "ADDON_TUTOR_MATH",
@@ -32,7 +33,7 @@ const BUNDLE_PRICING = {
 };
 
 export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof import("@aivo/db").createDb>) {
-  app.get("/api/tutors/catalog", async () => {
+  app.get("/api/tutors/catalog", { schema: getTutorsCatalogSchema }, async () => {
     const catalog = Object.entries(TUTORS).map(([key, tutor]) => ({
       key,
       sku: TUTOR_SKU_MAP[key],
@@ -46,14 +47,14 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
     return { tutors: catalog, bundles: BUNDLE_PRICING };
   });
 
-  app.get("/api/tutors/active/:userId", async (request) => {
+  app.get("/api/tutors/active/:userId", { schema: getTutorsActiveByUserIdSchema }, async (request) => {
     const { userId } = request.params as { userId: string };
     const subs = await db.select().from(tutorSubscriptions)
       .where(and(eq(tutorSubscriptions.userId, userId), eq(tutorSubscriptions.status, "active")));
     return subs;
   });
 
-  app.post("/api/tutors/subscribe", async (request, reply) => {
+  app.post("/api/tutors/subscribe", { schema: tutorsSubscribeSchema }, async (request, reply) => {
     const { userId, tutorSku, tenantId } = request.body as { userId: string; tutorSku: string; tenantId?: string };
     if (!userId || !tutorSku) {
       return reply.code(400).send({ error: "userId and tutorSku required" });
@@ -91,7 +92,7 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
     return { status: "activated", subscription: sub };
   });
 
-  app.post("/api/tutors/subscribe-bundle", async (request, reply) => {
+  app.post("/api/tutors/subscribe-bundle", { schema: tutorsSubscribeBundleSchema }, async (request, reply) => {
     const { userId, bundleKey, tenantId } = request.body as { userId: string; bundleKey: string; tenantId?: string };
     if (!userId || !bundleKey) {
       return reply.code(400).send({ error: "userId and bundleKey required" });
@@ -132,7 +133,7 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
     return { bundle: bundleKey, results };
   });
 
-  app.post("/api/tutors/unsubscribe", async (request, reply) => {
+  app.post("/api/tutors/unsubscribe", { schema: tutorsUnsubscribeSchema }, async (request, reply) => {
     const { userId, tutorSku } = request.body as { userId: string; tutorSku: string };
     if (!userId || !tutorSku) {
       return reply.code(400).send({ error: "userId and tutorSku required" });

@@ -7,6 +7,7 @@ import { resolveTenantIdForLearner } from "../lib/tenant.js";
 import { computeTutorXp, computeTutorQuality, type TutorSignals } from "../services/scoring.js";
 import { getActiveCurriculumFocus } from "./curriculum.js";
 import { loadDapeProfile } from "../lib/dape.js";
+import { sessionStartSchema, sessionBySessionIdMessageSchema, sessionBySessionIdCompleteSchema, getSessionsByLearnerIdSchema, getSessionBySessionIdSchema, sessionBySessionIdCoLearnSchema } from "./schemas.js";
 
 const logger = createLogger("tutor-svc.chat");
 
@@ -85,7 +86,7 @@ function computeMasteryDelta(
 }
 
 export function registerChatRoutes(app: FastifyInstance, db: any) {
-  app.post("/api/tutor/session/start", async (request, reply) => {
+  app.post("/api/tutor/session/start", { schema: sessionStartSchema }, async (request, reply) => {
     const { learnerId, tutorSku, sessionType } = request.body as any;
     if (!learnerId || !tutorSku) {
       return reply.code(400).send({ error: "learnerId and tutorSku required" });
@@ -135,7 +136,7 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
     return { sessionId: session.id, tutorName, functioningLevel };
   });
 
-  app.post("/api/tutor/session/:sessionId/message", async (request, reply) => {
+  app.post("/api/tutor/session/:sessionId/message", { schema: sessionBySessionIdMessageSchema }, async (request, reply) => {
     const { sessionId } = request.params as any;
     const { message, locale } = request.body as any;
     if (!message) return reply.code(400).send({ error: "message required" });
@@ -194,7 +195,7 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.post("/api/tutor/session/:sessionId/complete", async (request, reply) => {
+  app.post("/api/tutor/session/:sessionId/complete", { schema: sessionBySessionIdCompleteSchema }, async (request, reply) => {
     const { sessionId } = request.params as any;
     const body = (request.body as any) || {};
     const { masteryUpdates, xpEarned } = body;
@@ -241,7 +242,7 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.get("/api/tutor/sessions/:learnerId", async (request) => {
+  app.get("/api/tutor/sessions/:learnerId", { schema: getSessionsByLearnerIdSchema }, async (request) => {
     const { learnerId } = request.params as any;
     const sessions = await db.select().from(tutorSessions)
       .where(eq(tutorSessions.learnerId, learnerId))
@@ -250,14 +251,14 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
     return sessions;
   });
 
-  app.get("/api/tutor/session/:sessionId", async (request, reply) => {
+  app.get("/api/tutor/session/:sessionId", { schema: getSessionBySessionIdSchema }, async (request, reply) => {
     const { sessionId } = request.params as any;
     const [session] = await db.select().from(tutorSessions).where(eq(tutorSessions.id, sessionId));
     if (!session) return reply.code(404).send({ error: "Session not found" });
     return session;
   });
 
-  app.post("/api/tutor/session/:sessionId/co-learn", async (request, reply) => {
+  app.post("/api/tutor/session/:sessionId/co-learn", { schema: sessionBySessionIdCoLearnSchema }, async (request, reply) => {
     const { sessionId } = request.params as any;
     const { parentId } = request.body as any;
     if (!parentId) return reply.code(400).send({ error: "parentId required" });

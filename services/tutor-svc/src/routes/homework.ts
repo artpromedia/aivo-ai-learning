@@ -4,6 +4,7 @@ import { homeworkAssignments, homeworkSessions, tutorSubscriptions, learners } f
 import { verifyJWT, JWTPayload } from "@aivo/security";
 import { createLogger } from "@aivo/observability";
 import { getActiveCurriculumFocus } from "./curriculum.js";
+import { tutorsHomeworkUploadSchema, getTutorsHomeworkLearnerByLearnerIdSchema, getTutorsHomeworkByAssignmentIdSchema, tutorsHomeworkSessionStartSchema, getTutorsHomeworkSessionBySessionIdStateSchema, tutorsHomeworkSessionBySessionIdMessageSchema, tutorsHomeworkSessionBySessionIdCompleteSchema, getTutorsHomeworkParentByParentIdSchema } from "./schemas.js";
 
 const logger = createLogger("tutor-svc.homework");
 
@@ -141,7 +142,7 @@ async function getParentIdForLearner(db: any, learnerId: string): Promise<string
 }
 
 export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
-  app.post("/api/tutors/homework/upload", async (request, reply) => {
+  app.post("/api/tutors/homework/upload", { schema: tutorsHomeworkUploadSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
@@ -252,7 +253,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.get("/api/tutors/homework/learner/:learnerId", async (request, reply) => {
+  app.get("/api/tutors/homework/learner/:learnerId", { schema: getTutorsHomeworkLearnerByLearnerIdSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
@@ -284,7 +285,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.get("/api/tutors/homework/:assignmentId", async (request, reply) => {
+  app.get("/api/tutors/homework/:assignmentId", { schema: getTutorsHomeworkByAssignmentIdSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
@@ -306,7 +307,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
     return assignment;
   });
 
-  app.post("/api/tutors/homework/session/start", async (request, reply) => {
+  app.post("/api/tutors/homework/session/start", { schema: tutorsHomeworkSessionStartSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
@@ -360,7 +361,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.get("/api/tutors/homework/session/:sessionId/state", async (request, reply) => {
+  app.get("/api/tutors/homework/session/:sessionId/state", { schema: getTutorsHomeworkSessionBySessionIdStateSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
@@ -395,7 +396,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
     };
   });
 
-  app.post("/api/tutors/homework/session/:sessionId/message", async (request, reply) => {
+  app.post("/api/tutors/homework/session/:sessionId/message", { schema: tutorsHomeworkSessionBySessionIdMessageSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
@@ -479,7 +480,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
     }
   });
 
-  app.post("/api/tutors/homework/session/:sessionId/complete", async (request, reply) => {
+  app.post("/api/tutors/homework/session/:sessionId/complete", { schema: tutorsHomeworkSessionBySessionIdCompleteSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
@@ -533,7 +534,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
     return { status: "completed", sessionId, durationSeconds, xpEarned: Math.min(completed * 10, 50) };
   });
 
-  app.get("/api/tutors/homework/parent/:parentId", async (request, reply) => {
+  app.get("/api/tutors/homework/parent/:parentId", { schema: getTutorsHomeworkParentByParentIdSchema }, async (request, reply) => {
     const authUser = await extractAuth(request);
     if (!authUser) return reply.code(401).send({ error: "Authentication required" });
 
