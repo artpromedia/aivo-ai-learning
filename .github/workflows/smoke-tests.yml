@@ -131,9 +131,42 @@ jobs:
             NS="aivo"
           fi
 
-          kubectl port-forward -n "$NS" svc/identity-svc 13001:3000 &
+          # Wait for at least one ready endpoint before port-forwarding.
+          echo "Waiting for identity-svc rollout in $NS..."
+          kubectl rollout status -n "$NS" deploy/identity-svc --timeout=120s || true
+          for i in $(seq 1 30); do
+            READY=$(kubectl get endpoints -n "$NS" identity-svc \
+              -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || true)
+            if [ -n "$READY" ]; then
+              echo "identity-svc has ready endpoints: $READY"
+              break
+            fi
+            echo "  attempt $i/30: no ready endpoints yet, sleeping 2s..."
+            sleep 2
+          done
+
+          kubectl port-forward -n "$NS" svc/identity-svc 13001:3000 \
+            > /tmp/pf-identity.log 2>&1 &
           PF_PID=$!
-          sleep 5
+
+          # Wait until the port is actually listening.
+          PF_READY=0
+          for i in $(seq 1 20); do
+            if curl -s -o /dev/null --max-time 2 "http://localhost:13001/health" \
+                 -w "%{http_code}" 2>/dev/null | grep -qE '^[0-9]{3}$'; then
+              # got any HTTP response, port-forward is up
+              PF_READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$PF_READY" -ne 1 ]; then
+            echo "::warning::port-forward did not become ready in time"
+            echo "--- port-forward log ---"
+            cat /tmp/pf-identity.log || true
+            echo "--- pod status ---"
+            kubectl get pods -n "$NS" -l app=identity-svc -o wide || true
+          fi
 
           FAIL=0
 
@@ -150,14 +183,18 @@ jobs:
 
           check_required() {
             local name="$1" url="$2" expected_csv="$3"
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null || true)
-            STATUS=${STATUS:-000}
-            if has_expected_status "$STATUS" "$expected_csv"; then
-              echo "OK: $name → HTTP $STATUS"
-            else
-              echo "FAIL: $name → HTTP $STATUS (expected one of: $expected_csv)"
-              FAIL=1
-            fi
+            local STATUS=000
+            for i in 1 2 3 4 5; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null || true)
+              STATUS=${STATUS:-000}
+              if has_expected_status "$STATUS" "$expected_csv"; then
+                echo "OK: $name → HTTP $STATUS (attempt $i)"
+                return 0
+              fi
+              sleep 2
+            done
+            echo "FAIL: $name → HTTP $STATUS (expected one of: $expected_csv)"
+            FAIL=1
           }
 
           check_optional() {
@@ -180,6 +217,11 @@ jobs:
           kill $PF_PID 2>/dev/null || true
 
           if [ "$FAIL" -eq 1 ]; then
+            echo "--- port-forward log ---"
+            cat /tmp/pf-identity.log || true
+            echo "--- identity-svc pods ---"
+            kubectl get pods -n "$NS" -l app=identity-svc -o wide || true
+            kubectl describe pods -n "$NS" -l app=identity-svc | tail -60 || true
             echo "::error::Endpoint smoke tests failed"
             exit 1
           fi
