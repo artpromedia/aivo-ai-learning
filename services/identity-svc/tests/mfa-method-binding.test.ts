@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 
 const BASE = process.env.IDENTITY_URL || "http://localhost:3001";
 
+// Skip when no live identity-svc is reachable. These are integration smoke
+// tests that require a running server; they are gated on IDENTITY_URL being
+// explicitly set so unit-style local runs don't fail with ECONNREFUSED.
+const SKIP = !process.env.IDENTITY_URL;
+
 async function call(path: string, body: any, headers: Record<string, string> = {}) {
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
@@ -14,7 +19,7 @@ async function call(path: string, body: any, headers: Record<string, string> = {
   return { status: res.status, json };
 }
 
-test("verify-mfa rejects email OTP when issued mfaToken is bound to webauthn/totp", async () => {
+test("verify-mfa rejects email OTP when issued mfaToken is bound to webauthn/totp", { skip: SKIP }, async () => {
   // Forge a JWT-shaped token whose payload claims method=webauthn and feed an
   // email-OTP-style 6-digit code: the route must reject it (not silently fall
   // back to the email path) — the router enforces method binding.
@@ -36,7 +41,7 @@ test("verify-mfa rejects email OTP when issued mfaToken is bound to webauthn/tot
   );
 });
 
-test("resend-mfa refuses to send email OTP when token is bound to webauthn/totp", async () => {
+test("resend-mfa refuses to send email OTP when token is bound to webauthn/totp", { skip: SKIP }, async () => {
   const fakeTotpToken = [
     "eyJhbGciOiJIUzI1NiJ9",
     Buffer.from(JSON.stringify({ sub: "00000000-0000-0000-0000-000000000000", mfaMethod: "totp" })).toString("base64url"),

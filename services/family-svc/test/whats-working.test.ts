@@ -2,6 +2,9 @@
  * Tests for the pure "what's working" insight builder. No DB / no
  * Fastify so the tests run regardless of DATABASE_URL.
  */
+// Pin timezone so local-hour bucketing is deterministic across CI / dev hosts.
+// Must run before any Date is constructed.
+process.env.TZ = "UTC";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {

@@ -102,8 +102,18 @@ describe("logAdminEnterpriseFlags", () => {
   it("emits one structured log line containing every flag", () => {
     const calls: Array<{ obj: Record<string, unknown>; msg?: string }> = [];
     const logger = {
-      info: (obj: Record<string, unknown>, msg?: string) => {
-        calls.push({ obj, msg });
+      info: ((
+        a: string | Record<string, unknown>,
+        b?: string | Record<string, unknown>,
+      ) => {
+        if (typeof a === "string") {
+          calls.push({ obj: (b as Record<string, unknown>) ?? {}, msg: a });
+        } else {
+          calls.push({ obj: a, msg: b as string | undefined });
+        }
+      }) as {
+        (message: string, data?: Record<string, unknown>): void;
+        (data: Record<string, unknown>, message?: string): void;
       },
     };
     const flags = loadAdminEnterpriseFlags({});

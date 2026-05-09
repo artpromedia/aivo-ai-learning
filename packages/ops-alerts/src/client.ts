@@ -134,7 +134,10 @@ export class OpsAlertClient {
         method: "POST",
         headers: { "content-type": "application/json" },
         body,
-        signal: AbortSignal.timeout(this.opts.attemptTimeoutMs),
+        // Cast to satisfy both DOM and undici fetch typings — they
+        // disagree on the exact shape of AbortSignal but accept the
+        // standard global one at runtime.
+        signal: AbortSignal.timeout(this.opts.attemptTimeoutMs) as unknown as RequestInit["signal"],
       });
       if (!res.ok) return false;
       this.stats.drainedTotal++;

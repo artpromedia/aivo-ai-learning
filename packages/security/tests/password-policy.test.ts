@@ -6,7 +6,7 @@ import {
   isPasswordRotationDue,
   isInternalRoleForPolicy,
   PASSWORD_HISTORY_DEPTH,
-} from "../src/password-policy";
+} from "../src/password-policy.js";
 
 test("min length: internal roles need 14, public roles need 12", () => {
   assert.equal(minLengthFor("PLATFORM_ADMIN"), 14);

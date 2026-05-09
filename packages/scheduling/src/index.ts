@@ -202,7 +202,7 @@ export function startSafeCron(opts: SafeCronOptions): SafeCronHandle {
       scheduleNext();
     }, tickIntervalMs);
     if (typeof (timer as { unref?: () => void }).unref === "function") {
-      (timer as { unref: () => void }).unref();
+      (timer as unknown as { unref: () => void }).unref();
     }
   }
 
@@ -216,7 +216,7 @@ export function startSafeCron(opts: SafeCronOptions): SafeCronHandle {
     scheduleNext();
   }, Math.min(5_000, tickIntervalMs));
   if (typeof (timer as { unref?: () => void }).unref === "function") {
-    (timer as { unref: () => void }).unref();
+    (timer as unknown as { unref: () => void }).unref();
   }
 
   return {
