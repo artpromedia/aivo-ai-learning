@@ -211,6 +211,7 @@ export default function ParentAssessmentPage() {
   const [result, setResult] = useState<any>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [alreadyCompleted, setAlreadyCompleted] = useState(false);
+  const [baselineCompleted, setBaselineCompleted] = useState(false);
   const [learnerName, setLearnerName] = useState("");
   const [learnerFunctioningLevel, setLearnerFunctioningLevel] = useState("");
   const [checkingStatus, setCheckingStatus] = useState(true);
@@ -235,9 +236,14 @@ export default function ParentAssessmentPage() {
     if (!accessToken || !user) return;
     (async () => {
       try {
-        const [learnersRes, statusRes] = await Promise.all([
+        const [learnersRes, statusRes, baselineRes] = await Promise.all([
           fetch("/api/users/learners", { headers: { Authorization: `Bearer ${accessToken}` } }),
           fetch(`/api/assessments/parent/${learnerId}/status`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+          // Also probe the learner's baseline (discovery) status so the
+          // already-completed screen can hide the "Start Baseline" CTA
+          // when both intake and baseline are already done (e.g. when a
+          // newly-invited caregiver lands here for an existing learner).
+          fetch(`/api/assessments/learner/discovery/${learnerId}/status`, { headers: { Authorization: `Bearer ${accessToken}` } }),
         ]);
         if (learnersRes.ok) {
           const learners: any[] = await learnersRes.json();
@@ -250,6 +256,10 @@ export default function ParentAssessmentPage() {
         if (statusRes.ok) {
           const status = await statusRes.json();
           if (status?.completed) setAlreadyCompleted(true);
+        }
+        if (baselineRes.ok) {
+          const bs = await baselineRes.json();
+          if (bs?.baselineCompleted) setBaselineCompleted(true);
         }
       } catch { /* swallow — status check is best-effort */ }
 
@@ -455,7 +465,9 @@ export default function ParentAssessmentPage() {
   if (alreadyCompleted && !submitted) return <AlreadyCompletedScreen
     learnerName={learnerName}
     learnerFunctioningLevel={learnerFunctioningLevel}
+    baselineCompleted={baselineCompleted}
     onStartBaseline={() => router.push(`/dashboard/learner/assessment?learnerId=${learnerId}`)}
+    onViewBrain={() => router.push(`/dashboard/parent/learner/${learnerId}/brain`)}
     onBackToProfile={() => router.push(`/dashboard/parent/learner/${learnerId}`)}
     onBackToDashboard={() => router.push("/dashboard/parent")}
     t={t}
@@ -1708,11 +1720,13 @@ function WrapUpScreen({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function AlreadyCompletedScreen({
-  learnerName, learnerFunctioningLevel, onStartBaseline, onBackToProfile, onBackToDashboard, t,
+  learnerName, learnerFunctioningLevel, baselineCompleted, onStartBaseline, onViewBrain, onBackToProfile, onBackToDashboard, t,
 }: {
   learnerName: string;
   learnerFunctioningLevel: string;
+  baselineCompleted: boolean;
   onStartBaseline: () => void;
+  onViewBrain: () => void;
   onBackToProfile: () => void;
   onBackToDashboard: () => void;
   t: ReturnType<typeof useTranslations>;
@@ -1729,8 +1743,8 @@ function AlreadyCompletedScreen({
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-[hsl(142_71%_45%)] mb-2">{t("already_done_eyebrow")}</p>
-              <h1 className="text-2xl font-extrabold vi-text">{t("already_complete_title")}</h1>
-              <p className="vi-text-muted mt-2">{t("already_complete_desc", { name: learnerName || t("this_learner") })}</p>
+              <h1 className="text-2xl font-extrabold vi-text">{baselineCompleted ? t("all_assessments_complete_title") : t("already_complete_title")}</h1>
+              <p className="vi-text-muted mt-2">{baselineCompleted ? t("all_assessments_complete_desc", { name: learnerName || t("this_learner") }) : t("already_complete_desc", { name: learnerName || t("this_learner") })}</p>
             </div>
             {learnerFunctioningLevel && (
               <div className="vi-card p-4 text-left">
@@ -1740,19 +1754,27 @@ function AlreadyCompletedScreen({
                 </p>
               </div>
             )}
-            <div className="vi-card p-4 text-left" style={{ background: "hsl(43 100% 50% / 0.06)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
-              <div className="flex items-start gap-3">
-                <IconWell color="sel" size="sm"><Compass className="w-5 h-5" strokeWidth={2.5} /></IconWell>
-                <div className="flex-1">
-                  <p className="text-sm font-extrabold text-[hsl(43_100%_50%)]">{t("next_step_baseline")}</p>
-                  <p className="text-xs vi-text-muted mt-1">{t("baseline_child_desc", { name: learnerName || t("your_child") })}</p>
+            {!baselineCompleted && (
+              <div className="vi-card p-4 text-left" style={{ background: "hsl(43 100% 50% / 0.06)", borderColor: "hsl(43 100% 50% / 0.3)" }}>
+                <div className="flex items-start gap-3">
+                  <IconWell color="sel" size="sm"><Compass className="w-5 h-5" strokeWidth={2.5} /></IconWell>
+                  <div className="flex-1">
+                    <p className="text-sm font-extrabold text-[hsl(43_100%_50%)]">{t("next_step_baseline")}</p>
+                    <p className="text-xs vi-text-muted mt-1">{t("baseline_child_desc", { name: learnerName || t("your_child") })}</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
             <div className="flex flex-col gap-3 pt-2">
-              <button onClick={onStartBaseline} className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[hsl(43_100%_50%)] text-white font-extrabold shadow-xl shadow-[hsl(43_100%_50%/0.3)] hover:scale-105 active:scale-95 transition-transform" style={{ minHeight: "48px" }}>
-                <Compass className="w-4 h-4" /> {t("start_baseline")}
-              </button>
+              {baselineCompleted ? (
+                <button onClick={onViewBrain} className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[hsl(43_100%_50%)] text-white font-extrabold shadow-xl shadow-[hsl(43_100%_50%/0.3)] hover:scale-105 active:scale-95 transition-transform" style={{ minHeight: "48px" }}>
+                  <Compass className="w-4 h-4" /> {t("view_brain_profile")}
+                </button>
+              ) : (
+                <button onClick={onStartBaseline} className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[hsl(43_100%_50%)] text-white font-extrabold shadow-xl shadow-[hsl(43_100%_50%/0.3)] hover:scale-105 active:scale-95 transition-transform" style={{ minHeight: "48px" }}>
+                  <Compass className="w-4 h-4" /> {t("start_baseline")}
+                </button>
+              )}
               <button onClick={onBackToProfile} className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-[hsl(262_83%_58%)] text-white font-extrabold shadow-lg hover:scale-105 active:scale-95 transition-transform" style={{ minHeight: "48px" }}>
                 {t("back_to_profile")}
               </button>
