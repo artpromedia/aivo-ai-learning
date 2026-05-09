@@ -1,15 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet , Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Pressable } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
 import { EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function CoViewSession() {
-  const { childId } = useLocalSearchParams<{ childId: string }>();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- route param reserved for future use
+  const { childId: _childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 

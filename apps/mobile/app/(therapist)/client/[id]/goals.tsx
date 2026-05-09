@@ -5,8 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTherapyGoals } from '@/hooks/useFamily';
-import { AivoCard, AivoButton, LoadingState, EmptyState } from '@aivo/mobile-ui';
-import { colors, spacing, radius } from '@/constants/colors';
+import { AivoCard, LoadingState, EmptyState } from '@aivo/mobile-ui';
+import { colors, spacing } from '@/constants/colors';
 
 export default function TherapyGoals() {
   const { t } = useTranslation();

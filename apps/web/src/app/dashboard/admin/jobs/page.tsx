@@ -83,12 +83,14 @@ function DurationSparkline({ runs }: { runs: RunRow[] }) {
     >
       {data.map((r, i) => {
         const h = Math.max(2, ((r.durationMs ?? 0) / max) * (height - 4));
+        /* eslint-disable no-restricted-syntax -- traffic-light status colors for ops dashboard chart; semantic mapping not subject to age-tier theming */
         const fill =
           r.status === "failed"
             ? "#dc2626"
             : r.status === "partial"
               ? "#f59e0b"
               : "#10b981";
+        /* eslint-enable no-restricted-syntax */
         return (
           <g key={r.id ?? i}>
             <rect

@@ -79,7 +79,7 @@ export default function AdminCouponsPage() {
 
   useEffect(() => {
     loadCoupons();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [accessToken]);
 
   function updateField<K extends keyof CouponForm>(key: K, value: CouponForm[K]) {

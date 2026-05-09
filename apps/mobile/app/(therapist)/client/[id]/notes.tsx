@@ -9,7 +9,8 @@ import { colors, spacing, radius } from '@/constants/colors';
 
 export default function SessionNotesScreen() {
   const { t } = useTranslation();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- route param reserved for future use
+  const { id: _id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const [skillTargeted, setSkillTargeted] = useState('');
   const [method, setMethod] = useState('');

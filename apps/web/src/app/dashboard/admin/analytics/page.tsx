@@ -65,6 +65,7 @@ export default function AdminAnalyticsPage() {
     }).finally(() => setLoading(false));
   }, [accessToken]);
 
+  /* eslint-disable no-restricted-syntax -- semantic data-viz palette for cohort levels; values map to fixed analytic categories, not surface tokens */
   const LEVEL_COLORS: Record<string, string> = {
     STANDARD: "#22C55E",
     SUPPORTED: "#3B82F6",
@@ -72,6 +73,7 @@ export default function AdminAnalyticsPage() {
     NON_VERBAL: "#F97316",
     PRE_SYMBOLIC: "#EF4444",
   };
+  /* eslint-enable no-restricted-syntax */
 
   const totalCohort = cohorts.reduce((s, c) => s + c.count, 0);
 
@@ -132,6 +134,7 @@ export default function AdminAnalyticsPage() {
                 <div className="space-y-4">
                   {cohorts.map((c) => {
                     const pct = totalCohort > 0 ? Math.round((c.count / totalCohort) * 100) : 0;
+                    // eslint-disable-next-line no-restricted-syntax -- neutral fallback for unknown cohort level
                     const color = LEVEL_COLORS[c.level] || "#94A3B8";
                     return (
                       <div key={c.level}>

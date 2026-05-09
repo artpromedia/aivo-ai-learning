@@ -28,7 +28,7 @@ const OUTBOX_KEY = '@aivo/session_outbox';
 async function getAsyncStorage(): Promise<any> {
   try {
     // Optional native dep — gracefully degrades when not installed.
-    // eslint-disable-next-line import/no-unresolved
+     
     return (await import('@react-native-async-storage/async-storage')).default;
   } catch {
     return null;

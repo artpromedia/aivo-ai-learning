@@ -56,7 +56,10 @@ export default function LessonPlanScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { data: learnersRaw } = useConnectedLearners();
-  const learners: ConnectedLearner[] = Array.isArray(learnersRaw) ? learnersRaw : [];
+  const learners: ConnectedLearner[] = useMemo(
+    () => (Array.isArray(learnersRaw) ? learnersRaw : []),
+    [learnersRaw],
+  );
 
   const [selectedLearnerId, setSelectedLearnerId] = useState<string>('');
   const [subject, setSubject] = useState('Mathematics');

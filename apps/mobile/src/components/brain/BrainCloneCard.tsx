@@ -28,21 +28,21 @@ interface BrainState {
   activeAccommodations?: string[];
   activeTutors?: string[];
   xaiExplanation?: {
-    mastery_decisions?: Array<{
+    mastery_decisions?: {
       domain: string;
       score: number;
       display_label?: string;
-    }>;
-    accommodation_decisions?: Array<{
+    }[];
+    accommodation_decisions?: {
       accommodation: string;
       display_label?: string;
       affects_domains?: string[];
-    }>;
-    tutor_decisions?: Array<{
+    }[];
+    tutor_decisions?: {
       tutor_key: string;
       reasoning?: string;
       affects_domains?: string[];
-    }>;
+    }[];
   };
   state?: BrainState;
   updatedAt?: string;

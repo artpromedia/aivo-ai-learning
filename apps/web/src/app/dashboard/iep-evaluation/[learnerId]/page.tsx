@@ -128,7 +128,7 @@ export default function TeacherEvaluationPage() {
       setDecisionCats(active.decisionCategories || active.aiSuggestion?.suggested_categories || []);
       setDecisionRationale(active.decisionRationale || "");
     }
-  }, [activeId, active?.updatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeId, active?.updatedAt]);  
 
   if (loading || !user) return null;
 

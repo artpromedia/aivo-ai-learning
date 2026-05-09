@@ -8,7 +8,8 @@ import { EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function CoLearnScreen() {
-  const { childId } = useLocalSearchParams<{ childId: string }>();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- route param reserved for future use
+  const { childId: _childId } = useLocalSearchParams<{ childId: string }>();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 

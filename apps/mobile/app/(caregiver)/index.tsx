@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useConnectedLearners } from '@/hooks/useFamily';
 import { AivoCard, EmptyState, LoadingState } from '@aivo/mobile-ui';
-import { colors, spacing, radius } from '@/constants/colors';
+import { colors, spacing } from '@/constants/colors';
 
 export default function CaregiverDashboard() {
   const { t } = useTranslation();

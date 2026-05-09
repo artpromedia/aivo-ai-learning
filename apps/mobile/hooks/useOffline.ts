@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import NetInfo from '@react-native-community/netinfo';
 
 interface SyncItem {
@@ -25,6 +25,7 @@ export function useOffline() {
       }
     });
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- processSyncQueue is module-scoped and stable
   }, []);
 
   const addToSyncQueue = useCallback((action: string, endpoint: string, method: string, body: unknown) => {

@@ -88,9 +88,11 @@ function generateDemoBeats(tutorKey: string, learnerName: string, level: Functio
       ] } },
       { id: "core1", type: "demonstration", tutorState: "pointing", narration: "Every story has characters, a setting, and a plot. Let me show you!", visuals: [
         { id: "v3", type: "card", content: "Story Elements", emoji: "🎭", animation: "bounce", position: { x: 50, y: 20 } },
+        /* eslint-disable no-restricted-syntax -- demo lesson seed data: shape colors are content (story elements: characters/setting/plot), not surface theming */
         { id: "v4", type: "shape", content: "👤", emoji: "👤", animation: "slide_in", position: { x: 20, y: 50 }, color: "#10B981" },
         { id: "v5", type: "shape", content: "🏰", emoji: "🏰", animation: "slide_in", position: { x: 50, y: 50 }, color: "#3B82F6" },
         { id: "v6", type: "shape", content: "⚡", emoji: "⚡", animation: "slide_in", position: { x: 80, y: 50 }, color: "#F59E0B" },
+        /* eslint-enable no-restricted-syntax */
       ] },
       { id: "core2", type: "interaction", tutorState: "thinking", narration: "In the story 'The Three Bears,' what is the setting?", visuals: [
         { id: "v7", type: "card", content: "Reading Detective", emoji: "🔍", animation: "fade_in", position: { x: 50, y: 20 } },

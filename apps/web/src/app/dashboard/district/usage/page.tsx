@@ -170,8 +170,13 @@ function SeatToolsCard({ usage }: { usage: UsageData | null }) {
       </div>
 
       {showSeat && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4" onClick={() => setShowSeat(false)}>
-          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4"
+          role="presentation"
+          onClick={() => setShowSeat(false)}
+          onKeyDown={(e) => { if (e.key === "Escape") setShowSeat(false); }}
+        >
+          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events -- form stops propagation so backdrop clicks don't dismiss while typing; submit and Escape handle real interaction */}
           <form onClick={(e) => e.stopPropagation()} onSubmit={submitSeat}
             className="vi-card w-full max-w-md p-6 space-y-4">
             <h3 className="text-lg font-heading font-semibold vi-text">Request more seats</h3>

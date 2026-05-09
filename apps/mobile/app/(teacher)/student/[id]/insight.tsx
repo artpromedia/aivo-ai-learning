@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
+import { Text, TextInput, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,7 +9,8 @@ import { colors, spacing, radius } from '@/constants/colors';
 
 export default function SubmitInsightScreen() {
   const { t } = useTranslation();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- route param reserved for future use
+  const { id: _id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const [insightText, setInsightText] = useState('');
 

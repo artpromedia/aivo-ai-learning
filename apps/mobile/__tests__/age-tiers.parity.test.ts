@@ -75,6 +75,7 @@ describe("age-tier parity (web ↔ mobile)", () => {
     // Use createRequire so vitest's rollup transform doesn't try to
     // statically analyse the web module graph (the web package pulls
     // in CSS-var-dependent helpers that don't parse cleanly here).
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- intentional dynamic resolution for parity test
     const { createRequire } = require("node:module");
     const req = createRequire(__filename);
     const mod = req("@aivo/learner-ui/src/tokens/age-tiers");

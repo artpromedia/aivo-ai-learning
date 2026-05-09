@@ -40,6 +40,7 @@ export function AdventuresTab({ onNavigate }: AdventuresTabProps) {
         <div className="space-y-2">
           {visibleQuests.slice(0, isLow ? 3 : 5).map((world) => {
             const tutor = TUTORS[world.tutor as keyof typeof TUTORS];
+            // eslint-disable-next-line no-restricted-syntax -- per-tutor brand color fallback; tutor.color is brand-mark, not surface token
             const color = tutor?.color || "#7C3AED";
             const Icon = world.Icon;
             return (

@@ -131,7 +131,7 @@ export function useAuthState(): AuthContextValue {
         }
       }
       return { success: false, error: data.error || data.message || 'Login failed' };
-    } catch (err) {
+    } catch {
       return { success: false, error: 'Network error. Please try again.' };
     }
   }, []);

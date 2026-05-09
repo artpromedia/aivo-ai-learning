@@ -115,7 +115,7 @@ export function useTherapyGoals(learnerId: string) {
     queryFn: async () => {
       const res = await apiFetch(API.FAMILY, '/api/family/therapy-goals');
       if (!res.ok) throw new Error('Failed to fetch therapy goals');
-      const data = (await res.json()) as { goals?: Array<{ learnerId: string }> };
+      const data = (await res.json()) as { goals?: { learnerId: string }[] };
       const goals = Array.isArray(data?.goals) ? data.goals : [];
       return { goals: goals.filter((g) => g.learnerId === learnerId) };
     },

@@ -42,7 +42,7 @@ const PROD_BASE = (process.env.EXPO_PUBLIC_API_URL || '').replace(/\/+$/, '');
 // failure mode is "the app appears broken" with no signal to the operator.
 // We only warn (don't throw) so that web/Metro can still boot for inspection.
 if (!__DEV__ && !PROD_BASE) {
-  // eslint-disable-next-line no-console
+   
   console.warn(
     '[aivo] EXPO_PUBLIC_API_URL is not set for this production build — ' +
       'all API calls will fail. Set it via EAS env / app.config and rebuild.',

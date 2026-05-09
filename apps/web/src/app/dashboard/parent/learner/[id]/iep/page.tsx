@@ -220,7 +220,7 @@ export default function IepDashboardPage() {
       refreshInbox();
     }, 60_000);
     return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [accessToken, learnerId]);
 
   // Default landing tab is "updates", so any unread items the parent has
@@ -230,7 +230,7 @@ export default function IepDashboardPage() {
     if (activeTab === "updates" && inboxUnread > 0) {
       markInboxRead();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [activeTab, inboxUnread]);
 
   const inFlightDrafts = draftSummaries.filter(
@@ -544,7 +544,13 @@ export default function IepDashboardPage() {
       )}
 
       {showPrefs && prefs && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowPrefs(false)}>
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          role="presentation"
+          onClick={() => setShowPrefs(false)}
+          onKeyDown={(e) => { if (e.key === "Escape") setShowPrefs(false); }}
+        >
+          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- inner container only stops propagation; outer overlay handles keyboard close */}
           <div className="vi-card p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <h2 className="font-heading font-bold text-lg vi-text mb-1">{tu("preferences_title")}</h2>
             <p className="text-xs vi-text-muted mb-4">{tu("preferences_help")}</p>

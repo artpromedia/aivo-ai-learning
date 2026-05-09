@@ -20,7 +20,7 @@ interface LeaderboardEntry {
   rank: number | null;
 }
 
-const MEDAL_ICONS: Array<keyof typeof Ionicons.glyphMap> = ['trophy', 'medal', 'ribbon'];
+const MEDAL_ICONS: (keyof typeof Ionicons.glyphMap)[] = ['trophy', 'medal', 'ribbon'];
 const MEDAL_TINTS = ['#F59E0B', '#94A3B8', '#EA580C'];
 
 export default function LearnerLeaderboardScreen() {
@@ -31,7 +31,7 @@ export default function LearnerLeaderboardScreen() {
   const { data, isLoading } = useLeaderboard(scope);
   const entries = (data ?? []) as LeaderboardEntry[];
 
-  const scopes: Array<{ key: Scope; label: string }> = [
+  const scopes: { key: Scope; label: string }[] = [
     { key: 'global', label: t('learnerLeaderboard.scopeGlobal') },
     { key: 'class', label: t('learnerLeaderboard.scopeClass') },
     { key: 'school', label: t('learnerLeaderboard.scopeSchool') },

@@ -7,7 +7,7 @@
  *
  * These are logic-level tests (no DOM rendering required).
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { SwitchScanController } from "@aivo/aac-bridge";
 import type { SymbolItem } from "@aivo/aac-bridge";
 

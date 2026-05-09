@@ -29,6 +29,7 @@ interface LearnerRecord {
  */
 export default function LearnerLayout({ children }: { children: React.ReactNode }) {
   return (
+    // eslint-disable-next-line no-restricted-syntax -- pre-tier-load fallback; tier vars not yet hydrated, this matches --tier-bg default for EARLY tier
     <Suspense fallback={<div style={{ minHeight: "100vh", background: "#FFFAEF" }} />}>
       <LearnerLayoutInner>{children}</LearnerLayoutInner>
     </Suspense>
@@ -82,7 +83,9 @@ function LearnerLayoutInner({ children }: { children: React.ReactNode }) {
       <div
         style={{
           minHeight: "100vh",
+          // eslint-disable-next-line no-restricted-syntax -- CSS-var fallback for tier theming SSR safety
           background: "var(--tier-bg, #FFFAEF)",
+          // eslint-disable-next-line no-restricted-syntax -- CSS-var fallback for tier theming SSR safety
           color: "var(--tier-text, #292F3D)",
           fontFamily: "var(--tier-font-body, 'Nunito', system-ui, sans-serif)",
           transition: "background-color 400ms ease, color 400ms ease",

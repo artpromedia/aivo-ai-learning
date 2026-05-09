@@ -116,7 +116,7 @@ export function AvatarUploader({
             className="relative inline-flex items-center justify-center rounded-full overflow-hidden bg-slate-100"
             style={{ width: size, height: size }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            { }
             <img
               src={displayUrl as string}
               alt={t("avatar_preview_alt")}

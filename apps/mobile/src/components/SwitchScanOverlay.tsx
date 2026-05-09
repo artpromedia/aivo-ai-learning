@@ -12,7 +12,6 @@ import {
   View,
   StyleSheet,
   Animated,
-  Platform,
 } from "react-native";
 import { SwitchScanController } from "@aivo/aac-bridge";
 import type { AACSessionConfig, SymbolItem } from "@aivo/aac-bridge";
@@ -73,6 +72,7 @@ export function SwitchScanOverlay({
       controllerRef.current = null;
       setHighlightedId(null);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pulseAnim is a stable Animated.Value ref; config object identity is intentionally tracked via scanDelayMs
   }, [active, items, config.scanDelayMs]);
 
   // Volume key listeners (Expo / React Native volume manager integration).
@@ -83,6 +83,7 @@ export function SwitchScanOverlay({
 
     let VolumeManager: any = null;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- optional native module probed at runtime
       VolumeManager = require("react-native-volume-manager");
     } catch {
       return; // Module not installed — switch scanning via volume keys unavailable.

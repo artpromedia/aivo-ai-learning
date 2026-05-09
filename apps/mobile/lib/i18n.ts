@@ -1,4 +1,4 @@
-import i18n from 'i18next';
+import i18n, { init } from 'i18next';
 import * as Localization from 'expo-localization';
 import en from '@/i18n/en.json';
 import es from '@/i18n/es.json';
@@ -10,7 +10,7 @@ const resources = {
 
 const deviceLocale = Localization.getLocales()?.[0]?.languageCode ?? 'en';
 
-i18n.init({
+init({
   resources,
   lng: deviceLocale,
   fallbackLng: 'en',

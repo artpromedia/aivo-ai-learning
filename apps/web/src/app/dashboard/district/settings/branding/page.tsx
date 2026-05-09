@@ -163,10 +163,12 @@ export default function DistrictBrandingPage() {
           <label className="block">
             <span className="text-xs font-semibold vi-text-muted uppercase tracking-wide">Primary Color</span>
             <div className="mt-1 flex items-center gap-3">
+              {/* eslint-disable-next-line no-restricted-syntax -- district admin chooses tenant brand color; default is product brand mark, not a tier surface */}
               <input type="color" value={branding.primaryColor || "#7c3aed"}
                 onChange={(e) => setBranding({ ...branding, primaryColor: e.target.value })}
                 className="h-10 w-16 rounded-lg border vi-border" />
               <input type="text" value={branding.primaryColor || ""}
+                // eslint-disable-next-line no-restricted-syntax -- placeholder hex example for district brand color input
                 placeholder="#7C3AED"
                 onChange={(e) => setBranding({ ...branding, primaryColor: e.target.value })}
                 className="flex-1 rounded-lg border vi-border px-3 py-2 vi-bg vi-text font-mono text-sm" />
@@ -208,6 +210,7 @@ export default function DistrictBrandingPage() {
         <h2 className="text-lg font-heading font-semibold vi-text">Live Preview</h2>
         <div className="rounded-2xl border vi-border overflow-hidden">
           <div className="flex items-center gap-3 px-5 py-3 text-white"
+            // eslint-disable-next-line no-restricted-syntax -- live preview of tenant brand color (district admin's own choice), defaults to product brand mark
             style={{ backgroundColor: branding.primaryColor || "#7c3aed" }}>
             {branding.logoUrl ? (
               <img src={branding.logoUrl} alt="" className="h-8 max-w-32 object-contain" />

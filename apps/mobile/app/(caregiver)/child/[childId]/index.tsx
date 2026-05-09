@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLearner } from '@/hooks/useLearners';
-import { AivoCard, StatCard, LoadingState, AivoButton } from '@aivo/mobile-ui';
+import { AivoCard, StatCard, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing } from '@/constants/colors';
 
 export default function ChildOverviewScreen() {

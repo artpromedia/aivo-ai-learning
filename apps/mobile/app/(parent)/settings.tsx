@@ -163,12 +163,12 @@ export default function ParentSettings() {
     }
   }, [t]);
 
-  const parentRows: Array<{
+  const parentRows: {
     icon: React.ComponentProps<typeof Ionicons>['name'];
     label: string;
     onPress: () => void;
     loading?: boolean;
-  }> = [
+  }[] = [
     {
       icon: 'key-outline',
       label: t('parentSettings.managePins'),

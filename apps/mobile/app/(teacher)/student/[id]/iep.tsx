@@ -5,11 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
-import { colors, spacing, radius } from '@/constants/colors';
+import { colors, spacing } from '@/constants/colors';
 
 export default function TeacherIEPUpload() {
   const { t } = useTranslation();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- route param reserved for future use
+  const { id: _id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
   return (

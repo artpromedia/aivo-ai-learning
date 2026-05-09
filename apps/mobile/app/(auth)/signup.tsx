@@ -17,7 +17,7 @@ import { AivoButton } from '@aivo/mobile-ui';
 async function getAsyncStorage(): Promise<any> {
   try {
     // Optional native dep — gracefully degrades when not installed.
-    // eslint-disable-next-line import/no-unresolved
+     
     return (await import('@react-native-async-storage/async-storage')).default;
   } catch {
     return null;
@@ -76,6 +76,7 @@ export default function SignupScreen() {
         handleGoogleResponse(idToken);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handleGoogleResponse is intentionally invoked only when response changes
   }, [response]);
 
   useEffect(() => {

@@ -24,6 +24,7 @@ const WORLD_ICONS: Record<string, IconCmp> = {
   pixel_code_forge: Code2,
 };
 
+/* eslint-disable no-restricted-syntax -- quest-world identity colors are semantic per-world brand marks, not age-tier surface tokens */
 const WORLD_COLORS: Record<string, string> = {
   nova_number_galaxy: "#6366f1",
   sage_story_kingdom: "#059669",
@@ -31,6 +32,7 @@ const WORLD_COLORS: Record<string, string> = {
   chrono_time_tower: "#8b5cf6",
   pixel_code_forge: "#3b82f6",
 };
+/* eslint-enable no-restricted-syntax */
 
 export default function QuestsPage() {
   const { user, accessToken, logout, loading } = useAuth();
@@ -85,12 +87,14 @@ export default function QuestsPage() {
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") router.push(`/dashboard/learner/quests/${world.key}`); }}
               className="bg-white rounded-2xl p-6 border-2 shadow-sm hover:shadow-xl transition cursor-pointer group"
+              // eslint-disable-next-line no-restricted-syntax -- per-world brand color fallback to product brand mark
               style={{ borderColor: WORLD_COLORS[world.key] || "#7c3aed" }}
               onClick={() => router.push(`/dashboard/learner/quests/${world.key}`)}
             >
               <div className="flex items-center gap-4 mb-3">
                 <div
                   className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                  // eslint-disable-next-line no-restricted-syntax -- per-world brand color tints; fallback to product brand mark
                   style={{ backgroundColor: `${WORLD_COLORS[world.key] || "#7c3aed"}1f`, color: WORLD_COLORS[world.key] || "#7c3aed" }}
                 >
                   {(() => { const Icon = WORLD_ICONS[world.key] || Globe2; return <Icon className="w-7 h-7" strokeWidth={2} aria-hidden />; })()}

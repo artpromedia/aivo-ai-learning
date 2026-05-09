@@ -74,7 +74,10 @@ export default function TherapistSessionsScreen() {
   const { t } = useTranslation();
   const { data: clientsRaw, isLoading: clientsLoading, error: clientsError, refetch } =
     useConnectedLearners();
-  const clients: ConnectedLearner[] = Array.isArray(clientsRaw) ? clientsRaw : [];
+  const clients: ConnectedLearner[] = useMemo(
+    () => (Array.isArray(clientsRaw) ? clientsRaw : []),
+    [clientsRaw],
+  );
 
   const [tab, setTab] = useState<Tab>('history');
   const [selectedLearner, setSelectedLearner] = useState<string | null>(null);

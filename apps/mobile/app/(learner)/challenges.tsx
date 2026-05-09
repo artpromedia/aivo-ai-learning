@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLearners } from '@/hooks/useLearners';
 import { apiFetch } from '@/lib/api';
 import { API } from '@/constants/api';
-import { AivoCard, AivoButton, EmptyState } from '@aivo/mobile-ui';
+import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 
 export default function ChallengesScreen() {

@@ -47,6 +47,7 @@ export function TodayTab({ missions, onSelCheckin }: TodayTabProps) {
                 <div key={mission.id} className="flex items-center gap-3 bg-slate-50 rounded-2xl px-4 py-3 border border-slate-100">
                   <div
                     className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0"
+                    // eslint-disable-next-line no-restricted-syntax -- tutor brand-mark tint; neutral slate fallback when no tutor assigned
                     style={{ backgroundColor: tutor ? `${tutor.color}1f` : "#f1f5f9", color: tutor?.color }}
                     aria-hidden
                   >

@@ -13,7 +13,7 @@ import { colors, spacing, radius } from '@/constants/colors';
 export default function ParentDashboard() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
-  const { data: learners, isLoading, refetch } = useLearners();
+  const { data: learners, refetch } = useLearners();
   const { data: inbox } = useParentInbox(user?.id ?? '');
   const unreadCount = inbox?.unreadCount ?? 0;
   const [refreshing, setRefreshing] = React.useState(false);

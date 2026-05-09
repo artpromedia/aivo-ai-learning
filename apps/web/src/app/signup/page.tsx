@@ -57,7 +57,7 @@ function SignupInner() {
 
   useEffect(() => {
     if (invitedEmail && !email) setEmail(invitedEmail);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [invitedEmail]);
 
   useEffect(() => {

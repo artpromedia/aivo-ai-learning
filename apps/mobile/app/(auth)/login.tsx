@@ -50,6 +50,7 @@ export default function LoginScreen() {
         handleGoogleResponse(idToken);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handleGoogleResponse is intentionally invoked only when response changes
   }, [response]);
 
   const handleGoogleResponse = async (idToken: string, consent?: { coppaConsent: boolean; termsAccepted: boolean }) => {

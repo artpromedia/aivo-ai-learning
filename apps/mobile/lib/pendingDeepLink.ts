@@ -20,6 +20,7 @@ const PENDING_DEEP_LINK_KEY = 'aivo_pending_deep_link';
 
 let SecureStore: typeof import('expo-secure-store') | null = null;
 if (Platform.OS !== 'web') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- conditional native module load on non-web platforms
   SecureStore = require('expo-secure-store');
 }
 

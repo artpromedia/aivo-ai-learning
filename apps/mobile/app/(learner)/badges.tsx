@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useEngagement } from '@/hooks/useEngagement';
 import { AivoCard, EmptyState } from '@aivo/mobile-ui';
-import { colors, spacing, radius } from '@/constants/colors';
+import { colors, spacing } from '@/constants/colors';
 
 const rarityColors: Record<string, string> = {
   common: colors.textSecondary,

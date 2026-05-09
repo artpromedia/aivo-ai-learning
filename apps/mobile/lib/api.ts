@@ -1,11 +1,11 @@
 import { Platform } from 'react-native';
-import { API } from '@/constants/api';
 
 const TOKEN_KEY = 'aivo_access_token';
 const MUST_CHANGE_PASSWORD_KEY = 'aivo_must_change_password';
 
 let SecureStore: typeof import('expo-secure-store') | null = null;
 if (Platform.OS !== 'web') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- conditional native module load on non-web platforms
   SecureStore = require('expo-secure-store');
 }
 

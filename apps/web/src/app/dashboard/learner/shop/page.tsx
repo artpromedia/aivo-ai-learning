@@ -32,12 +32,14 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   skin_tones: Palette,
 };
 
+/* eslint-disable no-restricted-syntax -- rarity colors are a semantic gamification palette (common/rare/epic/legendary), shared across the engagement system */
 const RARITY_COLORS: Record<string, string> = {
   common: "#94a3b8",
   rare: "#3b82f6",
   epic: "#8b5cf6",
   legendary: "#f59e0b",
 };
+/* eslint-enable no-restricted-syntax */
 
 export default function ShopPage() {
   const { user, accessToken, logout, loading } = useAuth();
@@ -154,7 +156,9 @@ export default function ShopPage() {
                     <ItemIcon className="w-6 h-6" strokeWidth={2} aria-hidden />
                   </div>
                   <div className="font-heading font-bold text-sm text-slate-900">{item.name}</div>
-                  <div className="text-xs font-semibold capitalize" style={{ color: RARITY_COLORS[item.rarity] || "#94a3b8" }}>
+                  <div className="text-xs font-semibold capitalize"
+                    // eslint-disable-next-line no-restricted-syntax -- gamification rarity palette; neutral fallback for unknown rarity
+                    style={{ color: RARITY_COLORS[item.rarity] || "#94a3b8" }}>
                     {item.rarity}
                   </div>
                   {isOwned ? (
