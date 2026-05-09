@@ -2,6 +2,9 @@ image:
   repository: ghcr.io/artpromedia
   pullPolicy: IfNotPresent
 
+imagePullSecrets:
+  - name: ghcr-pull-secret
+
 replicaCount: 2
 
 resources:
