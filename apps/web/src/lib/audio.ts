@@ -190,11 +190,96 @@ export function playSwell(durationSec: number = 4.5): () => void {
 }
 
 /**
+ * Split a long text into utterance-sized chunks on sentence/clause
+ * boundaries. The browser's SpeechSynthesis truncates utterances above
+ * ~200 characters in practice (Chrome cuts off long lines silently),
+ * so we chunk and queue multiple short utterances instead of one big
+ * one. Boundaries: sentence-final punctuation first, then commas /
+ * semicolons / colons, then a hard length limit as a last resort so a
+ * stream of clause-less text (e.g. URLs, IDs) still gets spoken.
+ */
+function chunkForSpeech(input: string, maxLen = 180): string[] {
+  const text = input.replace(/\s+/g, " ").trim();
+  if (!text) return [];
+  if (text.length <= maxLen) return [text];
+
+  const out: string[] = [];
+  // Greedy split on sentence-final punctuation, keeping the punctuation.
+  const sentences = text.match(/[^.!?]+[.!?]+(?:["')\]]+)?\s*|[^.!?]+$/g) || [text];
+  let buf = "";
+  const flush = () => { if (buf.trim()) out.push(buf.trim()); buf = ""; };
+  for (const raw of sentences) {
+    const s = raw.trim();
+    if (!s) continue;
+    if (s.length > maxLen) {
+      flush();
+      // Fall back to clause boundaries within the long sentence.
+      const clauses = s.split(/(?<=[,;:])\s+/);
+      let sub = "";
+      for (const c of clauses) {
+        if ((sub + " " + c).trim().length > maxLen && sub) {
+          out.push(sub.trim());
+          sub = c;
+        } else {
+          sub = sub ? `${sub} ${c}` : c;
+        }
+      }
+      if (sub.trim().length > maxLen) {
+        // Hard split as a last resort so we never enqueue an over-length utterance.
+        for (let i = 0; i < sub.length; i += maxLen) out.push(sub.slice(i, i + maxLen).trim());
+      } else if (sub.trim()) {
+        out.push(sub.trim());
+      }
+      continue;
+    }
+    if ((buf + " " + s).trim().length > maxLen) {
+      flush();
+      buf = s;
+    } else {
+      buf = buf ? `${buf} ${s}` : s;
+    }
+  }
+  flush();
+  return out;
+}
+
+/**
+ * Chrome's SpeechSynthesis pauses internally after ~15 seconds of
+ * continuous speech, leaving the rest of the utterance unspoken.
+ * Calling `pause()` immediately followed by `resume()` on a short
+ * interval is the documented workaround. We start the keep-alive when
+ * speech begins and clear it when the queue drains or is cancelled.
+ */
+function startKeepAlive(): () => void {
+  if (typeof window === "undefined" || typeof window.speechSynthesis === "undefined") {
+    return () => { /* no-op */ };
+  }
+  const id = window.setInterval(() => {
+    try {
+      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    } catch {
+      /* ignore — best-effort keep-alive */
+    }
+  }, 10_000);
+  return () => window.clearInterval(id);
+}
+
+/**
  * Speak text using the platform's SpeechSynthesis API. No-op when muted,
  * during SSR, or when the API is unavailable. Returns a cancel fn.
  *
- * Kept in this module so the same global mute toggle silences both chimes
- * and tutor voice lines in one place.
+ * Long inputs are split into sentence-sized chunks and spoken
+ * sequentially (queued via `onend`) so the entire text reads to
+ * completion instead of being silently truncated by the browser's
+ * ~15-second / ~200-character limits. A pause/resume keep-alive is
+ * also installed for the lifetime of the queue so Chrome does not
+ * silently stop part-way through.
+ *
+ * Kept in this module so the same global mute toggle silences both
+ * chimes and tutor voice lines in one place.
  */
 export function speakUtterance(
   text: string,
@@ -202,17 +287,39 @@ export function speakUtterance(
 ): () => void {
   if (isAudioMuted()) return () => {};
   if (typeof window === "undefined" || typeof window.speechSynthesis === "undefined") return () => {};
-  const trimmed = text?.trim();
-  if (!trimmed) return () => {};
+  const chunks = chunkForSpeech(text || "");
+  if (chunks.length === 0) return () => {};
   try {
     // Cancel anything queued so successive prompts don't pile up.
     window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(trimmed);
-    if (opts.rate) u.rate = opts.rate;
-    if (opts.pitch) u.pitch = opts.pitch;
-    if (opts.lang) u.lang = opts.lang;
-    window.speechSynthesis.speak(u);
+
+    let cancelled = false;
+    let stopKeepAlive: (() => void) | null = null;
+    // Keep references so the GC doesn't reclaim utterances mid-queue —
+    // a known cause of `onend` never firing in Chrome.
+    const utterances: SpeechSynthesisUtterance[] = [];
+
+    const speakIndex = (i: number) => {
+      if (cancelled || i >= chunks.length) {
+        stopKeepAlive?.();
+        return;
+      }
+      const u = new SpeechSynthesisUtterance(chunks[i]);
+      if (opts.rate) u.rate = opts.rate;
+      if (opts.pitch) u.pitch = opts.pitch;
+      if (opts.lang) u.lang = opts.lang;
+      u.onend = () => speakIndex(i + 1);
+      u.onerror = () => speakIndex(i + 1);
+      utterances.push(u);
+      window.speechSynthesis.speak(u);
+    };
+
+    stopKeepAlive = startKeepAlive();
+    speakIndex(0);
+
     return () => {
+      cancelled = true;
+      stopKeepAlive?.();
       try {
         window.speechSynthesis.cancel();
       } catch {

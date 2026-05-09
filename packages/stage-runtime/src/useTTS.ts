@@ -60,13 +60,62 @@ export interface UseTTSResult {
   isSpeaking: boolean;
 }
 
+/**
+ * Split a long string into utterance-sized chunks on sentence/clause
+ * boundaries. The browser's SpeechSynthesis silently truncates utterances
+ * that run past ~15s / ~200 chars in Chrome, so we queue many short
+ * utterances instead of one big one.
+ */
+function chunkForSpeech(input: string, maxLen = 180): string[] {
+  const text = input.replace(/\s+/g, " ").trim();
+  if (!text) return [];
+  if (text.length <= maxLen) return [text];
+  const out: string[] = [];
+  const sentences = text.match(/[^.!?]+[.!?]+(?:["')\]]+)?\s*|[^.!?]+$/g) || [text];
+  let buf = "";
+  const flush = () => { if (buf.trim()) out.push(buf.trim()); buf = ""; };
+  for (const raw of sentences) {
+    const s = raw.trim();
+    if (!s) continue;
+    if (s.length > maxLen) {
+      flush();
+      const clauses = s.split(/(?<=[,;:])\s+/);
+      let sub = "";
+      for (const c of clauses) {
+        if ((sub + " " + c).trim().length > maxLen && sub) {
+          out.push(sub.trim());
+          sub = c;
+        } else {
+          sub = sub ? `${sub} ${c}` : c;
+        }
+      }
+      if (sub.trim().length > maxLen) {
+        for (let i = 0; i < sub.length; i += maxLen) out.push(sub.slice(i, i + maxLen).trim());
+      } else if (sub.trim()) {
+        out.push(sub.trim());
+      }
+      continue;
+    }
+    if ((buf + " " + s).trim().length > maxLen) {
+      flush();
+      buf = s;
+    } else {
+      buf = buf ? `${buf} ${s}` : s;
+    }
+  }
+  flush();
+  return out;
+}
+
 export function useTTS(
   tutorKey: string,
   adaptations: SensoryAdaptations,
   locale?: string,
 ): UseTTSResult {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const utterancesRef = useRef<SpeechSynthesisUtterance[]>([]);
+  const keepAliveRef = useRef<number | null>(null);
+  const cancelledRef = useRef(false);
   // Override the tutor's default lang when the learner has selected a
   // non-English UI locale, so the tutor's spoken voice matches the language
   // the LLM is now responding in. `tutorKey` and `locale` are the only
@@ -79,6 +128,11 @@ export function useTTS(
 
   useEffect(() => {
     return () => {
+      cancelledRef.current = true;
+      if (keepAliveRef.current !== null && typeof window !== "undefined") {
+        window.clearInterval(keepAliveRef.current);
+        keepAliveRef.current = null;
+      }
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
@@ -91,17 +145,16 @@ export function useTTS(
         resolve();
         return;
       }
+      const chunks = chunkForSpeech(text || "");
+      if (chunks.length === 0) {
+        resolve();
+        return;
+      }
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.pitch = voicePrefs.pitch;
-      utterance.rate = voicePrefs.rate;
-      utterance.volume = adaptations.volumeLevel;
-      utterance.lang = voicePrefs.lang;
+      cancelledRef.current = false;
+      utterancesRef.current = [];
 
-      // Prefer a "natural" voice in the requested language, then any voice
-      // that matches the language family, then fall back to the browser
-      // default. Single pass through the voices list — categorise as we go
-      // and pick the highest-priority match at the end.
+      // Resolve voice once for the whole queue.
       const voices = window.speechSynthesis.getVoices();
       const langTag = voicePrefs.lang.toLowerCase();
       const baseLang = langTag.split("-")[0];
@@ -114,7 +167,7 @@ export function useTTS(
         if (vLang === langTag) {
           if (v.name.toLowerCase().includes("natural")) {
             exactNatural ??= v;
-            break; // best possible match — stop early
+            break;
           }
           exact ??= v;
         } else if (vLang.startsWith(baseLang + "-")) {
@@ -124,17 +177,60 @@ export function useTTS(
         }
       }
       const preferred = exactNatural || exact || baseRegion || base;
-      if (preferred) utterance.voice = preferred;
 
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => { setIsSpeaking(false); resolve(); };
-      utterance.onerror = () => { setIsSpeaking(false); resolve(); };
-      utteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
+      // Chrome silently halts speech after ~15s. pause/resume on a
+      // 10s interval defeats the cutoff for the lifetime of the queue.
+      if (keepAliveRef.current !== null) {
+        window.clearInterval(keepAliveRef.current);
+      }
+      keepAliveRef.current = window.setInterval(() => {
+        try {
+          if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+            window.speechSynthesis.pause();
+            window.speechSynthesis.resume();
+          }
+        } catch {
+          /* best-effort */
+        }
+      }, 10_000);
+
+      const finish = () => {
+        if (keepAliveRef.current !== null) {
+          window.clearInterval(keepAliveRef.current);
+          keepAliveRef.current = null;
+        }
+        setIsSpeaking(false);
+        resolve();
+      };
+
+      const speakIndex = (i: number) => {
+        if (cancelledRef.current || i >= chunks.length) {
+          finish();
+          return;
+        }
+        const utterance = new SpeechSynthesisUtterance(chunks[i]);
+        utterance.pitch = voicePrefs.pitch;
+        utterance.rate = voicePrefs.rate;
+        utterance.volume = adaptations.volumeLevel;
+        utterance.lang = voicePrefs.lang;
+        if (preferred) utterance.voice = preferred;
+        if (i === 0) utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => speakIndex(i + 1);
+        utterance.onerror = () => speakIndex(i + 1);
+        utterancesRef.current.push(utterance);
+        window.speechSynthesis.speak(utterance);
+      };
+
+      speakIndex(0);
     });
   }, [voicePrefs, adaptations.volumeLevel]);
 
   const stop = useCallback(() => {
+    cancelledRef.current = true;
+    if (keepAliveRef.current !== null && typeof window !== "undefined") {
+      window.clearInterval(keepAliveRef.current);
+      keepAliveRef.current = null;
+    }
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
