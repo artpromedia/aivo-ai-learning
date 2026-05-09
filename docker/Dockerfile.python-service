@@ -47,8 +47,9 @@ ENV GIT_COMMIT=${GIT_COMMIT}
 COPY services/${SERVICE_NAME}/src/ ./src/
 
 # Generate startup script (convert brain-svc -> brain_svc for Python module)
+# Honors $PORT env (defaults to 3000) so deployments can override the listen port.
 RUN MODULE_NAME=$(echo "${SERVICE_NAME}" | sed 's/-/_/g') && \
-    printf '#!/bin/sh\nexec python -m uvicorn "%s.main:app" --host 0.0.0.0 --port 3000\n' "$MODULE_NAME" > /app/start.sh && \
+    printf '#!/bin/sh\nexec python -m uvicorn "%s.main:app" --host 0.0.0.0 --port "${PORT:-3000}"\n' "$MODULE_NAME" > /app/start.sh && \
     chmod +x /app/start.sh
 
 # Create non-root user
@@ -60,6 +61,6 @@ USER appuser
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+    CMD sh -c 'curl -f http://localhost:${PORT:-3000}/health || exit 1'
 
 CMD ["/app/start.sh"]

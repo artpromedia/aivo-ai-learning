@@ -350,6 +350,12 @@ jobs:
             EXTRA_SETS=()
             case "$svc" in
               admin-svc)        EXTRA_SETS=(--set env.ADMIN_SVC_PORT=3000) ;;
+              assessment-svc)
+                EXTRA_SETS=(
+                  --set "env.AI_SVC_URL=http://ai-svc.${NS}.svc.cluster.local:3000"
+                  --set "env.BRAIN_SVC_URL=http://brain-svc.${NS}.svc.cluster.local:8000"
+                )
+                ;;
               billing-svc)      EXTRA_SETS=(--set env.BILLING_SVC_PORT=3000) ;;
               comms-svc)
                 HELM_TIMEOUT=8m
@@ -694,7 +700,13 @@ jobs:
             EXTRA_SETS=()
             case "$svc" in
               brain-svc)       PORT=8000 ;;
-              assessment-svc)  PORT=3003 ;;
+              assessment-svc)
+                PORT=3003
+                EXTRA_SETS=(
+                  --set "env.AI_SVC_URL=http://ai-svc.aivo.svc.cluster.local:3000"
+                  --set "env.BRAIN_SVC_URL=http://brain-svc.aivo.svc.cluster.local:8000"
+                )
+                ;;
               # These services read a port env var whose name matches what
               # K8s auto-injects (<SVC-UPPER>_PORT=tcp://ClusterIP:Port).
               # The tcp:// value causes parseInt() to return NaN → crash.
