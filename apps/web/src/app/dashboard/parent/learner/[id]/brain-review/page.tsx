@@ -637,7 +637,7 @@ export default function BrainReviewPage() {
                 {isAlreadyResolved ? "Review your child's personalized learning Brain." : "Review the AI's recommendations. Adjust anything, then approve to activate learning."}
               </p>
             </div>
-            {isAlreadyResolved && (
+            {isAlreadyResolved && review.approval_status && (
               <span className={`px-4 py-2 rounded-full text-sm font-bold ${
                 review.approval_status === "approved" ? "bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]" :
                 review.approval_status === "amended" ? "bg-[hsl(var(--visual-reading)/0.12)] text-[hsl(var(--visual-reading))]" :
