@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import BrainVisualization from "@/components/BrainVisualization";
-import BrainCloneCard from "@/components/brain/BrainCloneCard";
+import LearnerBrainMapCard from "@/components/brain/LearnerBrainMapCard";
 import { useTranslations } from "next-intl";
 import { Brain, Palette, Lightbulb, Target } from "lucide-react";
 import { IconWell } from "@/components/discovery/_vi";
@@ -58,12 +58,11 @@ export default function ParentBrainProfilePage() {
             <IconWell color="primary" size="sm"><Brain className="w-5 h-5" /></IconWell>
             <h2 className="font-heading font-bold text-lg vi-text">Interactive Brain Map</h2>
           </div>
-          <BrainCloneCard
+          <LearnerBrainMapCard
             learnerId={learnerId}
             learnerName={learnerName}
             enrolledGrade={learnerGrade}
             accessToken={accessToken}
-            variant="full"
           />
         </div>
       )}
