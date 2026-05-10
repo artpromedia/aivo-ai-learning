@@ -11,7 +11,7 @@ import {
   Target,
   TrendingUp,
 } from "lucide-react";
-import LearnerBrainMapCard from "@/components/brain/LearnerBrainMapCard";
+import BrainCloneCard from "@/components/brain/BrainCloneCard";
 
 interface LearnerSummaryCardProps {
   learner: {
@@ -171,17 +171,23 @@ export function LearnerSummaryCard({
         {/* Brain map preview — only shown once the brain has been built.
             Stops click-bubbling so interacting with the brain (hover/click
             a region) does not also navigate to the learner detail page. */}
+        {/* Brain Clone preview — compact variant for the dashboard card.
+            Stops click-bubbling so interacting with the brain (hover/click
+            a region) does not also navigate to the learner detail page. */}
         {hasBrain && accessToken && (
+          // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
           <div
             className="mb-4"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
           >
-            <LearnerBrainMapCard
+            <BrainCloneCard
               learnerId={learner.id}
               learnerName={learner.name}
               enrolledGrade={learner.gradeLevel ?? null}
               accessToken={accessToken}
+              variant="card"
+              summary={{ streak, badgeCount }}
             />
           </div>
         )}
