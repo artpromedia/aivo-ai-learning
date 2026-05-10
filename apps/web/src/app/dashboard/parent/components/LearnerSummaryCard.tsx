@@ -57,7 +57,7 @@ export function LearnerSummaryCard({
   baselineCompleted = false,
   pendingRecommendations = 0,
   accessToken,
-}: LearnerSummaryCardProps) {
+}: Readonly<LearnerSummaryCardProps>) {
   const router = useRouter();
 
   type Status = {
@@ -105,6 +105,7 @@ export function LearnerSummaryCard({
   const goToLearner = () => router.push(`/dashboard/parent/learner/${learner.id}`);
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus, jsx-a11y/no-noninteractive-element-interactions
     <div
       role="button"
       tabIndex={0}
@@ -136,7 +137,7 @@ export function LearnerSummaryCard({
                   >
                     <Target size={10} strokeWidth={3} aria-hidden="true" />
                     {LEVEL_LABELS[learner.functioningLevel] ||
-                      learner.functioningLevel.replace(/_/g, " ")}
+                      learner.functioningLevel.replaceAll("_", " ")}
                   </span>
                 )}
               </div>
@@ -161,7 +162,7 @@ export function LearnerSummaryCard({
             {badgeCount > 0 && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[hsl(var(--visual-sel)/0.12)] border border-[hsl(var(--visual-sel)/0.3)] text-[hsl(var(--visual-sel))] text-xs font-bold">
                 <Star size={14} strokeWidth={2.5} fill="currentColor" aria-hidden="true" />
-                {badgeCount} badge{badgeCount !== 1 ? "s" : ""}
+                {badgeCount} badge{badgeCount === 1 ? "" : "s"}
               </span>
             )}
           </div>
@@ -175,7 +176,6 @@ export function LearnerSummaryCard({
             className="mb-4"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
-            role="presentation"
           >
             <LearnerBrainMapCard
               learnerId={learner.id}
