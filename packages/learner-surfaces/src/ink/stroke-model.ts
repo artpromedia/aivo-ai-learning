@@ -13,11 +13,22 @@ export interface InkStroke {
   createdAt: string;
 }
 
+let fallbackStrokeCounter = 0;
+
+function createStrokeId(): string {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  fallbackStrokeCounter += 1;
+  return `stroke-${Date.now()}-${fallbackStrokeCounter}`;
+}
+
 export function createStroke(
   tool: InkStroke["tool"],
   point: InkPoint,
   width: number,
-  id: string = globalThis.crypto?.randomUUID?.() ?? `stroke-${Date.now()}`,
+  id: string = createStrokeId(),
 ): InkStroke {
   return {
     id,

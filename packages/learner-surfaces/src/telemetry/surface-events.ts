@@ -17,16 +17,21 @@ export interface SurfaceTelemetryEvent {
   payload?: Record<string, unknown>;
 }
 
-let eventCounter = 0;
+function createEventId(surfaceId: string, type: SurfaceTelemetryEventType): string {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return `${surfaceId}-${type}-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
+}
 
 export function createSurfaceEvent(
   surfaceId: string,
   type: SurfaceTelemetryEventType,
   payload?: Record<string, unknown>,
 ): SurfaceTelemetryEvent {
-  eventCounter += 1;
   return {
-    id: `${surfaceId}-${type}-${eventCounter}`,
+    id: createEventId(surfaceId, type),
     surfaceId,
     type,
     occurredAt: new Date().toISOString(),
