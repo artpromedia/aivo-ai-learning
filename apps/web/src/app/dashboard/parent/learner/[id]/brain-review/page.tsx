@@ -7,8 +7,8 @@ import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
 import BrainSphere from "@/components/brain/BrainSphere";
 import BrainBuildingSequence from "@/components/brain/BrainBuildingSequence";
-import MasterToChildClone from "@/components/brain/MasterToChildClone";
-import { hasSeenClone } from "@/lib/clone-flags";
+import BrainPersonalizationAnimation from "@/components/brain/BrainPersonalizationAnimation";
+import { hasSeenClone, markSeenClone } from "@/lib/clone-flags";
 import { useTranslations } from "next-intl";
 import { Brain, CheckCircle2, RefreshCw, RotateCcw, Compass, Search, BarChart3, Shield, GraduationCap, ClipboardList, Lock, Users2, BookOpen, Microscope, Landmark, Code2, MessageCircle, Heart, Puzzle, Home, Target, Palette, Wrench, Dna, Plus, Check, PlayCircle, type LucideIcon } from "lucide-react";
 import { subjectIcon, subjectBarClass, subjectWellClass } from "@/lib/subject-icons";
@@ -541,10 +541,11 @@ export default function BrainReviewPage() {
     // review screen is how they revisit the full animation.
     const seen = hasSeenClone(learnerId);
     return (
-      <MasterToChildClone
+      <BrainPersonalizationAnimation
         learnerName={cloningName}
-        learnerId={learnerId}
-        durationMs={seen ? 1500 : 5000}
+        durationMs={seen ? 1500 : 9000}
+        onComplete={() => markSeenClone(learnerId)}
+        onSkip={() => markSeenClone(learnerId)}
       />
     );
   }
@@ -593,11 +594,17 @@ export default function BrainReviewPage() {
     <div className="min-h-screen vi-bg">
       {replayingClone && (
         <div className="fixed inset-0 z-50">
-          <MasterToChildClone
+          <BrainPersonalizationAnimation
             learnerName={review.learner_name}
-            learnerId={learnerId}
-            durationMs={5000}
-            onComplete={() => setReplayingClone(false)}
+            durationMs={9000}
+            onComplete={() => {
+              markSeenClone(learnerId);
+              setReplayingClone(false);
+            }}
+            onSkip={() => {
+              markSeenClone(learnerId);
+              setReplayingClone(false);
+            }}
           />
         </div>
       )}
