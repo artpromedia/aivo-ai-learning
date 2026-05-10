@@ -3,7 +3,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import BrainVisualization from "@/components/BrainVisualization";
+import BrainVisualizationPanel from "@/components/BrainVisualizationPanel";
 import LearnerBrainMapCard from "@/components/brain/LearnerBrainMapCard";
 import { useTranslations } from "next-intl";
 import { Brain, Palette, Lightbulb, Target } from "lucide-react";
@@ -17,7 +17,6 @@ export default function ParentBrainProfilePage() {
 
   const [learnerName, setLearnerName] = useState("Learner");
   const [learnerGrade, setLearnerGrade] = useState<string | null>(null);
-  const [baselineCompleted, setBaselineCompleted] = useState(false);
 
   useEffect(() => {
     if (!accessToken || !learnerId) return;
@@ -29,15 +28,6 @@ export default function ParentBrainProfilePage() {
           setLearnerName(found.name);
           setLearnerGrade(found.gradeLevel ?? null);
         }
-      })
-      .catch(() => {});
-
-    fetch(`/api/assessments/learner/discovery/${learnerId}/status`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((r) => r.ok ? r.json() : null)
-      .then((status) => {
-        if (status?.baselineCompleted) setBaselineCompleted(true);
       })
       .catch(() => {});
   }, [accessToken, learnerId]);
@@ -73,7 +63,11 @@ export default function ParentBrainProfilePage() {
           <h2 className="font-heading font-bold text-lg vi-text">{t("brain_visualization")}</h2>
         </div>
         {accessToken ? (
-          <BrainVisualization learnerId={learnerId} learnerName={learnerName} accessToken={accessToken} baselineCompleted={baselineCompleted} />
+          <BrainVisualizationPanel
+            learnerName={learnerName}
+            version="v1"
+            updatedAt={new Date().toLocaleDateString()}
+          />
         ) : (
           <p className="text-sm vi-text-muted">{t("loading_brain")}</p>
         )}
