@@ -105,7 +105,7 @@ export function LearnerSummaryCard({
   const goToLearner = () => router.push(`/dashboard/parent/learner/${learner.id}`);
 
   return (
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus, jsx-a11y/no-noninteractive-element-interactions
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus, jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/prefer-tag-over-role
     <div
       role="button"
       tabIndex={0}

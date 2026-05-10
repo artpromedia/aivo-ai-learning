@@ -1,7 +1,8 @@
 .shell {
-  width: min(1680px, calc(100vw - 48px));
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 42px 0 56px;
+  padding: 24px 0 32px;
   color: #172033;
 }
 
@@ -165,7 +166,7 @@
 
 .learningGrid {
   display: grid;
-  grid-template-columns: minmax(680px, 1.35fr) minmax(430px, 0.75fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.75fr);
   gap: 24px;
   align-items: stretch;
 }
