@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { TUTORS, type TutorKey, getTutorsForTier } from "@aivo/brand";
 import { gradeToTier } from "@aivo/learner-ui";
-import BrainVisualization from "@/components/BrainVisualization";
+import BrainVisualizationPanel from "@/components/BrainVisualizationPanel";
 import { useTranslations } from "next-intl";
 import {
   Brain,
@@ -183,7 +183,11 @@ export default function LearnerHubPage() {
               View Full Profile →
             </Link>
           </div>
-          <BrainVisualization learnerId={learnerId} learnerName={learner.name} accessToken={accessToken} compact baselineCompleted={baselineCompleted} />
+          <BrainVisualizationPanel
+            learnerName={learner.name}
+            version="v1"
+            updatedAt={new Date().toLocaleDateString()}
+          />
         </div>
       )}
 
