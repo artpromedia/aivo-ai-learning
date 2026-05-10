@@ -110,20 +110,37 @@ export default function BrainCloneCard({
         if (cancelled) return;
         if (res.ok) {
           const data = await res.json();
-          // The brain API returns the canonical fields at the top level
-          // (camelCased). A legacy `state` jsonb column also rides along
-          // but is typically `{}`. Prefer top-level when it has the
-          // canonical fields; only fall back to nested `state` if the
-          // top-level row is missing them.
-          const nested = data?.state;
-          const hasTopLevel =
-            data && (data.masteryLevels || data.version || data.updatedAt);
-          const hasNested =
-            nested && (nested.masteryLevels || nested.version || nested.updatedAt);
-          let chosen: BrainState;
-          if (hasTopLevel) chosen = data as BrainState;
-          else if (hasNested) chosen = nested as BrainState;
-          else chosen = (data ?? {}) as BrainState;
+          // The brain API camelCases top-level columns, but the legacy
+          // `state` jsonb column keeps snake_case keys (e.g.
+          // `mastery_levels`). Some installs only ever populated the
+          // legacy jsonb and left the dedicated columns empty. Merge so
+          // either source produces a usable BrainState.
+          const nested = data?.state ?? {};
+          const hasTopLevelMastery =
+            data?.masteryLevels && Object.keys(data.masteryLevels).length > 0;
+          const masteryLevels = hasTopLevelMastery
+            ? data.masteryLevels
+            : (nested.mastery_levels ?? nested.masteryLevels ?? {});
+          const activeAccommodations =
+            (data?.activeAccommodations && data.activeAccommodations.length
+              ? data.activeAccommodations
+              : (nested.active_accommodations ?? nested.activeAccommodations)) ?? [];
+          const activeTutors =
+            (data?.activeTutors && data.activeTutors.length
+              ? data.activeTutors
+              : (nested.active_tutors ?? nested.activeTutors)) ?? [];
+          const xaiExplanation =
+            data?.xaiExplanation && Object.keys(data.xaiExplanation).length > 0
+              ? data.xaiExplanation
+              : (nested.xai_explanation ?? nested.xaiExplanation ?? {});
+          const chosen: BrainState = {
+            masteryLevels,
+            activeAccommodations,
+            activeTutors,
+            xaiExplanation,
+            updatedAt: data?.updatedAt ?? nested.updated_at ?? nested.updatedAt,
+            version: data?.version ?? nested.version,
+          };
           setState(chosen);
           setExists(true);
         } else if (res.status === 404) {
