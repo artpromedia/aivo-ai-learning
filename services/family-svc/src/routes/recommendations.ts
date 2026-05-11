@@ -5,7 +5,16 @@ import {
   brainInsights,
 } from "@aivo/db";
 import { authenticateRequest, verifyParentOwnership } from "../auth.js";
-import { getRecommendationsByLearnerIdSchema, recommendationsByLearnerIdByRecIdRespondSchema, getRecommendationsByLearnerIdHistorySchema, getRecommendationsByLearnerIdConflictsSchema } from "./schemas.js";
+import {
+  applyRecommendationEffect,
+  EffectPayload,
+} from "./recommendation-effects.js";
+import {
+  getRecommendationsByLearnerIdSchema,
+  recommendationsByLearnerIdByRecIdRespondSchema,
+  getRecommendationsByLearnerIdHistorySchema,
+  getRecommendationsByLearnerIdConflictsSchema,
+} from "./schemas.js";
 
 interface LearnerId {
   learnerId: string;
@@ -16,8 +25,9 @@ interface RespondParams extends LearnerId {
 }
 
 interface RespondBody {
-  action: string;
+  action: "APPROVED" | "DECLINED" | "ADJUSTED" | string;
   notes?: string;
+  amendedPayload?: EffectPayload;
 }
 
 interface QueryStatus {
@@ -67,14 +77,71 @@ export async function registerRecommendationRoutes(app: FastifyInstance) {
       and(eq(brainRecommendations.id, recId), eq(brainRecommendations.learnerId, learnerId))
     );
     if (existing.length === 0) return reply.code(404).send({ error: "Recommendation not found" });
+    const rec = existing[0];
 
-    await db.update(brainRecommendations).set({
-      status: body.action as "APPROVED" | "DECLINED" | "ADJUSTED",
-      parentNotes: body.notes || null,
-      resolvedAt: new Date(),
-    }).where(eq(brainRecommendations.id, recId));
+    if (rec.status !== "PENDING") {
+      return reply.code(409).send({ error: `Recommendation already ${rec.status}` });
+    }
 
-    return { status: "updated", action: body.action };
+    // DECLINED: no effect application, just record the status.
+    if (body.action === "DECLINED") {
+      await db.update(brainRecommendations).set({
+        status: "DECLINED",
+        parentNotes: body.notes || null,
+        resolvedAt: new Date(),
+        resolvedBy: claims.sub,
+      }).where(eq(brainRecommendations.id, recId));
+      return { status: "updated", action: "DECLINED" };
+    }
+
+    // APPROVED/ADJUSTED: apply effect, store applied payload, mark resolved.
+    // If ADJUSTED, the parent's amendedPayload supersedes the original.
+    const basePayload = (rec.payload as EffectPayload | null) ?? {};
+    const amendedPayload =
+      body.action === "ADJUSTED" ? (body.amendedPayload ?? null) : null;
+    const effectivePayload: EffectPayload = amendedPayload
+      ? { ...basePayload, ...amendedPayload }
+      : basePayload;
+
+    try {
+      const result = await applyRecommendationEffect({
+        db,
+        learnerId,
+        recId,
+        recType: rec.type,
+        payload: effectivePayload,
+        trigger: body.action === "ADJUSTED" ? "parent_amended" : "parent_approved",
+      });
+
+      const now = new Date();
+      await db.update(brainRecommendations).set({
+        status: body.action as "APPROVED" | "ADJUSTED",
+        parentNotes: body.notes || null,
+        amendedPayload: amendedPayload ?? undefined,
+        appliedPayload: effectivePayload,
+        resolvedAt: now,
+        resolvedBy: claims.sub,
+        appliedAt: now,
+        applyError: null,
+      }).where(eq(brainRecommendations.id, recId));
+
+      return {
+        status: "updated",
+        action: body.action,
+        effect: result,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      // Leave status PENDING so a retry is possible; record the error.
+      await db.update(brainRecommendations).set({
+        applyError: message,
+      }).where(eq(brainRecommendations.id, recId));
+      request.log.error({ err, recId, learnerId }, "Failed to apply recommendation effect");
+      return reply.code(500).send({
+        error: "Failed to apply recommendation",
+        detail: message,
+      });
+    }
   });
 
   app.get("/api/family/recommendations/:learnerId/history", { schema: getRecommendationsByLearnerIdHistorySchema }, async (request, reply) => {

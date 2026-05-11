@@ -17,6 +17,7 @@
     "buy": "Buy",
     "approve": "Approve",
     "decline": "Decline",
+    "adjust": "Adjust",
     "comingSoon": "Coming soon",
     "overview": "Overview",
     "on": "On",
@@ -184,7 +185,10 @@
     "title": "Recommendations",
     "subtitle": "Review and respond to AI learning recommendations",
     "allCaughtUp": "All Caught Up",
-    "noPending": "No pending recommendations at this time."
+    "noPending": "No pending recommendations at this time.",
+    "adjust": "Adjust",
+    "adjustValueLabel": "Edit proposed value",
+    "amendValueRequired": "Please enter a value before adjusting."
   },
   "parentInbox": {
     "title": "Inbox",
