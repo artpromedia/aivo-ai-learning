@@ -66,3 +66,66 @@ export function canMutateBrainGovernanceFields(role: TenantRole | undefined): bo
   if (!role) return false;
   return MUTATE_BRAIN_GOVERNANCE_FIELDS.has(role);
 }
+
+// ---- Sprint 08 district-mode helpers ----------------------------------
+
+const MANAGE_DISTRICT_HIERARCHY_ROLES = new Set<TenantRole>([
+  "district_admin",
+  "platform_admin",
+]);
+
+const MANAGE_SCHOOL_ROSTER_ROLES = new Set<TenantRole>([
+  "school_admin",
+  "district_admin",
+  "platform_admin",
+]);
+
+const VIEW_CLASS_LEARNERS_ROLES = new Set<TenantRole>([
+  "teacher",
+  "school_admin",
+  "district_admin",
+  "platform_admin",
+]);
+
+const RUN_SIS_IMPORT_ROLES = new Set<TenantRole>([
+  "district_admin",
+  "platform_admin",
+  "service",
+]);
+
+const ACCEPT_DPA_ROLES = new Set<TenantRole>(["district_admin"]);
+
+const EXPORT_DISTRICT_COMPLIANCE_ROLES = new Set<TenantRole>([
+  "district_admin",
+  "platform_admin",
+]);
+
+export function canManageDistrictHierarchy(role: TenantRole | undefined): boolean {
+  if (!role) return false;
+  return MANAGE_DISTRICT_HIERARCHY_ROLES.has(role);
+}
+
+export function canManageSchoolRoster(role: TenantRole | undefined): boolean {
+  if (!role) return false;
+  return MANAGE_SCHOOL_ROSTER_ROLES.has(role);
+}
+
+export function canViewClassLearners(role: TenantRole | undefined): boolean {
+  if (!role) return false;
+  return VIEW_CLASS_LEARNERS_ROLES.has(role);
+}
+
+export function canRunSisImport(role: TenantRole | undefined): boolean {
+  if (!role) return false;
+  return RUN_SIS_IMPORT_ROLES.has(role);
+}
+
+export function canAcceptDpa(role: TenantRole | undefined): boolean {
+  if (!role) return false;
+  return ACCEPT_DPA_ROLES.has(role);
+}
+
+export function canExportDistrictCompliance(role: TenantRole | undefined): boolean {
+  if (!role) return false;
+  return EXPORT_DISTRICT_COMPLIANCE_ROLES.has(role);
+}

@@ -20,6 +20,57 @@ from ..services.llm_gateway import generate_completion
 logger = logging.getLogger(__name__)
 
 
+def _self_regulation_hub_enabled() -> bool:
+    """Sprint 06 flag check. When on, adapted problems are also handed
+    off to the new homework-svc so the four-step engine can pick up the
+    extracted problems and present the UNDERSTAND step in the learner UI.
+    """
+    import os
+
+    raw = os.environ.get("AIVO_FEATURE_SELF_REGULATION_HUB", "")
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+async def _forward_to_homework_svc(
+    learner_id: str,
+    tenant_id: str,
+    subject: str,
+    problems: list[dict[str, Any]],
+) -> None:
+    """Fire-and-forget hand-off to the @aivo/homework-svc. Failures are
+    swallowed so legacy adaptation flow is unaffected."""
+
+    if not _self_regulation_hub_enabled():
+        return
+    if not learner_id or not tenant_id:
+        return
+    import os
+    import httpx
+
+    base = os.environ.get("HOMEWORK_SVC_URL", "http://localhost:3065")
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            session = await client.post(
+                f"{base}/api/homework-sessions",
+                json={
+                    "tenantId": tenant_id,
+                    "learnerId": learner_id,
+                    "subject": subject,
+                    "profile": {},
+                },
+            )
+            if session.status_code != 201:
+                return
+            session_id = session.json().get("id")
+            if not session_id or not problems:
+                return
+            # Advance step engine through UNDERSTAND so the UI can render
+            # PLAN immediately when the learner opens the session.
+            await client.post(f"{base}/api/homework-sessions/{session_id}/step")
+    except Exception:  # pragma: no cover — fire-and-forget
+        return
+
+
 @dataclass
 class AdaptedProblem:
     problem_number: int
@@ -227,6 +278,14 @@ async def adapt_homework(
             )
         if issues:
             logger.info(f"Adaptation quality warnings: {issues}")
+
+        # Sprint 06: hand off to homework-svc (flag-gated, fire-and-forget).
+        await _forward_to_homework_svc(
+            learner_id=str(brain_context.get("learner_id") or ""),
+            tenant_id=str(brain_context.get("tenant_id") or ""),
+            subject=subject,
+            problems=extracted_problems,
+        )
 
         return adapted
 

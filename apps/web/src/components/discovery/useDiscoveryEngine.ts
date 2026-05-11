@@ -318,6 +318,37 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     surfaceSignalsRef.current.push(signal);
   }, []);
 
+  // Sprint 02 telemetry hook. When the problem-session ledger flag is on,
+  // discovery activities also push answer telemetry to the relay. Per
+  // Sprint 03 we send only aggregate flags (correct, hasInk, latency), not
+  // raw stroke data or free-form text. Fire-and-forget.
+  const ledgerEnabled =
+    typeof process !== "undefined" &&
+    ["1", "true", "yes", "on"].includes(
+      String(process.env.NEXT_PUBLIC_AIVO_FEATURE_PROBLEM_SESSION_LEDGER ?? "")
+        .trim()
+        .toLowerCase(),
+    );
+
+  const emitDiscoveryTelemetry = useCallback(
+    (eventType: string, payload: Record<string, unknown>): void => {
+      if (!ledgerEnabled) return;
+      if (!learnerId) return;
+      void fetch("/api/learning/surface-telemetry", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          learnerId,
+          eventType,
+          payload,
+        }),
+      }).catch(() => {
+        // Swallow — telemetry is best-effort.
+      });
+    },
+    [ledgerEnabled, learnerId],
+  );
+
   const retryChapterGeneration = useCallback(async (chapter: AdventureChapter) => {
     delete chapterActivitiesRef.current[chapter.id];
     setGenerationStatus(prev => {
@@ -335,6 +366,11 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     if (payload) {
       recordSurfaceSignal({ ...payload, latencyMs, correct });
     }
+    emitDiscoveryTelemetry("answer_attempted", {
+      correct,
+      latencyMs,
+      hasInk: Number((payload as { inkStrokeCount?: number } | undefined)?.inkStrokeCount ?? 0) > 0,
+    });
 
     setState(s => {
       const newStreakCorrect = correct ? s.streakCorrect + 1 : 0;
@@ -394,7 +430,7 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
         responseLatencies: [...s.responseLatencies, latencyMs],
       };
     });
-  }, [chapters, config.activitiesPerChapter]);
+  }, [chapters, config.activitiesPerChapter, emitDiscoveryTelemetry, recordSurfaceSignal]);
 
   const advanceToNextChapter = useCallback(async () => {
     const nextIdx = state.currentChapterIdx + 1;

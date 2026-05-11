@@ -11,8 +11,60 @@ from brain_svc.services.clone_pipeline import clone_brain
 from brain_svc.auth import AuthClaims, require_auth
 
 LEARNING_SVC_URL = os.environ.get("LEARNING_SVC_URL", "http://localhost:3005")
+RECOMMENDATION_SVC_URL = os.environ.get(
+    "RECOMMENDATION_SVC_URL", "http://localhost:3066"
+)
 
 router = APIRouter()
+
+
+def _profile_recommendations_v2_enabled() -> bool:
+    """Sprint 07 flag check."""
+    raw = os.environ.get("AIVO_FEATURE_PROFILE_RECOMMENDATIONS_V2", "")
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+async def _maybe_emit_regression_candidates(
+    learner_id: str, regressions: list[dict]
+) -> None:
+    """Sprint 07 hook: push regression-check signals to recommendation-svc.
+
+    Each regression entry becomes a `regression_check`-source signal that
+    can trigger a `mastery_adjustment` recommendation when correlated
+    with other evidence. Fire-and-forget.
+    """
+    if not _profile_recommendations_v2_enabled():
+        return
+    if not regressions:
+        return
+    import httpx
+
+    signals = []
+    for reg in regressions:
+        delta = reg.get("delta") or reg.get("change") or 0
+        signals.append(
+            {
+                "source": "regression_check",
+                "metric": "mastery_signal",
+                "value": float(abs(delta)),
+                "summary": (
+                    f"Regression in {reg.get('domain', 'domain')}: "
+                    f"{reg.get('previous')} -> {reg.get('current')}"
+                ),
+            }
+        )
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            await client.post(
+                f"{RECOMMENDATION_SVC_URL}/api/recommendations/candidates",
+                json={
+                    "learnerId": learner_id,
+                    "signals": signals,
+                    "currentProfile": {},
+                },
+            )
+    except Exception:  # pragma: no cover — fire-and-forget
+        return
 
 def _snake_to_camel(name: str) -> str:
     components = name.split('_')
@@ -756,6 +808,8 @@ async def check_regression(learner_id: str, db: Session = Depends(get_db), auth:
 
     if regressions:
         db.commit()
+        # Sprint 07: fire-and-forget recommendation candidate emission.
+        await _maybe_emit_regression_candidates(learner_id, regressions)
 
     return {
         "learnerId": learner_id,

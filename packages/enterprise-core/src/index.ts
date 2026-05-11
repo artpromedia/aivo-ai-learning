@@ -19,4 +19,10 @@ export {
   canReadParentPrivateNotes,
   canSubmitTeacherObservation,
   canMutateBrainGovernanceFields,
+  canManageDistrictHierarchy,
+  canManageSchoolRoster,
+  canViewClassLearners,
+  canRunSisImport,
+  canAcceptDpa,
+  canExportDistrictCompliance,
 } from "./role-policy.js";
