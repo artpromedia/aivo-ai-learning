@@ -11,7 +11,9 @@
 
 import { redactAuditMetadata } from "./audit-redaction.js";
 
-const DEFAULT_BASE_URL = process.env.AUDIT_SVC_URL ?? "http://localhost:3069";
+function resolveBaseUrl(): string {
+  return process.env.AUDIT_SVC_URL ?? "http://localhost:3069";
+}
 
 function dataGovernanceCenterEnabled(): boolean {
   const raw = process.env.AIVO_FEATURE_DATA_GOVERNANCE_CENTER;
@@ -43,14 +45,22 @@ export interface AuditClientOptions {
 }
 
 export class AuditClient {
-  private readonly baseUrl: string;
-  private readonly enabled: boolean;
+  private readonly explicitBaseUrl: string | undefined;
+  private readonly explicitEnabled: boolean | undefined;
   private readonly fetchImpl: typeof fetch;
 
   constructor(options: AuditClientOptions = {}) {
-    this.baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
-    this.enabled = options.enabled ?? dataGovernanceCenterEnabled();
+    this.explicitBaseUrl = options.baseUrl;
+    this.explicitEnabled = options.enabled;
     this.fetchImpl = options.fetchImpl ?? fetch;
+  }
+
+  private get baseUrl(): string {
+    return this.explicitBaseUrl ?? resolveBaseUrl();
+  }
+
+  private get enabled(): boolean {
+    return this.explicitEnabled ?? dataGovernanceCenterEnabled();
   }
 
   isEnabled(): boolean {

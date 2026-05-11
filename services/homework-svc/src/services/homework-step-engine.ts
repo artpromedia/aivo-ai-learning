@@ -32,9 +32,10 @@ export function nextStep(state: HomeworkStepState): HomeworkStepState {
 }
 
 export function isFinalAnswerGuardSatisfied(state: HomeworkStepState): boolean {
-  // Final answer cannot be revealed until learner has at least attempted SOLVE.
+  // Final answer cannot be revealed until learner has at least entered SOLVE.
   return (
     state.history.includes("solve") ||
+    state.currentStep === "solve" ||
     state.currentStep === "check" ||
     state.currentStep === "complete"
   );
