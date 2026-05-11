@@ -1,9 +1,6 @@
 "use client";
 import { useCallback, useRef, useState } from "react";
-import type {
-  SurfaceResponse,
-  SurfaceTelemetryEvent,
-} from "@aivo/learner-surfaces";
+import type { SurfaceResponse, SurfaceTelemetryEvent } from "@aivo/learner-surfaces";
 import type { Beat, SessionPhase, SessionState, FunctioningLevel } from "./types";
 import type { TutorKey } from "@aivo/brand";
 import { SESSION_DURATIONS } from "./types";
@@ -45,7 +42,11 @@ const INITIAL_STATE: SessionState = {
   functioningLevel: "STANDARD",
 };
 
-export function useSessionFlow(tutorKey: TutorKey, learnerId: string, functioningLevel: FunctioningLevel) {
+export function useSessionFlow(
+  tutorKey: TutorKey,
+  learnerId: string,
+  functioningLevel: FunctioningLevel,
+) {
   const [state, setState] = useState<SessionState>({
     ...INITIAL_STATE,
     tutorKey,
@@ -53,7 +54,8 @@ export function useSessionFlow(tutorKey: TutorKey, learnerId: string, functionin
     functioningLevel,
     startedAt: Date.now(),
   });
-  const [processSignals, setProcessSignals] = useState<SessionProcessSignals>(INITIAL_PROCESS_SIGNALS);
+  const [processSignals, setProcessSignals] =
+    useState<SessionProcessSignals>(INITIAL_PROCESS_SIGNALS);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const maxDurationMs = SESSION_DURATIONS[functioningLevel].max * 60 * 1000;
@@ -117,29 +119,83 @@ export function useSessionFlow(tutorKey: TutorKey, learnerId: string, functionin
         attemptedAnswers: p.attemptedAnswers + 1,
         correctAnswers: p.correctAnswers + (correct ? 1 : 0),
         erasuresCount: p.erasuresCount + Number(payload?.erasureCount ?? 0),
-        scratchpadUseCount: p.scratchpadUseCount + (Number(payload?.inkStrokeCount ?? 0) > 0 ? 1 : 0),
+        scratchpadUseCount:
+          p.scratchpadUseCount + (Number(payload?.inkStrokeCount ?? 0) > 0 ? 1 : 0),
       }));
     },
     [],
   );
 
-  const recordSurfaceEvent = useCallback((event: SurfaceTelemetryEvent) => {
-    setProcessSignals((p) => {
-      const hintBumped = event.type === "tool_changed" && event.payload?.tool === "hint" ? 1 : 0;
-      return {
-        ...p,
-        surfaceEvents: [...p.surfaceEvents, event],
-        hintUsageCount: p.hintUsageCount + hintBumped,
-      };
-    });
-  }, []);
+  // Sprint 02 / 03 adapter: flag-aware fire-and-forget telemetry relay.
+  // When NEXT_PUBLIC_AIVO_FEATURE_PROBLEM_SESSION_LEDGER is "true" / "1" /
+  // "yes" / "on", surface events and final answers are POSTed to a relay
+  // endpoint in learning-svc which forwards them to the problem-session
+  // ledger. The call is fire-and-forget: errors never reach the UI.
+  const ledgerEnabled =
+    typeof process !== "undefined" &&
+    ["1", "true", "yes", "on"].includes(
+      String(process.env.NEXT_PUBLIC_AIVO_FEATURE_PROBLEM_SESSION_LEDGER ?? "")
+        .trim()
+        .toLowerCase(),
+    );
 
-  const recordSurfaceResponse = useCallback((response: SurfaceResponse) => {
-    setProcessSignals((p) => ({
-      ...p,
-      surfaceResponses: [...p.surfaceResponses, response],
-    }));
-  }, []);
+  const emitTelemetry = useCallback(
+    (eventType: string, payload: Record<string, unknown>): void => {
+      if (!ledgerEnabled) return;
+      const sessionId = (typeof window !== "undefined" ? state.sessionId : undefined) ?? undefined;
+      if (!sessionId || !state.learnerId) return;
+      void fetch("/api/learning/surface-telemetry", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          learnerId: state.learnerId,
+          sessionId,
+          eventType,
+          payload,
+        }),
+      }).catch(() => {
+        // Swallow — telemetry is best-effort.
+      });
+    },
+    [ledgerEnabled, state.sessionId, state.learnerId],
+  );
+
+  const recordSurfaceEvent = useCallback(
+    (event: SurfaceTelemetryEvent) => {
+      setProcessSignals((p) => {
+        const hintBumped = event.type === "tool_changed" && event.payload?.tool === "hint" ? 1 : 0;
+        return {
+          ...p,
+          surfaceEvents: [...p.surfaceEvents, event],
+          hintUsageCount: p.hintUsageCount + hintBumped,
+        };
+      });
+      // Emit aggregated event types to the ledger (NOT every pointer event,
+      // per the Sprint 03 high-volume-mode rule).
+      if (event.type === "tool_changed" && event.payload?.tool === "hint") {
+        emitTelemetry("hint_requested", { tool: "hint" });
+      }
+      if (event.type === "surface_started") {
+        emitTelemetry("surface_rendered", { surfaceId: event.surfaceId });
+      }
+    },
+    [emitTelemetry],
+  );
+
+  const recordSurfaceResponse = useCallback(
+    (response: SurfaceResponse) => {
+      setProcessSignals((p) => ({
+        ...p,
+        surfaceResponses: [...p.surfaceResponses, response],
+      }));
+      emitTelemetry("answer_attempted", {
+        surfaceId: response.surfaceId,
+        hasAnswer: response.answer !== undefined,
+        hasInk: Array.isArray(response.inkStrokes) && response.inkStrokes.length > 0,
+      });
+    },
+    [emitTelemetry],
+  );
 
   const currentBeat = state.beats[state.currentBeatIndex] || null;
   const progress = state.totalBeats > 0 ? (state.currentBeatIndex + 1) / state.totalBeats : 0;

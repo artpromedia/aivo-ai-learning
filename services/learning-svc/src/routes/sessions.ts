@@ -50,6 +50,68 @@ async function fetchBrainContext(learnerId: string): Promise<Record<string, unkn
 // swallowed: the ledger is evidence, not the source of truth.
 const PROBLEM_SESSION_SVC_URL = process.env.PROBLEM_SESSION_SVC_URL ?? "http://localhost:3061";
 
+// ---- Sprint 05 adapter: subject-brain context --------------------------
+const SUBJECT_BRAIN_SVC_URL = process.env.SUBJECT_BRAIN_SVC_URL ?? "http://localhost:3064";
+
+function advancedContentGeneratorsEnabled(): boolean {
+  const raw = process.env.AIVO_FEATURE_ADVANCED_CONTENT_GENERATORS;
+  if (!raw) return false;
+  const v = String(raw).trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
+async function fetchSubjectBrainContext(input: {
+  learnerId: string;
+  subject: string;
+  topic?: string;
+  brainContext: Record<string, unknown>;
+}): Promise<Record<string, unknown> | undefined> {
+  if (!advancedContentGeneratorsEnabled()) return undefined;
+  try {
+    const res = await fetch(`${SUBJECT_BRAIN_SVC_URL}/api/subject-brain/context`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) return undefined;
+    return (await res.json()) as Record<string, unknown>;
+  } catch {
+    return undefined;
+  }
+}
+
+// ---- Sprint 10 adapter: responsible-AI evaluation ----------------------
+const RESPONSIBLE_AI_SVC_URL = process.env.RESPONSIBLE_AI_SVC_URL ?? "http://localhost:3071";
+
+function responsibleAiGuardrailsEnabled(): boolean {
+  const raw = process.env.AIVO_FEATURE_RESPONSIBLE_AI_GUARDRAILS;
+  if (!raw) return false;
+  const v = String(raw).trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
+async function evaluateResponsibleAi(input: {
+  learnerId: string;
+  contextType: "lesson" | "homework" | "chat" | "baseline" | "recommendation";
+  inputSummary: string;
+  output: unknown;
+  requiredSurfaces?: string[];
+  learnerProfileSummary?: Record<string, unknown>;
+}): Promise<{ allowed: boolean; severity: string; recommendedAction: string } | undefined> {
+  if (!responsibleAiGuardrailsEnabled()) return undefined;
+  try {
+    const res = await fetch(`${RESPONSIBLE_AI_SVC_URL}/api/responsible-ai/evaluate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ...input, policyMode: "warn" }),
+    });
+    if (!res.ok) return undefined;
+    return (await res.json()) as { allowed: boolean; severity: string; recommendedAction: string };
+  } catch {
+    return undefined;
+  }
+}
+
 function problemSessionLedgerEnabled(): boolean {
   const raw = process.env.AIVO_FEATURE_PROBLEM_SESSION_LEDGER;
   if (!raw) return false;
@@ -171,6 +233,19 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     const brainContext = await fetchBrainContext(learnerId);
     const functioningLevel = (brainContext as any).functioning_level_profile?.level || "STANDARD";
 
+    // Sprint 05: pull subject-brain context when the flag is on. The result
+    // is merged into brainContext so the existing generator pipeline picks
+    // it up without behavioral change when the flag is off.
+    const subjectBrainContext = await fetchSubjectBrainContext({
+      learnerId,
+      subject,
+      topic,
+      brainContext,
+    });
+    const enrichedBrainContext = subjectBrainContext
+      ? { ...brainContext, subjectBrain: subjectBrainContext }
+      : brainContext;
+
     const [session] = await db
       .insert(lessonSessions)
       .values({
@@ -181,7 +256,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
         status: "CONTENT_GENERATING",
         contentType: contentType || "LESSON",
         functioningLevel,
-        brainContextSnapshot: brainContext,
+        brainContextSnapshot: enrichedBrainContext,
         ...(startedAt ? { startedAt } : {}),
         ...(durationSeconds > 0 ? { durationSeconds } : {}),
       })
@@ -204,9 +279,28 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
         gradeTarget: (brainContext as any).curriculum_alignment?.grade_band || "THIRD",
         deliveryLevel: (brainContext as any).curriculum_alignment?.delivery_level || "THIRD",
         functioningLevel,
-        brainContext,
+        brainContext: enrichedBrainContext,
         contentType: contentType || "LESSON",
       });
+
+      // Sprint 10: evaluate the generated content with responsible-AI when
+      // the flag is on. We run in `warn` mode so a violation logs and
+      // recommends a revise but does NOT block legacy delivery. Switching
+      // to `block` mode is a one-line change once the team is ready.
+      const raiResult = await evaluateResponsibleAi({
+        learnerId,
+        contextType: "lesson",
+        inputSummary: topic || `Introduction to ${subject}`,
+        output: { content: generated.content, subject, topic },
+        requiredSurfaces: (subjectBrainContext as { recommendedSurfaces?: string[] } | undefined)
+          ?.recommendedSurfaces,
+      });
+      if (raiResult && !raiResult.allowed) {
+        app.log.warn(
+          { learnerId, sessionId: session.id, severity: raiResult.severity },
+          "responsible-AI flagged generated lesson content",
+        );
+      }
 
       await db.insert(lessonContent).values({
         sessionId: session.id,
@@ -234,13 +328,11 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
             },
           })
           .where(eq(lessonSessions.id, session.id));
-        return reply
-          .code(422)
-          .send({
-            error: "Content failed quality gate",
-            qualityScore: generated.qualityScore,
-            qualityGateLog: generated.qualityGateLog,
-          });
+        return reply.code(422).send({
+          error: "Content failed quality gate",
+          qualityScore: generated.qualityScore,
+          qualityGateLog: generated.qualityGateLog,
+        });
       }
 
       await db
@@ -688,6 +780,58 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
       };
     },
   );
+
+  // Sprint 02 / 03 relay: receives surface telemetry from the web stage and
+  // forwards it to the problem-session ledger. The relay looks up the most
+  // recent active problem session for the learner (which the lesson-create
+  // adapter recorded) and appends the event there. Flag-gated; no-op when
+  // the ledger flag is off.
+  app.post("/api/learning/surface-telemetry", async (request, reply) => {
+    if (!problemSessionLedgerEnabled()) {
+      return reply.code(204).send();
+    }
+    const body = request.body as {
+      learnerId?: string;
+      sessionId?: string;
+      eventType?: string;
+      payload?: Record<string, unknown>;
+    } | null;
+    if (!body?.learnerId || !body?.eventType) {
+      return reply.code(400).send({ error: "learnerId and eventType are required" });
+    }
+    try {
+      const recentRes = await fetch(
+        `${PROBLEM_SESSION_SVC_URL}/api/problem-sessions/learner/${encodeURIComponent(
+          body.learnerId,
+        )}/recent?limit=5`,
+      );
+      if (!recentRes.ok) return reply.code(204).send();
+      const { sessions = [] } = (await recentRes.json()) as {
+        sessions: Array<{ id: string; sourceSessionId?: string; status: string }>;
+      };
+      // Prefer the session whose sourceSessionId matches the lesson session;
+      // fall back to the most recent active session.
+      const match =
+        sessions.find((s) => body.sessionId && s.sourceSessionId === body.sessionId) ??
+        sessions.find((s) => s.status === "active");
+      if (!match) return reply.code(204).send();
+      await fetch(
+        `${PROBLEM_SESSION_SVC_URL}/api/problem-sessions/${encodeURIComponent(match.id)}/events`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            eventType: body.eventType,
+            payload: body.payload ?? {},
+          }),
+        },
+      );
+      return reply.code(204).send();
+    } catch {
+      // Telemetry is best-effort.
+      return reply.code(204).send();
+    }
+  });
 }
 
 const MASTERY_THRESHOLDS: Record<string, number> = {

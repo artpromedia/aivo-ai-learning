@@ -76,6 +76,41 @@ async function recordHomeworkProblemSession(input: {
   }
 }
 
+// ---- Sprint 10 adapter: responsible-AI evaluation -----------------------
+const RESPONSIBLE_AI_SVC_URL = process.env.RESPONSIBLE_AI_SVC_URL ?? "http://localhost:3071";
+
+function responsibleAiGuardrailsEnabled(): boolean {
+  const raw = process.env.AIVO_FEATURE_RESPONSIBLE_AI_GUARDRAILS;
+  if (!raw) return false;
+  const v = String(raw).trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
+async function evaluateResponsibleAiHomework(input: {
+  learnerId: string;
+  inputSummary: string;
+  output: unknown;
+}): Promise<{ allowed: boolean; severity: string; recommendedAction: string } | undefined> {
+  if (!responsibleAiGuardrailsEnabled()) return undefined;
+  try {
+    const res = await fetch(`${RESPONSIBLE_AI_SVC_URL}/api/responsible-ai/evaluate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        learnerId: input.learnerId,
+        contextType: "homework",
+        inputSummary: input.inputSummary,
+        output: input.output,
+        policyMode: "warn",
+      }),
+    });
+    if (!res.ok) return undefined;
+    return (await res.json()) as { allowed: boolean; severity: string; recommendedAction: string };
+  } catch {
+    return undefined;
+  }
+}
+
 const SUBJECT_TO_SKU: Record<string, string> = {
   MATH: "ADDON_TUTOR_MATH",
   ELA: "ADDON_TUTOR_ELA",
@@ -554,6 +589,20 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
         if (!res.ok) throw new Error(`ai-svc returned ${res.status}`);
 
         const data: any = await res.json();
+
+        // Sprint 10: responsible-AI evaluation in warn mode.
+        const raiResult = await evaluateResponsibleAiHomework({
+          learnerId: session.learnerId,
+          inputSummary: existingMessages[existingMessages.length - 1]?.content ?? "",
+          output: data.response,
+        });
+        if (raiResult && !raiResult.allowed) {
+          logger.warn("responsible-AI flagged homework chat", {
+            sessionId,
+            severity: raiResult.severity,
+          });
+        }
+
         existingMessages.push({
           role: "assistant",
           content: data.response,
