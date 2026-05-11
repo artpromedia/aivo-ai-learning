@@ -5,7 +5,7 @@ import { buildApp } from "../server.js";
 let app: FastifyInstance;
 
 beforeEach(async () => {
-  app = await buildApp();
+  app = await buildApp({ skipAuth: true });
 });
 
 afterEach(async () => {

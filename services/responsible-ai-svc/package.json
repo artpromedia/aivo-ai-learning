@@ -19,7 +19,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@aivo/enterprise-core": "workspace:*",
     "@aivo/feature-flags": "workspace:*",
+    "@aivo/observability": "workspace:*",
     "@aivo/tutor-surface-protocol": "workspace:*",
     "@fastify/cors": "^11.0.0",
     "fastify": "^5.3.3"
