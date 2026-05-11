@@ -1,5 +1,13 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, RefreshControl } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  RefreshControl,
+  TextInput,
+  Alert,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -7,9 +15,32 @@ import { useLearners } from '@/hooks/useLearners';
 import {
   useBrainRecommendations,
   useRecommendationAction,
+  RecommendationAmendedPayload,
 } from '@/hooks/useBrain';
 import { AivoCard, AivoButton, EmptyState, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
+
+const AMEND_FIELD: Record<string, keyof RecommendationAmendedPayload | null> = {
+  accommodation_add: 'accommodation',
+  accommodation_remove: 'accommodation',
+  tutor_suggestion: 'tutor',
+  functioning_level_change: 'level',
+  curriculum_shift: 'curriculumId',
+  path_adjustment: 'proposedValue',
+  regression_alert: 'proposedValue',
+  goal_suggestion: 'proposedValue',
+  iep_goal_met: 'proposedValue',
+  iep_refresh: 'proposedValue',
+  rebaseline: null,
+  brain_profile_review: null,
+  brain_upgrade: null,
+};
+
+function formatValue(v: unknown): string {
+  if (v === null || v === undefined) return '—';
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
+}
 
 export default function RecommendationsScreen() {
   const insets = useSafeAreaInsets();
@@ -19,9 +50,43 @@ export default function RecommendationsScreen() {
     useBrainRecommendations(firstLearnerId);
   const action = useRecommendationAction();
   const { t } = useTranslation();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [amendValues, setAmendValues] = useState<Record<string, string>>({});
 
   const pending =
     recommendations?.filter((r) => r.status === 'PENDING') ?? [];
+
+  const respond = async (
+    rec: (typeof pending)[number],
+    actionType: 'approve' | 'decline' | 'adjust',
+  ) => {
+    try {
+      const payload = rec.payload as Record<string, unknown> | null;
+      let amendedPayload: RecommendationAmendedPayload | undefined;
+      if (actionType === 'adjust') {
+        const field = AMEND_FIELD[rec.type];
+        const value = amendValues[rec.id] ?? '';
+        if (!value.trim()) {
+          Alert.alert(t('common.error'), t('parentRecommendations.amendValueRequired'));
+          return;
+        }
+        amendedPayload = field ? { [field]: value } : { proposedValue: value };
+      }
+      await action.mutateAsync({
+        learnerId: firstLearnerId,
+        recommendationId: rec.id,
+        action: actionType,
+        amendedPayload,
+      });
+      setExpandedId(null);
+      void payload;
+    } catch (err) {
+      Alert.alert(
+        t('common.error'),
+        err instanceof Error ? err.message : 'Failed',
+      );
+    }
+  };
 
   if (isLoading) return <LoadingState />;
 
@@ -53,53 +118,102 @@ export default function RecommendationsScreen() {
           message={t('parentRecommendations.noPending')}
         />
       ) : (
-        pending.map((rec) => (
-          <AivoCard key={rec.id} style={styles.recCard}>
-            <View style={styles.recHeader}>
-              <View
-                style={[styles.typeBadge, { backgroundColor: colors.info + '20' }]}
-              >
-                <Text style={[styles.typeText, { color: colors.info }]}>
-                  {rec.type}
+        pending.map((rec) => {
+          const payload = (rec.payload as Record<string, unknown> | null) || null;
+          const canAmend = AMEND_FIELD[rec.type] !== null && AMEND_FIELD[rec.type] !== undefined;
+          const isExpanded = expandedId === rec.id;
+          const amendInitial = canAmend
+            ? formatValue(payload?.[AMEND_FIELD[rec.type] as string] ?? payload?.proposedValue)
+            : '';
+          return (
+            <AivoCard key={rec.id} style={styles.recCard}>
+              <View style={styles.recHeader}>
+                <View style={[styles.typeBadge, { backgroundColor: colors.info + '20' }]}>
+                  <Text style={[styles.typeText, { color: colors.info }]}>{rec.type}</Text>
+                </View>
+                <Text style={styles.recDate}>
+                  {new Date(rec.createdAt).toLocaleDateString()}
                 </Text>
               </View>
-              <Text style={styles.recDate}>
-                {new Date(rec.createdAt).toLocaleDateString()}
-              </Text>
-            </View>
-            <Text style={styles.recTitle}>{rec.title}</Text>
-            {rec.description && (
-              <Text style={styles.recDesc}>{rec.description}</Text>
-            )}
-            <View style={styles.recActions}>
-              <AivoButton
-                title={t('common.approve')}
-                onPress={() =>
-                  action.mutate({
-                    learnerId: firstLearnerId,
-                    recommendationId: rec.id,
-                    action: 'approve',
-                  })
-                }
-                size="sm"
-                style={{ flex: 1, marginRight: 8 }}
-              />
-              <AivoButton
-                title={t('common.decline')}
-                onPress={() =>
-                  action.mutate({
-                    learnerId: firstLearnerId,
-                    recommendationId: rec.id,
-                    action: 'decline',
-                  })
-                }
-                variant="outline"
-                size="sm"
-                style={{ flex: 1 }}
-              />
-            </View>
-          </AivoCard>
-        ))
+              <Text style={styles.recTitle}>{rec.title}</Text>
+              {rec.description && <Text style={styles.recDesc}>{rec.description}</Text>}
+
+              {payload && (
+                <View style={styles.payload}>
+                  {payload.currentValue != null && (
+                    <Text style={styles.payloadLine}>
+                      <Text style={styles.payloadLabel}>Current: </Text>
+                      {formatValue(payload.currentValue)}
+                    </Text>
+                  )}
+                  {payload.proposedValue != null && (
+                    <Text style={styles.payloadLine}>
+                      <Text style={styles.payloadLabel}>Proposed: </Text>
+                      {formatValue(payload.proposedValue)}
+                    </Text>
+                  )}
+                  {typeof payload.reason === 'string' && (
+                    <Text style={styles.payloadLine}>
+                      <Text style={styles.payloadLabel}>Why: </Text>
+                      {payload.reason}
+                    </Text>
+                  )}
+                  {rec.confidence != null && (
+                    <Text style={styles.payloadLine}>
+                      <Text style={styles.payloadLabel}>Confidence: </Text>
+                      {(rec.confidence * 100).toFixed(0)}%
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              {rec.applyError && (
+                <Text style={styles.applyError}>Last attempt failed: {rec.applyError}</Text>
+              )}
+
+              {isExpanded && canAmend && (
+                <View style={styles.amendBox}>
+                  <Text style={styles.amendLabel}>
+                    {t('parentRecommendations.adjustValueLabel')}
+                  </Text>
+                  <TextInput
+                    style={styles.amendInput}
+                    value={amendValues[rec.id] ?? amendInitial}
+                    onChangeText={(v) => setAmendValues((prev) => ({ ...prev, [rec.id]: v }))}
+                    placeholder={amendInitial}
+                  />
+                </View>
+              )}
+
+              <View style={styles.recActions}>
+                <AivoButton
+                  title={t('common.approve')}
+                  onPress={() => respond(rec, 'approve')}
+                  size="sm"
+                  style={{ flex: 1, marginRight: 6 }}
+                />
+                {canAmend && (
+                  <AivoButton
+                    title={isExpanded ? t('common.adjust') : t('parentRecommendations.adjust')}
+                    onPress={() =>
+                      isExpanded ? respond(rec, 'adjust') : setExpandedId(rec.id)
+                    }
+                    variant="outline"
+                    size="sm"
+                    style={{ flex: 1, marginRight: 6 }}
+                  />
+                )}
+                <AivoButton
+                  title={t('common.decline')}
+                  onPress={() => respond(rec, 'decline')}
+                  variant="outline"
+                  size="sm"
+                  style={{ flex: 1 }}
+                />
+              </View>
+            </AivoCard>
+          );
+        })
       )}
     </ScrollView>
   );
@@ -117,4 +231,25 @@ const styles = StyleSheet.create({
   recTitle: { fontSize: 16, fontFamily: 'Nunito-Bold', color: colors.text, marginBottom: 4 },
   recDesc: { fontSize: 14, fontFamily: 'Nunito-Regular', color: colors.textSecondary, lineHeight: 20, marginBottom: 12 },
   recActions: { flexDirection: 'row' },
+  payload: {
+    backgroundColor: colors.background,
+    padding: 10,
+    borderRadius: radius.md,
+    marginBottom: 10,
+  },
+  payloadLine: { fontSize: 12, fontFamily: 'Nunito-Regular', color: colors.text, marginBottom: 2 },
+  payloadLabel: { fontFamily: 'Nunito-Bold', color: colors.textSecondary },
+  applyError: { fontSize: 12, color: colors.error, marginBottom: 8 },
+  amendBox: { marginBottom: 10 },
+  amendLabel: { fontSize: 12, fontFamily: 'Nunito-Bold', color: colors.textSecondary, marginBottom: 4 },
+  amendInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+    fontFamily: 'Nunito-Regular',
+    color: colors.text,
+  },
 });

@@ -75,6 +75,12 @@ export interface BrainRecommendation {
   title: string;
   description?: string | null;
   payload?: Record<string, unknown> | null;
+  amendedPayload?: Record<string, unknown> | null;
+  appliedPayload?: Record<string, unknown> | null;
+  evidence?: Record<string, unknown> | null;
+  sourceSignals?: unknown[] | null;
+  confidence?: number | null;
+  applyError?: string | null;
   parentNotes?: string | null;
   createdAt: string;
   resolvedAt?: string | null;
@@ -229,6 +235,18 @@ export function useBrainRecommendations(learnerId: string) {
   });
 }
 
+export type RecommendationAction = 'approve' | 'decline' | 'adjust';
+
+export interface RecommendationAmendedPayload {
+  accommodation?: string;
+  tutor?: string;
+  level?: string;
+  subject?: string;
+  curriculumId?: string;
+  proposedValue?: unknown;
+  [k: string]: unknown;
+}
+
 export function useRecommendationAction() {
   const queryClient = useQueryClient();
 
@@ -238,22 +256,39 @@ export function useRecommendationAction() {
       recommendationId,
       action,
       parentNotes,
+      amendedPayload,
     }: {
       learnerId: string;
       recommendationId: string;
-      action: 'approve' | 'decline';
+      action: RecommendationAction;
       parentNotes?: string;
+      amendedPayload?: RecommendationAmendedPayload;
     }) => {
-      const apiAction = action === 'approve' ? 'APPROVED' : 'DECLINED';
+      const apiAction =
+        action === 'approve'
+          ? 'APPROVED'
+          : action === 'adjust'
+          ? 'ADJUSTED'
+          : 'DECLINED';
+      const body: Record<string, unknown> = {
+        action: apiAction,
+        notes: parentNotes,
+      };
+      if (action === 'adjust' && amendedPayload) {
+        body.amendedPayload = amendedPayload;
+      }
       const res = await apiFetch(
         API.FAMILY,
         `/api/family/recommendations/${learnerId}/${recommendationId}/respond`,
         {
           method: 'POST',
-          body: JSON.stringify({ action: apiAction, notes: parentNotes }),
+          body: JSON.stringify(body),
         },
       );
-      if (!res.ok) throw new Error('Action failed');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || err.error || 'Action failed');
+      }
       return res.json();
     },
     onSuccess: (_, variables) => {

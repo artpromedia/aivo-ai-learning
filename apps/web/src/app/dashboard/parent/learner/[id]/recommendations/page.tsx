@@ -6,13 +6,38 @@ import { useTranslations } from "next-intl";
 import { CheckCircle2, ClipboardList } from "lucide-react";
 import { IconWell } from "@/components/discovery/_vi";
 
+interface RecommendationPayload {
+  targetTable?: string;
+  targetField?: string;
+  currentValue?: unknown;
+  proposedValue?: unknown;
+  reason?: string;
+  evidence?: Record<string, unknown>;
+  confidence?: number;
+  sourceSignals?: unknown[];
+  requiresParentApproval?: boolean;
+  accommodation?: string;
+  tutor?: string;
+  domain?: string;
+  level?: string;
+  subject?: string;
+  curriculumId?: string;
+  [k: string]: unknown;
+}
+
 interface Recommendation {
   id: string;
   type: string;
   status: string;
   title: string;
   description: string;
-  payload: Record<string, unknown> | null;
+  payload: RecommendationPayload | null;
+  amendedPayload: RecommendationPayload | null;
+  appliedPayload: RecommendationPayload | null;
+  evidence: Record<string, unknown> | null;
+  sourceSignals: unknown[] | null;
+  confidence: number | null;
+  applyError: string | null;
   parentNotes: string | null;
   resolvedAt: string | null;
   createdAt: string;
@@ -48,6 +73,29 @@ const TYPE_COLORS: Record<string, string> = {
   goal_suggestion: "bg-[hsl(var(--visual-primary)/0.06)] border-[hsl(var(--visual-primary)/0.3)] text-[hsl(var(--visual-primary))]",
 };
 
+// Which payload field the parent can edit when amending each recommendation type.
+const AMEND_FIELD: Record<string, keyof RecommendationPayload | null> = {
+  accommodation_add: "accommodation",
+  accommodation_remove: "accommodation",
+  tutor_suggestion: "tutor",
+  functioning_level_change: "level",
+  curriculum_shift: "curriculumId",
+  path_adjustment: "proposedValue",
+  regression_alert: "proposedValue",
+  goal_suggestion: "proposedValue",
+  iep_goal_met: "proposedValue",
+  iep_refresh: "proposedValue",
+  rebaseline: null,
+  brain_profile_review: null,
+  brain_upgrade: null,
+};
+
+function formatValue(v: unknown): string {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+}
+
 export default function RecommendationsPage() {
   const { user, accessToken, loading } = useAuth();
   const params = useParams();
@@ -60,6 +108,9 @@ export default function RecommendationsPage() {
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
   const [respondingTo, setRespondingTo] = useState<string | null>(null);
   const [responseNotes, setResponseNotes] = useState("");
+  const [amendValue, setAmendValue] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!accessToken || !learnerId) return;
@@ -80,20 +131,49 @@ export default function RecommendationsPage() {
 
   useEffect(() => { fetchData(); }, [accessToken, learnerId]);
 
-  const respondToRec = async (recId: string, action: string) => {
+  const startResponding = (rec: Recommendation) => {
+    setRespondingTo(rec.id);
+    setResponseNotes("");
+    setSubmitError(null);
+    const field = AMEND_FIELD[rec.type];
+    const initial = field && rec.payload ? rec.payload[field] : rec.payload?.proposedValue;
+    setAmendValue(initial != null ? String(initial) : "");
+  };
+
+  const respondToRec = async (rec: Recommendation, action: "APPROVED" | "DECLINED" | "ADJUSTED") => {
+    setSubmitting(true);
+    setSubmitError(null);
     try {
-      const res = await fetch(`/api/family/recommendations/${learnerId}/${recId}/respond`, {
+      const body: { action: string; notes?: string; amendedPayload?: RecommendationPayload } = {
+        action,
+        notes: responseNotes || undefined,
+      };
+      if (action === "ADJUSTED") {
+        const field = AMEND_FIELD[rec.type];
+        if (field) {
+          body.amendedPayload = { [field]: amendValue };
+        } else {
+          body.amendedPayload = { proposedValue: amendValue };
+        }
+      }
+      const res = await fetch(`/api/family/recommendations/${learnerId}/${rec.id}/respond`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ action, notes: responseNotes }),
+        body: JSON.stringify(body),
       });
-      if (res.ok) {
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setSubmitError(errData.detail || errData.error || `Failed (${res.status})`);
+      } else {
         setRespondingTo(null);
         setResponseNotes("");
-        fetchData();
+        setAmendValue("");
+        await fetchData();
       }
     } catch (err) {
-      console.error("Failed to respond to recommendation:", err);
+      setSubmitError(err instanceof Error ? err.message : "Request failed");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -142,56 +222,117 @@ export default function RecommendationsPage() {
               <p className="vi-text-muted font-semibold">{t("no_pending")}</p>
             </div>
           ) : (
-            pendingRecs.map(rec => (
-              <div key={rec.id} className={`rounded-2xl p-5 border shadow-sm ${TYPE_COLORS[rec.type] || "vi-card"}`}>
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wide opacity-70">
-                      {TYPE_LABELS[rec.type] || rec.type}
-                    </span>
-                    <h3 className="font-heading font-bold text-lg mt-1">{rec.title}</h3>
-                  </div>
-                  <span className="text-xs vi-text-muted">{new Date(rec.createdAt).toLocaleDateString()}</span>
-                </div>
-                {rec.description && <p className="text-sm mb-4 opacity-80">{rec.description}</p>}
-
-                {respondingTo === rec.id ? (
-                  <div className="space-y-3 mt-3 p-3 rounded-xl bg-white/50">
-                    <textarea value={responseNotes} onChange={(e) => setResponseNotes(e.target.value)}
-                      placeholder={t("add_notes")}
-                      className="w-full px-4 py-2.5 rounded-xl border vi-border outline-none text-sm font-body resize-none h-20" />
-                    <div className="flex gap-2">
-                      <button onClick={() => respondToRec(rec.id, "APPROVED")}
-                        className="px-4 py-2 rounded-full bg-[hsl(var(--visual-science))] text-white font-bold text-sm hover:bg-[hsl(var(--visual-science)/0.9)] transition"
-                        style={{ minHeight: 44 }}>
-                        {t("approve")}
-                      </button>
-                      <button onClick={() => respondToRec(rec.id, "ADJUSTED")}
-                        className="px-4 py-2 rounded-full bg-[hsl(var(--visual-sel))] text-white font-bold text-sm hover:bg-[hsl(var(--visual-sel)/0.9)] transition"
-                        style={{ minHeight: 44 }}>
-                        {t("adjust")}
-                      </button>
-                      <button onClick={() => respondToRec(rec.id, "DECLINED")}
-                        className="px-4 py-2 rounded-full bg-[hsl(var(--visual-math))] text-white font-bold text-sm hover:bg-[hsl(var(--visual-math)/0.9)] transition"
-                        style={{ minHeight: 44 }}>
-                        {t("decline")}
-                      </button>
-                      <button onClick={() => setRespondingTo(null)}
-                        className="px-4 py-2 rounded-full vi-surface-soft vi-text-muted font-bold text-sm hover:bg-[hsl(var(--visual-border))] transition"
-                        style={{ minHeight: 44 }}>
-                        {tCommon("cancel")}
-                      </button>
+            pendingRecs.map(rec => {
+              const amendField = AMEND_FIELD[rec.type];
+              const canAmend = amendField !== null && amendField !== undefined;
+              return (
+                <div key={rec.id} className={`rounded-2xl p-5 border shadow-sm ${TYPE_COLORS[rec.type] || "vi-card"}`}>
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-wide opacity-70">
+                        {TYPE_LABELS[rec.type] || rec.type}
+                      </span>
+                      <h3 className="font-heading font-bold text-lg mt-1">{rec.title}</h3>
                     </div>
+                    <span className="text-xs vi-text-muted">{new Date(rec.createdAt).toLocaleDateString()}</span>
                   </div>
-                ) : (
-                  <button onClick={() => setRespondingTo(rec.id)}
-                    className="px-5 py-2 rounded-full bg-[hsl(var(--visual-primary))] text-white font-heading font-black uppercase tracking-wider text-sm hover:bg-[hsl(var(--visual-primary)/0.9)] transition"
-                    style={{ minHeight: 44 }}>
-                    {t("respond")}
-                  </button>
-                )}
-              </div>
-            ))
+                  {rec.description && <p className="text-sm mb-3 opacity-80">{rec.description}</p>}
+
+                  {rec.payload && (
+                    <div className="text-xs mb-3 grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 rounded-xl bg-white/40">
+                      {rec.payload.targetField && (
+                        <div><span className="font-bold opacity-70">Field:</span> {rec.payload.targetField}</div>
+                      )}
+                      {rec.payload.currentValue !== undefined && rec.payload.currentValue !== null && (
+                        <div><span className="font-bold opacity-70">Current:</span> {formatValue(rec.payload.currentValue)}</div>
+                      )}
+                      {rec.payload.proposedValue !== undefined && rec.payload.proposedValue !== null && (
+                        <div><span className="font-bold opacity-70">Proposed:</span> {formatValue(rec.payload.proposedValue)}</div>
+                      )}
+                      {rec.payload.reason && (
+                        <div className="sm:col-span-2"><span className="font-bold opacity-70">Why:</span> {rec.payload.reason}</div>
+                      )}
+                      {rec.confidence != null && (
+                        <div><span className="font-bold opacity-70">Confidence:</span> {(rec.confidence * 100).toFixed(0)}%</div>
+                      )}
+                      {rec.sourceSignals && rec.sourceSignals.length > 0 && (
+                        <div className="sm:col-span-2"><span className="font-bold opacity-70">Signals:</span> {rec.sourceSignals.map((s) => String(s)).join(", ")}</div>
+                      )}
+                    </div>
+                  )}
+
+                  {rec.applyError && (
+                    <div className="text-xs mb-3 p-2 rounded bg-[hsl(var(--visual-math)/0.1)] text-[hsl(var(--visual-math))]">
+                      Previous apply attempt failed: {rec.applyError}. You can retry.
+                    </div>
+                  )}
+
+                  {respondingTo === rec.id ? (
+                    <div className="space-y-3 mt-3 p-3 rounded-xl bg-white/50">
+                      {canAmend && (
+                        <div>
+                          <label className="text-xs font-bold opacity-70 mb-1 block">
+                            {t("adjust_value_label")}
+                          </label>
+                          <input
+                            type="text"
+                            value={amendValue}
+                            onChange={(e) => setAmendValue(e.target.value)}
+                            placeholder={String(rec.payload?.proposedValue ?? "")}
+                            className="w-full px-4 py-2.5 rounded-xl border vi-border outline-none text-sm font-body"
+                          />
+                          <p className="text-xs vi-text-muted mt-1">
+                            {t("adjust_value_help")}
+                          </p>
+                        </div>
+                      )}
+                      <textarea value={responseNotes} onChange={(e) => setResponseNotes(e.target.value)}
+                        placeholder={t("add_notes")}
+                        className="w-full px-4 py-2.5 rounded-xl border vi-border outline-none text-sm font-body resize-none h-20" />
+                      {submitError && (
+                        <div className="text-xs p-2 rounded bg-[hsl(var(--visual-math)/0.1)] text-[hsl(var(--visual-math))]">
+                          {submitError}
+                        </div>
+                      )}
+                      <div className="flex gap-2 flex-wrap">
+                        <button onClick={() => respondToRec(rec, "APPROVED")}
+                          disabled={submitting}
+                          className="px-4 py-2 rounded-full bg-[hsl(var(--visual-science))] text-white font-bold text-sm hover:bg-[hsl(var(--visual-science)/0.9)] transition disabled:opacity-50"
+                          style={{ minHeight: 44 }}>
+                          {t("approve")}
+                        </button>
+                        {canAmend && (
+                          <button onClick={() => respondToRec(rec, "ADJUSTED")}
+                            disabled={submitting || !amendValue.trim()}
+                            className="px-4 py-2 rounded-full bg-[hsl(var(--visual-sel))] text-white font-bold text-sm hover:bg-[hsl(var(--visual-sel)/0.9)] transition disabled:opacity-50"
+                            style={{ minHeight: 44 }}>
+                            {t("adjust")}
+                          </button>
+                        )}
+                        <button onClick={() => respondToRec(rec, "DECLINED")}
+                          disabled={submitting}
+                          className="px-4 py-2 rounded-full bg-[hsl(var(--visual-math))] text-white font-bold text-sm hover:bg-[hsl(var(--visual-math)/0.9)] transition disabled:opacity-50"
+                          style={{ minHeight: 44 }}>
+                          {t("decline")}
+                        </button>
+                        <button onClick={() => setRespondingTo(null)}
+                          disabled={submitting}
+                          className="px-4 py-2 rounded-full vi-surface-soft vi-text-muted font-bold text-sm hover:bg-[hsl(var(--visual-border))] transition"
+                          style={{ minHeight: 44 }}>
+                          {tCommon("cancel")}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => startResponding(rec)}
+                      className="px-5 py-2 rounded-full bg-[hsl(var(--visual-primary))] text-white font-heading font-black uppercase tracking-wider text-sm hover:bg-[hsl(var(--visual-primary)/0.9)] transition"
+                      style={{ minHeight: 44 }}>
+                      {t("respond")}
+                    </button>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       )}
@@ -212,6 +353,11 @@ export default function RecommendationsPage() {
                   <span className="text-xs vi-text-muted font-bold uppercase">{TYPE_LABELS[rec.type] || rec.type}</span>
                   <div className="font-heading font-bold text-slate-800">{rec.title}</div>
                   {rec.parentNotes && <p className="text-xs vi-text-muted mt-1">{t("note_label")}: {rec.parentNotes}</p>}
+                  {rec.appliedPayload && rec.status !== "DECLINED" && (
+                    <p className="text-xs vi-text-muted mt-1">
+                      Applied: {formatValue(rec.appliedPayload.proposedValue ?? rec.appliedPayload.accommodation ?? rec.appliedPayload.tutor ?? rec.appliedPayload.level)}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`px-3 py-1 text-xs rounded-full font-bold ${

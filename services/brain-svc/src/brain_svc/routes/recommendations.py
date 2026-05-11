@@ -6,9 +6,26 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from brain_svc.models.database import get_db
 from brain_svc.models.schemas import RecommendationCreate, RecommendationResolve
+from brain_svc.services.recommendation_generator import generate_for_learner
 from brain_svc.auth import AuthClaims, require_auth
 
 router = APIRouter()
+
+
+@router.post("/generate/{learner_id}")
+async def generate_recommendations(
+    learner_id: str,
+    db: Session = Depends(get_db),
+    auth: AuthClaims = Depends(require_auth),
+):
+    """Run the automatic recommendation generator for one learner.
+
+    This inspects causal_analyses, iep_profiles, assessment_attempts and
+    iep_goals, then emits new PENDING brain_recommendations rows for any
+    signal that does not already have a pending recommendation. Safe to
+    call repeatedly — duplicates are skipped via a payload-based dedup key.
+    """
+    return generate_for_learner(db, learner_id)
 
 @router.post("/")
 async def create_recommendation(request: RecommendationCreate, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):

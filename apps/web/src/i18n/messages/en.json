@@ -1110,6 +1110,8 @@
     "decline": "Decline",
     "respond": "Respond",
     "note_label": "Note",
+    "adjust_value_label": "Edit proposed value before approving",
+    "adjust_value_help": "If you approve as-is, the proposed value is applied. If you edit it here and choose Adjust, your version is applied instead.",
     "sensory_needs_title": "Understanding Your Child's Sensory Needs",
     "sensory_needs_desc": "This information helps AIVO adapt all generated content — adjusting colors, animations, sound levels, visual complexity, and text density based on your child's sensory profile.",
     "hyper_sensitive": "Hyper-sensitive",
