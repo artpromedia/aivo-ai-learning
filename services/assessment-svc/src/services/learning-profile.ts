@@ -11,6 +11,12 @@
  * `learner_profiles`.
  */
 
+import {
+  summariseSurfaceSignals,
+  type SurfaceSignal,
+  type SurfaceSignalSummary,
+} from "./surface-signal-analysis.js";
+
 export type Modality = "visual" | "auditory" | "kinesthetic" | "reading";
 
 export interface ChapterResult {
@@ -35,6 +41,22 @@ export interface DerivedProfile {
   attentionRunLength: number;
   frustrationTolerance: "low" | "moderate" | "high";
   itemsAdministered: number;
+  /**
+   * Optional process-aware extension. Populated when the client sends
+   * surface signals to `discovery/complete`. Existing callers that
+   * pass only chapter results get `undefined` plus zeroed scalar
+   * fields so the legacy persistence path keeps working.
+   */
+  surfaceSignalSummary?: SurfaceSignalSummary;
+  inputModeFit: Array<{ mode: string; accuracy: number; n: number }>;
+  scratchpadUseRate: number;
+  hintDependenceRate: number;
+  erasureRate: number;
+  abandonmentRate: number;
+  fineMotorDragConcern: boolean;
+  selfCorrectionSignal: "low" | "moderate" | "high";
+  preferredInteractionModes: string[];
+  supportNeeds: string[];
 }
 
 /**
@@ -59,6 +81,8 @@ export function deriveLearningProfile(
   chapters: readonly ChapterResult[],
   /** Optional all-items response latencies, ms. */
   responseLatencies: readonly number[] = [],
+  /** Optional per-activity surface signals from interactive surfaces. */
+  surfaceSignals: readonly SurfaceSignal[] = [],
 ): DerivedProfile {
   const totalCorrect = chapters.reduce((s, c) => s + (c.correct || 0), 0);
   const totalItems = chapters.reduce((s, c) => s + (c.total || 0), 0);
@@ -149,6 +173,10 @@ export function deriveLearningProfile(
   const frustrationTolerance: DerivedProfile["frustrationTolerance"] =
     frustrationRate >= 0.4 ? "low" : frustrationRate >= 0.15 ? "moderate" : "high";
 
+  const surfaceSignalSummary = surfaceSignals.length > 0
+    ? summariseSurfaceSignals(surfaceSignals)
+    : undefined;
+
   return {
     thetaPlacement: Math.round(theta * 10) / 10,
     modalityFit,
@@ -157,5 +185,15 @@ export function deriveLearningProfile(
     attentionRunLength,
     frustrationTolerance,
     itemsAdministered: totalItems,
+    surfaceSignalSummary,
+    inputModeFit: surfaceSignalSummary?.inputModeFit ?? [],
+    scratchpadUseRate: surfaceSignalSummary?.scratchpadUseRate ?? 0,
+    hintDependenceRate: surfaceSignalSummary?.hintDependenceRate ?? 0,
+    erasureRate: surfaceSignalSummary?.erasureRate ?? 0,
+    abandonmentRate: surfaceSignalSummary?.abandonmentRate ?? 0,
+    fineMotorDragConcern: surfaceSignalSummary?.fineMotorDragConcern ?? false,
+    selfCorrectionSignal: surfaceSignalSummary?.selfCorrectionSignal ?? "low",
+    preferredInteractionModes: surfaceSignalSummary?.preferredInteractionModes ?? [],
+    supportNeeds: surfaceSignalSummary?.supportNeeds ?? [],
   };
 }

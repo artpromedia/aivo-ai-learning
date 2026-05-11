@@ -8,6 +8,7 @@ import {
   type LearnerInterestSignal,
 } from "@aivo/special-interest-engine";
 import { deriveLearningProfile } from "../services/learning-profile.js";
+import { partitionChapterActivitiesPayload } from "../services/discovery-activity-validator.js";
 
 async function verifyConnectedAccess(
   db: any,
@@ -411,12 +412,31 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
       }
 
       const data = await aiRes.json() as any;
+      const { activities, rejectedActivities, totalValid } = partitionChapterActivitiesPayload(data.activities);
+
+      if (totalValid === 0) {
+        app.log.warn({
+          learnerId,
+          chapterId: data.chapter_id,
+          rejectedCount: rejectedActivities.length,
+        }, "[discovery/chapter] all generated activities rejected");
+        return reply.status(502).send({
+          error: "ai_generated_invalid_activities",
+          rejectedActivities,
+        });
+      }
+
+      const personalizationLevel = rejectedActivities.length === 0 ? "full" : "partial";
+
       return reply.send({
         generated: true,
         learnerId,
         functioningLevel: learner.functioningLevel,
         chapterId: data.chapter_id,
-        activities: data.activities,
+        personalizationLevel,
+        source: "ai",
+        activities,
+        rejectedActivities,
         model: data.model,
       });
     } catch (e: any) {
@@ -507,6 +527,10 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
           totalAttempts: body.totalAttempts,
           xpEarned: body.xpEarned || 0,
           chapterResults: body.chapterResults,
+          // Process-aware signals captured by surface-driven activities
+          // (geometry, scratchpad, math expression, etc.). Stored as
+          // metadata so we don't require a destructive schema change.
+          surfaceSignals: Array.isArray(body.surfaceSignals) ? body.surfaceSignals : [],
         },
       }).returning();
 
@@ -524,6 +548,7 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
         learningProfile = deriveLearningProfile(
           body.chapterResults || [],
           body.responseLatencies || [],
+          Array.isArray(body.surfaceSignals) ? body.surfaceSignals : [],
         );
         await db
           .insert(learnerProfiles)

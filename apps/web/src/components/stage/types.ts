@@ -18,13 +18,14 @@
  * deleted in favour of pure re-exports from `@aivo/stage-ui`.
  */
 import type { TutorKey } from "@aivo/brand";
+import type { LearnerSurfaceSpec } from "@aivo/learner-surfaces";
 import type {
   FunctioningLevel,
   SensoryLevel,
   SensoryProfile,
   SensoryAdaptations,
   TutorState,
-  InteractionType,
+  InteractionType as SharedInteractionType,
   SessionPhase,
   ChoiceOption,
 } from "@aivo/stage-ui";
@@ -35,10 +36,20 @@ export type {
   SensoryProfile,
   SensoryAdaptations,
   TutorState,
-  InteractionType,
   SessionPhase,
   ChoiceOption,
 };
+
+/**
+ * Web-side interactions extend the shared list with surface-aware
+ * variants. Legacy values (`multiple_choice`, `drag_drop`, `voice`,
+ * `tap`, `match`, `draw`) keep working unchanged.
+ */
+export type InteractionType =
+  | SharedInteractionType
+  | "geometry_workspace"
+  | "scratchpad"
+  | "math_expression";
 
 export interface VisualElement {
   id: string;
@@ -65,7 +76,7 @@ export interface DragZone {
 
 export interface Beat {
   id: string;
-  type: "narration" | "interaction" | "demonstration" | "celebration";
+  type: "narration" | "interaction" | "demonstration" | "celebration" | "reflection";
   narration?: string;
   tutorState: TutorState;
   visuals: VisualElement[];
@@ -77,6 +88,14 @@ export interface Beat {
     dragZones?: DragZone[];
     correctAnswer?: string;
   };
+  /**
+   * Optional inline surface spec for surface-aware beats (geometry,
+   * scratchpad, math expression, etc.). When `surfaceId` is set
+   * instead, the parent StagePlan must provide a surfaces dictionary
+   * the runtime can resolve against.
+   */
+  surface?: LearnerSurfaceSpec;
+  surfaceId?: string;
   durationMs?: number;
   transition?: "fade" | "slide" | "zoom";
 }

@@ -1,8 +1,27 @@
 import type { TutorKey } from "@aivo/brand";
+import type { LearnerSurfaceSpec, FeedbackMode } from "@aivo/learner-surfaces";
 
 export type AdventurePhase = "loading" | "pre-adventure" | "map" | "chapter-intro" | "activity" | "chapter-complete" | "break" | "finale" | "results";
 
-export type ActivityInteraction = "tap_image" | "tap_word" | "drag_sort" | "drag_place" | "sequence" | "emotion_pick" | "pattern_fill" | "memory" | "observation";
+export type ActivityInteraction =
+  | "tap_image"
+  | "tap_word"
+  | "drag_sort"
+  | "drag_place"
+  | "sequence"
+  | "emotion_pick"
+  | "pattern_fill"
+  | "memory"
+  | "observation"
+  | "choice_grid"
+  | "memory_sequence"
+  | "draw"
+  | "scratchpad"
+  | "geometry_workspace"
+  | "math_expression"
+  | "voice_response"
+  | "reading_annotation"
+  | "science_diagram";
 
 export type DifficultyTier = "easy" | "medium" | "hard";
 
@@ -24,6 +43,23 @@ export interface Activity {
   sceneEmoji: string;
   difficulty: DifficultyTier;
   brainMeasures: string[];
+  /**
+   * When set, the activity renders through `@aivo/learner-surfaces`
+   * `SurfaceHost` instead of the legacy choice tile grid. The
+   * surface spec carries diagram/scratchpad/scoring/accessibility
+   * metadata.
+   */
+  surface?: LearnerSurfaceSpec;
+  feedbackMode?: FeedbackMode;
+  scoring?: {
+    mode: "exact" | "rubric" | "process" | "hybrid";
+    correctAnswer?: string | number | boolean;
+    rubric?: Array<{ id: string; label: string; points: number; description: string }>;
+  };
+  domain?: string;
+  skillCode?: string;
+  standardCode?: string;
+  estimatedDifficulty?: number;
 }
 
 export interface AdventureChapter {
