@@ -1,3 +1,6 @@
+export * from "./learning-events.js";
+export * from "./problem-session-events.js";
+
 export const EVENTS = {
   ASSESSMENT_COMPLETED: "assessment.completed",
   ASSESSMENT_STARTED: "assessment.started",

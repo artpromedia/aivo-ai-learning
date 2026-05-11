@@ -18,3 +18,4 @@ export * from "./comms.js";
 export * from "./moderation.js";
 export * from "./curriculum.js";
 export * from "./jobs.js";
+export * from "./problem-sessions.js";
