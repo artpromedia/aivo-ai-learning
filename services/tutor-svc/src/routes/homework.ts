@@ -5,6 +5,7 @@ import { verifyJWT, JWTPayload } from "@aivo/security";
 import { createLogger } from "@aivo/observability";
 import { getActiveCurriculumFocus } from "./curriculum.js";
 import { tutorsHomeworkUploadSchema, getTutorsHomeworkLearnerByLearnerIdSchema, getTutorsHomeworkByAssignmentIdSchema, tutorsHomeworkSessionStartSchema, getTutorsHomeworkSessionBySessionIdStateSchema, tutorsHomeworkSessionBySessionIdMessageSchema, tutorsHomeworkSessionBySessionIdCompleteSchema, getTutorsHomeworkParentByParentIdSchema } from "./schemas.js";
+import { fetchBrainContext as fetchNormalizedBrainContext, type NormalizedBrainContext } from "../services/brain-context.js";
 
 const logger = createLogger("tutor-svc.homework");
 
@@ -72,15 +73,8 @@ async function verifyLearnerOwnership(
   return learner.parentId === authUser.sub;
 }
 
-async function fetchBrainContext(learnerId: string): Promise<Record<string, unknown>> {
-  try {
-    const res = await fetch(`${BRAIN_SVC_URL}/api/brain/${learnerId}`);
-    if (res.ok) {
-      const data = await res.json();
-      return (data as any).state || {};
-    }
-  } catch {}
-  return {};
+async function fetchBrainContext(learnerId: string): Promise<NormalizedBrainContext> {
+  return fetchNormalizedBrainContext(learnerId, { service: "tutor-svc.homework" });
 }
 
 async function checkSubscription(db: any, userId: string, sku: string): Promise<boolean> {
@@ -129,8 +123,16 @@ async function writeMasteryUpdate(
   }
 }
 
-function getFunctioningLevel(brainContext: Record<string, unknown>): string {
-  return (brainContext as any)?.functioning_level_profile?.level || "STANDARD";
+function getFunctioningLevel(brainContext: NormalizedBrainContext | Record<string, unknown>): string {
+  const ctx = brainContext as NormalizedBrainContext;
+  return (
+    ctx.functioningLevel ||
+    ctx.functioning_level ||
+    (ctx.functioningLevelProfile?.level as string | undefined) ||
+    (ctx.functioning_level_profile?.level as string | undefined) ||
+    (brainContext as any)?.functioning_level_profile?.level ||
+    "STANDARD"
+  );
 }
 
 async function getParentIdForLearner(db: any, learnerId: string): Promise<string | null> {
@@ -192,8 +194,9 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
         }
       }
 
-      const brainContext = await fetchBrainContext(learnerId);
-      const functioningLevel = getFunctioningLevel(brainContext);
+      const brainContextNorm = await fetchBrainContext(learnerId);
+      const functioningLevel = getFunctioningLevel(brainContextNorm);
+      const brainContext: Record<string, unknown> = { ...brainContextNorm };
 
       let adaptedProblems: any[] = [];
       if (ocrData.problems && ocrData.problems.length > 0) {
@@ -424,17 +427,24 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
     const existingMessages = (session.messages as any[]) || [];
     existingMessages.push({ role: "user", content: message, timestamp: new Date().toISOString() });
 
-    const brainContext = await fetchBrainContext(session.learnerId);
-    const functioningLevel = getFunctioningLevel(brainContext);
+    const brainContextNorm = await fetchBrainContext(session.learnerId);
+    const functioningLevel = getFunctioningLevel(brainContextNorm);
+    const brainContext: Record<string, unknown> = { ...brainContextNorm };
 
     const focusSubject = HOMEWORK_SUBJECT_TO_FOCUS[(assignment?.detectedSubject || "OTHER").toUpperCase()]
       || (assignment?.subject || "other").toLowerCase();
     try {
       const focus = await getActiveCurriculumFocus(db, session.learnerId, focusSubject);
-      if (focus) (brainContext as any).curriculum_focus = focus;
+      if (focus) brainContext.curriculum_focus = focus;
     } catch (err) {
       logger.error("Failed to load curriculum focus for homework (non-blocking)", { err: String(err) });
     }
+
+    const homeworkFocus = {
+      subject: assignment?.subject,
+      detectedSubject: assignment?.detectedSubject,
+      problemCount: (assignment?.adaptedProblems as any[] | undefined)?.length || 0,
+    };
 
     try {
       const res = await fetch(`${AI_SVC_URL}/api/ai/homework/chat`, {
@@ -451,6 +461,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
                 adapted_problems: assignment.adaptedProblems,
               }
             : {},
+          homework_focus: homeworkFocus,
           messages: existingMessages.map((m: any) => ({ role: m.role, content: m.content })),
           locale: typeof locale === "string" && locale ? locale : undefined,
         }),

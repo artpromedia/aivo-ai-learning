@@ -1,5 +1,8 @@
 import json
 from ..prompts.tutor_personas import TUTOR_PERSONAS, FUNCTIONING_LEVEL_ADAPTATIONS
+from .brain_context import normalize_brain_context
+from .profile_lowering import build_profile_lowering_block
+from .surface_directives import SURFACE_TOOL_PROTOCOL
 
 
 # BCP-47 base locale → human-readable language name. Used to interpolate a
@@ -89,6 +92,23 @@ def build_tutor_system_prompt(
     adaptation = FUNCTIONING_LEVEL_ADAPTATIONS.get(functioning_level, FUNCTIONING_LEVEL_ADAPTATIONS["STANDARD"])
 
     normalized_locale = _normalize_locale(locale)
+
+    # Normalise brain_context so callers may pass camelCase or snake_case
+    # shapes interchangeably. The normaliser also pulls the brain record
+    # out of /context responses and the legacy `state` envelope.
+    brain_context = normalize_brain_context(brain_context)
+
+    # If the caller did not pass an explicit functioning_level (or passed
+    # STANDARD as a default), prefer the value the normaliser pulled from
+    # the learner's profile. We do not overwrite a non-STANDARD explicit
+    # value because the caller may be intentionally testing a level.
+    if functioning_level == "STANDARD":
+        derived = brain_context.get("functioning_level")
+        if isinstance(derived, str) and derived:
+            functioning_level = derived
+            adaptation = FUNCTIONING_LEVEL_ADAPTATIONS.get(
+                functioning_level, FUNCTIONING_LEVEL_ADAPTATIONS["STANDARD"]
+            )
 
     layer1 = persona.get("system_prompt", "You are a helpful AI tutor.")
 
@@ -192,6 +212,21 @@ def build_tutor_system_prompt(
             profile_lines.append(f"- Target language: {language_profile['target_language']}")
         if len(profile_lines) > 1:
             layer2_parts.append("\n".join(profile_lines))
+
+    # Profile-Lowered Instruction Protocol. Emitted before the language
+    # directive so the model sees pedagogy rules first, then language pin.
+    subject_for_lowering = persona.get("subject")
+    layer2_parts.append(
+        build_profile_lowering_block(
+            subject=subject_for_lowering,
+            topic=None,
+            grade_target=None,
+            functioning_level=functioning_level,
+            brain_context=brain_context,
+        )
+    )
+
+    layer2_parts.append(SURFACE_TOOL_PROTOCOL)
 
     # The language directive is appended last so it is the most recent
     # instruction the model sees before generating — this maximises
@@ -339,6 +374,15 @@ def build_content_generation_prompt(
     normalized_locale = _normalize_locale(locale)
     language_name = LANGUAGE_NAMES.get(normalized_locale, LANGUAGE_NAMES[DEFAULT_LOCALE])
 
+    brain_context = normalize_brain_context(brain_context)
+    if functioning_level == "STANDARD":
+        derived = brain_context.get("functioning_level")
+        if isinstance(derived, str) and derived:
+            functioning_level = derived
+            adaptation = FUNCTIONING_LEVEL_ADAPTATIONS.get(
+                functioning_level, FUNCTIONING_LEVEL_ADAPTATIONS["STANDARD"]
+            )
+
     system_prompt = f"""You are AIVO's content generation engine. Generate educational content that is:
 - Age-appropriate and engaging
 - Aligned to {grade_target} grade objectives
@@ -389,6 +433,33 @@ Generate 5 practice problems as JSON:
     accommodations = brain_context.get("active_accommodations", [])
     if accommodations:
         user_prompt_parts.append(f"Apply these accommodations: {', '.join(accommodations)}")
+
+    # Profile-Lowered Instruction Protocol — surfaced in the user prompt for
+    # content generation so the StagePlan reflects the lowered access path.
+    user_prompt_parts.append(
+        build_profile_lowering_block(
+            subject=subject,
+            topic=topic,
+            grade_target=grade_target,
+            functioning_level=functioning_level,
+            brain_context=brain_context,
+        )
+    )
+
+    # Quality contract for generated StagePlans — the validator enforces
+    # these fields, so surface the contract in the prompt as well.
+    user_prompt_parts.append(
+        "\n## Required Output Fields (in addition to lesson JSON):\n"
+        "- profileAdaptationsApplied: array of human-readable adaptations.\n"
+        "- profileEvidenceUsed: { functioningLevel, accommodations, mastery, "
+        "iep, sensory, language, processProfile, curriculumAlignment } booleans.\n"
+        "- accommodationsApplied: array of accommodation IDs honoured.\n"
+        "- Include at least one learner surface (geometry_workspace, "
+        "scratchpad, reading_annotation, science_diagram, or manipulative) "
+        "when the subject/topic benefits from visual or written work.\n"
+        "- Geometry topics MUST include a geometry_workspace surface.\n"
+        "- Computation topics MUST include a scratchpad surface."
+    )
 
     return system_prompt, "\n".join(user_prompt_parts)
 

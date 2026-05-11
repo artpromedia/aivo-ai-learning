@@ -39,7 +39,21 @@ function checkText(text: unknown, where: string, issues: StagePlanQualityIssue[]
   if (HTML_TAG_RE.test(text)) issues.push({ code: "raw_html", detail: where });
 }
 
-export function validateStagePlan(plan: any, opts?: { functioningLevel?: string }): StagePlanValidationResult {
+export interface StagePlanValidationOptions {
+  functioningLevel?: string;
+  /** Subject/topic used to enforce geometry-needs-geometry_workspace and
+   * computation-needs-scratchpad rules. */
+  subject?: string;
+  topic?: string;
+  /** When true, the upstream Brain context had accommodations on file;
+   * the generated plan must surface a non-empty `accommodationsApplied`. */
+  brainHadAccommodations?: boolean;
+  /** When true, the upstream Brain context had IEP goals; the plan must
+   * either reference them or explicitly note them in the safety checks. */
+  brainHadIep?: boolean;
+}
+
+export function validateStagePlan(plan: any, opts?: StagePlanValidationOptions): StagePlanValidationResult {
   const issues: StagePlanQualityIssue[] = [];
 
   if (!plan || typeof plan !== "object") {
@@ -112,6 +126,76 @@ export function validateStagePlan(plan: any, opts?: { functioningLevel?: string 
       if (typeof beat?.narration === "string" && beat.narration.length > 240) {
         issues.push({ code: "narration_too_long_for_low_verbal", detail: beat.id ?? "" });
       }
+    }
+  }
+  if (fl === "NON_VERBAL") {
+    for (const beat of plan.beats || []) {
+      const reqMode = beat?.interaction?.responseMode ?? beat?.expectedResponse ?? "";
+      if (typeof reqMode === "string" && /speech|spoken|voice/i.test(reqMode)) {
+        issues.push({ code: "non_verbal_requires_speech", detail: beat.id ?? "" });
+      }
+    }
+  }
+  if (fl === "PRE_SYMBOLIC") {
+    for (const beat of plan.beats || []) {
+      const hasVisual = !!(beat?.surfaceId || beat?.surface || beat?.interaction?.media);
+      if (typeof beat?.narration === "string" && beat.narration.length > 80 && !hasVisual) {
+        issues.push({ code: "pre_symbolic_text_only_abstract", detail: beat.id ?? "" });
+      }
+    }
+  }
+
+  // Profile evidence guards. The generator's prompt requires
+  // `profileAdaptationsApplied` and `profileEvidenceUsed`; refuse to
+  // serve a plan whose Brain context had accommodations or IEP goals
+  // on file but which surface no adaptation marker.
+  const subject: string | undefined = plan.subject ?? opts?.subject;
+  const topic: string | undefined = plan.topic ?? opts?.topic;
+
+  const adaptations = plan.profileAdaptationsApplied;
+  const evidence = plan.profileEvidenceUsed;
+  if (adaptations !== undefined) {
+    if (!Array.isArray(adaptations) || adaptations.length === 0) {
+      issues.push({ code: "profile_adaptations_empty", detail: "profileAdaptationsApplied" });
+    }
+  }
+  if (evidence !== undefined && (typeof evidence !== "object" || evidence === null)) {
+    issues.push({ code: "profile_evidence_missing", detail: "profileEvidenceUsed" });
+  }
+
+  if (opts?.brainHadAccommodations) {
+    const applied = plan.accommodationsApplied;
+    if (!Array.isArray(applied) || applied.length === 0) {
+      issues.push({ code: "accommodations_not_applied", detail: "accommodationsApplied" });
+    }
+  }
+  if (opts?.brainHadIep) {
+    const applied = plan.accommodationsApplied || [];
+    const checks = plan.safetyChecks || [];
+    const adaptList = plan.profileAdaptationsApplied || [];
+    const referenced = [...applied, ...checks, ...adaptList].some(
+      (v: unknown) => typeof v === "string" && /iep|goal/i.test(v),
+    );
+    if (!referenced) {
+      issues.push({ code: "iep_goals_not_referenced", detail: "profileAdaptationsApplied|safetyChecks" });
+    }
+  }
+
+  // Subject-required surfaces.
+  const surfaceTypes = new Set<string>(
+    Object.values(surfaces)
+      .map((s: any) => (typeof s?.type === "string" ? s.type : ""))
+      .filter(Boolean),
+  );
+  const haystack = `${subject ?? ""} ${topic ?? ""}`;
+  if (/\b(geometry|area|perimeter|rectangle|triangle|polygon|angle|shape)\b/i.test(haystack)) {
+    if (!surfaceTypes.has("geometry_workspace")) {
+      issues.push({ code: "geometry_missing_geometry_workspace", detail: haystack.trim() });
+    }
+  }
+  if (/(add(ition)?|subtract(ion)?|multipl(y|ication)|divi(de|sion)|sum|product|quotient|fraction|computation|arithmetic)/i.test(haystack)) {
+    if (!surfaceTypes.has("scratchpad") && !surfaceTypes.has("math_expression")) {
+      issues.push({ code: "computation_missing_scratchpad", detail: haystack.trim() });
     }
   }
 

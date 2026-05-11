@@ -8,6 +8,7 @@ import { computeTutorXp, computeTutorQuality, type TutorSignals } from "../servi
 import { getActiveCurriculumFocus } from "./curriculum.js";
 import { loadDapeProfile } from "../lib/dape.js";
 import { sessionStartSchema, sessionBySessionIdMessageSchema, sessionBySessionIdCompleteSchema, getSessionsByLearnerIdSchema, getSessionBySessionIdSchema, sessionBySessionIdCoLearnSchema } from "./schemas.js";
+import { fetchBrainContext as fetchNormalizedBrainContext, type NormalizedBrainContext } from "../services/brain-context.js";
 
 const logger = createLogger("tutor-svc.chat");
 
@@ -61,15 +62,18 @@ for (const [sku, key] of Object.entries(TUTOR_SKU_TO_KEY)) {
   if (tutor) TUTOR_NAME_MAP[sku] = tutor.name;
 }
 
-async function fetchBrainContext(learnerId: string): Promise<Record<string, unknown>> {
-  try {
-    const res = await fetch(`${BRAIN_SVC_URL}/api/brain/${learnerId}`);
-    if (res.ok) {
-      const data = await res.json();
-      return data.state || {};
-    }
-  } catch {}
-  return {};
+async function fetchBrainContext(learnerId: string): Promise<NormalizedBrainContext> {
+  return fetchNormalizedBrainContext(learnerId, { service: "tutor-svc" });
+}
+
+function deriveFunctioningLevel(ctx: NormalizedBrainContext): string {
+  return (
+    ctx.functioningLevel ||
+    ctx.functioning_level ||
+    (ctx.functioningLevelProfile?.level as string | undefined) ||
+    (ctx.functioning_level_profile?.level as string | undefined) ||
+    "STANDARD"
+  );
 }
 
 function computeMasteryDelta(
@@ -93,8 +97,11 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
     }
 
     const tutorName = TUTOR_NAME_MAP[tutorSku] || "Tutor";
-    const brainContext = await fetchBrainContext(learnerId);
-    const functioningLevel = (brainContext as any).functioning_level_profile?.level || "STANDARD";
+    const brainContextNorm = await fetchBrainContext(learnerId);
+    const functioningLevel = deriveFunctioningLevel(brainContextNorm);
+    // The persisted session row keeps the normalised object; later
+    // requests will merge curriculum_focus / dape_profile into it.
+    const brainContext: Record<string, unknown> = { ...brainContextNorm };
 
     const subject = TUTOR_SKU_TO_SUBJECT[tutorSku];
     if (subject) {

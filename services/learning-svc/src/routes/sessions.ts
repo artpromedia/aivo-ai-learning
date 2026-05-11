@@ -3,6 +3,8 @@ import { eq, and, desc } from "drizzle-orm";
 import { lessonSessions, lessonContent, gradebookEntries, learningPaths } from "@aivo/db";
 import { generateLessonContent, getSubjectForTutor, fetchPersonalizedTopics } from "../services/content-generator.js";
 import { computeLessonXp, computeCompletionQuality, type LessonSignals } from "../services/scoring.js";
+import { fetchBrainContext as fetchNormalizedBrainContext, type NormalizedBrainContext } from "../services/brain-context.js";
+import { validateStagePlan } from "../services/stageplan-validator.js";
 import { resolveTenantId, requireLearnerAccess } from "../lib/tenant.js";
 import {
   createSessionSchema,
@@ -25,15 +27,37 @@ function requireUrl(name: string, devDefault: string): string {
 }
 const BRAIN_SVC_URL = requireUrl("BRAIN_SVC_URL", "http://localhost:3002");
 
-async function fetchBrainContext(learnerId: string): Promise<Record<string, unknown>> {
-  try {
-    const res = await fetch(`${BRAIN_SVC_URL}/api/brain/${learnerId}`);
-    if (res.ok) {
-      const data = await res.json();
-      return data.state || {};
-    }
-  } catch {}
-  return {};
+async function fetchBrainContext(learnerId: string): Promise<NormalizedBrainContext> {
+  return fetchNormalizedBrainContext(learnerId, { service: "learning-svc" });
+}
+
+function deriveFunctioningLevel(ctx: NormalizedBrainContext): string {
+  return (
+    ctx.functioningLevel ||
+    ctx.functioning_level ||
+    (ctx.functioningLevelProfile?.level as string | undefined) ||
+    (ctx.functioning_level_profile?.level as string | undefined) ||
+    "STANDARD"
+  );
+}
+
+function deriveGradeBand(ctx: NormalizedBrainContext): string {
+  const c = ctx.curriculumAlignment || ctx.curriculum_alignment || {};
+  return (
+    (c.grade_band as string | undefined) ||
+    (c.gradeBand as string | undefined) ||
+    (ctx.learner?.gradeLevel as string | undefined) ||
+    "THIRD"
+  );
+}
+
+function deriveDeliveryLevel(ctx: NormalizedBrainContext): string {
+  const c = ctx.curriculumAlignment || ctx.curriculum_alignment || {};
+  return (
+    (c.delivery_level as string | undefined) ||
+    (c.deliveryLevel as string | undefined) ||
+    deriveGradeBand(ctx)
+  );
 }
 
 export function registerSessionRoutes(app: FastifyInstance, db: any) {
@@ -116,7 +140,9 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
 
     const subject = getSubjectForTutor(tutorSku);
     const brainContext = await fetchBrainContext(learnerId);
-    const functioningLevel = (brainContext as any).functioning_level_profile?.level || "STANDARD";
+    const functioningLevel = deriveFunctioningLevel(brainContext);
+    const gradeBand = deriveGradeBand(brainContext);
+    const deliveryLevel = deriveDeliveryLevel(brainContext);
 
     const [session] = await db.insert(lessonSessions).values({
       tenantId,
@@ -135,10 +161,10 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
       const generated = await generateLessonContent({
         subject,
         topic: topic || `Introduction to ${subject}`,
-        gradeTarget: (brainContext as any).curriculum_alignment?.grade_band || "THIRD",
-        deliveryLevel: (brainContext as any).curriculum_alignment?.delivery_level || "THIRD",
+        gradeTarget: gradeBand,
+        deliveryLevel,
         functioningLevel,
-        brainContext,
+        brainContext: brainContext as unknown as Record<string, unknown>,
         contentType: contentType || "LESSON",
       });
 
@@ -147,8 +173,8 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
         contentType: contentType || "LESSON",
         subject,
         topic: topic || `Introduction to ${subject}`,
-        gradeTarget: (brainContext as any).curriculum_alignment?.grade_band || "THIRD",
-        deliveryLevel: (brainContext as any).curriculum_alignment?.delivery_level || "THIRD",
+        gradeTarget: gradeBand,
+        deliveryLevel,
         generatedContent: { raw: generated.content },
         qualityScore: generated.qualityScore,
         qualityGateLog: generated.qualityGateLog,
@@ -162,6 +188,34 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
           .set({ status: "ABANDONED", sessionData: { error: "Content failed quality gate", qualityGateLog: generated.qualityGateLog } })
           .where(eq(lessonSessions.id, session.id));
         return reply.code(422).send({ error: "Content failed quality gate", qualityScore: generated.qualityScore, qualityGateLog: generated.qualityGateLog });
+      }
+
+      // Best-effort StagePlan profile-evidence gate. Only runs when the
+      // generated content can be parsed as a plan object — generic
+      // markdown lessons skip this gate silently.
+      let parsedPlan: unknown = null;
+      try {
+        parsedPlan = typeof generated.content === "string" ? JSON.parse(generated.content) : generated.content;
+      } catch {
+        parsedPlan = null;
+      }
+      if (parsedPlan && typeof parsedPlan === "object" && Array.isArray((parsedPlan as any).beats)) {
+        const validation = validateStagePlan(parsedPlan, {
+          functioningLevel,
+          subject,
+          topic: topic || undefined,
+          brainHadAccommodations: brainContext.profileCompleteness.hasAccommodations,
+          brainHadIep: brainContext.profileCompleteness.hasIep,
+        });
+        if (!validation.valid) {
+          await db.update(lessonSessions)
+            .set({ status: "ABANDONED", sessionData: { error: "StagePlan failed profile gate", validationIssues: validation.issues } })
+            .where(eq(lessonSessions.id, session.id));
+          return reply.code(422).send({
+            error: "StagePlan failed profile gate",
+            validationIssues: validation.issues,
+          });
+        }
       }
 
       await db.update(lessonSessions)
@@ -405,7 +459,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     }
 
     const brain = await fetchBrainContext(learnerId);
-    const masteryLevels = ((brain as any).mastery_levels || {}) as Record<string, number>;
+    const masteryLevels = (brain.mastery_levels || {}) as Record<string, number>;
     const subjectScores = Object.entries(masteryLevels)
       .filter(([k]) => k.toLowerCase().includes(subject.toLowerCase().split(" ")[0]))
       .map(([, v]) => Number(v) || 0);
@@ -461,8 +515,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     }
 
     const brain = await fetchBrainContext(learnerId);
-    const functioningLevel =
-      ((brain as any).functioning_level_profile?.level as string) || "STANDARD";
+    const functioningLevel = deriveFunctioningLevel(brain);
     const threshold = MASTERY_THRESHOLDS[functioningLevel] ?? MASTERY_THRESHOLDS.STANDARD;
 
     const gradebook = await db.select().from(gradebookEntries).where(

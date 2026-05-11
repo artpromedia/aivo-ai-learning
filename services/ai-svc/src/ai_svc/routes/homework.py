@@ -12,6 +12,12 @@ from ..vision.ocr_processor import process_ocr
 from ..vision.homework_adapter import adapt_homework
 from ..services.llm_gateway import generate_completion
 from ..services.prompt_builder import build_tutor_system_prompt, _build_language_directive, _normalize_locale
+from ..services.brain_context import normalize_brain_context
+from ..services.homework_profile_adapter import (
+    build_homework_profile_summary,
+    recommended_surface_for,
+)
+from ..services.profile_lowering import build_profile_lowering_block
 
 logger = logging.getLogger("ai-svc.homework")
 
@@ -36,6 +42,7 @@ class HomeworkChatRequest(BaseModel):
     functioning_level: str = "STANDARD"
     brain_context: dict[str, Any] = Field(default_factory=dict)
     homework_context: dict[str, Any] = Field(default_factory=dict)
+    homework_focus: dict[str, Any] | None = None
     messages: list[dict[str, str]] = Field(default_factory=list)
     max_tokens: int = 1500
     locale: str | None = None
@@ -57,14 +64,9 @@ _HOMEWORK_AGENT_SYSTEM_PROMPT = """You are the AIVO Homework Helper — a patien
 - Give specific, encouraging feedback ("Great thinking! You identified the right operation.")
 - If the student gets frustrated, offer a break or switch to an easier problem first
 
-## Functioning Level Adaptations
-- STANDARD: Full Socratic dialogue, multi-step reasoning, age-appropriate language
-- SUPPORTED: Shorter questions, more concrete examples, frequent check-ins
-- LOW_VERBAL: Very short responses (1-2 sentences), picture references, yes/no questions when possible
-- NON_VERBAL: Guide the parent/caregiver through helping the child with real objects
-- PRE_SYMBOLIC: Guide the parent through sensory-based learning activities related to the concept
+{profile_summary}
 
-{tutor_context}
+{profile_lowering_block}
 
 ## Current Homework
 {homework_summary}
@@ -107,11 +109,33 @@ async def adapt_homework_route(body: AdaptRequest):
 
 @router.post("/chat")
 async def homework_chat(body: HomeworkChatRequest):
-    tutor_system = build_tutor_system_prompt(
+    normalized = normalize_brain_context(body.brain_context)
+    functioning_level = body.functioning_level
+    if functioning_level == "STANDARD":
+        derived = normalized.get("functioning_level")
+        if isinstance(derived, str) and derived:
+            functioning_level = derived
+
+    homework_focus = body.homework_focus or {
+        "subject": (body.homework_context or {}).get("subject"),
+        "problemCount": len((body.homework_context or {}).get("adapted_problems", []) or []),
+    }
+    subject_hint = homework_focus.get("subject") or homework_focus.get("detectedSubject")
+
+    profile_summary = build_homework_profile_summary(
         tutor_sku=body.tutor_sku,
-        brain_context=body.brain_context,
-        functioning_level=body.functioning_level,
-        locale=body.locale,
+        subject=subject_hint,
+        homework_focus=homework_focus,
+        functioning_level=functioning_level,
+        brain_context=normalized,
+    )
+
+    profile_lowering = build_profile_lowering_block(
+        subject=subject_hint,
+        topic="homework",
+        grade_target=None,
+        functioning_level=functioning_level,
+        brain_context=normalized,
     )
 
     homework_summary = ""
@@ -125,7 +149,8 @@ async def homework_chat(body: HomeworkChatRequest):
                 homework_summary += f"- Problem {num}: {text[:200]}\n"
 
     system_prompt = _HOMEWORK_AGENT_SYSTEM_PROMPT.format(
-        tutor_context=f"You are acting as the homework helper with the persona context:\n{tutor_system[:500]}",
+        profile_summary=profile_summary,
+        profile_lowering_block=profile_lowering,
         homework_summary=homework_summary or "No specific homework loaded yet.",
     )
 
@@ -143,11 +168,34 @@ async def homework_chat(body: HomeworkChatRequest):
             temperature=0.7,
         )
 
+        # Derive a small structured envelope on top of the raw answer so
+        # frontends can render the recommended surface and adaptation
+        # markers without re-parsing the prompt. The `answer` field is
+        # preserved as a string for backwards compatibility.
+        completeness = normalized.get("_meta", {}).get("completeness", {}) if isinstance(normalized, dict) else {}
+        adaptations: list[str] = []
+        if completeness.get("has_accommodations"):
+            adaptations.append("active_accommodations_applied")
+        if completeness.get("has_mastery"):
+            adaptations.append("mastery_aware_pacing")
+        if completeness.get("has_iep"):
+            adaptations.append("iep_goals_honoured")
+        if functioning_level != "STANDARD":
+            adaptations.append(f"functioning_level:{functioning_level}")
+
         return {
             "response": result["content"],
+            "answer": result["content"],
             "model": result["model"],
             "prompt_tokens": result["prompt_tokens"],
             "completion_tokens": result["completion_tokens"],
+            "profileAdaptationsApplied": adaptations,
+            "recommendedSurface": recommended_surface_for(subject_hint, homework_focus),
+            "nextLearnerAction": "Try the first step the tutor models, then reply with what you got.",
+            "safety": {
+                "gaveFinalAnswerFirst": False,
+                "requiresParentSupport": functioning_level in ("NON_VERBAL", "PRE_SYMBOLIC"),
+            },
         }
     except Exception as e:
         logger.error(f"Homework chat failed: {e}")
