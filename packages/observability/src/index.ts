@@ -1,6 +1,10 @@
 import pino from "pino";
 import { randomUUID } from "node:crypto";
 
+export * from "./safe-logger.js";
+export * from "./learning-traces.js";
+export * from "./llm-traces.js";
+
 // ── Sensitive-key sanitisation ─────────────────────────────────────────────
 
 const SENSITIVE_KEY_RE = /token|key|secret|password|credential|auth/i;

@@ -1,5 +1,5 @@
 {
-  "name": "@aivo/homework-svc",
+  "name": "@aivo/responsible-ai-svc",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@aivo/feature-flags": "workspace:*",
+    "@aivo/tutor-surface-protocol": "workspace:*",
     "@fastify/cors": "^11.0.0",
     "fastify": "^5.3.3"
   },

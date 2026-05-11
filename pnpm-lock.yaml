@@ -1584,6 +1584,34 @@ importers:
         specifier: ^5.7.3
         version: 5.7.3
 
+  services/responsible-ai-svc:
+    dependencies:
+      '@aivo/feature-flags':
+        specifier: workspace:*
+        version: link:../../packages/feature-flags
+      '@aivo/tutor-surface-protocol':
+        specifier: workspace:*
+        version: link:../../packages/tutor-surface-protocol
+      '@fastify/cors':
+        specifier: ^11.0.0
+        version: 11.2.0
+      fastify:
+        specifier: '>=5.8.5'
+        version: 5.8.5
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      tsx:
+        specifier: ^4.19.4
+        version: 4.21.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.8.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)(terser@5.46.1)
+
   services/science-solver-svc:
     dependencies:
       '@aivo/feature-flags':
