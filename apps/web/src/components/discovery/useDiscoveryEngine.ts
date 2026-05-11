@@ -12,6 +12,20 @@ import type {
 } from "./types";
 import { ADVENTURE_CHAPTERS, FUNCTIONING_LEVEL_CONFIG } from "./types";
 import { FALLBACK_ACTIVITIES } from "./fallbackActivities";
+import { validateDiscoveryActivities } from "./activity-schema";
+import { emitDiscoveryEvent } from "./discovery-telemetry";
+
+export type GenerationSource = "ai" | "cache" | "fallback";
+export type PersonalizationLevel = "full" | "partial" | "none";
+
+export interface ChapterGenerationStatus {
+  chapterId: string;
+  source: GenerationSource;
+  personalizationLevel: PersonalizationLevel;
+  retrying: boolean;
+  reason?: string;
+  rejectedCount: number;
+}
 
 
 interface UseDiscoveryEngineProps {
@@ -93,26 +107,37 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
   const chapterTotalRef = useRef(0);
   const chapterLatenciesRef = useRef<number[]>([]);
   const loadingChapterRef = useRef<string | null>(null);
+  const surfaceSignalsRef = useRef<Array<Record<string, unknown>>>([]);
   // Bumped each time chapter activities are loaded so derived getters
   // (which read from a ref) trigger a re-render in consumers.
   const [, setActivitiesVersion] = useState(0);
+  const [generationStatus, setGenerationStatus] = useState<Record<string, ChapterGenerationStatus>>({});
 
-  const loadChapterActivities = useCallback(async (chapter: AdventureChapter): Promise<ChapterActivities> => {
-    if (chapterActivitiesRef.current[chapter.id]) {
-      return chapterActivitiesRef.current[chapter.id];
-    }
+  const validateAndCoerceActivities = useCallback(
+    (raw: ChapterActivities | undefined, chapterId: string): { activities: ChapterActivities; rejected: number } => {
+      if (!raw) return { activities: { easy: [], medium: [], hard: [] }, rejected: 0 };
+      const tiers: DifficultyTier[] = ["easy", "medium", "hard"];
+      let rejected = 0;
+      const out: ChapterActivities = { easy: [], medium: [], hard: [] };
+      for (const tier of tiers) {
+        const items = raw[tier] || [];
+        const result = validateDiscoveryActivities(items as unknown as Parameters<typeof validateDiscoveryActivities>[0]);
+        rejected += result.rejectedActivities.length;
+        for (const r of result.rejectedActivities) {
+          emitDiscoveryEvent("baseline_activity_rejected", { chapterId, id: r.id, reason: r.reason });
+        }
+        out[tier] = result.validActivities as unknown as Activity[];
+      }
+      return { activities: out, rejected };
+    },
+    [],
+  );
 
-    if (!accessToken) {
-      const fallback = FALLBACK_ACTIVITIES[chapter.id] || FALLBACK_ACTIVITIES.sage_story_garden;
-      chapterActivitiesRef.current[chapter.id] = fallback;
-      setActivitiesVersion(v => v + 1);
-      return fallback;
-    }
-
-    try {
+  const fetchChapterPayload = useCallback(
+    async (chapter: AdventureChapter, token: string) => {
       const res = await fetch(`/api/assessments/learner/discovery/${learnerId}/chapter`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           chapter: {
             id: chapter.id,
@@ -124,29 +149,124 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
           },
         }),
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.generated && data.activities) {
-          const activities = data.activities as ChapterActivities;
-          const hasActivities = ["easy", "medium", "hard"].some(
-            tier => (activities[tier as DifficultyTier] || []).length > 0
-          );
-          if (hasActivities) {
-            chapterActivitiesRef.current[chapter.id] = activities;
-            setActivitiesVersion(v => v + 1);
-            return activities;
-          }
-        }
+      if (!res.ok) {
+        return { ok: false as const, status: res.status, reason: `http_${res.status}` };
       }
-    } catch {
+      const data = await res.json();
+      return { ok: true as const, data };
+    },
+    [learnerId],
+  );
+
+  const loadChapterActivities = useCallback(async (chapter: AdventureChapter): Promise<ChapterActivities> => {
+    if (chapterActivitiesRef.current[chapter.id]) {
+      return chapterActivitiesRef.current[chapter.id];
     }
 
-    const fallback = FALLBACK_ACTIVITIES[chapter.id] || FALLBACK_ACTIVITIES.sage_story_garden;
-    chapterActivitiesRef.current[chapter.id] = fallback;
+    const useFallback = (reason: string, source: GenerationSource = "fallback", level: PersonalizationLevel = "none") => {
+      const fallback = FALLBACK_ACTIVITIES[chapter.id] || FALLBACK_ACTIVITIES.sage_story_garden;
+      chapterActivitiesRef.current[chapter.id] = fallback;
+      setActivitiesVersion(v => v + 1);
+      setGenerationStatus(prev => ({
+        ...prev,
+        [chapter.id]: {
+          chapterId: chapter.id,
+          source,
+          personalizationLevel: level,
+          retrying: false,
+          reason,
+          rejectedCount: 0,
+        },
+      }));
+      emitDiscoveryEvent("baseline_generation_fallback_used", { chapterId: chapter.id, reason });
+      return fallback;
+    };
+
+    if (!accessToken) {
+      return useFallback("no_access_token");
+    }
+
+    emitDiscoveryEvent("baseline_generation_started", { chapterId: chapter.id });
+    setGenerationStatus(prev => ({
+      ...prev,
+      [chapter.id]: {
+        chapterId: chapter.id,
+        source: "ai",
+        personalizationLevel: "full",
+        retrying: false,
+        rejectedCount: 0,
+      },
+    }));
+
+    let attempt: Awaited<ReturnType<typeof fetchChapterPayload>>;
+    try {
+      attempt = await fetchChapterPayload(chapter, accessToken);
+    } catch (err: any) {
+      attempt = { ok: false, status: 0, reason: `network_error:${err?.message ?? "unknown"}` };
+    }
+
+    if (!attempt.ok) {
+      // Single retry on AI/network failure before falling back.
+      setGenerationStatus(prev => ({
+        ...prev,
+        [chapter.id]: {
+          ...(prev[chapter.id] ?? {
+            chapterId: chapter.id,
+            source: "ai",
+            personalizationLevel: "full",
+            rejectedCount: 0,
+          }),
+          retrying: true,
+          reason: attempt.reason,
+        },
+      }));
+      try {
+        attempt = await fetchChapterPayload(chapter, accessToken);
+      } catch (err: any) {
+        attempt = { ok: false, status: 0, reason: `network_error:${err?.message ?? "unknown"}` };
+      }
+    }
+
+    if (!attempt.ok) {
+      emitDiscoveryEvent("baseline_generation_failed", { chapterId: chapter.id, reason: attempt.reason });
+      return useFallback(attempt.reason);
+    }
+
+    const data = attempt.data as {
+      generated?: boolean;
+      activities?: ChapterActivities;
+      personalizationLevel?: PersonalizationLevel;
+      source?: GenerationSource;
+      rejectedActivities?: unknown[];
+    };
+
+    if (!data.generated || !data.activities) {
+      return useFallback("ai_no_activities");
+    }
+
+    const { activities, rejected } = validateAndCoerceActivities(data.activities, chapter.id);
+    const hasActivities = (["easy", "medium", "hard"] as DifficultyTier[]).some(
+      tier => (activities[tier] || []).length > 0,
+    );
+    if (!hasActivities) {
+      return useFallback("all_activities_invalid");
+    }
+
+    chapterActivitiesRef.current[chapter.id] = activities;
     setActivitiesVersion(v => v + 1);
-    return fallback;
-  }, [accessToken, learnerId]);
+    setGenerationStatus(prev => ({
+      ...prev,
+      [chapter.id]: {
+        chapterId: chapter.id,
+        source: data.source ?? "ai",
+        personalizationLevel: data.personalizationLevel ?? "full",
+        retrying: false,
+        rejectedCount: rejected + (data.rejectedActivities?.length ?? 0),
+      },
+    }));
+    emitDiscoveryEvent("baseline_generation_succeeded", { chapterId: chapter.id, rejected });
+    return activities;
+  }, [accessToken, fetchChapterPayload, validateAndCoerceActivities]);
 
   useEffect(() => {
     if (resumeHandledRef.current) return;
@@ -194,10 +314,27 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     setState(s => ({ ...s, phase: "activity", currentActivityIdx: 0 }));
   }, []);
 
-  const handleAnswer = useCallback((correct: boolean, latencyMs: number) => {
+  const recordSurfaceSignal = useCallback((signal: Record<string, unknown>) => {
+    surfaceSignalsRef.current.push(signal);
+  }, []);
+
+  const retryChapterGeneration = useCallback(async (chapter: AdventureChapter) => {
+    delete chapterActivitiesRef.current[chapter.id];
+    setGenerationStatus(prev => {
+      const next = { ...prev };
+      delete next[chapter.id];
+      return next;
+    });
+    return loadChapterActivities(chapter);
+  }, [loadChapterActivities]);
+
+  const handleAnswer = useCallback((correct: boolean, latencyMs: number, payload?: Record<string, unknown>) => {
     if (correct) chapterCorrectRef.current++;
     chapterTotalRef.current++;
     chapterLatenciesRef.current.push(latencyMs);
+    if (payload) {
+      recordSurfaceSignal({ ...payload, latencyMs, correct });
+    }
 
     setState(s => {
       const newStreakCorrect = correct ? s.streakCorrect + 1 : 0;
@@ -309,6 +446,7 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
       totalAttempts: state.totalAttempts,
       xpEarned: state.xpEarned,
       responseLatencies: state.responseLatencies,
+      surfaceSignals: surfaceSignalsRef.current,
     });
 
     const doPost = async (token: string) => {
@@ -367,12 +505,15 @@ export function useDiscoveryEngine({ learnerId, learnerName, functioningLevel, a
     state,
     chapters,
     config,
+    generationStatus,
     getCurrentActivity,
     getCurrentActivities,
     startAdventure,
     beginFirstChapter,
     startChapterActivities,
     handleAnswer,
+    recordSurfaceSignal,
+    retryChapterGeneration,
     advanceToNextChapter,
     resumeAfterBreak,
     finishAdventure,

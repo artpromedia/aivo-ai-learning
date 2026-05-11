@@ -4,10 +4,16 @@ import { Check, Mic, Loader2, AlertCircle, RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/providers/i18n-provider";
 import { useAuth } from "@/providers/auth-provider";
+import type {
+  LearnerSurfaceSpec,
+  SurfaceTelemetryEvent,
+} from "@aivo/learner-surfaces";
 import type { Beat, FunctioningLevel, SensoryAdaptations } from "./types";
 import { CHOICE_COUNTS } from "./types";
 import { useSpeechInput, type SpeechInputError } from "./useSpeechInput";
 import { matchVoiceAnswer } from "./voiceMatch";
+import { SurfaceResponseZone } from "./SurfaceResponseZone";
+import { isSurfaceBeat } from "./surface-normalizer";
 
 const STT_LOCALE_MAP: Record<string, string> = {
   en: "en-US",
@@ -26,11 +32,13 @@ interface ResponseZoneProps {
   beat: Beat | null;
   functioningLevel: FunctioningLevel;
   adaptations: SensoryAdaptations;
-  onAnswer: (correct: boolean) => void;
+  onAnswer: (correct: boolean, payload?: Record<string, unknown>) => void;
   accentColor: string;
+  resolveSurface?: (id: string) => LearnerSurfaceSpec | undefined;
+  onSurfaceEvent?: (event: SurfaceTelemetryEvent) => void;
 }
 
-export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, accentColor }: ResponseZoneProps) {
+export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, accentColor, resolveSurface, onSurfaceEvent }: ResponseZoneProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -46,6 +54,17 @@ export function ResponseZone({ beat, functioningLevel, adaptations, onAnswer, ac
       prevBeatId.current = beat?.id;
     }
   }, [beat?.id]);
+
+  if (beat && isSurfaceBeat(beat)) {
+    return (
+      <SurfaceResponseZone
+        beat={beat}
+        resolveSurface={resolveSurface}
+        onCorrectnessEvaluated={(correct, payload) => onAnswer(correct, payload)}
+        onSurfaceEvent={onSurfaceEvent}
+      />
+    );
+  }
 
   const interaction = beat?.interaction;
   if (!interaction) return null;
