@@ -76,6 +76,79 @@ async function recordHomeworkProblemSession(input: {
   }
 }
 
+// ---- Sprint 04 adapter: math + science recognizers ---------------------
+const MATH_RECOGNIZER_SVC_URL =
+  process.env.MATH_RECOGNIZER_SVC_URL ?? "http://localhost:3062";
+const SCIENCE_SOLVER_SVC_URL =
+  process.env.SCIENCE_SOLVER_SVC_URL ?? "http://localhost:3063";
+
+function advancedContentGeneratorsEnabled(): boolean {
+  const raw = process.env.AIVO_FEATURE_ADVANCED_CONTENT_GENERATORS;
+  if (!raw) return false;
+  const v = String(raw).trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
+interface MathRecognizerSummary {
+  recognizedExpression?: string;
+  misconceptions: Array<{ id: string; label: string }>;
+  feedbackHint?: string;
+  correctness?: boolean;
+  confidence: number;
+}
+
+async function callMathRecognizer(input: {
+  learnerId: string;
+  problemSessionId?: string;
+  prompt?: string;
+  finalAnswer?: string | number;
+  typedWork?: string;
+  skillCode?: string;
+}): Promise<MathRecognizerSummary | undefined> {
+  if (!advancedContentGeneratorsEnabled()) return undefined;
+  try {
+    const res = await fetch(`${MATH_RECOGNIZER_SVC_URL}/api/math-recognizer/recognize`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ...input, subject: "math" }),
+    });
+    if (!res.ok) return undefined;
+    return (await res.json()) as MathRecognizerSummary;
+  } catch {
+    return undefined;
+  }
+}
+
+interface ScienceSolverSummary {
+  reasoningType: string;
+  observedStrengths: string[];
+  missingElements: string[];
+  nextHint: string;
+  confidence: number;
+}
+
+async function callScienceSolver(input: {
+  learnerId: string;
+  problemSessionId?: string;
+  topic?: string;
+  prompt: string;
+  response: string | Record<string, unknown>;
+  expectedReasoningType?: "classification" | "sequence" | "hypothesis" | "observation" | "cause_effect";
+}): Promise<ScienceSolverSummary | undefined> {
+  if (!advancedContentGeneratorsEnabled()) return undefined;
+  try {
+    const res = await fetch(`${SCIENCE_SOLVER_SVC_URL}/api/science-solver/analyze`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) return undefined;
+    return (await res.json()) as ScienceSolverSummary;
+  } catch {
+    return undefined;
+  }
+}
+
 // ---- Sprint 10 adapter: responsible-AI evaluation -----------------------
 const RESPONSIBLE_AI_SVC_URL = process.env.RESPONSIBLE_AI_SVC_URL ?? "http://localhost:3071";
 
@@ -550,6 +623,45 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: any) {
         content: message,
         timestamp: new Date().toISOString(),
       });
+
+      // Sprint 04: recognizer enrichment when flag is on. The recognizer
+      // summary is attached to the most recent user message as analysis
+      // metadata so the tutor prompt can pick it up via `homework_context`
+      // later. Errors are swallowed.
+      const subjectUpper = (assignment?.detectedSubject || "").toUpperCase();
+      if (subjectUpper === "MATH") {
+        const summary = await callMathRecognizer({
+          learnerId: session.learnerId,
+          problemSessionId: undefined,
+          typedWork: message,
+          prompt: typeof assignment?.subject === "string" ? assignment.subject : undefined,
+        });
+        if (summary) {
+          existingMessages[existingMessages.length - 1].analysis = {
+            type: "math",
+            misconceptions: summary.misconceptions,
+            feedbackHint: summary.feedbackHint,
+            correctness: summary.correctness,
+            confidence: summary.confidence,
+          };
+        }
+      } else if (subjectUpper === "SCIENCE") {
+        const summary = await callScienceSolver({
+          learnerId: session.learnerId,
+          prompt: typeof assignment?.subject === "string" ? assignment.subject : "science problem",
+          response: message,
+        });
+        if (summary) {
+          existingMessages[existingMessages.length - 1].analysis = {
+            type: "science",
+            reasoningType: summary.reasoningType,
+            observedStrengths: summary.observedStrengths,
+            missingElements: summary.missingElements,
+            nextHint: summary.nextHint,
+            confidence: summary.confidence,
+          };
+        }
+      }
 
       const brainContext = await fetchBrainContext(session.learnerId);
       const functioningLevel = getFunctioningLevel(brainContext);

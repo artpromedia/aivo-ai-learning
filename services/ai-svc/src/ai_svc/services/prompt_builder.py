@@ -193,12 +193,62 @@ def build_tutor_system_prompt(
         if len(profile_lines) > 1:
             layer2_parts.append("\n".join(profile_lines))
 
+    # Sprint 03: Surface Tool Protocol. When the tutor surface protocol
+    # feature is enabled, instruct the model to return structured surface
+    # commands instead of inline HTML/SVG.
+    if _surface_tool_protocol_enabled():
+        layer2_parts.append(_build_surface_tool_protocol_block())
+
     # The language directive is appended last so it is the most recent
     # instruction the model sees before generating — this maximises
     # adherence across providers.
     layer2_parts.append(_build_language_directive(normalized_locale))
 
     return layer1 + "\n".join(layer2_parts)
+
+
+def _surface_tool_protocol_enabled() -> bool:
+    """Return True when the tutor surface protocol flag is on."""
+    import os
+
+    raw = os.environ.get("AIVO_FEATURE_TUTOR_SURFACE_PROTOCOL", "")
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _build_surface_tool_protocol_block() -> str:
+    """Sprint 03 — Surface Tool Protocol.
+
+    Instructs the tutor to emit structured surface commands (open_scratchpad,
+    show_geometry, show_graph, show_number_line, show_manipulative,
+    show_reading_annotation, show_science_diagram, collect_answer,
+    collect_drawing, highlight_object, update_label, save_snapshot) instead
+    of raw HTML or SVG. The block is validated downstream by
+    `ai_svc.services.surface_directives.validate_tutor_surface_command`.
+    """
+    return (
+        "\n## Surface Tool Protocol\n"
+        "When a learner would benefit from a visual, diagram, scratchpad, "
+        "graph, number line, annotation, manipulative, or science diagram, "
+        "return structured surface commands. Use structured JSON only. "
+        "Never return raw HTML or raw SVG. Always include accessibility alt "
+        "text and a keyboard alternative. Choose surfaces based on subject, "
+        "task, functioning level, accommodations, and learner process "
+        "profile.\n\n"
+        "Subject rules:\n"
+        "- Geometry requires geometry_workspace.\n"
+        "- Computation requiring work requires scratchpad.\n"
+        "- Fractions may use number_line, area_model, manipulative, or scratchpad.\n"
+        "- Science systems may use science_diagram or classification manipulatives.\n"
+        "- Reading comprehension may use reading_annotation.\n"
+        "- Coding may use trace table or step workspace.\n\n"
+        "Each command must include: id, commandType, surfaceId, reason. "
+        "Surfaces must include accessibility.altText and "
+        "accessibility.keyboardAlternative=true. Geometry surfaces must "
+        "include diagram.shapes with at least one shape. Scratchpad commands "
+        "must enable ink capture. Speech-required commands are not permitted "
+        "for NON_VERBAL learners. Long typed responses are not permitted for "
+        "LOW_VERBAL or PRE_SYMBOLIC learners."
+    )
 
 
 def _build_dape_block(dape_profile) -> str:

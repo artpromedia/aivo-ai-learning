@@ -12,6 +12,7 @@ from ..vision.ocr_processor import process_ocr
 from ..vision.homework_adapter import adapt_homework
 from ..services.llm_gateway import generate_completion
 from ..services.prompt_builder import build_tutor_system_prompt, _build_language_directive, _normalize_locale
+from ..services.responsible_ai_client import evaluate as evaluate_responsible_ai
 
 logger = logging.getLogger("ai-svc.homework")
 
@@ -142,6 +143,25 @@ async def homework_chat(body: HomeworkChatRequest):
             max_tokens=body.max_tokens,
             temperature=0.7,
         )
+
+        # Sprint 10: responsible-AI evaluation for homework output. Catches
+        # final_answer_before_attempt and other homework-integrity violations.
+        rai_result = await evaluate_responsible_ai(
+            learner_id=str(body.brain_context.get("learner_id") or ""),
+            context_type="homework",
+            input_summary=body.messages[-1]["content"] if body.messages else "",
+            output=result["content"],
+            learner_profile_summary={
+                "functioningLevel": body.functioning_level,
+                "accommodations": body.brain_context.get("active_accommodations") or [],
+            },
+            policy_mode="warn",
+        )
+        if rai_result and not rai_result.get("allowed", True):
+            logger.warning(
+                "responsible-AI flagged homework response: severity=%s",
+                rai_result.get("severity"),
+            )
 
         return {
             "response": result["content"],

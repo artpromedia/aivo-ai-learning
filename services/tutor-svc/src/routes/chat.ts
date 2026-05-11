@@ -38,6 +38,78 @@ function requireUrl(name: string, devDefault: string): string {
 const AI_SVC_URL = requireUrl("AI_SVC_URL", "http://localhost:3004");
 const BRAIN_SVC_URL = requireUrl("BRAIN_SVC_URL", "http://localhost:3002");
 
+// ---- Sprint 05 adapter: subject-brain context ---------------------------
+const SUBJECT_BRAIN_SVC_URL =
+  process.env.SUBJECT_BRAIN_SVC_URL ?? "http://localhost:3064";
+
+function advancedContentGeneratorsEnabled(): boolean {
+  const raw = process.env.AIVO_FEATURE_ADVANCED_CONTENT_GENERATORS;
+  if (!raw) return false;
+  const v = String(raw).trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
+async function fetchSubjectBrainContextForChat(input: {
+  learnerId: string;
+  subject: string;
+  topic?: string;
+  brainContext: Record<string, unknown>;
+  functioningLevel?: string;
+}): Promise<Record<string, unknown> | undefined> {
+  if (!advancedContentGeneratorsEnabled()) return undefined;
+  try {
+    const res = await fetch(`${SUBJECT_BRAIN_SVC_URL}/api/subject-brain/context`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) return undefined;
+    return (await res.json()) as Record<string, unknown>;
+  } catch {
+    return undefined;
+  }
+}
+
+// ---- Sprint 10 adapter: responsible-AI evaluation in tutor chat ---------
+const RESPONSIBLE_AI_SVC_URL =
+  process.env.RESPONSIBLE_AI_SVC_URL ?? "http://localhost:3071";
+
+function responsibleAiGuardrailsEnabled(): boolean {
+  const raw = process.env.AIVO_FEATURE_RESPONSIBLE_AI_GUARDRAILS;
+  if (!raw) return false;
+  const v = String(raw).trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
+async function evaluateResponsibleAiChat(input: {
+  learnerId: string;
+  inputSummary: string;
+  output: unknown;
+  functioningLevel?: string;
+}): Promise<{ allowed: boolean; severity: string; recommendedAction: string } | undefined> {
+  if (!responsibleAiGuardrailsEnabled()) return undefined;
+  try {
+    const res = await fetch(`${RESPONSIBLE_AI_SVC_URL}/api/responsible-ai/evaluate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        learnerId: input.learnerId,
+        contextType: "chat",
+        inputSummary: input.inputSummary,
+        output: input.output,
+        learnerProfileSummary: input.functioningLevel
+          ? { functioningLevel: input.functioningLevel }
+          : undefined,
+        policyMode: "warn",
+      }),
+    });
+    if (!res.ok) return undefined;
+    return (await res.json()) as { allowed: boolean; severity: string; recommendedAction: string };
+  } catch {
+    return undefined;
+  }
+}
+
 const TUTOR_SKU_TO_KEY: Record<string, string> = {
   ADDON_TUTOR_MATH: "nova",
   ADDON_TUTOR_ELA: "sage",
@@ -160,6 +232,25 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
       }
     }
 
+    // Sprint 05: enrich brain context with subject-brain context when flag is on.
+    if (liveSubject) {
+      const subjectBrain = await fetchSubjectBrainContextForChat({
+        learnerId: session.learnerId,
+        subject: liveSubject,
+        topic:
+          typeof (liveBrainContext as { curriculum_focus?: { topic?: unknown } }).curriculum_focus
+            ?.topic === "string"
+            ? ((liveBrainContext as { curriculum_focus?: { topic?: string } }).curriculum_focus
+                ?.topic as string)
+            : undefined,
+        brainContext: liveBrainContext,
+        functioningLevel: (session.functioningLevel as string | undefined) ?? "STANDARD",
+      });
+      if (subjectBrain) {
+        liveBrainContext.subjectBrain = subjectBrain;
+      }
+    }
+
     try {
       const res = await fetch(`${AI_SVC_URL}/api/ai/tutor/chat`, {
         method: "POST",
@@ -179,6 +270,21 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
       }
 
       const data = await res.json();
+
+      // Sprint 10: responsible-AI evaluation in warn mode.
+      const raiResult = await evaluateResponsibleAiChat({
+        learnerId: session.learnerId,
+        inputSummary: message,
+        output: data.response,
+        functioningLevel: (session.functioningLevel as string | undefined) ?? "STANDARD",
+      });
+      if (raiResult && !raiResult.allowed) {
+        logger.warn("responsible-AI flagged tutor chat", {
+          sessionId,
+          severity: raiResult.severity,
+        });
+      }
+
       existingMessages.push({ role: "assistant", content: data.response, timestamp: new Date().toISOString() });
 
       await db.update(tutorSessions).set({

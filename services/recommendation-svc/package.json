@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@aivo/audit-svc": "workspace:*",
     "@aivo/enterprise-core": "workspace:*",
     "@aivo/feature-flags": "workspace:*",
     "@fastify/cors": "^11.0.0",

@@ -1,7 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type { SurfaceProtocolProfile, TutorSurfaceCommand } from "@aivo/tutor-surface-protocol";
+import {
+  SurfaceHost,
+  type LearnerSurfaceSpec,
+  type SurfaceResponse,
+  type SurfaceTelemetryEvent,
+} from "@aivo/learner-surfaces";
 import {
   normalizeTutorSurfaceCommands,
   type NormalizedTutorCommand,
@@ -10,13 +16,12 @@ import {
 export interface TutorSurfaceCommandRendererProps {
   commands: TutorSurfaceCommand[];
   profile?: SurfaceProtocolProfile;
+  disabled?: boolean;
   /**
-   * Called with the normalized list of renderable commands. The host renders
-   * each via `SurfaceHost` from `@aivo/learner-surfaces`. The component does
-   * not own SurfaceHost lifecycle so existing stage hooks can wire snapshots
-   * into the problem-session ledger.
+   * Optional: forwarded the normalized list so callers can also wire
+   * snapshots back to the problem-session ledger.
    */
-  onCommands: (commands: NormalizedTutorCommand[]) => void;
+  onCommands?: (commands: NormalizedTutorCommand[]) => void;
   /**
    * Telemetry hook for rejected commands. Implementations MUST NOT include
    * raw payload, sensitive learner data, or free-form tutor text.
@@ -24,21 +29,47 @@ export interface TutorSurfaceCommandRendererProps {
   onRejected?: (
     rejected: Array<{ commandId?: string; surfaceId?: string; codes: string[] }>,
   ) => void;
+  /**
+   * Forwarded to each rendered SurfaceHost. Called when the learner submits
+   * a response from any of the rendered surfaces.
+   */
+  onSurfaceResponse?: (response: SurfaceResponse) => void;
+  /**
+   * Forwarded to each rendered SurfaceHost. Receives surface telemetry
+   * events (surface_started, surface_submitted, ink_*, answer_changed,
+   * tool_changed, unsupported_surface).
+   */
+  onSurfaceEvent?: (event: SurfaceTelemetryEvent) => void;
+}
+
+function commandToSurface(command: NormalizedTutorCommand): LearnerSurfaceSpec | null {
+  const surface = command.command.surface;
+  if (!surface) return null;
+  // The protocol's `LearnerSurfaceSpec` is structurally compatible with the
+  // `@aivo/learner-surfaces` runtime spec. We coerce because the protocol
+  // is intentionally narrower (no Capture / Scoring required at the
+  // protocol layer); SurfaceHost will fill in safe defaults.
+  return surface as unknown as LearnerSurfaceSpec;
 }
 
 export function TutorSurfaceCommandRenderer({
   commands,
   profile,
+  disabled = false,
   onCommands,
   onRejected,
-}: TutorSurfaceCommandRendererProps): null {
+  onSurfaceResponse,
+  onSurfaceEvent,
+}: TutorSurfaceCommandRendererProps) {
   const { normalized, rejected } = useMemo(
     () => normalizeTutorSurfaceCommands(commands, profile),
     [commands, profile],
   );
 
-  useMemo(() => {
-    onCommands(normalized);
+  // Notify callers once per render. `useEffect` here (not `useMemo` for side
+  // effects) so React renders the surface tree below first.
+  useEffect(() => {
+    onCommands?.(normalized);
     if (rejected.length > 0 && onRejected) {
       onRejected(
         rejected.map((entry) => ({
@@ -50,5 +81,23 @@ export function TutorSurfaceCommandRenderer({
     }
   }, [normalized, rejected, onCommands, onRejected]);
 
-  return null;
+  return (
+    <div data-tutor-surface-renderer="true">
+      {normalized
+        .filter((cmd) => cmd.renderable)
+        .map((cmd) => {
+          const surface = commandToSurface(cmd);
+          if (!surface) return null;
+          return (
+            <SurfaceHost
+              key={cmd.command.id}
+              surface={surface}
+              disabled={disabled}
+              onSubmit={onSurfaceResponse}
+              onEvent={onSurfaceEvent}
+            />
+          );
+        })}
+    </div>
+  );
 }

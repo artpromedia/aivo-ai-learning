@@ -1,7 +1,9 @@
 import type { FastifyInstance } from "fastify";
+import { emitAuditEvent } from "@aivo/audit-svc";
 import type { ProblemSessionStore } from "../services/problem-session-store.js";
 import { ProblemSessionNotFoundError } from "../services/problem-session-store.js";
 import { countEventTypes, summarizeAttempts } from "../services/problem-session-scoring.js";
+import { maybeEmitRecommendationSignals } from "../services/recommendation-signal-emitter.js";
 
 interface CreateSessionBody {
   tenantId: string;
@@ -122,6 +124,19 @@ export function registerSessionRoutes(app: FastifyInstance, store: ProblemSessio
         storageUrl: request.body.storageUrl,
         strokeCount: request.body.strokeCount,
       });
+      // Sprint 09: audit emission for snapshot saves.
+      void emitAuditEvent({
+        actorRole: "service",
+        action: "problem_session_snapshot_saved",
+        resourceType: "problem_session_snapshot",
+        resourceId: snapshot.id,
+        metadata: {
+          problemSessionId: snapshot.problemSessionId,
+          surfaceId: snapshot.surfaceId,
+          snapshotType: snapshot.snapshotType,
+          strokeCount: snapshot.strokeCount,
+        },
+      });
       return reply.code(201).send(snapshot);
     } catch (error) {
       if (error instanceof ProblemSessionNotFoundError) {
@@ -136,6 +151,9 @@ export function registerSessionRoutes(app: FastifyInstance, store: ProblemSessio
     async (request, reply) => {
       const session = await store.completeSession(request.params.id);
       if (!session) return reply.code(404).send({ error: "Not found" });
+      // Sprint 07: trigger recommendation candidate generation from
+      // accumulated session signals. Flag-gated; fire-and-forget.
+      void maybeEmitRecommendationSignals(store, session.id);
       return session;
     },
   );

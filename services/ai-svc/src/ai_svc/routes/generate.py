@@ -8,6 +8,7 @@ from ..services.budget_caps import BudgetExceeded
 from ..services.prompt_builder import build_content_generation_prompt, build_tutor_system_prompt
 from ..services.quality_gate import run_quality_gate
 from ..services.baseline_generator import build_baseline_generation_prompt
+from ..services.responsible_ai_client import evaluate as evaluate_responsible_ai
 
 logger = logging.getLogger("ai-svc.generate")
 
@@ -88,6 +89,26 @@ async def generate_content(req: ContentRequest):
         content_type="lesson_content",
     )
 
+    # Sprint 10: responsible-AI evaluation in warn mode. Flag-gated; a
+    # violation logs and is surfaced in the response but does not fail
+    # the legacy quality gate.
+    rai_result = await evaluate_responsible_ai(
+        learner_id=str(req.brain_context.get("learner_id") or ""),
+        context_type="lesson",
+        input_summary=f"{req.subject} / {req.topic}",
+        output={"content": result["content"], "subject": req.subject, "topic": req.topic},
+        learner_profile_summary={
+            "functioningLevel": req.functioning_level,
+            "accommodations": req.brain_context.get("active_accommodations") or [],
+        },
+        policy_mode="warn",
+    )
+    if rai_result and not rai_result.get("allowed", True):
+        logger.warning(
+            "responsible-AI flagged generated content: %s",
+            {"severity": rai_result.get("severity"), "subject": req.subject},
+        )
+
     return ContentResponse(
         content=result["content"],
         model=result["model"],
@@ -122,6 +143,24 @@ async def tutor_chat(req: TutorChatRequest):
         raise HTTPException(status_code=429, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"LLM chat failed: {str(e)}")
+
+    # Sprint 10: responsible-AI evaluation in warn mode for tutor chat.
+    rai_result = await evaluate_responsible_ai(
+        learner_id=str(req.brain_context.get("learner_id") or ""),
+        context_type="chat",
+        input_summary=req.messages[-1]["content"] if req.messages else "",
+        output=result["content"],
+        learner_profile_summary={
+            "functioningLevel": req.functioning_level,
+            "accommodations": req.brain_context.get("active_accommodations") or [],
+        },
+        policy_mode="warn",
+    )
+    if rai_result and not rai_result.get("allowed", True):
+        logger.warning(
+            "responsible-AI flagged tutor chat: severity=%s",
+            rai_result.get("severity"),
+        )
 
     return TutorChatResponse(
         response=result["content"],

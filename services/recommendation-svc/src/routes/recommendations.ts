@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { TenantRole } from "@aivo/enterprise-core";
+import { emitAuditEvent } from "@aivo/audit-svc";
 import {
   applyRecommendation,
   type BrainProfile,
@@ -70,6 +71,18 @@ export function registerRecommendationRoutes(app: FastifyInstance): void {
         recommendation.status = "FAILED";
         recommendation.declineReason = result.reason;
       }
+      // Sprint 09: audit emission.
+      void emitAuditEvent({
+        actorRole: request.body?.actorRole ?? "parent",
+        action: "profile_recommendation_approved",
+        resourceType: "profile_recommendation",
+        resourceId: recommendation.id,
+        learnerId: recommendation.learnerId,
+        metadata: {
+          recommendationType: recommendation.type,
+          outcome: result.status,
+        },
+      });
       return { recommendation, result };
     },
   );
@@ -102,6 +115,18 @@ export function registerRecommendationRoutes(app: FastifyInstance): void {
         recommendation.status = "FAILED";
         recommendation.declineReason = result.reason;
       }
+      // Sprint 09: audit emission for amendment.
+      void emitAuditEvent({
+        actorRole: request.body?.actorRole ?? "parent",
+        action: "profile_recommendation_amended",
+        resourceType: "profile_recommendation",
+        resourceId: recommendation.id,
+        learnerId: recommendation.learnerId,
+        metadata: {
+          recommendationType: recommendation.type,
+          outcome: result.status,
+        },
+      });
       return { recommendation, result };
     },
   );
@@ -122,6 +147,16 @@ export function registerRecommendationRoutes(app: FastifyInstance): void {
       recommendation.status = "DECLINED";
       recommendation.declineReason = request.body?.reason;
       recommendation.updatedAt = new Date().toISOString();
+      // Sprint 09: audit emission for decline.
+      void emitAuditEvent({
+        actorRole: request.body?.actorRole ?? "parent",
+        action: "profile_recommendation_declined",
+        resourceType: "profile_recommendation",
+        resourceId: recommendation.id,
+        learnerId: recommendation.learnerId,
+        reason: request.body?.reason,
+        metadata: { recommendationType: recommendation.type },
+      });
       return { recommendation };
     },
   );

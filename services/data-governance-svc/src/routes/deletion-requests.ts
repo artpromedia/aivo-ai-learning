@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { emitAuditEvent } from "@aivo/audit-svc";
 import {
   approveDeletion,
   createDeletionRequest,
@@ -27,6 +28,15 @@ export function registerDeletionRoutes(app: FastifyInstance): void {
       retentionHolds: request.body.retentionHolds ?? [],
     });
     STORE.set(record.id, record);
+    void emitAuditEvent({
+      actorId: request.body.requesterId,
+      actorRole: request.body.requesterRole,
+      action: "deletion_requested",
+      resourceType: "deletion_request",
+      resourceId: record.id,
+      learnerId: record.learnerId,
+      metadata: { status: record.status },
+    });
     return reply.code(201).send(record);
   });
 
@@ -38,6 +48,14 @@ export function registerDeletionRoutes(app: FastifyInstance): void {
       try {
         const updated = approveDeletion(existing);
         STORE.set(updated.id, updated);
+        void emitAuditEvent({
+          actorRole: "platform_admin",
+          action: "deletion_approved",
+          resourceType: "deletion_request",
+          resourceId: updated.id,
+          learnerId: updated.learnerId,
+          metadata: { status: updated.status },
+        });
         return updated;
       } catch (error) {
         return reply.code(409).send({ error: (error as Error).message });
@@ -68,6 +86,14 @@ export function registerDeletionRoutes(app: FastifyInstance): void {
       try {
         const updated = finalizeHardDelete(existing);
         STORE.set(updated.id, updated);
+        void emitAuditEvent({
+          actorRole: "platform_admin",
+          action: "deletion_completed",
+          resourceType: "deletion_request",
+          resourceId: updated.id,
+          learnerId: updated.learnerId,
+          metadata: { status: updated.status },
+        });
         return updated;
       } catch (error) {
         return reply.code(409).send({ error: (error as Error).message });

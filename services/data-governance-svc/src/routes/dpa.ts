@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { emitAuditEvent } from "@aivo/audit-svc";
 import { InMemoryDpaStore, type DpaAcceptanceInput } from "../services/dpa-store.js";
 
 const STORE = new InMemoryDpaStore();
@@ -14,6 +15,17 @@ export function registerDpaRoutes(app: FastifyInstance): void {
       return reply.code(400).send({ error: "Missing required DPA fields" });
     }
     const record = STORE.acceptDpa(body);
+    void emitAuditEvent({
+      actorId: body.acceptedById,
+      actorRole: body.acceptedByRole,
+      action: "dpa_accepted",
+      resourceType: "dpa",
+      resourceId: record.id,
+      metadata: {
+        districtId: record.districtId,
+        version: record.version,
+      },
+    });
     return reply.code(201).send(record);
   });
 

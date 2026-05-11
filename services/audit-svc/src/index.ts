@@ -3,6 +3,7 @@ import { buildApp } from "./server.js";
 export { buildApp } from "./server.js";
 export * from "./services/audit-store.js";
 export * from "./services/audit-redaction.js";
+export * from "./services/audit-client.js";
 
 const PORT = parseInt(process.env.AUDIT_PORT || "3069", 10);
 

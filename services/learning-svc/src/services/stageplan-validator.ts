@@ -39,7 +39,82 @@ function checkText(text: unknown, where: string, issues: StagePlanQualityIssue[]
   if (HTML_TAG_RE.test(text)) issues.push({ code: "raw_html", detail: where });
 }
 
-export function validateStagePlan(plan: any, opts?: { functioningLevel?: string }): StagePlanValidationResult {
+export interface ValidateStagePlanOptions {
+  functioningLevel?: string;
+  /**
+   * When true (Sprint 05), the validator requires the generated plan to
+   * record `subjectBrainEvidenceUsed`. Pass true only when the
+   * subject-brain context was actually fetched (i.e. the
+   * `advancedContentGenerators` flag is on and the service returned).
+   */
+  requireSubjectBrainEvidence?: boolean;
+  /**
+   * Optional list of surface types the subject brain said are required for
+   * this subject + topic. When provided, the validator fails if no beat /
+   * surface in the plan satisfies the requirement.
+   */
+  requiredSurfaces?: string[];
+  /**
+   * The subject the lesson was generated for. Used to apply subject-aware
+   * surface requirements when explicit requiredSurfaces are not provided.
+   */
+  subject?: string;
+  /**
+   * The topic the lesson was generated for. Used together with `subject`
+   * to detect e.g. "area of a rectangle" → geometry_workspace required.
+   */
+  topic?: string;
+}
+
+function collectSurfaceTypes(plan: any): Set<string> {
+  const types = new Set<string>();
+  const surfaces = plan?.surfaces;
+  if (surfaces && typeof surfaces === "object") {
+    for (const value of Object.values(surfaces)) {
+      const t = (value as { type?: string } | undefined)?.type;
+      if (typeof t === "string") types.add(t);
+    }
+  }
+  for (const beat of plan?.beats || []) {
+    const t = beat?.surface?.type;
+    if (typeof t === "string") types.add(t);
+    const it = beat?.interaction?.type;
+    if (typeof it === "string") types.add(it);
+  }
+  return types;
+}
+
+function detectSubjectSurfaceRequirements(
+  subject: string | undefined,
+  topic: string | undefined,
+): string[] {
+  const required: string[] = [];
+  if (!subject) return required;
+  const subj = subject.toLowerCase();
+  const t = (topic ?? "").toLowerCase();
+  if (subj === "math") {
+    if (/geometry|area|perimeter|rectangle|triangle|angle|polygon|circle/.test(t)) {
+      required.push("geometry_workspace");
+    }
+    if (/computation|arithmetic|add|subtract|multiply|divide|long division/.test(t)) {
+      required.push("scratchpad");
+    }
+  }
+  if (subj === "science") {
+    if (/classif|sort|group/.test(t)) required.push("drag_manipulative");
+    if (/cycle|sequence|order/.test(t)) required.push("science_diagram");
+    if (/observ|inference/.test(t)) required.push("reading_annotation");
+  }
+  if (subj === "ela") {
+    if (/read|comprehension/.test(t)) required.push("reading_annotation");
+  }
+  return required;
+}
+
+export function validateStagePlan(
+  plan: any,
+  opts?: ValidateStagePlanOptions,
+): StagePlanValidationResult {
   const issues: StagePlanQualityIssue[] = [];
 
   if (!plan || typeof plan !== "object") {
@@ -112,6 +187,61 @@ export function validateStagePlan(plan: any, opts?: { functioningLevel?: string 
       if (typeof beat?.narration === "string" && beat.narration.length > 240) {
         issues.push({ code: "narration_too_long_for_low_verbal", detail: beat.id ?? "" });
       }
+    }
+  }
+
+  // Sprint 05: when subject-brain context was fetched, the generated plan
+  // MUST record `subjectBrainEvidenceUsed`. This guarantees the LLM cannot
+  // silently ignore the subject brain context.
+  if (opts?.requireSubjectBrainEvidence) {
+    const evidence = (plan as { subjectBrainEvidenceUsed?: unknown }).subjectBrainEvidenceUsed;
+    if (!evidence || typeof evidence !== "object") {
+      issues.push({
+        code: "missing_subject_brain_evidence",
+        detail: "subjectBrainEvidenceUsed must be set when subject-brain context is available",
+      });
+    }
+  }
+
+  // Sprint 05: surface-type requirements. Either the explicit list passed
+  // in opts.requiredSurfaces or a subject-derived set.
+  const requiredSurfaces = new Set<string>([
+    ...(opts?.requiredSurfaces ?? []),
+    ...detectSubjectSurfaceRequirements(opts?.subject, opts?.topic),
+  ]);
+  if (requiredSurfaces.size > 0) {
+    const present = collectSurfaceTypes(plan);
+    for (const required of requiredSurfaces) {
+      if (!present.has(required)) {
+        issues.push({
+          code: `missing_required_surface_${required}`,
+          detail: `plan does not contain a ${required} surface`,
+        });
+      }
+    }
+  }
+
+  // Sprint 05: profile-adaptation evidence. When the learner is on a
+  // functioning level that requires adaptation, the plan must record at
+  // least one applied accommodation in `accommodationsApplied` OR a
+  // profile note inside `subjectBrainEvidenceUsed.profileAdaptations`.
+  if (
+    fl === "LOW_VERBAL" ||
+    fl === "NON_VERBAL" ||
+    fl === "PRE_SYMBOLIC" ||
+    fl === "DEVELOPING"
+  ) {
+    const applied = Array.isArray(plan.accommodationsApplied) ? plan.accommodationsApplied : [];
+    const evidence = (plan as { subjectBrainEvidenceUsed?: { profileAdaptations?: unknown } })
+      .subjectBrainEvidenceUsed;
+    const adaptations = Array.isArray(evidence?.profileAdaptations)
+      ? (evidence!.profileAdaptations as unknown[])
+      : [];
+    if (applied.length === 0 && adaptations.length === 0) {
+      issues.push({
+        code: "missing_profile_adaptations",
+        detail: `functioning level ${fl} requires adaptations but none recorded`,
+      });
     }
   }
 
