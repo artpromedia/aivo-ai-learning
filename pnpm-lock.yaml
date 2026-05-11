@@ -1290,6 +1290,31 @@ importers:
         specifier: ^5.7.3
         version: 5.7.3
 
+  services/integration-svc:
+    dependencies:
+      '@aivo/feature-flags':
+        specifier: workspace:*
+        version: link:../../packages/feature-flags
+      '@fastify/cors':
+        specifier: ^11.0.0
+        version: 11.2.0
+      fastify:
+        specifier: '>=5.8.5'
+        version: 5.8.5
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      tsx:
+        specifier: ^4.19.4
+        version: 4.21.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.8.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)(terser@5.46.1)
+
   services/integrations-svc:
     dependencies:
       '@aivo/db':
@@ -1570,6 +1595,34 @@ importers:
 
   services/subject-brain-svc:
     dependencies:
+      '@aivo/feature-flags':
+        specifier: workspace:*
+        version: link:../../packages/feature-flags
+      '@fastify/cors':
+        specifier: ^11.0.0
+        version: 11.2.0
+      fastify:
+        specifier: '>=5.8.5'
+        version: 5.8.5
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      tsx:
+        specifier: ^4.19.4
+        version: 4.21.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.8.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)(terser@5.46.1)
+
+  services/tenant-svc:
+    dependencies:
+      '@aivo/enterprise-core':
+        specifier: workspace:*
+        version: link:../../packages/enterprise-core
       '@aivo/feature-flags':
         specifier: workspace:*
         version: link:../../packages/feature-flags

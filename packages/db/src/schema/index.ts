@@ -20,3 +20,5 @@ export * from "./curriculum.js";
 export * from "./jobs.js";
 export * from "./problem-sessions.js";
 export * from "./recommendations-v2.js";
+export * from "./tenancy.js";
+export * from "./enterprise-integrations.js";
