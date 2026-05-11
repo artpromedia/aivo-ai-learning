@@ -7,7 +7,7 @@
     "build": "node ../../scripts/next-build-with-ca.mjs",
     "start": "next start",
     "lint": "eslint src/ --ext .ts,.tsx",
-    "test": "tsx --test tests/unit/*.test.ts src/components/stage/__tests__/*.test.tsx"
+    "test": "tsx --test tests/unit/*.test.ts src/components/stage/__tests__/*.test.tsx src/components/homework/__tests__/*.test.tsx src/components/recommendations/__tests__/*.test.tsx"
   },
   "dependencies": {
     "@aivo/brand": "workspace:*",
