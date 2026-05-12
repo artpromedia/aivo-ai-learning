@@ -62,6 +62,8 @@ RUN echo "Building at commit ${GIT_COMMIT}"
 # Always build audit-svc first since its compiled dist is consumed as a workspace dependency
 # by data-governance-svc, problem-session-svc, recommendation-svc, tenant-svc.
 RUN pnpm --filter "@aivo/audit-svc" build
+# Pre-build @aivo/events for the same reason (Node 22 won't strip TS types under node_modules).
+RUN pnpm --filter "@aivo/events" build
 RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
 
 # Use pnpm deploy to create production bundle
