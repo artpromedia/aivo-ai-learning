@@ -8,7 +8,12 @@ export async function registerSensoryProfileRoutes(app: FastifyInstance) {
   const db = (app as any).db;
 
   app.post("/api/assessments/sensory-profile", { schema: assessmentsSensoryProfileSchema }, async (req, reply) => {
-    const auth = await verifyJWT(req.headers.authorization?.replace("Bearer ", "") || "");
+    let auth: any = null;
+    try {
+      auth = await verifyJWT(req.headers.authorization?.replace("Bearer ", "") || "");
+    } catch {
+      return reply.status(401).send({ error: "Unauthorized" });
+    }
     if (!auth) return reply.status(401).send({ error: "Unauthorized" });
 
     const { learnerId, visual, auditory, tactile, vestibular, proprioceptive, notes } = req.body as any;
@@ -53,7 +58,12 @@ export async function registerSensoryProfileRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/assessments/sensory-profile/:learnerId", { schema: getAssessmentsSensoryProfileByLearnerIdSchema }, async (req, reply) => {
-    const auth = await verifyJWT(req.headers.authorization?.replace("Bearer ", "") || "");
+    let auth: any = null;
+    try {
+      auth = await verifyJWT(req.headers.authorization?.replace("Bearer ", "") || "");
+    } catch {
+      return reply.status(401).send({ error: "Unauthorized" });
+    }
     if (!auth) return reply.status(401).send({ error: "Unauthorized" });
 
     const { learnerId } = req.params as any;
