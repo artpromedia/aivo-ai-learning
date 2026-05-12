@@ -19,6 +19,7 @@ export type {
   GeometryMeasurement,
   GeometryTool,
   SurfaceResponse,
+  GeometryAction,
 } from "./types.js";
 
 export { SurfaceHost, type SurfaceHostProps } from "./SurfaceHost.js";
@@ -43,6 +44,11 @@ export { usePointerInk, type InkTool } from "./ink/usePointerInk.js";
 export { distance, midpoint, angleDegrees, toPointString } from "./geometry/primitives.js";
 export { renderGeometrySvg, type RenderGeometrySvgProps } from "./geometry/renderGeometrySvg.js";
 export { inferMeasurementText, enrichMeasurements } from "./geometry/measurement-tools.js";
+export {
+  useGeometryInteractions,
+  type UseGeometryInteractions,
+  type UseGeometryInteractionsOptions,
+} from "./geometry/useGeometryInteractions.js";
 
 export {
   createSurfaceEvent,

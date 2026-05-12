@@ -1,13 +1,22 @@
 "use client";
 import { useCallback, useRef, useState } from "react";
-import type { SurfaceResponse, SurfaceTelemetryEvent } from "@aivo/learner-surfaces";
+import type { LearnerSurfaceSpec, SurfaceResponse, SurfaceTelemetryEvent } from "@aivo/learner-surfaces";
 import type { Beat, SessionPhase, SessionState, FunctioningLevel } from "./types";
 import type { TutorKey } from "@aivo/brand";
 import { SESSION_DURATIONS } from "./types";
 
+export interface SurfaceSubmissionFeedback {
+  surfaceId: string;
+  correct: boolean;
+  score: number;
+  feedback: string;
+  misconceptions: string[];
+}
+
 export interface SessionProcessSignals {
   surfaceEvents: SurfaceTelemetryEvent[];
   surfaceResponses: SurfaceResponse[];
+  surfaceFeedback: SurfaceSubmissionFeedback[];
   beatsCompleted: number;
   attemptedAnswers: number;
   correctAnswers: number;
@@ -19,6 +28,7 @@ export interface SessionProcessSignals {
 const INITIAL_PROCESS_SIGNALS: SessionProcessSignals = {
   surfaceEvents: [],
   surfaceResponses: [],
+  surfaceFeedback: [],
   beatsCompleted: 0,
   attemptedAnswers: 0,
   correctAnswers: 0,
@@ -56,6 +66,7 @@ export function useSessionFlow(
   });
   const [processSignals, setProcessSignals] =
     useState<SessionProcessSignals>(INITIAL_PROCESS_SIGNALS);
+  const [lastFeedback, setLastFeedback] = useState<SurfaceSubmissionFeedback | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const maxDurationMs = SESSION_DURATIONS[functioningLevel].max * 60 * 1000;
@@ -183,7 +194,7 @@ export function useSessionFlow(
   );
 
   const recordSurfaceResponse = useCallback(
-    (response: SurfaceResponse) => {
+    (response: SurfaceResponse, surface?: LearnerSurfaceSpec) => {
       setProcessSignals((p) => ({
         ...p,
         surfaceResponses: [...p.surfaceResponses, response],
@@ -192,9 +203,52 @@ export function useSessionFlow(
         surfaceId: response.surfaceId,
         hasAnswer: response.answer !== undefined,
         hasInk: Array.isArray(response.inkStrokes) && response.inkStrokes.length > 0,
+        geometryActionCount: Array.isArray(response.geometryActions)
+          ? response.geometryActions.length
+          : 0,
       });
+
+      // Sprint 05: when the surface spec is forwarded, run real
+      // scoring via tutor-svc and store the feedback. No demo
+      // fallback — failures are silent here but logged via the
+      // existing rejection telemetry hook.
+      if (!surface || !state.learnerId) return;
+      void fetch("/api/tutor/surface-submit", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          learnerId: state.learnerId,
+          sessionId: state.sessionId ?? undefined,
+          tutorKey: state.tutorKey,
+          surface: { id: surface.id, type: surface.type, scoring: surface.scoring },
+          response,
+        }),
+      })
+        .then(async (res) => (res.ok ? res.json() : null))
+        .then((data: unknown) => {
+          if (!data || typeof data !== "object") return;
+          const d = data as Partial<SurfaceSubmissionFeedback> & {
+            surfaceId?: string;
+          };
+          if (typeof d.surfaceId !== "string") return;
+          const entry: SurfaceSubmissionFeedback = {
+            surfaceId: d.surfaceId,
+            correct: Boolean(d.correct),
+            score: typeof d.score === "number" ? d.score : 0,
+            feedback: typeof d.feedback === "string" ? d.feedback : "",
+            misconceptions: Array.isArray(d.misconceptions) ? d.misconceptions : [],
+          };
+          setProcessSignals((p) => ({
+            ...p,
+            surfaceFeedback: [...p.surfaceFeedback, entry],
+          }));
+          setLastFeedback(entry);
+        })
+        .catch(() => {
+          // best-effort — UI continues without scoring feedback
+        });
     },
-    [emitTelemetry],
+    [emitTelemetry, state.learnerId, state.sessionId, state.tutorKey],
   );
 
   const currentBeat = state.beats[state.currentBeatIndex] || null;
@@ -209,6 +263,7 @@ export function useSessionFlow(
     processSignals,
     currentBeat,
     progress,
+    lastFeedback,
     setPhase,
     loadBeats,
     nextBeat,

@@ -31,9 +31,10 @@ export interface TutorSurfaceCommandRendererProps {
   ) => void;
   /**
    * Forwarded to each rendered SurfaceHost. Called when the learner submits
-   * a response from any of the rendered surfaces.
+   * a response from any of the rendered surfaces. The associated surface
+   * spec is forwarded so callers can run the scoring pipeline.
    */
-  onSurfaceResponse?: (response: SurfaceResponse) => void;
+  onSurfaceResponse?: (response: SurfaceResponse, surface: LearnerSurfaceSpec) => void;
   /**
    * Forwarded to each rendered SurfaceHost. Receives surface telemetry
    * events (surface_started, surface_submitted, ink_*, answer_changed,
@@ -93,7 +94,7 @@ export function TutorSurfaceCommandRenderer({
               key={cmd.command.id}
               surface={surface}
               disabled={disabled}
-              onSubmit={onSurfaceResponse}
+              onSubmit={(response) => onSurfaceResponse?.(response, surface)}
               onEvent={onSurfaceEvent}
             />
           );

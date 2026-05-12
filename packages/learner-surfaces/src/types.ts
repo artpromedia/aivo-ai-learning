@@ -178,4 +178,37 @@ export interface SurfaceResponse {
   answer?: string | number | boolean;
   selectedChoiceId?: string;
   inkStrokes?: InkStroke[];
+  geometryActions?: GeometryAction[];
+  durationMs?: number;
 }
+
+/**
+ * A single learner-driven manipulation of a geometry diagram. Captured
+ * during interactive geometry sessions so scoring + analytics can replay
+ * the construction (Sprint 05).
+ */
+export type GeometryAction =
+  | {
+      type: "move_shape";
+      shapeId: string;
+      from: Point;
+      to: Point;
+      at: number;
+    }
+  | {
+      type: "place_label";
+      labelId: string;
+      text: string;
+      position: Point;
+      at: number;
+    }
+  | {
+      type: "measure";
+      measurementId: string;
+      tool: "ruler" | "protractor";
+      value: number;
+      unit: "px" | "deg";
+      from?: Point;
+      to?: Point;
+      at: number;
+    };

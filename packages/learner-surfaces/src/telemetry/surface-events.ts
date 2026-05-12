@@ -7,6 +7,7 @@ export type SurfaceTelemetryEventType =
   | "ink_clear"
   | "answer_changed"
   | "tool_changed"
+  | "geometry_action"
   | "unsupported_surface";
 
 export interface SurfaceTelemetryEvent {
