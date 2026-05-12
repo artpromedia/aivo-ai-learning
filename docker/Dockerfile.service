@@ -64,6 +64,10 @@ RUN echo "Building at commit ${GIT_COMMIT}"
 RUN pnpm --filter "@aivo/audit-svc" build
 # Pre-build @aivo/events for the same reason (Node 22 won't strip TS types under node_modules).
 RUN pnpm --filter "@aivo/events" build
+# Pre-build @aivo/enterprise-core and @aivo/observability for the same reason — services import
+# registerEnterpriseAuthHook / registerObservabilityPlugin at runtime from these workspace deps.
+RUN pnpm --filter "@aivo/enterprise-core" build
+RUN pnpm --filter "@aivo/observability" build
 RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
 
 # Use pnpm deploy to create production bundle
