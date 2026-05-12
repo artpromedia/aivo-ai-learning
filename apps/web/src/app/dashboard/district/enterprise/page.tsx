@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DistrictOverview } from "../../../../components/enterprise/DistrictOverview.js";
+import { DistrictOverview } from "../../../../components/enterprise/DistrictOverview";
 
 interface DistrictSummary {
   id: string;

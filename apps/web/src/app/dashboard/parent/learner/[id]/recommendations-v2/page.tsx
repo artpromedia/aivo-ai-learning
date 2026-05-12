@@ -5,11 +5,11 @@ import { useParams } from "next/navigation";
 import {
   RecommendationInbox,
   type RecommendationInboxItem,
-} from "../../../../../../components/recommendations/RecommendationInbox.js";
+} from "../../../../../../components/recommendations/RecommendationInbox";
 import {
   RecommendationDecisionHistory,
   type RecommendationDecision,
-} from "../../../../../../components/recommendations/RecommendationDecisionHistory.js";
+} from "../../../../../../components/recommendations/RecommendationDecisionHistory";
 
 /**
  * Sprint 07 parent dashboard: enterprise recommendations v2. Lists all

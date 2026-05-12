@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import {
   normalizeTutorSurfaceCommands,
   type NormalizeResult,
-} from "../tutor-surface-command-normalizer.js";
+} from "../tutor-surface-command-normalizer";
 import { buildGeometryCommand, buildScratchpadCommand } from "@aivo/tutor-surface-protocol";
 
 test("normalizer accepts a valid geometry command and marks it renderable", () => {

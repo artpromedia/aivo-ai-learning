@@ -1,7 +1,7 @@
 "use client";
 
-import { DistrictDpaPanel } from "../../../../components/data-governance/DistrictDpaPanel.js";
-import { AuditReportPanel } from "../../../../components/data-governance/AuditReportPanel.js";
+import { DistrictDpaPanel } from "../../../../components/data-governance/DistrictDpaPanel";
+import { AuditReportPanel } from "../../../../components/data-governance/AuditReportPanel";
 
 /**
  * Sprint 09 district compliance page. Shows DPA status, audit event

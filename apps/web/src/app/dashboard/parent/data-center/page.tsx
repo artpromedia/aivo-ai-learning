@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ParentDataExportPanel } from "../../../../components/data-governance/ParentDataExportPanel.js";
-import { DeletionRequestPanel } from "../../../../components/data-governance/DeletionRequestPanel.js";
+import { ParentDataExportPanel } from "../../../../components/data-governance/ParentDataExportPanel";
+import { DeletionRequestPanel } from "../../../../components/data-governance/DeletionRequestPanel";
 
 /**
  * Sprint 09 parent data center. Lets a parent export or delete their

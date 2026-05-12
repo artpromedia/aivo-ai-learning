@@ -1,6 +1,6 @@
 "use client";
 
-import { RosterImportPanel } from "../../../../../components/enterprise/RosterImportPanel.js";
+import { RosterImportPanel } from "../../../../../components/enterprise/RosterImportPanel";
 
 export default function DistrictRostersPage() {
   return (

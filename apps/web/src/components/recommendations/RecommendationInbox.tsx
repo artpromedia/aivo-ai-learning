@@ -4,8 +4,8 @@ import { useState } from "react";
 import {
   RecommendationEvidenceCard,
   type RecommendationEvidenceEntry,
-} from "./RecommendationEvidenceCard.js";
-import { RecommendationAmendDialog } from "./RecommendationAmendDialog.js";
+} from "./RecommendationEvidenceCard";
+import { RecommendationAmendDialog } from "./RecommendationAmendDialog";
 
 export interface RecommendationInboxItem {
   id: string;

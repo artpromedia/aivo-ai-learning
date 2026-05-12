@@ -11,7 +11,7 @@ import {
 import {
   normalizeTutorSurfaceCommands,
   type NormalizedTutorCommand,
-} from "./tutor-surface-command-normalizer.js";
+} from "./tutor-surface-command-normalizer";
 
 export interface TutorSurfaceCommandRendererProps {
   commands: TutorSurfaceCommand[];

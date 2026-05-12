@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   ClassLearnerTable,
   type ClassLearnerRow,
-} from "../../../../components/enterprise/ClassLearnerTable.js";
+} from "../../../../components/enterprise/ClassLearnerTable";
 
 interface TeacherClass {
   classId: string;

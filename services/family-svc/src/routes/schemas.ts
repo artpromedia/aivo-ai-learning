@@ -410,7 +410,7 @@ export const recommendationsByLearnerIdByRecIdRespondSchema = {
   summary: "POST /api/family/recommendations/:learnerId/:recId/respond",
   params: { type: "object", required: ["learnerId", "recId"], additionalProperties: true, properties: { learnerId: { type: "string" }, recId: { type: "string" } } },
   body: passthroughObject,
-  response: { 200: passthroughObject, 400: errorResponse, 403: errorResponse, 404: errorResponse },
+  response: { 200: passthroughObject, 400: errorResponse, 403: errorResponse, 404: errorResponse, 409: errorResponse, 500: errorResponse },
 } as const;
 
 export const getRecommendationsByLearnerIdHistorySchema = {

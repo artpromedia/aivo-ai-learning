@@ -4,18 +4,18 @@ import { useState } from "react";
 import {
   HomeworkStepFlow,
   type HomeworkStep,
-} from "../../../../../components/homework/HomeworkStepFlow.js";
+} from "../../../../../components/homework/HomeworkStepFlow";
 import {
   HomeworkUploadPanel,
   type DetectedProblem,
   type HomeworkUploadResult,
-} from "../../../../../components/homework/HomeworkUploadPanel.js";
-import { HomeworkSurfacePanel } from "../../../../../components/homework/HomeworkSurfacePanel.js";
+} from "../../../../../components/homework/HomeworkUploadPanel";
+import { HomeworkSurfacePanel } from "../../../../../components/homework/HomeworkSurfacePanel";
 import {
   SelfRegulationPrompt,
   type FocusObservationState,
   type SelfRegulationRecommendation,
-} from "../../../../../components/homework/SelfRegulationPrompt.js";
+} from "../../../../../components/homework/SelfRegulationPrompt";
 import type { LearnerSurfaceSpec, SurfaceResponse } from "@aivo/learner-surfaces";
 
 /**
