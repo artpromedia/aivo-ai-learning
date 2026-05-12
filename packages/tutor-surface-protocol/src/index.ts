@@ -22,3 +22,9 @@ export type { GraphCommandInput, NumberLineCommandInput } from "./graph-command.
 
 export { buildReadingAnnotationCommand, buildSaveSnapshotCommand } from "./annotation-command.js";
 export type { AnnotationCommandInput, SaveSnapshotCommandInput } from "./annotation-command.js";
+
+export { normalizeTutorSurfaceResponse } from "./runtime-normalizer.js";
+export type { NormalizationOutcome } from "./runtime-normalizer.js";
+
+export { validateTutorSurfaceResponse } from "./runtime-validator.js";
+export type { TutorSurfaceResponse } from "./runtime-validator.js";

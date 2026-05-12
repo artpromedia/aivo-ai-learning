@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
@@ -14,6 +14,7 @@ import { useTTS } from "@/components/stage/useTTS";
 import { useLocale } from "@/providers/i18n-provider";
 import { TUTOR_THEMES } from "@/components/stage/types";
 import type { Beat, TutorState, FunctioningLevel } from "@/components/stage/types";
+import { fetchTutorSurfaceBeats } from "@/components/stage/TutorSurfaceRuntime";
 
 const SKU_MAP: Record<string, string> = {
   nova: "ADDON_TUTOR_MATH", sage: "ADDON_TUTOR_ELA", spark: "ADDON_TUTOR_SCIENCE",
@@ -23,145 +24,6 @@ const SKU_MAP: Record<string, string> = {
   compass: "ADDON_TUTOR_LIFE_SKILLS", muse: "ADDON_TUTOR_CREATIVE_WRITING",
 };
 
-function generateDemoBeats(tutorKey: string, learnerName: string, level: FunctioningLevel): Beat[] {
-  const tutor = TUTORS[tutorKey as TutorKey];
-  if (!tutor) return [];
-  const name = tutor.name;
-
-  const beatSets: Record<string, Beat[]> = {
-    nova: [
-      { id: "open", type: "narration", tutorState: "speaking", narration: `Welcome back, ${learnerName}! Ready to explore the cosmos of numbers with me?`, visuals: [
-        { id: "v1", type: "card", content: "Today's Mission", emoji: "🚀", animation: "bounce", position: { x: 50, y: 30 } },
-      ] },
-      { id: "warmup", type: "interaction", tutorState: "encouraging", narration: "Let's warm up! Which planet has the most moons?", visuals: [
-        { id: "v2", type: "card", content: "Quick Space Quiz", emoji: "🪐", animation: "fade_in", position: { x: 50, y: 20 } },
-      ], interaction: { type: "multiple_choice", prompt: "Which planet has the most moons?", choices: [
-        { id: "a", label: "Jupiter", emoji: "🟤", isCorrect: false },
-        { id: "b", label: "Saturn", emoji: "🪐", isCorrect: true },
-        { id: "c", label: "Earth", emoji: "🌍", isCorrect: false },
-        { id: "d", label: "Mars", emoji: "🔴", isCorrect: false },
-      ] } },
-      { id: "core1", type: "demonstration", tutorState: "pointing", narration: "Fractions are like splitting a planet into equal parts. Watch!", visuals: [
-        { id: "v3", type: "card", content: "Fraction Explorer", emoji: "🌕", animation: "slide_in", position: { x: 50, y: 25 } },
-        { id: "v4", type: "manipulative", content: "🌕,🌗,🌑", animation: "bounce", position: { x: 50, y: 55 } },
-      ] },
-      { id: "core2", type: "interaction", tutorState: "encouraging", narration: "If we split a pizza into 4 equal slices and eat 1, what fraction is left?", visuals: [
-        { id: "v5", type: "card", content: "Pizza Fractions", emoji: "🍕", animation: "fade_in", position: { x: 50, y: 20 } },
-      ], interaction: { type: "multiple_choice", prompt: "1 slice eaten from 4 total. What fraction remains?", choices: [
-        { id: "a", label: "3/4", emoji: "🍕", isCorrect: true },
-        { id: "b", label: "1/4", emoji: "🍕", isCorrect: false },
-        { id: "c", label: "2/4", emoji: "🍕", isCorrect: false },
-        { id: "d", label: "4/4", emoji: "🍕", isCorrect: false },
-      ] } },
-      { id: "core3", type: "interaction", tutorState: "thinking", narration: "Now arrange these fractions from smallest to largest!", visuals: [
-        { id: "v6", type: "card", content: "Sort the Fractions", emoji: "📊", animation: "slide_in", position: { x: 50, y: 20 } },
-      ], interaction: { type: "drag_drop", prompt: "Drag fractions in order: smallest → largest", dragItems: [
-        { id: "d1", label: "3/4", emoji: "🔵", targetZone: "z3" },
-        { id: "d2", label: "1/4", emoji: "🟢", targetZone: "z1" },
-        { id: "d3", label: "1/2", emoji: "🟡", targetZone: "z2" },
-      ], dragZones: [
-        { id: "z1", label: "Smallest" },
-        { id: "z2", label: "Middle" },
-        { id: "z3", label: "Largest" },
-      ] } },
-      { id: "check", type: "interaction", tutorState: "encouraging", narration: "Final challenge! What is 1/2 + 1/4?", visuals: [
-        { id: "v7", type: "card", content: "Star Challenge", emoji: "⭐", animation: "glow", position: { x: 50, y: 20 } },
-      ], interaction: { type: "multiple_choice", prompt: "What is 1/2 + 1/4?", choices: [
-        { id: "a", label: "3/4", emoji: "✨", isCorrect: true },
-        { id: "b", label: "2/4", emoji: "💫", isCorrect: false },
-        { id: "c", label: "1/6", emoji: "🌟", isCorrect: false },
-      ] } },
-      { id: "close", type: "celebration", tutorState: "celebrating", narration: `Amazing work, ${learnerName}! You're becoming a fraction master! Next time we'll explore mixed numbers!`, visuals: [
-        { id: "v8", type: "card", content: "Mission Complete!", emoji: "🏆", animation: "bounce", position: { x: 50, y: 30 } },
-      ] },
-    ],
-    sage: [
-      { id: "open", type: "narration", tutorState: "speaking", narration: `Welcome to the Story Garden, ${learnerName}! Let's discover a wonderful tale together.`, visuals: [
-        { id: "v1", type: "card", content: "Story Time", emoji: "📖", animation: "fade_in", position: { x: 50, y: 30 } },
-      ] },
-      { id: "warmup", type: "interaction", tutorState: "encouraging", narration: "Which word means the same as 'happy'?", visuals: [
-        { id: "v2", type: "card", content: "Word Power Warm-Up", emoji: "✏️", animation: "slide_in", position: { x: 50, y: 20 } },
-      ], interaction: { type: "multiple_choice", prompt: "Which word is a synonym for 'happy'?", choices: [
-        { id: "a", label: "Joyful", emoji: "😊", isCorrect: true },
-        { id: "b", label: "Angry", emoji: "😠", isCorrect: false },
-        { id: "c", label: "Tired", emoji: "😴", isCorrect: false },
-      ] } },
-      { id: "core1", type: "demonstration", tutorState: "pointing", narration: "Every story has characters, a setting, and a plot. Let me show you!", visuals: [
-        { id: "v3", type: "card", content: "Story Elements", emoji: "🎭", animation: "bounce", position: { x: 50, y: 20 } },
-        /* eslint-disable no-restricted-syntax -- demo lesson seed data: shape colors are content (story elements: characters/setting/plot), not surface theming */
-        { id: "v4", type: "shape", content: "👤", emoji: "👤", animation: "slide_in", position: { x: 20, y: 50 }, color: "#10B981" },
-        { id: "v5", type: "shape", content: "🏰", emoji: "🏰", animation: "slide_in", position: { x: 50, y: 50 }, color: "#3B82F6" },
-        { id: "v6", type: "shape", content: "⚡", emoji: "⚡", animation: "slide_in", position: { x: 80, y: 50 }, color: "#F59E0B" },
-        /* eslint-enable no-restricted-syntax */
-      ] },
-      { id: "core2", type: "interaction", tutorState: "thinking", narration: "In the story 'The Three Bears,' what is the setting?", visuals: [
-        { id: "v7", type: "card", content: "Reading Detective", emoji: "🔍", animation: "fade_in", position: { x: 50, y: 20 } },
-      ], interaction: { type: "multiple_choice", prompt: "Where does the story take place?", choices: [
-        { id: "a", label: "A forest cottage", emoji: "🏠", isCorrect: true },
-        { id: "b", label: "A spaceship", emoji: "🚀", isCorrect: false },
-        { id: "c", label: "A school", emoji: "🏫", isCorrect: false },
-      ] } },
-      { id: "check", type: "interaction", tutorState: "encouraging", narration: "Match each story element to its description!", visuals: [
-        { id: "v8", type: "card", content: "Match Game", emoji: "🧩", animation: "glow", position: { x: 50, y: 20 } },
-      ], interaction: { type: "drag_drop", prompt: "Match each element to its meaning", dragItems: [
-        { id: "d1", label: "Character", emoji: "👤", targetZone: "z1" },
-        { id: "d2", label: "Setting", emoji: "🏰", targetZone: "z2" },
-        { id: "d3", label: "Plot", emoji: "⚡", targetZone: "z3" },
-      ], dragZones: [
-        { id: "z1", label: "Who" },
-        { id: "z2", label: "Where" },
-        { id: "z3", label: "What happens" },
-      ] } },
-      { id: "close", type: "celebration", tutorState: "celebrating", narration: `Wonderful reading, ${learnerName}! You're becoming a true story detective!`, visuals: [
-        { id: "v9", type: "card", content: "Chapter Complete!", emoji: "📚", animation: "bounce", position: { x: 50, y: 30 } },
-      ] },
-    ],
-  };
-
-  const defaultBeats: Beat[] = [
-    { id: "open", type: "narration", tutorState: "speaking", narration: `Hello ${learnerName}! I'm ${name}, and I'm so excited to learn with you today!`, visuals: [
-      { id: "v1", type: "card", content: `Welcome to ${name}'s World`, emoji: tutor.icon, animation: "bounce", position: { x: 50, y: 30 } },
-    ] },
-    { id: "warmup", type: "interaction", tutorState: "encouraging", narration: "Let's start with a quick warm-up question!", visuals: [
-      { id: "v2", type: "card", content: "Warm-Up Challenge", emoji: "⚡", animation: "slide_in", position: { x: 50, y: 20 } },
-    ], interaction: { type: "multiple_choice", prompt: `What does ${name} teach?`, choices: [
-      { id: "a", label: tutor.domain, emoji: tutor.icon, isCorrect: true },
-      { id: "b", label: "Swimming", emoji: "🏊", isCorrect: false },
-      { id: "c", label: "Cooking", emoji: "🍳", isCorrect: false },
-    ] } },
-    { id: "core1", type: "demonstration", tutorState: "pointing", narration: `Today we're exploring something amazing in ${tutor.domain}. Watch carefully!`, visuals: [
-      { id: "v3", type: "card", content: `Exploring ${tutor.domain}`, emoji: tutor.icon, animation: "fade_in", position: { x: 50, y: 25 } },
-      { id: "v4", type: "text", content: "Every great journey begins with curiosity!", animation: "slide_in", position: { x: 50, y: 55 } },
-    ] },
-    { id: "core2", type: "interaction", tutorState: "thinking", narration: "Now it's your turn! Can you solve this?", visuals: [
-      { id: "v5", type: "card", content: "Your Turn!", emoji: "🎯", animation: "bounce", position: { x: 50, y: 20 } },
-    ], interaction: { type: "tap", prompt: "Tap to show me you're ready!" } },
-    { id: "check", type: "interaction", tutorState: "encouraging", narration: "One last challenge! I know you can do this!", visuals: [
-      { id: "v6", type: "card", content: "Final Challenge", emoji: "⭐", animation: "glow", position: { x: 50, y: 20 } },
-    ], interaction: { type: "multiple_choice", prompt: "Did you enjoy learning today?", choices: [
-      { id: "a", label: "Yes!", emoji: "🎉", isCorrect: true },
-      { id: "b", label: "It was great!", emoji: "⭐", isCorrect: true },
-    ] } },
-    { id: "close", type: "celebration", tutorState: "celebrating", narration: `You did amazing, ${learnerName}! I can't wait for our next session!`, visuals: [
-      { id: "v7", type: "card", content: "Session Complete!", emoji: "🏆", animation: "bounce", position: { x: 50, y: 30 } },
-    ] },
-  ];
-
-  let beats = beatSets[tutorKey] || defaultBeats;
-
-  if (level === "LOW_VERBAL" || level === "NON_VERBAL" || level === "PRE_SYMBOLIC") {
-    beats = beats.map((b) => ({
-      ...b,
-      visuals: b.visuals.slice(0, 2),
-      interaction: b.interaction ? {
-        ...b.interaction,
-        choices: b.interaction.choices?.slice(0, 2),
-      } : undefined,
-    }));
-  }
-
-  return beats;
-}
 
 export default function LessonPage() {
   const { user, accessToken, loading } = useAuth();
@@ -181,6 +43,7 @@ export default function LessonPage() {
   const [showPause, setShowPause] = useState(false);
   const [started, setStarted] = useState(false);
   const [sessionApiId, setSessionApiId] = useState<string | null>(null);
+  const [lessonError, setLessonError] = useState<string | null>(null);
   const [curriculumFocus, setCurriculumFocus] = useState<{
     title?: string;
     summary?: string;
@@ -317,6 +180,7 @@ export default function LessonPage() {
 
   const startStage = async () => {
     if (!user || !tutor) return;
+    setLessonError(null);
     setStarted(true);
 
     const sku = SKU_MAP[tutorKey] || `ADDON_TUTOR_${tutorKey.toUpperCase()}`;
@@ -333,8 +197,19 @@ export default function LessonPage() {
     } catch {}
 
     const name = learnerName || user.name || "Explorer";
-    const beats = generateDemoBeats(tutorKey, name, functioningLevel);
-    loadBeats(beats, undefined, name);
+    try {
+      const { beats } = await fetchTutorSurfaceBeats({
+        tutorKey,
+        learnerId: user.id,
+        functioningLevel,
+        accessToken,
+      });
+      loadBeats(beats, undefined, name);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unable to start lesson.";
+      setLessonError(message);
+      setStarted(false);
+    }
   };
 
   const completeSessionAPI = async () => {
@@ -447,6 +322,16 @@ export default function LessonPage() {
                 <Play className="w-5 h-5 fill-white" /> {tLearner("start_learning")}
               </button>
 
+              {lessonError && (
+                <div
+                  role="alert"
+                  className="mt-4 rounded-2xl border-2 border-red-300 bg-red-50 px-4 py-3 text-left text-sm text-red-900"
+                >
+                  <p className="font-bold mb-1">Could not start the lesson</p>
+                  <p className="text-red-800">{lessonError}</p>
+                </div>
+              )}
+
               {tutorKey === "vigor" && dapeProfile?.hasActiveTrack && (
                 <div className="mt-6 text-left rounded-2xl border-2 p-4 bg-white" style={{ borderColor: `${tutor.color}40` }}>
                   <div className="flex items-center justify-between mb-2 gap-3">
@@ -473,7 +358,7 @@ export default function LessonPage() {
                           onClick={() => loadDapeActivity(c.id)}
                           className="text-xs font-bold rounded-full px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700"
                         >
-                          {c.label} · {c.goalCount}
+                          {c.label} Â· {c.goalCount}
                         </button>
                       ))}
                     </div>

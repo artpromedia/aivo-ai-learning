@@ -15,6 +15,7 @@ import websocket from "@fastify/websocket";
 import { registerSpeechBuddyRoutes } from "./routes/speechBuddy.js";
 import { registerEfRoutes } from "./routes/ef.js";
 import { registerTutorSessionRoutes } from "./routes/tutorSession.js";
+import { registerTutorSurfaceRoutes } from "./routes/tutorSurface.js";
 import { registerAuthHook } from "./lib/tenant.js";
 
 const logger = createLogger("tutor-svc");
@@ -64,6 +65,7 @@ export async function buildApp() {
   registerCurriculumRoutes(app, db);
   registerEfRoutes(app, db);
   registerTutorSessionRoutes(app);
+  registerTutorSurfaceRoutes(app);
   await registerSpeechBuddyRoutes(app);
 
   return app;
