@@ -193,10 +193,20 @@ export default function IepDashboardPage() {
     const headers = { Authorization: `Bearer ${accessToken}` };
 
     fetch(`/api/family/iep/${learnerId}/progress`, { headers })
-      .then(r => r.json()).then(setProgress)
+      .then(r => r.ok ? r.json() : null)
+      .then((d) => {
+        // Guard against non-object responses (e.g. 401/403 error bodies)
+        // so downstream `.map` on `progress.goals` never crashes the page.
+        if (d && typeof d === "object" && Array.isArray((d as IepProgress).goals)) {
+          setProgress(d as IepProgress);
+        } else {
+          setProgress(null);
+        }
+      })
       .catch((err) => console.error("Failed to fetch IEP progress:", err));
     fetch(`/api/family/iep/${learnerId}/documents`, { headers })
-      .then(r => r.json()).then(setDocuments)
+      .then(r => r.ok ? r.json() : [])
+      .then((d) => setDocuments(Array.isArray(d) ? d : []))
       .catch((err) => console.error("Failed to fetch IEP documents:", err));
     fetch(`/api/family/iep/${learnerId}/dape/progress`, { headers })
       .then(r => r.ok ? r.json() : null).then((d) => { if (d) setMotorProgress(d); })
@@ -655,7 +665,7 @@ export default function IepDashboardPage() {
 
       {activeTab === "documents" && (
         <div className="space-y-3">
-          {documents.length === 0 ? (
+          {!Array.isArray(documents) || documents.length === 0 ? (
             <div className="vi-card p-12 text-center">
               <div className="flex justify-center mb-3"><IconWell color="reading"><FileText className="w-7 h-7" /></IconWell></div>
               <p className="vi-text-muted font-semibold">{t("no_iep_documents")}</p>
@@ -742,7 +752,7 @@ export default function IepDashboardPage() {
 
       {activeTab === "evaluations" && (
         <div className="space-y-3">
-          {evaluations.length === 0 ? (
+          {!Array.isArray(evaluations) || evaluations.length === 0 ? (
             <div className="vi-card p-12 text-center">
               <div className="flex justify-center mb-3"><IconWell color="reading"><ClipboardList className="w-7 h-7" /></IconWell></div>
               <p className="vi-text-muted font-semibold">{te("none_yet_parent")}</p>
