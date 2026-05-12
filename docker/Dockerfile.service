@@ -59,16 +59,13 @@ RUN if [ -d "/app/services/${SERVICE_NAME}/node_modules/.prisma/client" ]; then 
 # outputs from older Dockerfiles are never reused across pushes.
 ARG GIT_COMMIT=unknown
 RUN echo "Building at commit ${GIT_COMMIT}"
-# Always build audit-svc first since its compiled dist is consumed as a workspace dependency
-# by data-governance-svc, problem-session-svc, recommendation-svc, tenant-svc.
-RUN pnpm --filter "@aivo/audit-svc" build
-# Pre-build @aivo/events for the same reason (Node 22 won't strip TS types under node_modules).
-RUN pnpm --filter "@aivo/events" build
-# Pre-build @aivo/enterprise-core and @aivo/observability for the same reason — services import
-# registerEnterpriseAuthHook / registerObservabilityPlugin at runtime from these workspace deps.
-RUN pnpm --filter "@aivo/enterprise-core" build
-RUN pnpm --filter "@aivo/observability" build
-RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
+# Build the service together with all of its workspace dependencies in topological order.
+# The "..." filter suffix tells turbo to include every transitive @aivo/* workspace package
+# the service depends on (e.g. @aivo/db, @aivo/enterprise-core, @aivo/observability,
+# @aivo/events, @aivo/audit-svc, @aivo/feature-flags, @aivo/security, ...), so each one
+# is compiled to dist/ before the service itself runs tsc. Node 22 will not type-strip
+# TS sources under node_modules, so this prebuild is mandatory.
+RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}..."
 
 # Use pnpm deploy to create production bundle
 RUN pnpm deploy --filter="@aivo/${SERVICE_NAME}" --prod --legacy /deploy
