@@ -6,6 +6,11 @@ export * from "./services/recommendation-policy.js";
 export * from "./services/recommendation-generator.js";
 export * from "./services/recommendation-effect-handlers.js";
 export * from "./services/recommendation-audit.js";
+export {
+  seedRecommendationForTest,
+  getProfileForTest,
+  clearRecommendationStoreForTest,
+} from "./routes/recommendations.js";
 
 const PORT = parseInt(process.env.RECOMMENDATION_PORT || "3066", 10);
 

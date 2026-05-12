@@ -436,6 +436,9 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.17
+      fastify:
+        specifier: '>=5.8.5'
+        version: 5.8.5
       typescript:
         specifier: ^5.7.3
         version: 5.8.3
@@ -949,15 +952,24 @@ importers:
 
   services/audit-svc:
     dependencies:
+      '@aivo/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@aivo/enterprise-core':
         specifier: workspace:*
         version: link:../../packages/enterprise-core
       '@aivo/feature-flags':
         specifier: workspace:*
         version: link:../../packages/feature-flags
+      '@aivo/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.6.1)(gel@2.2.0)(kysely@0.28.14)(postgres@3.4.5)
       fastify:
         specifier: '>=5.8.5'
         version: 5.8.5
@@ -1078,6 +1090,9 @@ importers:
       '@aivo/feature-flags':
         specifier: workspace:*
         version: link:../../packages/feature-flags
+      '@aivo/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
@@ -1204,9 +1219,15 @@ importers:
 
   services/homework-svc:
     dependencies:
+      '@aivo/enterprise-core':
+        specifier: workspace:*
+        version: link:../../packages/enterprise-core
       '@aivo/feature-flags':
         specifier: workspace:*
         version: link:../../packages/feature-flags
+      '@aivo/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
@@ -1351,9 +1372,15 @@ importers:
 
   services/integration-svc:
     dependencies:
+      '@aivo/enterprise-core':
+        specifier: workspace:*
+        version: link:../../packages/enterprise-core
       '@aivo/feature-flags':
         specifier: workspace:*
         version: link:../../packages/feature-flags
+      '@aivo/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
@@ -1465,9 +1492,15 @@ importers:
 
   services/math-recognizer-svc:
     dependencies:
+      '@aivo/enterprise-core':
+        specifier: workspace:*
+        version: link:../../packages/enterprise-core
       '@aivo/feature-flags':
         specifier: workspace:*
         version: link:../../packages/feature-flags
+      '@aivo/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
@@ -1493,6 +1526,9 @@ importers:
       '@aivo/audit-svc':
         specifier: workspace:*
         version: link:../audit-svc
+      '@aivo/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@aivo/enterprise-core':
         specifier: workspace:*
         version: link:../../packages/enterprise-core
@@ -1502,9 +1538,15 @@ importers:
       '@aivo/feature-flags':
         specifier: workspace:*
         version: link:../../packages/feature-flags
+      '@aivo/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.6.1)(gel@2.2.0)(kysely@0.28.14)(postgres@3.4.5)
       fastify:
         specifier: '>=5.8.5'
         version: 5.8.5
@@ -1527,15 +1569,24 @@ importers:
       '@aivo/audit-svc':
         specifier: workspace:*
         version: link:../audit-svc
+      '@aivo/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@aivo/enterprise-core':
         specifier: workspace:*
         version: link:../../packages/enterprise-core
       '@aivo/feature-flags':
         specifier: workspace:*
         version: link:../../packages/feature-flags
+      '@aivo/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.6.1)(gel@2.2.0)(kysely@0.28.14)(postgres@3.4.5)
       fastify:
         specifier: '>=5.8.5'
         version: 5.8.5
@@ -1595,9 +1646,15 @@ importers:
 
   services/responsible-ai-svc:
     dependencies:
+      '@aivo/enterprise-core':
+        specifier: workspace:*
+        version: link:../../packages/enterprise-core
       '@aivo/feature-flags':
         specifier: workspace:*
         version: link:../../packages/feature-flags
+      '@aivo/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@aivo/tutor-surface-protocol':
         specifier: workspace:*
         version: link:../../packages/tutor-surface-protocol
@@ -1623,9 +1680,15 @@ importers:
 
   services/science-solver-svc:
     dependencies:
+      '@aivo/enterprise-core':
+        specifier: workspace:*
+        version: link:../../packages/enterprise-core
       '@aivo/feature-flags':
         specifier: workspace:*
         version: link:../../packages/feature-flags
+      '@aivo/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
@@ -1688,9 +1751,15 @@ importers:
 
   services/subject-brain-svc:
     dependencies:
+      '@aivo/enterprise-core':
+        specifier: workspace:*
+        version: link:../../packages/enterprise-core
       '@aivo/feature-flags':
         specifier: workspace:*
         version: link:../../packages/feature-flags
+      '@aivo/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
@@ -1722,6 +1791,9 @@ importers:
       '@aivo/feature-flags':
         specifier: workspace:*
         version: link:../../packages/feature-flags
+      '@aivo/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
@@ -1814,6 +1886,43 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
+
+  tests/integration:
+    dependencies:
+      '@aivo/audit-svc':
+        specifier: workspace:*
+        version: link:../../services/audit-svc
+      '@aivo/data-governance-svc':
+        specifier: workspace:*
+        version: link:../../services/data-governance-svc
+      '@aivo/enterprise-core':
+        specifier: workspace:*
+        version: link:../../packages/enterprise-core
+      '@aivo/feature-flags':
+        specifier: workspace:*
+        version: link:../../packages/feature-flags
+      '@aivo/homework-svc':
+        specifier: workspace:*
+        version: link:../../services/homework-svc
+      '@aivo/problem-session-svc':
+        specifier: workspace:*
+        version: link:../../services/problem-session-svc
+      '@aivo/recommendation-svc':
+        specifier: workspace:*
+        version: link:../../services/recommendation-svc
+      '@aivo/responsible-ai-svc':
+        specifier: workspace:*
+        version: link:../../services/responsible-ai-svc
+      '@aivo/tutor-surface-protocol':
+        specifier: workspace:*
+        version: link:../../packages/tutor-surface-protocol
+    devDependencies:
+      fastify:
+        specifier: '>=5.8.5'
+        version: 5.8.5
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)(terser@5.46.1)
 
 packages:
 
@@ -17178,7 +17287,7 @@ snapshots:
       eslint: 9.39.4(jiti@2.6.1)
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.58.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.8.3))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1))
       eslint-plugin-expo: 1.0.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.8.3)
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.58.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.58.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.8.3))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.58.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.6.1))
       eslint-plugin-react: 7.37.5(eslint@9.39.4(jiti@2.6.1))
       eslint-plugin-react-hooks: 5.2.0(eslint@9.39.4(jiti@2.6.1))
       globals: 16.5.0
@@ -17207,7 +17316,7 @@ snapshots:
       tinyglobby: 0.2.16
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.58.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.58.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.8.3))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.58.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.6.1))
     transitivePeerDependencies:
       - supports-color
 
@@ -17231,7 +17340,7 @@ snapshots:
       - supports-color
       - typescript
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.58.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.58.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.8.3))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.58.2(eslint@9.39.4(jiti@2.6.1))(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.6.1)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9

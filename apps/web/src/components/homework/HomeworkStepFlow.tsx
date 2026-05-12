@@ -54,7 +54,11 @@ export function HomeworkStepFlow({
   }, [current, onAdvance]);
 
   const finalAnswerAllowed =
-    !enforceFinalAnswerGuard || history.includes("solve") || current === "check" || current === "complete";
+    !enforceFinalAnswerGuard ||
+    history.includes("solve") ||
+    current === "solve" ||
+    current === "check" ||
+    current === "complete";
 
   return (
     <section data-testid="homework-step-flow" className="homework-step-flow">

@@ -14,7 +14,12 @@ const STEP_ORDER = ["understand", "plan", "solve", "check", "complete"] as const
 type HomeworkStep = (typeof STEP_ORDER)[number];
 
 function isFinalAnswerAllowed(history: HomeworkStep[], current: HomeworkStep): boolean {
-  return history.includes("solve") || current === "check" || current === "complete";
+  return (
+    history.includes("solve") ||
+    current === "solve" ||
+    current === "check" ||
+    current === "complete"
+  );
 }
 
 test("step order matches UNDERSTAND -> PLAN -> SOLVE -> CHECK -> complete", () => {
@@ -27,7 +32,7 @@ test("final answer is NOT allowed before SOLVE", () => {
 });
 
 test("final answer becomes allowed once SOLVE has been entered", () => {
-  assert.equal(isFinalAnswerAllowed(["understand", "plan"], "solve"), false);
+  assert.equal(isFinalAnswerAllowed(["understand", "plan"], "solve"), true);
   assert.equal(isFinalAnswerAllowed(["understand", "plan", "solve"], "check"), true);
   assert.equal(
     isFinalAnswerAllowed(["understand", "plan", "solve", "check"], "complete"),

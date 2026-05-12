@@ -8,7 +8,7 @@ let store: InMemoryProblemSessionStore;
 
 beforeEach(async () => {
   store = new InMemoryProblemSessionStore();
-  app = await buildApp({ store });
+  app = await buildApp({ store, skipAuth: true });
 });
 
 afterEach(async () => {

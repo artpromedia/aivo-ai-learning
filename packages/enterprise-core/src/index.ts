@@ -11,6 +11,9 @@ export { createRequestContext } from "./request-context.js";
 export type { AuditContext, BuildAuditContextInput } from "./audit-context.js";
 export { buildAuditContext } from "./audit-context.js";
 
+export { registerEnterpriseAuthHook } from "./fastify-auth.js";
+export type { EnterpriseAuthOptions } from "./fastify-auth.js";
+
 export {
   canReadLearnerProfile,
   canMutateLearnerProfile,
