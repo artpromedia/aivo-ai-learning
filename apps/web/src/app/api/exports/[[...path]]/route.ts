@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const handlers = buildEnterpriseProxyHandlers({
   upstreamPrefix: "exports",
-  baseUrl: ENTERPRISE_SERVICE_URLS.dataGovernance(),
+  baseUrl: ENTERPRISE_SERVICE_URLS.dataGovernance,
   publicName: "data governance service",
 });
 

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const handlers = buildEnterpriseProxyHandlers({
   upstreamPrefix: "recommendations",
-  baseUrl: ENTERPRISE_SERVICE_URLS.recommendation(),
+  baseUrl: ENTERPRISE_SERVICE_URLS.recommendation,
   publicName: "recommendation service",
 });
 

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const handlers = buildEnterpriseProxyHandlers({
   upstreamPrefix: "subject-brain",
-  baseUrl: ENTERPRISE_SERVICE_URLS.subjectBrain(),
+  baseUrl: ENTERPRISE_SERVICE_URLS.subjectBrain,
   publicName: "subject brain service",
 });
 

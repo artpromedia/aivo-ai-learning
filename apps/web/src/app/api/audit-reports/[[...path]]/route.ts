@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const handlers = buildEnterpriseProxyHandlers({
   upstreamPrefix: "audit-reports",
-  baseUrl: ENTERPRISE_SERVICE_URLS.audit(),
+  baseUrl: ENTERPRISE_SERVICE_URLS.audit,
   publicName: "audit service",
 });
 
