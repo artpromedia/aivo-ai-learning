@@ -17,6 +17,7 @@ import { registerEfRoutes } from "./routes/ef.js";
 import { registerTutorSessionRoutes } from "./routes/tutorSession.js";
 import { registerTutorSurfaceRoutes } from "./routes/tutorSurface.js";
 import { registerTutorSurfaceSubmitRoute } from "./routes/surfaceSubmit.js";
+import { registerTutorRecommendationCandidatesRoute } from "./routes/recommendationCandidates.js";
 import { registerAuthHook } from "./lib/tenant.js";
 
 const logger = createLogger("tutor-svc");
@@ -68,6 +69,7 @@ export async function buildApp() {
   registerTutorSessionRoutes(app);
   registerTutorSurfaceRoutes(app);
   registerTutorSurfaceSubmitRoute(app);
+  registerTutorRecommendationCandidatesRoute(app);
   await registerSpeechBuddyRoutes(app);
 
   return app;

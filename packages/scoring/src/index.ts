@@ -298,3 +298,174 @@ export function scoreSurfaceResponse(
   };
 }
 
+// ─── Sprint 06: Auto profile recommendation pipeline ─────────────────────
+// Deterministic detector that converts a recent window of SurfaceScoreResults
+// (paired with the response inputs that produced them) into candidate
+// brain_recommendations rows for parent / teacher review. No LLM — pure
+// signal aggregation so it can run inline on every surface submission.
+
+export type RecommendationCandidateKind =
+  | "repeated_misconception"
+  | "low_process_engagement"
+  | "high_hint_dependence"
+  | "mastery_signal"
+  | "frustration_signal"
+  | "accommodation_hint";
+
+export interface RecommendationSignalSample {
+  surfaceId: string;
+  occurredAt: string; // ISO timestamp
+  result: SurfaceScoreResult;
+  durationMs?: number;
+  inkStrokeCount?: number;
+  geometryActionCount?: number;
+  hintsRequested?: number;
+}
+
+export interface RecommendationCandidate {
+  kind: RecommendationCandidateKind;
+  /** 0..1 — strength of evidence; >= 0.6 is "actionable". */
+  confidence: number;
+  title: string;
+  rationale: string;
+  /** Sample indices (into the input window) that triggered the candidate. */
+  evidenceIndices: number[];
+  /** Free-form extra evidence (e.g. misconception id list). */
+  payload: Record<string, unknown>;
+}
+
+export interface RecommendationAnalysisOptions {
+  /** Minimum samples required before any candidate is emitted. Default 3. */
+  minSamples?: number;
+  /** Window cap — only the most recent N samples are considered. Default 12. */
+  maxWindow?: number;
+}
+
+export interface RecommendationAnalysis {
+  sampleCount: number;
+  candidates: RecommendationCandidate[];
+}
+
+function avg(nums: number[]): number {
+  if (nums.length === 0) return 0;
+  return nums.reduce((a, b) => a + b, 0) / nums.length;
+}
+
+export function analyzeRecommendationSignals(
+  samples: RecommendationSignalSample[],
+  options: RecommendationAnalysisOptions = {},
+): RecommendationAnalysis {
+  const minSamples = options.minSamples ?? 3;
+  const maxWindow = options.maxWindow ?? 12;
+  const window = samples.slice(-maxWindow);
+  if (window.length < minSamples) {
+    return { sampleCount: window.length, candidates: [] };
+  }
+
+  const candidates: RecommendationCandidate[] = [];
+
+  // 1) Repeated misconception — same misconception id appears >= 2 times.
+  const misconceptionCounts = new Map<string, number[]>();
+  window.forEach((s, idx) => {
+    for (const m of s.result.misconceptions ?? []) {
+      const arr = misconceptionCounts.get(m) ?? [];
+      arr.push(idx);
+      misconceptionCounts.set(m, arr);
+    }
+  });
+  for (const [mid, indices] of misconceptionCounts) {
+    if (indices.length >= 2) {
+      candidates.push({
+        kind: "repeated_misconception",
+        confidence: clamp(0.4 + 0.2 * indices.length, 0, 1),
+        title: `Recurring misconception: ${mid}`,
+        rationale: `Detected ${indices.length}× in last ${window.length} responses.`,
+        evidenceIndices: indices,
+        payload: { misconceptionId: mid, occurrences: indices.length },
+      });
+    }
+  }
+
+  // 2) Low process engagement — average ink + geometry actions < 1 across window.
+  const engagementPerSample = window.map(
+    (s) => (s.inkStrokeCount ?? 0) + (s.geometryActionCount ?? 0),
+  );
+  const engagementAvg = avg(engagementPerSample);
+  if (engagementAvg < 1) {
+    candidates.push({
+      kind: "low_process_engagement",
+      confidence: clamp(0.6 + (1 - engagementAvg) * 0.2, 0, 1),
+      title: "Low process engagement detected",
+      rationale: `Average of ${engagementAvg.toFixed(2)} ink/geometry actions per response.`,
+      evidenceIndices: window.map((_, i) => i),
+      payload: { engagementAvg },
+    });
+  }
+
+  // 3) High hint dependence — average hintsRequested >= 2.
+  const hintsPerSample = window.map((s) => s.hintsRequested ?? 0);
+  const hintsAvg = avg(hintsPerSample);
+  if (hintsAvg >= 2) {
+    candidates.push({
+      kind: "high_hint_dependence",
+      confidence: clamp(0.5 + hintsAvg * 0.1, 0, 1),
+      title: "High hint dependence",
+      rationale: `Average ${hintsAvg.toFixed(1)} hints requested per response.`,
+      evidenceIndices: window.map((_, i) => i),
+      payload: { hintsAvg },
+    });
+  }
+
+  // 4) Mastery signal — last 3 results all correct with score >= 0.8.
+  const tail = window.slice(-3);
+  if (tail.length === 3 && tail.every((s) => s.result.correct && s.result.score >= 0.8)) {
+    candidates.push({
+      kind: "mastery_signal",
+      confidence: 0.8,
+      title: "Mastery signal: ready to level up",
+      rationale: "Last 3 responses correct with score ≥ 0.8.",
+      evidenceIndices: [window.length - 3, window.length - 2, window.length - 1],
+      payload: { averageScore: avg(tail.map((s) => s.result.score)) },
+    });
+  }
+
+  // 5) Frustration signal — three consecutive incorrect AND duration trending up.
+  if (tail.length === 3 && tail.every((s) => !s.result.correct)) {
+    const durations = tail.map((s) => s.durationMs ?? 0);
+    const rising = durations[2] > durations[0] && durations[2] > 5_000;
+    if (rising) {
+      candidates.push({
+        kind: "frustration_signal",
+        confidence: 0.7,
+        title: "Frustration signal detected",
+        rationale: "Three consecutive incorrect responses with rising response time.",
+        evidenceIndices: [window.length - 3, window.length - 2, window.length - 1],
+        payload: { durations },
+      });
+    }
+  }
+
+  // 6) Accommodation hint — process-mode succeeding while exact-mode failing
+  // suggests "show your work" works but final answer needs scaffolding.
+  const processSamples = window.filter((s) => s.result.mode === "process" && s.result.correct);
+  const exactSamples = window.filter((s) => s.result.mode === "exact" && !s.result.correct);
+  if (processSamples.length >= 2 && exactSamples.length >= 2) {
+    candidates.push({
+      kind: "accommodation_hint",
+      confidence: 0.6,
+      title: "Consider scaffolding for final-answer step",
+      rationale: "Process-mode responses correct but exact-mode responses failing.",
+      evidenceIndices: [
+        ...processSamples.map((_, i) => i),
+        ...exactSamples.map((_, i) => i),
+      ],
+      payload: {
+        processCorrect: processSamples.length,
+        exactIncorrect: exactSamples.length,
+      },
+    });
+  }
+
+  return { sampleCount: window.length, candidates };
+}
+

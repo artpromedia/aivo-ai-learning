@@ -13,6 +13,41 @@ export interface SurfaceSubmissionFeedback {
   misconceptions: string[];
 }
 
+// Sprint 06: deterministic recommendation candidate as returned by
+// POST /api/tutor/recommendation-candidates. Mirrors the @aivo/scoring
+// RecommendationCandidate shape but kept loosely typed in the web
+// layer so the API contract change is the source of truth.
+export interface RecommendationCandidate {
+  kind:
+    | "repeated_misconception"
+    | "low_process_engagement"
+    | "high_hint_dependence"
+    | "mastery_signal"
+    | "frustration_signal"
+    | "accommodation_hint";
+  confidence: number;
+  title: string;
+  rationale: string;
+  evidenceIndices: number[];
+  payload: Record<string, unknown>;
+}
+
+interface RecommendationSampleInternal {
+  surfaceId: string;
+  occurredAt: string;
+  result: {
+    correct: boolean;
+    score: number;
+    feedback: string;
+    misconceptions: string[];
+    mode: string;
+  };
+  durationMs?: number;
+  inkStrokeCount?: number;
+  geometryActionCount?: number;
+  hintsRequested?: number;
+}
+
 export interface SessionProcessSignals {
   surfaceEvents: SurfaceTelemetryEvent[];
   surfaceResponses: SurfaceResponse[];
@@ -67,6 +102,10 @@ export function useSessionFlow(
   const [processSignals, setProcessSignals] =
     useState<SessionProcessSignals>(INITIAL_PROCESS_SIGNALS);
   const [lastFeedback, setLastFeedback] = useState<SurfaceSubmissionFeedback | null>(null);
+  const [recommendationCandidates, setRecommendationCandidates] = useState<
+    RecommendationCandidate[]
+  >([]);
+  const recommendationSamplesRef = useRef<RecommendationSampleInternal[]>([]);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const maxDurationMs = SESSION_DURATIONS[functioningLevel].max * 60 * 1000;
@@ -243,6 +282,56 @@ export function useSessionFlow(
             surfaceFeedback: [...p.surfaceFeedback, entry],
           }));
           setLastFeedback(entry);
+
+          // Sprint 06: append a deterministic sample, then ask
+          // tutor-svc for recommendation candidates derived from the
+          // rolling window. No demo fallback — silent on network
+          // failure so the stage UI keeps running.
+          const mode = typeof (d as { mode?: unknown }).mode === "string"
+            ? ((d as { mode: string }).mode)
+            : "exact";
+          const sample: RecommendationSampleInternal = {
+            surfaceId: entry.surfaceId,
+            occurredAt: new Date().toISOString(),
+            result: {
+              correct: entry.correct,
+              score: entry.score,
+              feedback: entry.feedback,
+              misconceptions: entry.misconceptions,
+              mode,
+            },
+            durationMs:
+              typeof response.durationMs === "number" ? response.durationMs : undefined,
+            inkStrokeCount: Array.isArray(response.inkStrokes)
+              ? response.inkStrokes.length
+              : 0,
+            geometryActionCount: Array.isArray(response.geometryActions)
+              ? response.geometryActions.length
+              : 0,
+          };
+          const nextSamples = [...recommendationSamplesRef.current, sample].slice(-24);
+          recommendationSamplesRef.current = nextSamples;
+
+          void fetch("/api/tutor/recommendation-candidates", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              learnerId: state.learnerId,
+              sessionId: state.sessionId ?? undefined,
+              tutorKey: state.tutorKey,
+              samples: nextSamples,
+            }),
+          })
+            .then(async (res) => (res.ok ? res.json() : null))
+            .then((rec: unknown) => {
+              if (!rec || typeof rec !== "object") return;
+              const candidates = (rec as { candidates?: unknown }).candidates;
+              if (!Array.isArray(candidates)) return;
+              setRecommendationCandidates(candidates as RecommendationCandidate[]);
+            })
+            .catch(() => {
+              // best-effort — recommendations are advisory
+            });
         })
         .catch(() => {
           // best-effort — UI continues without scoring feedback
@@ -264,6 +353,7 @@ export function useSessionFlow(
     currentBeat,
     progress,
     lastFeedback,
+    recommendationCandidates,
     setPhase,
     loadBeats,
     nextBeat,
