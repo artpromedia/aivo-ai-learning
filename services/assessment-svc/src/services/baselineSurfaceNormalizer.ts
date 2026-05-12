@@ -126,9 +126,17 @@ export function normalizeBaselineItems(raw: unknown[]): NormalizationResult {
       surface: spec,
     } as NormalizedBaselineItem;
 
-    // MCQ-specific safety: ensure correctAnswer is present.
-    if (spec.kind === "multiple_choice" && !normalized.correctAnswer) {
-      const opts = Array.isArray(normalized.options) ? normalized.options : [];
+    // MCQ-specific safety: when the item carries the legacy
+    // `{options:[{value,isCorrect}]}` shape, ensure correctAnswer is
+    // populated. Discovery chapter activities use a richer
+    // `{choices, scoring}` shape and are passed through untouched.
+    if (
+      spec.kind === "multiple_choice" &&
+      !normalized.correctAnswer &&
+      Array.isArray(normalized.options) &&
+      normalized.options.length > 0
+    ) {
+      const opts = normalized.options;
       const correct = opts.find((o) => o && (o as any).isCorrect);
       if (correct && typeof (correct as any).value === "string") {
         normalized.correctAnswer = (correct as any).value;

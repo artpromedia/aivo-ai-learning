@@ -21,6 +21,7 @@ import {
 } from "@aivo/special-interest-engine";
 import { deriveLearningProfile } from "../services/learning-profile.js";
 import { partitionChapterActivitiesPayload } from "../services/discovery-activity-validator.js";
+import { normalizeBaselineItems } from "../services/baselineSurfaceNormalizer.js";
 
 // ---- Sprint 02 adapter: problem-session ledger ----------------------------
 // Flag-gated, fire-and-forget. Records a baseline-source problem session per
@@ -536,6 +537,31 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
 
         const personalizationLevel = rejectedActivities.length === 0 ? "full" : "partial";
 
+        // Sprint 03 — surface-aware normalization. Coerces every activity into
+        // an explicit LearnerSurfaceSpec so the renderer can pick the right
+        // workspace (multiple_choice, scratchpad, geometry_workspace, ...).
+        // Items with unknown / unsupported surfaces are dropped here and
+        // logged so we can tune the prompt; the rest pass through unchanged.
+        const surfaceNormalization = normalizeBaselineItems(
+          Array.isArray(activities) ? (activities as unknown[]) : [],
+        );
+        const surfaceIssues = surfaceNormalization.issues;
+        const surfaceErrors = surfaceIssues.filter((i) => i.severity === "error");
+        const surfaceWarnings = surfaceIssues.filter((i) => i.severity === "warning");
+        if (surfaceErrors.length > 0 || surfaceWarnings.length > 0) {
+          app.log.info(
+            {
+              learnerId,
+              chapterId: data.chapter_id,
+              errorCount: surfaceErrors.length,
+              warningCount: surfaceWarnings.length,
+              sample: surfaceIssues.slice(0, 5),
+            },
+            "[discovery/chapter] baseline surface normalization issues",
+          );
+        }
+        const normalizedActivities = surfaceNormalization.items;
+
         return reply.send({
           generated: true,
           learnerId,
@@ -543,8 +569,9 @@ export async function registerLearnerBaselineRoutes(app: FastifyInstance) {
           chapterId: data.chapter_id,
           personalizationLevel,
           source: "ai",
-          activities,
+          activities: normalizedActivities,
           rejectedActivities,
+          surfaceIssues,
           model: data.model,
         });
       } catch (e: any) {
