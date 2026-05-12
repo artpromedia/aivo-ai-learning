@@ -202,7 +202,7 @@ export default function LessonPage() {
         tutorKey,
         learnerId: user.id,
         functioningLevel,
-        accessToken,
+        accessToken: accessToken ?? undefined,
       });
       loadBeats(beats, undefined, name);
     } catch (err) {
