@@ -21,6 +21,9 @@ COPY packages/ ./packages/
 # Copy service files
 ARG SERVICE_NAME
 COPY services/${SERVICE_NAME}/ ./services/${SERVICE_NAME}/
+# Also copy audit-svc since several services import @aivo/audit-svc as a workspace dependency.
+# This is a tiny TS-only package; pnpm deploy in the prod stage will prune unused code.
+COPY services/audit-svc/ ./services/audit-svc/
 
 # Prepare entrypoint (fallback if service script is missing)
 RUN if [ -f "services/${SERVICE_NAME}/scripts/docker-entrypoint.sh" ]; then \
@@ -56,6 +59,9 @@ RUN if [ -d "/app/services/${SERVICE_NAME}/node_modules/.prisma/client" ]; then 
 # outputs from older Dockerfiles are never reused across pushes.
 ARG GIT_COMMIT=unknown
 RUN echo "Building at commit ${GIT_COMMIT}"
+# Always build audit-svc first since its compiled dist is consumed as a workspace dependency
+# by data-governance-svc, problem-session-svc, recommendation-svc, tenant-svc.
+RUN pnpm --filter "@aivo/audit-svc" build
 RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
 
 # Use pnpm deploy to create production bundle
