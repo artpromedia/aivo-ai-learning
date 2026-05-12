@@ -13,6 +13,7 @@ import type { TierThemeMobile } from "@aivo/mobile-ui";
 import type { Beat, Session } from "@/src/types/stage";
 import { MobileBeatRenderer } from "./MobileBeatRenderer";
 import { MobileTutorPanel } from "./MobileTutorPanel";
+import { useStageLayout } from "@/src/design/useStageLayout";
 
 export interface CompletionPayload {
   correctCount: number;
@@ -53,6 +54,7 @@ export function MobileStageRuntime(props: Props) {
   const beat = props.session.stagePlan.beats[props.currentIndex];
   const total = props.session.stagePlan.beats.length;
   const isLast = props.currentIndex >= total - 1;
+  const layout = useStageLayout();
   const styles = createStyles(props.theme);
 
   if (!beat) {
@@ -103,16 +105,28 @@ export function MobileStageRuntime(props: Props) {
     void props.onTutorTurnContinue(beat);
   }, [beat, props]);
 
-  return (
-    <View style={styles.container}>
-      <MobileTutorPanel theme={props.theme} tier={props.tier} message={tutorMessage} />
+  const advanceButton =
+    (props.answered || beat.kind === "tutor-turn") && !props.submitting ? (
+      <Pressable
+        style={styles.advance}
+        onPress={
+          beat.kind === "tutor-turn" ? handleTutorContinue : props.onAdvance
+        }
+        accessibilityRole="button"
+      >
+        <Text style={styles.advanceText}>
+          {isLast ? props.labels.finish : props.labels.next}
+        </Text>
+      </Pressable>
+    ) : null;
 
+  const beatColumn = (
+    <View style={styles.beatColumn}>
       <View style={styles.counterRow}>
         <Text style={styles.counter}>
           Activity {props.currentIndex + 1} of {total}
         </Text>
       </View>
-
       <MobileBeatRenderer
         theme={props.theme}
         beat={beat}
@@ -124,27 +138,48 @@ export function MobileStageRuntime(props: Props) {
         onSurfaceSubmit={handleSurface}
         onTutorTurnContinue={handleTutorContinue}
       />
+      {advanceButton}
+    </View>
+  );
 
-      {(props.answered || beat.kind === "tutor-turn") && !props.submitting ? (
-        <Pressable
-          style={styles.advance}
-          onPress={
-            beat.kind === "tutor-turn" ? handleTutorContinue : props.onAdvance
-          }
-          accessibilityRole="button"
-        >
-          <Text style={styles.advanceText}>
-            {isLast ? props.labels.finish : props.labels.next}
-          </Text>
-        </Pressable>
-      ) : null}
+  if (layout.mode === "split") {
+    return (
+      <View
+        style={[
+          styles.containerSplit,
+          { maxWidth: layout.contentMaxWidth, gap: layout.splitGap },
+        ]}
+      >
+        <View style={{ width: layout.tutorPanelWidth }}>
+          <MobileTutorPanel
+            theme={props.theme}
+            tier={props.tier}
+            message={tutorMessage}
+          />
+        </View>
+        {beatColumn}
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.container, { maxWidth: layout.contentMaxWidth }]}>
+      <MobileTutorPanel theme={props.theme} tier={props.tier} message={tutorMessage} />
+      {beatColumn}
     </View>
   );
 }
 
 function createStyles(theme: TierThemeMobile) {
   return StyleSheet.create({
-    container: { flex: 1, gap: 8 },
+    container: { flex: 1, gap: 8, alignSelf: "center", width: "100%" },
+    containerSplit: {
+      flex: 1,
+      flexDirection: "row",
+      alignSelf: "center",
+      width: "100%",
+    },
+    beatColumn: { flex: 1, gap: 8 },
     counterRow: { paddingHorizontal: 16 },
     counter: { color: theme.colors.text, opacity: 0.7, fontSize: 14 },
     empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
