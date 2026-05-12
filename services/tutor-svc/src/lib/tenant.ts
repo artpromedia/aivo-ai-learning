@@ -31,6 +31,7 @@ export function registerAuthHook(app: FastifyInstance): void {
       req.method === "OPTIONS" ||
       url === "/" ||
       url.startsWith("/health") ||
+      url === "/api/tutors/version" ||
       url.startsWith("/docs") ||
       url.startsWith("/json")
     ) {
