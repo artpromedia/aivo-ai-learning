@@ -1,5 +1,17 @@
 from typing import Optional
 
+# Sprint 03 — baseline items now carry a LearnerSurfaceSpec describing
+# which interactive workspace the runtime should mount (multiple_choice,
+# scratchpad, geometry_workspace, …). The contract lives in
+# baseline_surface_contract; curated exemplars live in
+# baseline_item_templates; both are validated by
+# baseline_surface_validator before items reach the runtime.
+from .baseline_surface_contract import (
+    LearnerSurfaceSpec,  # re-exported for type annotations downstream
+    render_prompt_section as render_surface_prompt_section,
+)
+from .baseline_item_templates import render_template_examples
+
 
 CURRICULUM_FRAMEWORK_GUIDANCE = {
     "CCSS": "Common Core State Standards (math: K-CC, OA, NBT, NF, MD, G; ELA: RL, RI, RF, W, SL, L)",
@@ -591,5 +603,15 @@ ID format: m1-m6 for math, e1-e6 for ela, s1-s6 for science, sp1-sp6 for speech,
 difficulty: 1 (easy) or 2 (moderate) — start each subject with difficulty 1.
 Personalize based on the learner's interests ({', '.join(interests) if interests else 'general'}), strengths, and challenges.
 Return ONLY the JSON object, no markdown formatting or code blocks."""
+
+    # Sprint 03 — append the surface contract to the user prompt so items
+    # arrive with a LearnerSurfaceSpec. The math section explicitly
+    # mentions scratchpad; the geometry/math sections mention
+    # geometry_workspace; everything else may default to multiple_choice.
+    surface_addendum = "\n\n" + render_surface_prompt_section("math") + "\n\n"
+    surface_addendum += "### Curated math / geometry templates (use as exemplars)\n"
+    surface_addendum += render_template_examples("math") + "\n\n"
+    surface_addendum += render_template_examples("geometry") + "\n"
+    user_prompt = user_prompt + surface_addendum
 
     return system_prompt, user_prompt
