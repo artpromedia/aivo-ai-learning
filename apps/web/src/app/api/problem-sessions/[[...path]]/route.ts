@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const handlers = buildEnterpriseProxyHandlers({
   upstreamPrefix: "problem-sessions",
-  baseUrl: ENTERPRISE_SERVICE_URLS.problemSession(),
+  baseUrl: ENTERPRISE_SERVICE_URLS.problemSession,
   publicName: "problem session service",
 });
 

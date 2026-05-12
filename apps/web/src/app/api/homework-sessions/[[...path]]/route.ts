@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const handlers = buildEnterpriseProxyHandlers({
   upstreamPrefix: "homework-sessions",
-  baseUrl: ENTERPRISE_SERVICE_URLS.homework(),
+  baseUrl: ENTERPRISE_SERVICE_URLS.homework,
   publicName: "homework service",
 });
 

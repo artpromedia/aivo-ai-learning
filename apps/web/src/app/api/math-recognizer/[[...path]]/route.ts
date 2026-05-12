@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const handlers = buildEnterpriseProxyHandlers({
   upstreamPrefix: "math-recognizer",
-  baseUrl: ENTERPRISE_SERVICE_URLS.mathRecognizer(),
+  baseUrl: ENTERPRISE_SERVICE_URLS.mathRecognizer,
   publicName: "math recognizer service",
 });
 

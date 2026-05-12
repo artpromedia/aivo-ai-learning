@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const handlers = buildEnterpriseProxyHandlers({
   upstreamPrefix: "science-solver",
-  baseUrl: ENTERPRISE_SERVICE_URLS.scienceSolver(),
+  baseUrl: ENTERPRISE_SERVICE_URLS.scienceSolver,
   publicName: "science solver service",
 });
 

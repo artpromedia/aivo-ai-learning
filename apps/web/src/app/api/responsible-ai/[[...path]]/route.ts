@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const handlers = buildEnterpriseProxyHandlers({
   upstreamPrefix: "responsible-ai",
-  baseUrl: ENTERPRISE_SERVICE_URLS.responsibleAi(),
+  baseUrl: ENTERPRISE_SERVICE_URLS.responsibleAi,
   publicName: "responsible AI service",
 });
 

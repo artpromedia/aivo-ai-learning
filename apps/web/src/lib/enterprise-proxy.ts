@@ -12,8 +12,12 @@ import { NextRequest, NextResponse } from "next/server";
 export interface ProxyTarget {
   /** Service name used in the upstream URL prefix `/api/<service>/...`. */
   upstreamPrefix: string;
-  /** The upstream base URL (e.g. `http://problem-session-svc:3061`). */
-  baseUrl: string;
+  /**
+   * Resolver for the upstream base URL (e.g. `http://problem-session-svc:3061`).
+   * Called per-request so missing production env vars don't blow up at module
+   * load time (which would break Next.js' page-data collection phase).
+   */
+  baseUrl: () => string;
   /** Service name used in the proxy's own URL (e.g. `recommendations`). */
   publicName: string;
 }
@@ -42,7 +46,7 @@ function copyRequestHeaders(req: NextRequest): Record<string, string> {
 
 function buildUpstreamUrl(target: ProxyTarget, segments: string[] | undefined, req: NextRequest): URL {
   const path = segments?.join("/") ?? "";
-  const url = new URL(`/api/${target.upstreamPrefix}/${path}`, target.baseUrl);
+  const url = new URL(`/api/${target.upstreamPrefix}/${path}`, target.baseUrl());
   url.search = req.nextUrl.search;
   return url;
 }
