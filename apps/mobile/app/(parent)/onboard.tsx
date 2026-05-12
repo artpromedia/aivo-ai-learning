@@ -8,12 +8,17 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAddLearner } from '@/hooks/useLearners';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
+import { useWindowSizeClass } from '@/src/design/useWindowSizeClass';
+import { CONTENT_MAX_WIDTH, pickBySizeClass } from '@/src/design/responsive';
 
 export default function OnboardScreen() {
   const insets = useSafeAreaInsets();
   const addLearner = useAddLearner();
   const [step, setStep] = useState(0);
   const { t } = useTranslation();
+  const { sizeClass, width: winWidth, isTablet } = useWindowSizeClass();
+  const hPad = pickBySizeClass(sizeClass, { compact: spacing.md, medium: spacing.lg, expanded: spacing.xl });
+  const contentWidth = Math.min(winWidth - hPad * 2, CONTENT_MAX_WIDTH.reading);
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -25,27 +30,42 @@ export default function OnboardScreen() {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
+  const [createdLearnerId, setCreatedLearnerId] = useState<string | null>(null);
+
   const handleAddChild = async () => {
     if (!form.firstName || !form.gradeLevel || !form.pin) {
       Alert.alert(t('parentOnboard.missingInfo'), t('parentOnboard.fillRequired'));
       return;
     }
     try {
-      await addLearner.mutateAsync(form);
-      router.replace('/(parent)' as any);
+      const created = await addLearner.mutateAsync(form);
+      // Advance to the baseline-assessment step instead of bouncing back
+      // to the dashboard. Tablet onboarding now guides the parent through
+      // profile intake → IEP upload → baseline → review.
+      setCreatedLearnerId((created as { id?: string } | null)?.id ?? null);
+      setStep(4);
     } catch {
       Alert.alert(t('common.error'), t('parentOnboard.addChildFailed'));
     }
   };
 
-  const steps = [t('parentOnboard.stepChildInfo'), t('parentOnboard.stepGrade'), t('parentOnboard.stepIEP'), t('parentOnboard.stepReview')];
+  // Onboarding now spans five steps so the parent reaches the personalized
+  // learning profile review instead of stopping at "child added".
+  const steps = [
+    t('parentOnboard.stepChildInfo'),
+    t('parentOnboard.stepGrade'),
+    t('parentOnboard.stepIEP'),
+    t('parentOnboard.stepReview'),
+    t('parentOnboard.stepBaseline', { defaultValue: 'Baseline' }),
+  ];
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 40 }}
+      style={[styles.container, { paddingHorizontal: hPad }]}
+      contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 40, alignItems: 'center' }}
       keyboardShouldPersistTaps="handled"
     >
+      <View style={{ width: contentWidth }}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color={colors.primary} />
         <Text style={styles.backText}>{t('common.back')}</Text>
@@ -167,13 +187,48 @@ export default function OnboardScreen() {
             </View>
           </>
         )}
+
+        {step === 4 && (
+          <>
+            <Ionicons name="rocket-outline" size={isTablet ? 56 : 40} color={colors.primary} style={{ alignSelf: 'center' }} />
+            <Text style={[styles.reviewTitle, { textAlign: 'center', marginTop: spacing.md }]}>
+              {t('parentOnboard.baselineTitle', { defaultValue: 'Start the baseline assessment' })}
+            </Text>
+            <Text style={[styles.uploadDesc, { textAlign: 'center', marginBottom: spacing.md }]}>
+              {t('parentOnboard.baselineDesc', {
+                defaultValue:
+                  "We'll generate a short adaptive baseline so your child's tutors can personalize from day one.",
+              })}
+            </Text>
+            <AivoButton
+              title={t('parentOnboard.launchBaseline', { defaultValue: 'Launch baseline assessment' })}
+              onPress={() => {
+                if (createdLearnerId) {
+                  router.replace(`/(parent)/brain/${createdLearnerId}` as any);
+                } else {
+                  router.replace('/(parent)' as any);
+                }
+              }}
+              size="lg"
+              icon={<Ionicons name="play" size={18} color="#FFF" />}
+            />
+            <AivoButton
+              title={t('parentOnboard.skipBaseline', { defaultValue: 'Skip for now' })}
+              onPress={() => router.replace('/(parent)' as any)}
+              variant="outline"
+              size="lg"
+              style={{ marginTop: spacing.sm }}
+            />
+          </>
+        )}
       </AivoCard>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.md },
+  container: { flex: 1, backgroundColor: colors.background },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: spacing.md },
   backText: { fontSize: 16, fontFamily: 'Nunito-SemiBold', color: colors.primary },
   title: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', color: colors.text },

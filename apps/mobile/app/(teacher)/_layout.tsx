@@ -3,22 +3,26 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/constants/colors';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useWindowSizeClass } from '@/src/design/useWindowSizeClass';
 
 export default function TeacherLayout() {
   const { t } = useTranslation();
+  const { isTablet } = useWindowSizeClass();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: colors.card,
-          borderTopColor: colors.border,
-          height: 84,
-          paddingBottom: 20,
-          paddingTop: 8,
-        },
+        tabBarStyle: isTablet
+          ? { display: 'none' }
+          : {
+              backgroundColor: colors.card,
+              borderTopColor: colors.border,
+              height: 84,
+              paddingBottom: 20,
+              paddingTop: 8,
+            },
         tabBarLabelStyle: { fontFamily: 'Nunito-SemiBold', fontSize: 11 },
       }}
     >

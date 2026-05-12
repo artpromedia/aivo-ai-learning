@@ -1,4 +1,5 @@
-export { theme } from './theme';
+export { theme, classifySizeClass, isTabletWidth } from './theme';
+export type { SizeClass } from './theme';
 export { AivoButton } from './AivoButton';
 export { AivoCard } from './AivoCard';
 export { AivoHeader } from './AivoHeader';

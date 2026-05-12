@@ -7,6 +7,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { TUTORS } from '@aivo/brand';
 import { AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
+import { useWindowSizeClass } from '@/src/design/useWindowSizeClass';
+import { CONTENT_MAX_WIDTH, pickBySizeClass } from '@/src/design/responsive';
 
 type TutorKey = keyof typeof TUTORS;
 
@@ -15,10 +17,13 @@ export default function TutorSessionScreen() {
   const insets = useSafeAreaInsets();
   const tutor = TUTORS[tutorSlug as TutorKey];
   const { t } = useTranslation();
+  const { sizeClass, width: winWidth } = useWindowSizeClass();
+  const hPad = pickBySizeClass(sizeClass, { compact: spacing.md, medium: spacing.lg, expanded: spacing.xl });
+  const contentWidth = Math.min(winWidth - hPad * 2, CONTENT_MAX_WIDTH.reading);
 
   if (!tutor) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.container, { paddingTop: insets.top + 16, paddingHorizontal: hPad }]}>
         <Pressable onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </Pressable>
@@ -28,7 +33,8 @@ export default function TutorSessionScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+    <View style={[styles.container, { paddingTop: insets.top + 16, paddingHorizontal: hPad, alignItems: 'center' }]}>
+      <View style={{ width: contentWidth }}>
       <Pressable onPress={() => router.back()} style={styles.backRow}>
         <Ionicons name="arrow-back" size={20} color="rgba(255,255,255,0.7)" />
         <Text style={styles.backText}>{t('common.back')}</Text>
@@ -63,12 +69,13 @@ export default function TutorSessionScreen() {
         size="lg"
         style={{ marginTop: spacing.xl }}
       />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A1A2E', paddingHorizontal: spacing.md },
+  container: { flex: 1, backgroundColor: '#1A1A2E' },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: spacing.xl },
   backText: { fontSize: 16, fontFamily: 'Nunito-SemiBold', color: 'rgba(255,255,255,0.7)' },
   title: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', color: '#FFF' },

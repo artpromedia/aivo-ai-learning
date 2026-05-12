@@ -19,6 +19,8 @@ import {
 } from '@/hooks/useHomework';
 import { AivoCard, AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
+import { useWindowSizeClass } from '@/src/design/useWindowSizeClass';
+import { CONTENT_MAX_WIDTH, pickBySizeClass } from '@/src/design/responsive';
 
 const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
   PROCESSING: { bg: '#FEF3C7', fg: '#B45309' },
@@ -59,6 +61,12 @@ export default function HomeworkScreen() {
   const startSession = useStartHomeworkSession();
   const uploadHomework = useUploadHomework();
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const { sizeClass, width: winWidth, isTablet } = useWindowSizeClass();
+  const hPad = pickBySizeClass(sizeClass, { compact: spacing.md, medium: spacing.lg, expanded: spacing.xl });
+  // Larger capture preview on tablets so the camera frame doesn't feel
+  // like a phone-sized strip stranded in the middle of a 12.9" canvas.
+  const previewHeight = pickBySizeClass(sizeClass, { compact: 200, medium: 320, expanded: 420 });
+  const contentWidth = Math.min(winWidth - hPad * 2, isTablet ? CONTENT_MAX_WIDTH.dashboard : winWidth);
 
   const onAssignmentPress = async (a: HomeworkAssignment) => {
     if (a.status !== 'READY' && a.status !== 'IN_PROGRESS') {
@@ -180,9 +188,10 @@ export default function HomeworkScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { paddingTop: insets.top + 16 }]}
-      contentContainerStyle={{ paddingBottom: 32 }}
+      style={[styles.container, { paddingTop: insets.top + 16, paddingHorizontal: hPad }]}
+      contentContainerStyle={{ paddingBottom: 32, alignItems: 'center' }}
     >
+      <View style={{ width: contentWidth }}>
       <Pressable
         onPress={() => router.back()}
         style={styles.backRow}
@@ -241,8 +250,9 @@ export default function HomeworkScreen() {
         </View>
       )}
 
-      <AivoCard style={styles.captureCard}>
-        <View style={styles.cameraPreview}>
+      <View style={isTablet ? styles.captureRow : undefined}>
+      <AivoCard style={[styles.captureCard, isTablet && styles.captureCardTablet]}>
+        <View style={[styles.cameraPreview, { height: previewHeight }]}>
           {uploadHomework.isPending ? (
             <>
               <ActivityIndicator color={colors.primary} />
@@ -281,7 +291,7 @@ export default function HomeworkScreen() {
         </View>
       </AivoCard>
 
-      <AivoCard style={styles.uploadCard}>
+      <AivoCard style={[styles.uploadCard, isTablet && styles.uploadCardTablet]}>
         <Ionicons name="document-outline" size={32} color={colors.secondary} />
         <Text style={styles.uploadTitle}>{t('learnerHomework.uploadPDF')}</Text>
         <Text style={styles.uploadDesc}>{t('learnerHomework.uploadPDFDesc')}</Text>
@@ -294,12 +304,14 @@ export default function HomeworkScreen() {
           style={{ marginTop: spacing.sm }}
         />
       </AivoCard>
+      </View>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.md },
+  container: { flex: 1, backgroundColor: colors.background },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: spacing.md },
   backText: { fontSize: 16, fontFamily: 'Nunito-SemiBold', color: colors.primary },
   title: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', color: colors.text },
@@ -323,6 +335,9 @@ const styles = StyleSheet.create({
   statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
   statusText: { fontSize: 11, fontFamily: 'Nunito-Bold' },
   captureCard: { marginBottom: spacing.md },
+  captureRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'stretch' },
+  captureCardTablet: { flex: 2 },
+  uploadCardTablet: { flex: 1, justifyContent: 'center' },
   cameraPreview: {
     height: 200,
     backgroundColor: colors.surface,

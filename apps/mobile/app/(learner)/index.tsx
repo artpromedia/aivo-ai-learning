@@ -9,21 +9,90 @@ import { useEngagement } from '@/hooks/useEngagement';
 import { TUTORS } from '@aivo/brand';
 import { StatCard } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
+import { useWindowSizeClass } from '@/src/design/useWindowSizeClass';
+import { CONTENT_MAX_WIDTH, gridColumns, pickBySizeClass } from '@/src/design/responsive';
+import { TabletScaffold } from '@/src/components/layout/TabletScaffold';
 
 export default function LearnerWorldMap() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { data: engagement, refetch } = useEngagement(user?.id || '');
   const { t } = useTranslation();
+  const { sizeClass, width: winWidth, isTablet } = useWindowSizeClass();
 
   const coreTutors = Object.entries(TUTORS).filter(([, t]) => t.tier === 'core');
 
-  return (
+  const railDestinations = [
+    {
+      key: 'worldMap',
+      label: t('tabs.worldMap'),
+      icon: 'map' as const,
+      active: true,
+      onPress: () => router.push('/(learner)' as any),
+    },
+    {
+      key: 'brain',
+      label: t('tabs.brain'),
+      icon: 'bulb' as const,
+      onPress: () => router.push('/(learner)/brain' as any),
+    },
+    {
+      key: 'homework',
+      label: t('learner.homework'),
+      icon: 'camera' as const,
+      onPress: () => router.push('/(learner)/homework' as any),
+    },
+    {
+      key: 'quests',
+      label: t('learner.quests'),
+      icon: 'compass' as const,
+      onPress: () => router.push('/(learner)/quests' as any),
+    },
+    {
+      key: 'gradebook',
+      label: t('learner.grades'),
+      icon: 'bar-chart' as const,
+      onPress: () => router.push('/(learner)/gradebook' as any),
+    },
+    {
+      key: 'shop',
+      label: t('tabs.shop'),
+      icon: 'cart' as const,
+      onPress: () => router.push('/(learner)/shop' as any),
+    },
+    {
+      key: 'gamification',
+      label: t('tabs.profile'),
+      icon: 'trophy' as const,
+      onPress: () => router.push('/(learner)/gamification' as any),
+    },
+    {
+      key: 'settings',
+      label: t('tabs.settings'),
+      icon: 'settings-outline' as const,
+      onPress: () => router.push('/(learner)/settings' as any),
+    },
+  ];
+
+  // Scale the world-grid column count with the size class so it stops
+  // looking under-designed on tablet hardware.
+  const cols = gridColumns(sizeClass);
+  const cardWidthPct = `${Math.floor(100 / cols) - 2}%` as const;
+  const hPad = pickBySizeClass(sizeClass, { compact: spacing.md, medium: spacing.lg, expanded: spacing.xl });
+  const maxContentWidth = isTablet ? CONTENT_MAX_WIDTH.dashboard : winWidth;
+  const contentWidth = Math.min(winWidth - hPad * 2, maxContentWidth);
+
+  const body = (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
+      style={[styles.container, { paddingHorizontal: hPad }]}
+      contentContainerStyle={{
+        paddingTop: isTablet ? spacing.lg : insets.top + 16,
+        paddingBottom: 32,
+        alignItems: 'center',
+      }}
       refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} colors={[colors.primary]} />}
     >
+      <View style={{ width: contentWidth }}>
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
@@ -85,7 +154,7 @@ export default function LearnerWorldMap() {
         {coreTutors.map(([key, tutor]) => (
           <Pressable
             key={key}
-            style={[styles.worldCard, { borderColor: tutor.color }]}
+            style={[styles.worldCard, { width: cardWidthPct, borderColor: tutor.color }]}
             onPress={() => router.push(`/(learner)/tutor/${key}` as any)}
           >
             <Text style={styles.worldIcon}>{tutor.icon}</Text>
@@ -113,12 +182,15 @@ export default function LearnerWorldMap() {
           <Text style={styles.quickLabel}>{t('learner.grades')}</Text>
         </Pressable>
       </View>
+      </View>
     </ScrollView>
   );
+
+  return <TabletScaffold destinations={railDestinations}>{body}</TabletScaffold>;
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.md },
+  container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   avatarContainer: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary + '20', alignItems: 'center', justifyContent: 'center' },
@@ -147,7 +219,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontFamily: 'Nunito-Bold', color: colors.text, marginBottom: spacing.md },
   worldGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: spacing.lg },
   worldCard: {
-    width: '31%',
+    // width is supplied at runtime by the size-class-aware grid logic
     backgroundColor: colors.card,
     borderRadius: radius.xl,
     padding: spacing.sm,
