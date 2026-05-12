@@ -6,6 +6,7 @@ import { useLearners } from '@/hooks/useLearners';
 import { useAuth } from '@/hooks/useAuth';
 import { TierThemeProvider, useTierTheme } from '@aivo/mobile-ui';
 import { SwitchScanOverlay } from '@/src/components/SwitchScanOverlay';
+import { useWindowSizeClass } from '@/src/design/useWindowSizeClass';
 
 /**
  * Resolve the active learner's gradeLevel.
@@ -58,19 +59,26 @@ export default function LearnerLayout() {
 function ThemedLearnerTabs() {
   const { t } = useTranslation();
   const { theme } = useTierTheme();
+  // On tablets we hide the bottom tab bar and rely on the per-screen
+  // tablet scaffold to render a navigation rail/sidebar instead. The
+  // <Tabs> navigator stays mounted so deep links keep working — only the
+  // bottom bar UI is suppressed.
+  const { isTablet } = useWindowSizeClass();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.colors.tabBarActive,
         tabBarInactiveTintColor: theme.colors.tabBarInactive,
-        tabBarStyle: {
-          backgroundColor: theme.colors.tabBar,
-          borderTopColor: theme.colors.border,
-          height: 84,
-          paddingBottom: 20,
-          paddingTop: 8,
-        },
+        tabBarStyle: isTablet
+          ? { display: 'none' }
+          : {
+              backgroundColor: theme.colors.tabBar,
+              borderTopColor: theme.colors.border,
+              height: 84,
+              paddingBottom: 20,
+              paddingTop: 8,
+            },
         tabBarLabelStyle: {
           fontFamily: 'Nunito-SemiBold',
           fontSize: 11,

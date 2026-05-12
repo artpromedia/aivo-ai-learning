@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TextInput,
   Alert,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,9 @@ import {
 } from '@/hooks/useBrain';
 import { AivoCard, AivoButton, EmptyState, LoadingState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
+import { useWindowSizeClass } from '@/src/design/useWindowSizeClass';
+import { CONTENT_MAX_WIDTH, pickBySizeClass } from '@/src/design/responsive';
+import { SplitPane } from '@/src/components/layout/SplitPane';
 
 const AMEND_FIELD: Record<string, keyof RecommendationAmendedPayload | null> = {
   accommodation_add: 'accommodation',
@@ -52,6 +56,10 @@ export default function RecommendationsScreen() {
   const { t } = useTranslation();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [amendValues, setAmendValues] = useState<Record<string, string>>({});
+  const [selectedRecId, setSelectedRecId] = useState<string | null>(null);
+  const { sizeClass, isTablet, width: winWidth } = useWindowSizeClass();
+  const hPad = pickBySizeClass(sizeClass, { compact: spacing.md, medium: spacing.lg, expanded: spacing.xl });
+  const contentWidth = Math.min(winWidth - hPad * 2, isTablet ? CONTENT_MAX_WIDTH.dashboard : winWidth);
 
   const pending =
     recommendations?.filter((r) => r.status === 'PENDING') ?? [];
@@ -90,42 +98,47 @@ export default function RecommendationsScreen() {
 
   if (isLoading) return <LoadingState />;
 
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
-      refreshControl={
-        <RefreshControl
-          refreshing={false}
-          onRefresh={refetch}
-          colors={[colors.primary]}
-        />
-      }
-    >
-      <Text style={styles.title}>{t('parentRecommendations.title')}</Text>
-      <Text style={styles.subtitle}>{t('parentRecommendations.subtitle')}</Text>
+  const activeRec =
+    pending.find((r) => r.id === selectedRecId) ?? pending[0] ?? null;
 
-      {pending.length === 0 ? (
-        <EmptyState
-          icon={
-            <Ionicons
-              name="checkmark-circle-outline"
-              size={48}
-              color={colors.success}
-            />
-          }
-          title={t('parentRecommendations.allCaughtUp')}
-          message={t('parentRecommendations.noPending')}
-        />
-      ) : (
-        pending.map((rec) => {
-          const payload = (rec.payload as Record<string, unknown> | null) || null;
-          const canAmend = AMEND_FIELD[rec.type] !== null && AMEND_FIELD[rec.type] !== undefined;
-          const isExpanded = expandedId === rec.id;
-          const amendInitial = canAmend
-            ? formatValue(payload?.[AMEND_FIELD[rec.type] as string] ?? payload?.proposedValue)
-            : '';
-          return (
+  const renderRec = (rec: (typeof pending)[number], compact: boolean) => {
+    const payload = (rec.payload as Record<string, unknown> | null) || null;
+    const canAmend = AMEND_FIELD[rec.type] !== null && AMEND_FIELD[rec.type] !== undefined;
+    const isExpanded = expandedId === rec.id;
+    const amendInitial = canAmend
+      ? formatValue(payload?.[AMEND_FIELD[rec.type] as string] ?? payload?.proposedValue)
+      : '';
+    const isActive = activeRec?.id === rec.id;
+    if (compact) {
+      return (
+        <Pressable
+          key={rec.id}
+          onPress={() => setSelectedRecId(rec.id)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: isActive }}
+        >
+          <AivoCard style={[styles.recCardCompact, isActive && styles.recCardActive]}>
+            <View style={styles.recHeader}>
+              <View style={[styles.typeBadge, { backgroundColor: colors.info + '20' }]}>
+                <Text style={[styles.typeText, { color: colors.info }]} numberOfLines={1}>
+                  {rec.type}
+                </Text>
+              </View>
+              <Text style={styles.recDate}>
+                {new Date(rec.createdAt).toLocaleDateString()}
+              </Text>
+            </View>
+            <Text style={styles.recTitle} numberOfLines={2}>{rec.title}</Text>
+            {rec.confidence != null ? (
+              <Text style={styles.recConfidence}>
+                {(rec.confidence * 100).toFixed(0)}% confident
+              </Text>
+            ) : null}
+          </AivoCard>
+        </Pressable>
+      );
+    }
+    return (
             <AivoCard key={rec.id} style={styles.recCard}>
               <View style={styles.recHeader}>
                 <View style={[styles.typeBadge, { backgroundColor: colors.info + '20' }]}>
@@ -213,17 +226,89 @@ export default function RecommendationsScreen() {
               </View>
             </AivoCard>
           );
-        })
-      )}
+  };
+
+  const emptyState = (
+    <EmptyState
+      icon={
+        <Ionicons
+          name="checkmark-circle-outline"
+          size={48}
+          color={colors.success}
+        />
+      }
+      title={t('parentRecommendations.allCaughtUp')}
+      message={t('parentRecommendations.noPending')}
+    />
+  );
+
+  // Tablet console: queue on the left, detail panel on the right.
+  if (isTablet && pending.length > 0) {
+    return (
+      <View
+        style={[
+          styles.container,
+          { paddingTop: insets.top + 16, paddingHorizontal: hPad, alignItems: 'center' },
+        ]}
+      >
+        <View style={{ width: contentWidth, flex: 1 }}>
+          <Text style={styles.title}>{t('parentRecommendations.title')}</Text>
+          <Text style={styles.subtitle}>{t('parentRecommendations.subtitle')}</Text>
+          <SplitPane
+            leftWidth={320}
+            left={
+              <ScrollView
+                refreshControl={
+                  <RefreshControl
+                    refreshing={false}
+                    onRefresh={refetch}
+                    colors={[colors.primary]}
+                  />
+                }
+              >
+                {pending.map((rec) => renderRec(rec, true))}
+              </ScrollView>
+            }
+            right={
+              <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+                {activeRec ? renderRec(activeRec, false) : emptyState}
+              </ScrollView>
+            }
+          />
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      style={[styles.container, { paddingHorizontal: hPad }]}
+      contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32, alignItems: 'center' }}
+      refreshControl={
+        <RefreshControl
+          refreshing={false}
+          onRefresh={refetch}
+          colors={[colors.primary]}
+        />
+      }
+    >
+      <View style={{ width: contentWidth }}>
+        <Text style={styles.title}>{t('parentRecommendations.title')}</Text>
+        <Text style={styles.subtitle}>{t('parentRecommendations.subtitle')}</Text>
+        {pending.length === 0 ? emptyState : pending.map((rec) => renderRec(rec, false))}
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.md },
+  container: { flex: 1, backgroundColor: colors.background },
   title: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', color: colors.text },
   subtitle: { fontSize: 14, fontFamily: 'Nunito-Regular', color: colors.textSecondary, marginTop: 4, marginBottom: spacing.lg },
   recCard: { marginBottom: spacing.md },
+  recCardCompact: { marginBottom: spacing.sm, padding: spacing.sm },
+  recCardActive: { borderWidth: 2, borderColor: colors.primary },
+  recConfidence: { fontSize: 11, fontFamily: 'Nunito-SemiBold', color: colors.textSecondary, marginTop: 4 },
   recHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   typeBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.full },
   typeText: { fontSize: 12, fontFamily: 'Nunito-SemiBold' },

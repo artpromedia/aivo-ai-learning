@@ -70,4 +70,36 @@ export const theme = {
     bodyBold: 'Nunito-Bold',
     mono: 'JetBrainsMono-Regular',
   },
+  /**
+   * Tablet-aware breakpoints — kept here so every package and screen
+   * agrees on the same compact/medium/expanded boundaries. Match
+   * Material 3 / iPadOS size classes.
+   */
+  breakpoints: {
+    compact: 0,
+    medium: 600,
+    expanded: 840,
+    xlarge: 1200,
+  },
+  /**
+   * Recommended content-width caps so cards and forms don't stretch
+   * edge-to-edge on tablet hardware.
+   */
+  contentMaxWidth: {
+    reading: 720,
+    dashboard: 1080,
+    workspace: 1280,
+  },
 } as const;
+
+export type SizeClass = 'compact' | 'medium' | 'expanded';
+
+export function classifySizeClass(width: number): SizeClass {
+  if (width >= theme.breakpoints.expanded) return 'expanded';
+  if (width >= theme.breakpoints.medium) return 'medium';
+  return 'compact';
+}
+
+export function isTabletWidth(width: number): boolean {
+  return width >= theme.breakpoints.medium;
+}

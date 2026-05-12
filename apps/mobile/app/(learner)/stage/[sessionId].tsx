@@ -10,6 +10,9 @@ import { apiFetch } from '@/lib/api';
 import { API } from '@/constants/api';
 import { spacing } from '@/constants/colors';
 import { useTierTheme, type TierThemeMobile } from '@aivo/mobile-ui';
+import { useWindowSizeClass } from '@/src/design/useWindowSizeClass';
+import { ScratchPad } from '@/src/components/learning/ScratchPad';
+import { CONTENT_MAX_WIDTH } from '@/src/design/responsive';
 
 // ── Offline outbox ──────────────────────────────────────────────────────────
 // Session-end payloads are queued in AsyncStorage when offline and flushed
@@ -144,7 +147,12 @@ export default function StageScreen() {
 
   const { tier, theme } = useTierTheme();
   const voice = TIER_VOICE[tier];
-  const styles = useMemo(() => createStyles(theme, voice), [theme, voice]);
+  const { sizeClass, isTablet } = useWindowSizeClass();
+  const styles = useMemo(
+    () => createStyles(theme, voice, sizeClass),
+    [theme, voice, sizeClass],
+  );
+  const [scratchOpen, setScratchOpen] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
@@ -285,11 +293,29 @@ export default function StageScreen() {
             />
           ))}
         </View>
-        <Pressable onPress={handlePause} hitSlop={12}>
-          <Ionicons name="pause" size={28} color={theme.colors.text} />
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+          {isTablet ? (
+            <Pressable
+              onPress={() => setScratchOpen((s) => !s)}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={scratchOpen ? 'Close scratchpad' : 'Open scratchpad'}
+            >
+              <Ionicons
+                name={scratchOpen ? 'close-circle-outline' : 'pencil'}
+                size={26}
+                color={scratchOpen ? theme.colors.primary : theme.colors.text}
+              />
+            </Pressable>
+          ) : null}
+          <Pressable onPress={handlePause} hitSlop={12}>
+            <Ionicons name="pause" size={28} color={theme.colors.text} />
+          </Pressable>
+        </View>
       </View>
 
+      <View style={styles.stageRow}>
+      <View style={styles.stageColumn}>
       <View style={styles.stageCanvas}>
         {/* HIGH tier hides the mascot tile entirely — Atlas is voice-only,
             keeping the focus studio editorial and uncluttered. */}
@@ -365,15 +391,48 @@ export default function StageScreen() {
           </Text>
         </Pressable>
       )}
+      </View>
+
+      {isTablet && scratchOpen ? (
+        <View style={styles.scratchSide}>
+          <ScratchPad gridPaper compactToolbar />
+        </View>
+      ) : null}
+      </View>
     </View>
   );
 }
 
 /** Per-tier StyleSheet — colours, radii, weights all derive from the theme. */
-function createStyles(theme: TierThemeMobile, voice: typeof TIER_VOICE[keyof typeof TIER_VOICE]) {
+function createStyles(
+  theme: TierThemeMobile,
+  voice: typeof TIER_VOICE[keyof typeof TIER_VOICE],
+  sizeClass: 'compact' | 'medium' | 'expanded',
+) {
   const isDark = theme.id === 'MIDDLE';
+  const isTablet = sizeClass !== 'compact';
+  // Cap content width so a 12.9" iPad doesn't render impossibly wide
+  // answer cards and a sea of whitespace around the question.
+  const stageMaxWidth = sizeClass === 'expanded' ? 760 : sizeClass === 'medium' ? 640 : CONTENT_MAX_WIDTH.workspace;
+  // Two columns work on phones; on tablets we want the answers to feel
+  // generous without becoming overstuffed strips.
+  const answerWidth = isTablet ? '47%' : '47%';
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.colors.bg },
+    stageRow: { flex: 1, flexDirection: isTablet ? 'row' : 'column' },
+    stageColumn: {
+      flex: 1,
+      maxWidth: stageMaxWidth,
+      alignSelf: isTablet ? 'flex-start' : 'stretch',
+      width: isTablet ? undefined : '100%',
+    },
+    scratchSide: {
+      flex: 1,
+      margin: spacing.md,
+      marginLeft: 0,
+      borderRadius: 16,
+      overflow: 'hidden',
+    },
     topBar: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -443,7 +502,7 @@ function createStyles(theme: TierThemeMobile, voice: typeof TIER_VOICE[keyof typ
       paddingBottom: 8,
     },
     answerCard: {
-      width: '47%',
+      width: answerWidth,
       backgroundColor: theme.colors.surface,
       borderRadius: theme.radius.lg,
       paddingVertical: theme.id === 'EARLY' ? 26 : 20,

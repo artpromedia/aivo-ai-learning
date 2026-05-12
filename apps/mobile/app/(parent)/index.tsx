@@ -9,6 +9,9 @@ import { useLearners } from '@/hooks/useLearners';
 import { useParentInbox } from '@/hooks/useParentInbox';
 import { AivoCard, StatCard, AivoButton, EmptyState } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
+import { useWindowSizeClass } from '@/src/design/useWindowSizeClass';
+import { CONTENT_MAX_WIDTH, pickBySizeClass } from '@/src/design/responsive';
+import { TabletScaffold } from '@/src/components/layout/TabletScaffold';
 
 export default function ParentDashboard() {
   const insets = useSafeAreaInsets();
@@ -18,6 +21,44 @@ export default function ParentDashboard() {
   const unreadCount = inbox?.unreadCount ?? 0;
   const [refreshing, setRefreshing] = React.useState(false);
   const { t } = useTranslation();
+  const { sizeClass, isTablet, width: winWidth } = useWindowSizeClass();
+  const hPad = pickBySizeClass(sizeClass, { compact: spacing.md, medium: spacing.lg, expanded: spacing.xl });
+  const contentWidth = Math.min(winWidth - hPad * 2, isTablet ? CONTENT_MAX_WIDTH.dashboard : winWidth);
+
+  const railDestinations = [
+    {
+      key: 'home',
+      label: t('tabs.home'),
+      icon: 'home' as const,
+      active: true,
+      onPress: () => router.push('/(parent)' as any),
+    },
+    {
+      key: 'inbox',
+      label: t('tabs.inbox'),
+      icon: 'mail' as const,
+      badge: unreadCount,
+      onPress: () => router.push('/(parent)/recommendations' as any),
+    },
+    {
+      key: 'tutors',
+      label: t('tabs.tutors'),
+      icon: 'school' as const,
+      onPress: () => router.push('/(parent)/tutors' as any),
+    },
+    {
+      key: 'billing',
+      label: t('parent.billing'),
+      icon: 'card-outline' as const,
+      onPress: () => router.push('/(parent)/billing' as any),
+    },
+    {
+      key: 'settings',
+      label: t('tabs.settings'),
+      icon: 'settings' as const,
+      onPress: () => router.push('/(parent)/settings' as any),
+    },
+  ];
 
 
   const onRefresh = async () => {
@@ -26,12 +67,17 @@ export default function ParentDashboard() {
     setRefreshing(false);
   };
 
-  return (
+  const body = (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 32 }}
+      style={[styles.container, { paddingHorizontal: hPad }]}
+      contentContainerStyle={{
+        paddingTop: isTablet ? spacing.lg : insets.top + 16,
+        paddingBottom: 32,
+        alignItems: 'center',
+      }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
     >
+      <View style={{ width: contentWidth }}>
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>{t('parent.greeting', { name: user?.name || 'Parent' })}</Text>
@@ -178,12 +224,15 @@ export default function ParentDashboard() {
           style={{ flex: 1 }}
         />
       </View>
+      </View>
     </ScrollView>
   );
+
+  return <TabletScaffold destinations={railDestinations}>{body}</TabletScaffold>;
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.md },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

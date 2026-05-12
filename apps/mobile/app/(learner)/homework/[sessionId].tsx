@@ -26,6 +26,9 @@ import {
 } from '@/hooks/useHomework';
 import { AivoCard } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
+import { useWindowSizeClass } from '@/src/design/useWindowSizeClass';
+import { HomeworkWorkspace } from '@/src/components/learning/HomeworkWorkspace';
+import { ScratchPad } from '@/src/components/learning/ScratchPad';
 
 type DisplayMessage = HomeworkChatMessage & { _localId: string };
 
@@ -47,6 +50,7 @@ export default function HomeworkSessionScreen() {
   const { t, i18n } = useTranslation();
   const params = useLocalSearchParams<{ sessionId: string }>();
   const sessionId = params.sessionId ?? '';
+  const { isTablet, sizeClass } = useWindowSizeClass();
 
   const { data, isLoading, error } = useHomeworkSessionState(sessionId);
   const sendMessage = useSendHomeworkMessage(sessionId);
@@ -202,13 +206,10 @@ export default function HomeworkSessionScreen() {
     );
   }
 
-  return (
-    <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top + 8 }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-    >
-      <View style={styles.header}>
+  // Header is shared between the phone (top of screen) and tablet
+  // (above the HomeworkWorkspace 3-pane shell).
+  const headerNode = (
+    <View style={[styles.header, isTablet && styles.headerTablet]}>
         <Pressable
           onPress={() => router.back()}
           style={styles.backRow}
@@ -240,20 +241,26 @@ export default function HomeworkSessionScreen() {
           </Pressable>
         ) : null}
       </View>
+  );
 
-      {showProblems && adaptedProblems.length > 0 ? (
-        <View style={styles.problemsWrap}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.problemsRow}
-          >
+  const problemsNode =
+    showProblems && adaptedProblems.length > 0 ? (
+      <View style={[styles.problemsWrap, isTablet && styles.problemsWrapTablet]}>
+        <ScrollView
+          horizontal={!isTablet}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={isTablet ? styles.problemsColumn : styles.problemsRow}
+        >
             {adaptedProblems.map((p) => {
               const done = completedProblems.has(p.problem_number);
               return (
                 <AivoCard
                   key={p.problem_number}
-                  style={[styles.problemCard, done && styles.problemCardDone]}
+                  style={[
+                    styles.problemCard,
+                    isTablet && styles.problemCardTablet,
+                    done && styles.problemCardDone,
+                  ]}
                 >
                   <Text style={styles.problemNum}>
                     {t('learnerHomeworkSession.problemNumber', {
@@ -294,9 +301,11 @@ export default function HomeworkSessionScreen() {
               );
             })}
           </ScrollView>
-        </View>
-      ) : null}
+      </View>
+    ) : null;
 
+  const chatNode = (
+    <View style={styles.chatFlex}>
       <FlatList
         ref={listRef}
         style={styles.messages}
@@ -400,6 +409,42 @@ export default function HomeworkSessionScreen() {
           </Text>
         )}
       </Pressable>
+    </View>
+  );
+
+  if (isTablet) {
+    // Three-pane tablet workspace: problems | scratchpad | chat.
+    // Lets the learner solve on paper while the tutor stays visible.
+    return (
+      <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+        <HomeworkWorkspace
+          header={headerNode}
+          problems={problemsNode ?? <Text style={styles.helperText}>{t('learnerHomeworkSession.noProblems', { defaultValue: 'No adapted problems yet.' })}</Text>}
+          work={
+            <View style={styles.workArea}>
+              <Text style={styles.workTitle}>
+                {t('learnerHomeworkSession.workTitle', { defaultValue: 'Your work' })}
+              </Text>
+              <View style={styles.workPad}>
+                <ScratchPad gridPaper={sizeClass === 'expanded'} compactToolbar />
+              </View>
+            </View>
+          }
+          tutor={chatNode}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top + 8 }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
+      {headerNode}
+      {problemsNode}
+      {chatNode}
     </KeyboardAvoidingView>
   );
 }
@@ -440,6 +485,27 @@ const styles = StyleSheet.create({
   },
   center: { alignItems: 'center', justifyContent: 'center' },
   header: { marginBottom: spacing.sm },
+  headerTablet: { marginBottom: 0, paddingHorizontal: 0 },
+  chatFlex: { flex: 1 },
+  problemsWrapTablet: { marginBottom: 0, flex: 1 },
+  problemsColumn: { gap: 8, paddingBottom: spacing.md },
+  workArea: { flex: 1 },
+  workTitle: {
+    fontSize: 14,
+    fontFamily: 'Nunito-Bold',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
+  },
+  workPad: { flex: 1, minHeight: 240 },
+  helperText: {
+    fontSize: 13,
+    fontFamily: 'Nunito-Regular',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingVertical: spacing.lg,
+  },
   backRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -476,6 +542,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     gap: 6,
   },
+  problemCardTablet: { width: '100%' },
   problemCardDone: { opacity: 0.7 },
   problemNum: {
     fontSize: 11,
