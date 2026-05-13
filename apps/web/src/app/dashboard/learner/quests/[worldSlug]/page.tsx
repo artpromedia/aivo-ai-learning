@@ -60,10 +60,6 @@ const WORLD_THEMES: Record<string, { icon: IconCmp; gradient: string }> = {
 const DEFAULT_THEME = { icon: Globe2 as IconCmp, gradient: "from-slate-500 to-slate-700" };
 /* eslint-enable no-restricted-syntax */
 
-function resolveWorld(worlds: QuestWorld[], slug: string): QuestWorld | undefined {
-  return worlds.find((w) => w.key === slug) ?? worlds.find((w) => w.tutorKey === slug);
-}
-
 type UiStatus = "completed" | "in_progress" | "available" | "locked";
 
 function deriveStatus(
@@ -92,7 +88,8 @@ export default function QuestWorldPage() {
   const params = useParams();
   const worldSlug = params.worldSlug as string;
 
-  const [worlds, setWorlds] = useState<QuestWorld[] | null>(null);
+  const [world, setWorld] = useState<QuestWorld | null>(null);
+  const [worldStatus, setWorldStatus] = useState<"loading" | "found" | "not_found" | "error">("loading");
   const [quests, setQuests] = useState<QuestRow[]>([]);
   const [progress, setProgress] = useState<QuestProgress[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -118,17 +115,24 @@ export default function QuestWorldPage() {
     if (!accessToken || !user) return;
     let cancelled = false;
     const auth = { Authorization: `Bearer ${accessToken}` };
+    setWorldStatus("loading");
+    setFetchError(null);
     (async () => {
       try {
-        const wr = await fetch("/api/engagement/quests/worlds", { headers: auth });
-        if (!wr.ok) throw new Error(`worlds ${wr.status}`);
-        const allWorlds: QuestWorld[] = await wr.json();
+        const wr = await fetch(`/api/engagement/quests/worlds/${encodeURIComponent(worldSlug)}`, { headers: auth });
         if (cancelled) return;
-        setWorlds(allWorlds);
-        const world = resolveWorld(allWorlds, worldSlug);
-        if (!world) return; // 404 rendered below
+        if (wr.status === 404) {
+          setWorld(null);
+          setWorldStatus("not_found");
+          return;
+        }
+        if (!wr.ok) throw new Error(`worlds ${wr.status}`);
+        const resolvedWorld: QuestWorld = await wr.json();
+        if (cancelled) return;
+        setWorld(resolvedWorld);
+        setWorldStatus("found");
         const [qr, pr] = await Promise.all([
-          fetch(`/api/engagement/quests/${world.key}`, { headers: auth }),
+          fetch(`/api/engagement/quests/${resolvedWorld.key}`, { headers: auth }),
           fetch(`/api/engagement/quests/progress/${user.id}`, { headers: auth }),
         ]);
         if (cancelled) return;
@@ -138,7 +142,10 @@ export default function QuestWorldPage() {
         }
         if (pr.ok) setProgress(await pr.json());
       } catch (e) {
-        if (!cancelled) setFetchError(e instanceof Error ? e.message : String(e));
+        if (!cancelled) {
+          setFetchError(e instanceof Error ? e.message : String(e));
+          setWorldStatus("error");
+        }
       }
     })();
     return () => {
@@ -166,8 +173,7 @@ export default function QuestWorldPage() {
 
   if (loading || !user) return null;
 
-  // Worlds list still loading
-  if (worlds === null && !fetchError) {
+  if (worldStatus === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-slate-500 font-semibold">{tCommon("loading")}</p>
@@ -175,14 +181,18 @@ export default function QuestWorldPage() {
     );
   }
 
-  const world = worlds ? resolveWorld(worlds, worldSlug) : undefined;
-
   if (!world) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-slate-500 font-semibold">{t("quest_not_found")}</p>
-          <Link href="/dashboard/learner/quests" className="text-primary hover:underline text-sm mt-2 inline-block">
+        <div className="text-center max-w-sm px-6">
+          <p className="text-slate-700 font-heading font-bold text-lg">{t("quest_not_found")}</p>
+          <p className="text-slate-400 text-xs font-mono mt-2 break-all" data-testid="quest-not-found-slug">
+            {worldSlug}
+          </p>
+          <Link
+            href="/dashboard/learner/quests"
+            className="text-primary hover:underline text-sm mt-4 inline-block font-semibold"
+          >
             ← {tCommon("back")}
           </Link>
         </div>

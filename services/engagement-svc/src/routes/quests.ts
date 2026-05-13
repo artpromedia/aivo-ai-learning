@@ -2,50 +2,15 @@ import { FastifyInstance } from "fastify";
 import { eq, and, asc } from "drizzle-orm";
 import { quests, questProgress } from "@aivo/db";
 import { authenticateRequest } from "../auth.js";
-import { getQuestsWorldsSchema, getQuestsByWorldKeySchema, getQuestsProgressByLearnerIdSchema, questsStartSchema, questsCompleteSchema } from "./schemas.js";
-
-const QUEST_WORLDS = [
-  {
-    key: "nova_number_galaxy",
-    name: "Nova's Number Galaxy",
-    tutorKey: "nova",
-    subject: "Mathematics",
-    description: "Explore the cosmos of numbers with Nova!",
-    chapters: 5,
-  },
-  {
-    key: "sage_story_kingdom",
-    name: "Sage's Story Kingdom",
-    tutorKey: "sage",
-    subject: "English Language Arts",
-    description: "Journey through the kingdom of stories with Sage!",
-    chapters: 5,
-  },
-  {
-    key: "spark_science_lab",
-    name: "Spark's Science Lab",
-    tutorKey: "spark",
-    subject: "Science",
-    description: "Discover the wonders of science with Spark!",
-    chapters: 5,
-  },
-  {
-    key: "chrono_time_tower",
-    name: "Chrono's Time Tower",
-    tutorKey: "chrono",
-    subject: "History",
-    description: "Travel through time with Chrono!",
-    chapters: 5,
-  },
-  {
-    key: "pixel_code_forge",
-    name: "Pixel's Code Forge",
-    tutorKey: "pixel",
-    subject: "Coding & Computer Science",
-    description: "Build amazing things with Pixel!",
-    chapters: 5,
-  },
-];
+import { QUEST_WORLDS, resolveQuestWorld } from "../quest-worlds.js";
+import {
+  getQuestsWorldsSchema,
+  getQuestsWorldBySlugSchema,
+  getQuestsByWorldKeySchema,
+  getQuestsProgressByLearnerIdSchema,
+  questsStartSchema,
+  questsCompleteSchema,
+} from "./schemas.js";
 
 export function registerQuestRoutes(
   app: FastifyInstance,
@@ -57,18 +22,39 @@ export function registerQuestRoutes(
     return QUEST_WORLDS;
   });
 
+  app.get(
+    "/api/engagement/quests/worlds/:slug",
+    { schema: getQuestsWorldBySlugSchema },
+    async (request, reply) => {
+      const claims = await authenticateRequest(request, reply);
+      if (!claims) return;
+
+      const { slug } = request.params as { slug: string };
+      const world = resolveQuestWorld(slug);
+      if (!world) {
+        return reply.status(404).send({ error: "quest_world_not_found", slug });
+      }
+      return world;
+    },
+  );
+
   app.get("/api/engagement/quests/:worldKey", { schema: getQuestsByWorldKeySchema }, async (request, reply) => {
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
     const { worldKey } = request.params as { worldKey: string };
+    const world = resolveQuestWorld(worldKey);
+    if (!world) {
+      return reply.status(404).send({ error: "quest_world_not_found", slug: worldKey });
+    }
+
     const worldQuests = await db
       .select()
       .from(quests)
-      .where(eq(quests.worldKey, worldKey))
+      .where(eq(quests.worldKey, world.key))
       .orderBy(asc(quests.chapterNumber));
 
-    return { world: QUEST_WORLDS.find((w) => w.key === worldKey), quests: worldQuests };
+    return { world, quests: worldQuests };
   });
 
   app.get("/api/engagement/quests/progress/:learnerId", { schema: getQuestsProgressByLearnerIdSchema }, async (request, reply) => {

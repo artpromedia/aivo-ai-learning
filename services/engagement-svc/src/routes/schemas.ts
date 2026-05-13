@@ -139,6 +139,14 @@ export const getQuestsWorldsSchema = {
   response: { 200: passthroughArray },
 } as const;
 
+export const getQuestsWorldBySlugSchema = {
+  tags: ["Engagement"],
+  operationId: "getQuestsWorldBySlug",
+  summary: "GET /api/engagement/quests/worlds/:slug",
+  params: { type: "object", required: ["slug"], additionalProperties: true, properties: { slug: { type: "string" } } },
+  response: { 200: passthroughObject, 404: errorResponse },
+} as const;
+
 export const getQuestsByWorldKeySchema = {
   tags: ["Engagement"],
   operationId: "getQuestsByWorldKey",
