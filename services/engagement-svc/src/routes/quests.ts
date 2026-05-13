@@ -46,6 +46,27 @@ export function registerQuestRoutes(
   );
 
   app.get(
+    "/api/engagement/quests/:worldKey",
+    { schema: getQuestsByWorldKeySchema },
+    async (request, reply) => {
+      const claims = await authenticateRequest(request, reply);
+      if (!claims) return;
+
+      const { worldKey } = request.params as { worldKey: string };
+      const world = resolveQuestWorld(worldKey);
+      if (!world) {
+        return reply.status(404).send({ error: "quest_world_not_found", worldKey });
+      }
+      const rows = await db
+        .select()
+        .from(quests)
+        .where(eq(quests.worldKey, world.key))
+        .orderBy(asc(quests.chapterNumber));
+      return { world, quests: rows };
+    },
+  );
+
+  app.get(
     "/api/engagement/quests/chapter/:questId",
     { schema: getQuestsChapterByQuestIdSchema },
     async (request, reply) => {
