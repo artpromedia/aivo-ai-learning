@@ -1,9 +1,16 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  TUTOR_KEY_TO_SKU,
+  type TutorKey,
+  type TutorSku,
+} from '@aivo/billing-entitlements';
+import { TUTORS } from '@aivo/brand';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { apiFetch } from '@/lib/api';
@@ -21,6 +28,23 @@ interface Plan {
   features: string[];
 }
 
+interface Subscription {
+  plan: string;
+  status: string;
+  paymentStatus?: string | null;
+  cancelAtPeriodEnd: boolean;
+  hasStripeCustomer?: boolean;
+  currentPeriodEnd?: string | null;
+}
+
+interface Entitlements {
+  plan: string;
+  status: string;
+  includedTutorSkus: TutorSku[];
+  purchasedTutorSkus: TutorSku[];
+  effectiveTutorSkus: TutorSku[];
+}
+
 export default function BillingScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -28,11 +52,9 @@ export default function BillingScreen() {
   const queryClient = useQueryClient();
   const tenantId = user?.tenantId || '';
 
-  const [switchingPlan, setSwitchingPlan] = useState<string | null>(null);
-  const [editPaymentVisible, setEditPaymentVisible] = useState(false);
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [savingPayment, setSavingPayment] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [addonLoading, setAddonLoading] = useState<TutorKey | null>(null);
 
   const { data: plansData } = useQuery<{ plans: Plan[] }>({
     queryKey: ['billing-plans'],
@@ -43,7 +65,7 @@ export default function BillingScreen() {
     },
   });
 
-  const { data: subscription } = useQuery({
+  const { data: subscription } = useQuery<Subscription>({
     queryKey: ['billing-subscription', tenantId],
     queryFn: async () => {
       const res = await apiFetch(API.BILLING, `/api/billing/subscription/${tenantId}`);
@@ -53,72 +75,154 @@ export default function BillingScreen() {
     enabled: !!tenantId,
   });
 
+  const { data: entitlements } = useQuery<Entitlements>({
+    queryKey: ['billing-entitlements', tenantId],
+    queryFn: async () => {
+      const res = await apiFetch(API.BILLING, `/api/billing/entitlements/${tenantId}`);
+      if (!res.ok) throw new Error('Failed to fetch entitlements');
+      return res.json();
+    },
+    enabled: !!tenantId,
+  });
+
   const currentPlanId = subscription?.plan || 'free';
   const plans = plansData?.plans || [];
+  const includedSkus = new Set<TutorSku>(entitlements?.includedTutorSkus ?? []);
+  const purchasedSkus = new Set<TutorSku>(entitlements?.purchasedTutorSkus ?? []);
+  const paymentFailed =
+    subscription?.paymentStatus === 'failed' || subscription?.status === 'past_due';
 
-  const handleSwitchPlan = useCallback(async (planId: string, planName: string) => {
-    if (planId === 'district') {
-      Alert.alert('Contact Sales', 'District plans require a custom agreement. Please contact sales@aivolearning.com for more information.');
-      return;
-    }
-    Alert.alert(
-      'Switch Plan',
-      `Switch to ${planName}? Your billing will be updated at the start of your next cycle.`,
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: 'Switch',
-          onPress: async () => {
-            setSwitchingPlan(planId);
-            try {
-              const res = await apiFetch(API.BILLING, '/api/billing/subscription', {
-                method: 'POST',
-                body: JSON.stringify({ tenantId, planId }),
-              });
-              const data = await res.json();
-              if (res.ok) {
-                Alert.alert('✅', `Switched to ${planName}!`);
-                queryClient.invalidateQueries({ queryKey: ['billing-subscription', tenantId] });
-              } else {
-                Alert.alert(t('common.error'), data.error || 'Failed to switch plan');
-              }
-            } catch {
-              Alert.alert(t('common.error'), 'Network error. Please try again.');
-            } finally {
-              setSwitchingPlan(null);
-            }
-          },
-        },
-      ]
-    );
-  }, [tenantId, t, queryClient]);
+  const refreshAll = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['billing-subscription', tenantId] });
+    queryClient.invalidateQueries({ queryKey: ['billing-entitlements', tenantId] });
+  }, [tenantId, queryClient]);
 
-  const handleSavePayment = useCallback(async () => {
-    if (cardNumber.length < 16 || cardExpiry.length < 5) {
-      Alert.alert(t('common.error'), 'Please enter valid card details.');
-      return;
-    }
-    setSavingPayment(true);
-    try {
-      const res = await apiFetch(API.BILLING, '/api/billing/subscription', {
-        method: 'POST',
-        body: JSON.stringify({ tenantId, planId: currentPlanId, paymentMethodId: `card_${Date.now()}` }),
-      });
-      if (res.ok) {
-        Alert.alert('✅', 'Payment method updated!');
-        setEditPaymentVisible(false);
-        setCardNumber('');
-        setCardExpiry('');
-      } else {
+  const startCheckout = useCallback(
+    async (planId: string, planName: string) => {
+      if (planId === 'district') {
+        Alert.alert(
+          'Contact Sales',
+          'District plans require a custom agreement. Please contact sales@aivolearning.com for more information.',
+        );
+        return;
+      }
+      if (planId === 'free') {
+        Alert.alert(
+          'Downgrade to Free',
+          'Cancel your current subscription? Access continues until the end of the billing period.',
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: 'Cancel subscription',
+              style: 'destructive',
+              onPress: async () => {
+                const res = await apiFetch(
+                  API.BILLING,
+                  `/api/billing/subscription/${tenantId}/cancel`,
+                  { method: 'POST' },
+                );
+                if (res.ok) {
+                  Alert.alert('Scheduled', 'Your subscription will end at the period end.');
+                  refreshAll();
+                } else {
+                  const data = await res.json().catch(() => ({}));
+                  Alert.alert(t('common.error'), data.error || 'Could not cancel');
+                }
+              },
+            },
+          ],
+        );
+        return;
+      }
+      setCheckoutLoading(planId);
+      try {
+        const res = await apiFetch(API.BILLING, '/api/billing/checkout/session', {
+          method: 'POST',
+          body: JSON.stringify({ tenantId, planId }),
+        });
         const data = await res.json();
-        Alert.alert(t('common.error'), data.error || 'Failed to update payment');
+        if (res.ok && data.checkoutUrl) {
+          // Opens the OS browser/tab so 3DS, Apple Pay, Link, etc. all work.
+          await WebBrowser.openBrowserAsync(data.checkoutUrl);
+          refreshAll();
+        } else {
+          Alert.alert(t('common.error'), data.error || `Could not start checkout for ${planName}`);
+        }
+      } catch {
+        Alert.alert(t('common.error'), 'Network error. Please try again.');
+      } finally {
+        setCheckoutLoading(null);
+      }
+    },
+    [tenantId, t, refreshAll],
+  );
+
+  const openPortal = useCallback(async () => {
+    setPortalLoading(true);
+    try {
+      const res = await apiFetch(API.BILLING, '/api/billing/portal/session', {
+        method: 'POST',
+        body: JSON.stringify({ tenantId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.portalUrl) {
+        await WebBrowser.openBrowserAsync(data.portalUrl);
+        refreshAll();
+      } else {
+        Alert.alert(t('common.error'), data.error || 'Could not open billing portal');
       }
     } catch {
       Alert.alert(t('common.error'), 'Network error. Please try again.');
     } finally {
-      setSavingPayment(false);
+      setPortalLoading(false);
     }
-  }, [cardNumber, cardExpiry, tenantId, currentPlanId, t]);
+  }, [tenantId, t, refreshAll]);
+
+  const addAddon = useCallback(
+    async (key: TutorKey) => {
+      setAddonLoading(key);
+      try {
+        const res = await apiFetch(API.BILLING, '/api/billing/addons', {
+          method: 'POST',
+          body: JSON.stringify({ tenantId, tutorSku: TUTOR_KEY_TO_SKU[key] }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          refreshAll();
+        } else {
+          Alert.alert(t('common.error'), data.error || 'Could not add tutor');
+        }
+      } catch {
+        Alert.alert(t('common.error'), 'Network error. Please try again.');
+      } finally {
+        setAddonLoading(null);
+      }
+    },
+    [tenantId, t, refreshAll],
+  );
+
+  const removeAddon = useCallback(
+    async (key: TutorKey) => {
+      setAddonLoading(key);
+      try {
+        const sku = TUTOR_KEY_TO_SKU[key];
+        const res = await apiFetch(API.BILLING, `/api/billing/addons/${tenantId}/${sku}`, {
+          method: 'DELETE',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          refreshAll();
+        } else {
+          Alert.alert(t('common.error'), data.error || 'Could not remove tutor');
+        }
+      } catch {
+        Alert.alert(t('common.error'), 'Network error. Please try again.');
+      } finally {
+        setAddonLoading(null);
+      }
+    },
+    [tenantId, t, refreshAll],
+  );
 
   return (
     <ScrollView
@@ -133,9 +237,23 @@ export default function BillingScreen() {
       <Text style={styles.title}>{t('parentBilling.title')}</Text>
       <Text style={styles.subtitle}>{t('parentBilling.subtitle')}</Text>
 
+      {paymentFailed && (
+        <AivoCard style={styles.paymentFailedCard}>
+          <Text style={styles.paymentFailedText}>
+            Your last payment failed. Update your card to keep access.
+          </Text>
+          <AivoButton
+            title={portalLoading ? '...' : 'Update payment method'}
+            onPress={openPortal}
+            size="sm"
+            style={{ marginTop: spacing.sm }}
+          />
+        </AivoCard>
+      )}
+
       {plans.map((plan) => {
         const isCurrent = plan.id === currentPlanId;
-        const isSwitching = switchingPlan === plan.id;
+        const isSwitching = checkoutLoading === plan.id;
         return (
           <AivoCard key={plan.id} style={[styles.planCard, isCurrent && styles.planCurrent]}>
             {isCurrent && (
@@ -145,8 +263,12 @@ export default function BillingScreen() {
             )}
             <Text style={styles.planName}>{plan.name}</Text>
             <View style={styles.priceRow}>
-              <Text style={styles.planPrice}>{plan.price === 0 ? (plan.priceLabel || '$0') : `$${plan.price}`}</Text>
-              <Text style={styles.planPeriod}>{plan.price > 0 ? `/${plan.interval}` : ''}</Text>
+              <Text style={styles.planPrice}>
+                {plan.price === 0 ? plan.priceLabel || '$0' : `$${plan.price}`}
+              </Text>
+              <Text style={styles.planPeriod}>
+                {plan.price > 0 ? `/${plan.interval}` : ''}
+              </Text>
             </View>
             {plan.features.map((f) => (
               <View key={f} style={styles.featureRow}>
@@ -154,19 +276,24 @@ export default function BillingScreen() {
                 <Text style={styles.featureText}>{f}</Text>
               </View>
             ))}
-            {!isCurrent && (
-              isSwitching ? (
+            {!isCurrent &&
+              (isSwitching ? (
                 <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.md }} />
               ) : (
                 <AivoButton
-                  title={plan.id === 'district' ? t('parentBilling.contactSales') : t('parentBilling.switchPlan')}
-                  onPress={() => handleSwitchPlan(plan.id, plan.name)}
+                  title={
+                    plan.id === 'district'
+                      ? t('parentBilling.contactSales')
+                      : plan.id === 'free'
+                        ? 'Downgrade to free'
+                        : t('parentBilling.switchPlan')
+                  }
+                  onPress={() => startCheckout(plan.id, plan.name)}
                   variant="outline"
                   size="sm"
                   style={{ marginTop: spacing.md }}
                 />
-              )
-            )}
+              ))}
           </AivoCard>
         );
       })}
@@ -178,53 +305,61 @@ export default function BillingScreen() {
         <View style={styles.paymentRow}>
           <Ionicons name="card" size={24} color={colors.primary} />
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.cardNumber}>**** **** **** 4242</Text>
-            <Text style={styles.cardExpiry}>Expires 12/2027</Text>
+            <Text style={styles.cardNumber}>
+              {subscription?.hasStripeCustomer ? 'Managed via Stripe' : 'No payment method on file'}
+            </Text>
+            <Text style={styles.cardExpiry}>
+              {subscription?.hasStripeCustomer
+                ? 'Tap manage to update card, view invoices, or cancel.'
+                : 'Subscribe to a paid plan to add a card.'}
+            </Text>
           </View>
-          <Pressable onPress={() => setEditPaymentVisible(true)}>
-            <Text style={styles.editLink}>{t('common.edit')}</Text>
-          </Pressable>
         </View>
+        {subscription?.hasStripeCustomer && (
+          <AivoButton
+            title={portalLoading ? '...' : 'Manage billing'}
+            onPress={openPortal}
+            size="sm"
+            style={{ marginTop: spacing.sm }}
+          />
+        )}
       </AivoCard>
 
-      <Modal visible={editPaymentVisible} transparent animationType="slide">
-        <Pressable style={styles.modalOverlay} onPress={() => setEditPaymentVisible(false)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>Update Payment Method</Text>
-            <Text style={styles.fieldLabel}>Card Number</Text>
-            <TextInput
-              style={styles.input}
-              value={cardNumber}
-              onChangeText={v => setCardNumber(v.replace(/\D/g, '').slice(0, 16))}
-              placeholder="1234 5678 9012 3456"
-              placeholderTextColor={colors.textSecondary}
-              keyboardType="number-pad"
-              maxLength={16}
-            />
-            <Text style={styles.fieldLabel}>Expiry (MM/YY)</Text>
-            <TextInput
-              style={styles.input}
-              value={cardExpiry}
-              onChangeText={v => {
-                const digits = v.replace(/\D/g, '').slice(0, 4);
-                setCardExpiry(digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits);
-              }}
-              placeholder="12/27"
-              placeholderTextColor={colors.textSecondary}
-              keyboardType="number-pad"
-              maxLength={5}
-            />
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.md }}>
-              <AivoButton title={t('common.cancel')} onPress={() => setEditPaymentVisible(false)} variant="outline" size="sm" style={{ flex: 1 }} />
-              {savingPayment ? (
-                <ActivityIndicator color={colors.primary} style={{ flex: 1 }} />
-              ) : (
-                <AivoButton title={t('common.save')} onPress={handleSavePayment} size="sm" style={{ flex: 1 }} />
-              )}
+      <Text style={[styles.sectionTitle, { marginTop: spacing.lg, marginBottom: spacing.md }]}>
+        Tutor add-ons
+      </Text>
+      {(Object.entries(TUTORS) as [TutorKey, typeof TUTORS[TutorKey]][]).map(([key, tutor]) => {
+        const sku = TUTOR_KEY_TO_SKU[key];
+        const isIncluded = includedSkus.has(sku);
+        const isPurchased = purchasedSkus.has(sku);
+        const isProcessing = addonLoading === key;
+        return (
+          <AivoCard key={key} style={styles.tutorRow}>
+            <View style={styles.tutorInfo}>
+              <Text style={styles.tutorName}>{tutor.name}</Text>
+              <Text style={styles.tutorDomain}>{tutor.domain}</Text>
             </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+            {isIncluded ? (
+              <Text style={styles.includedTag}>Included</Text>
+            ) : isPurchased ? (
+              <AivoButton
+                title={isProcessing ? '...' : 'Remove'}
+                onPress={() => removeAddon(key)}
+                variant="outline"
+                size="sm"
+                disabled={isProcessing}
+              />
+            ) : (
+              <AivoButton
+                title={isProcessing ? '...' : '+ $4.99/mo'}
+                onPress={() => addAddon(key)}
+                size="sm"
+                disabled={isProcessing || !subscription?.hasStripeCustomer}
+              />
+            )}
+          </AivoCard>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -249,19 +384,11 @@ const styles = StyleSheet.create({
   paymentRow: { flexDirection: 'row', alignItems: 'center' },
   cardNumber: { fontSize: 15, fontFamily: 'Nunito-Bold', color: colors.text },
   cardExpiry: { fontSize: 12, fontFamily: 'Nunito-Regular', color: colors.textSecondary },
-  editLink: { fontSize: 14, fontFamily: 'Nunito-SemiBold', color: colors.primary },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: colors.card, borderRadius: radius.xl, padding: spacing.lg, width: '85%' },
-  modalTitle: { fontSize: 20, fontFamily: 'Nunito-ExtraBold', color: colors.text, textAlign: 'center', marginBottom: spacing.md },
-  fieldLabel: { fontSize: 13, fontFamily: 'Nunito-Bold', color: colors.textSecondary, marginBottom: 4, marginTop: 8 },
-  input: {
-    height: 44,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    fontSize: 16,
-    fontFamily: 'Nunito-Regular',
-    color: colors.text,
-  },
+  paymentFailedCard: { marginBottom: spacing.md, borderWidth: 2, borderColor: colors.error },
+  paymentFailedText: { fontSize: 14, fontFamily: 'Nunito-Bold', color: colors.error },
+  tutorRow: { marginBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  tutorInfo: { flex: 1 },
+  tutorName: { fontSize: 15, fontFamily: 'Nunito-Bold', color: colors.text },
+  tutorDomain: { fontSize: 12, fontFamily: 'Nunito-Regular', color: colors.textSecondary },
+  includedTag: { fontSize: 12, fontFamily: 'Nunito-Bold', color: colors.textSecondary },
 });

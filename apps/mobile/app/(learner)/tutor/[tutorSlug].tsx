@@ -1,14 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuth } from '@/hooks/useAuth';
 import { TUTORS } from '@aivo/brand';
+import { TUTOR_KEY_TO_SKU, isTutorKey } from '@aivo/billing-entitlements';
 import { AivoButton } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
 import { useWindowSizeClass } from '@/src/design/useWindowSizeClass';
 import { CONTENT_MAX_WIDTH, pickBySizeClass } from '@/src/design/responsive';
+import { sessionClient, TutorNotEntitledError } from '@/src/api/sessionClient';
 
 type TutorKey = keyof typeof TUTORS;
 
@@ -17,9 +20,11 @@ export default function TutorSessionScreen() {
   const insets = useSafeAreaInsets();
   const tutor = TUTORS[tutorSlug as TutorKey];
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { sizeClass, width: winWidth } = useWindowSizeClass();
   const hPad = pickBySizeClass(sizeClass, { compact: spacing.md, medium: spacing.lg, expanded: spacing.xl });
   const contentWidth = Math.min(winWidth - hPad * 2, CONTENT_MAX_WIDTH.reading);
+  const [starting, setStarting] = useState(false);
 
   if (!tutor) {
     return (
@@ -31,6 +36,37 @@ export default function TutorSessionScreen() {
       </View>
     );
   }
+
+  const startSession = async () => {
+    if (!user || !isTutorKey(tutorSlug as string)) return;
+    setStarting(true);
+    try {
+      const sku = TUTOR_KEY_TO_SKU[tutorSlug as TutorKey];
+      const { sessionId } = await sessionClient.startSession({
+        learnerId: user.id,
+        tutorSku: sku,
+      });
+      router.push(`/(learner)/stage/${sessionId}` as any);
+    } catch (err) {
+      if (err instanceof TutorNotEntitledError) {
+        Alert.alert(
+          'Tutor locked',
+          "This tutor isn't included in your current plan. Open billing to add it as an add-on or upgrade your plan.",
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: 'Open billing', onPress: () => router.push('/(parent)/billing') },
+          ],
+        );
+      } else {
+        Alert.alert(
+          t('common.error'),
+          err instanceof Error ? err.message : 'Could not start session.',
+        );
+      }
+    } finally {
+      setStarting(false);
+    }
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16, paddingHorizontal: hPad, alignItems: 'center' }]}>
@@ -63,12 +99,16 @@ export default function TutorSessionScreen() {
         </View>
       </View>
 
-      <AivoButton
-        title={t('learnerTutor.startSession', { name: tutor.name })}
-        onPress={() => router.push(`/(learner)/stage/${tutorSlug}-session` as any)}
-        size="lg"
-        style={{ marginTop: spacing.xl }}
-      />
+      {starting ? (
+        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+      ) : (
+        <AivoButton
+          title={t('learnerTutor.startSession', { name: tutor.name })}
+          onPress={startSession}
+          size="lg"
+          style={{ marginTop: spacing.xl }}
+        />
+      )}
       </View>
     </View>
   );

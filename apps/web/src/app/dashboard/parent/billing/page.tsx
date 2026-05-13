@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { TUTORS, type TutorKey } from "@aivo/brand";
+import { TUTOR_KEY_TO_SKU, TUTOR_SKU_TO_KEY, type TutorSku } from "@aivo/billing-entitlements";
 import { useTranslations } from "next-intl";
 import { Check } from "lucide-react";
 
@@ -23,9 +24,11 @@ interface Subscription {
   tenantId: string;
   plan: string;
   status: string;
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
+  paymentStatus?: string | null;
+  currentPeriodStart?: string | null;
+  currentPeriodEnd?: string | null;
   cancelAtPeriodEnd: boolean;
+  hasStripeCustomer?: boolean;
 }
 
 interface Usage {
@@ -35,11 +38,30 @@ interface Usage {
   storageBytes: number;
 }
 
-const PLAN_INCLUDED_TUTORS: Record<string, TutorKey[]> = {
-  free: ["sage"],
-  single: ["sage", "nova", "spark", "chrono"],
-  family: ["sage", "nova", "spark", "chrono"],
-};
+interface Entitlements {
+  tenantId: string;
+  plan: string;
+  status: string;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd: string | null;
+  paymentStatus: string | null;
+  includedTutorSkus: TutorSku[];
+  purchasedTutorSkus: TutorSku[];
+  effectiveTutorSkus: TutorSku[];
+}
+
+interface Invoice {
+  id: string;
+  number?: string;
+  status: string;
+  amount: number;
+  amountPaid?: number;
+  currency?: string;
+  date?: string | null;
+  paidAt?: string | null;
+  url?: string | null;
+  pdf?: string | null;
+}
 
 export default function ParentBillingPage() {
   const { user, accessToken, logout, loading } = useAuth();
@@ -50,20 +72,29 @@ export default function ParentBillingPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [usage, setUsage] = useState<Usage | null>(null);
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [activeTutorAddons, setActiveTutorAddons] = useState<string[]>([]);
-  const [addonLoading, setAddonLoading] = useState<string | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [entitlements, setEntitlements] = useState<Entitlements | null>(null);
+  const [addonLoading, setAddonLoading] = useState<TutorKey | null>(null);
   const [addonMsg, setAddonMsg] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelMsg, setCancelMsg] = useState("");
   const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
   const [upgradeMsg, setUpgradeMsg] = useState("");
+  const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
     if (!loading && user && user.role !== "PARENT") router.push("/");
   }, [user, loading, router]);
+
+  const refreshEntitlements = async () => {
+    if (!accessToken || !user) return;
+    const res = await fetch(`/api/billing/entitlements/${user.tenantId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (res.ok) setEntitlements(await res.json());
+  };
 
   useEffect(() => {
     if (!accessToken || !user) return;
@@ -85,28 +116,80 @@ export default function ParentBillingPage() {
       headers: { Authorization: `Bearer ${accessToken}` },
     }).then(r => r.ok ? r.json() : { invoices: [] }).then(d => setInvoices(d.invoices || [])).catch(() => {});
 
-    fetch(`/api/billing/addons/${user.tenantId}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    }).then(r => r.ok ? r.json() : { addons: [] }).then(d => {
-      setActiveTutorAddons((d.addons || []).map((a: any) => a.tutorId));
-    }).catch(() => {});
+    refreshEntitlements();
   }, [accessToken, user]);
 
-  const handleAddTutor = async (tutorId: string) => {
-    setAddonLoading(tutorId);
+  const goToCheckout = async (planId: string) => {
+    if (planId === "district") return;
+    if (planId === "free") {
+      // Downgrade to free → schedule cancellation at period end.
+      handleCancel();
+      return;
+    }
+    setUpgradeLoading(planId);
+    setUpgradeMsg("");
+    try {
+      const res = await fetch("/api/billing/checkout/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          tenantId: user?.tenantId,
+          planId,
+          successUrl: `${window.location.origin}/dashboard/parent/billing?checkout=success`,
+          cancelUrl: `${window.location.origin}/dashboard/parent/billing?checkout=cancel`,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+      setUpgradeMsg(data.error || tc("error"));
+    } catch {
+      setUpgradeMsg(tc("error"));
+    }
+    setUpgradeLoading(null);
+  };
+
+  const openCustomerPortal = async () => {
+    setPortalLoading(true);
+    try {
+      const res = await fetch("/api/billing/portal/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          tenantId: user?.tenantId,
+          returnUrl: window.location.href,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.portalUrl) {
+        window.location.href = data.portalUrl;
+        return;
+      }
+      setUpgradeMsg(data.error || tc("error"));
+    } catch {
+      setUpgradeMsg(tc("error"));
+    }
+    setPortalLoading(false);
+  };
+
+  const handleAddTutor = async (key: TutorKey) => {
+    setAddonLoading(key);
     setAddonMsg("");
     try {
+      const sku = TUTOR_KEY_TO_SKU[key];
       const res = await fetch("/api/billing/addons", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ tenantId: user?.tenantId, tutorId }),
+        body: JSON.stringify({ tenantId: user?.tenantId, tutorSku: sku }),
       });
+      const data = await res.json();
       if (res.ok) {
-        setActiveTutorAddons(prev => [...prev, tutorId]);
-        const tutor = TUTORS[tutorId as TutorKey];
-        setAddonMsg(t("tutor_added_msg", { name: tutor?.name || tutorId }));
+        await refreshEntitlements();
+        const tutor = TUTORS[key];
+        setAddonMsg(t("tutor_added_msg", { name: tutor?.name || key }));
       } else {
-        const data = await res.json();
         setAddonMsg(data.error || t("failed_add_tutor"));
       }
     } catch {
@@ -115,18 +198,19 @@ export default function ParentBillingPage() {
     setAddonLoading(null);
   };
 
-  const handleRemoveTutor = async (tutorId: string) => {
-    setAddonLoading(tutorId);
+  const handleRemoveTutor = async (key: TutorKey) => {
+    setAddonLoading(key);
     setAddonMsg("");
     try {
-      const res = await fetch(`/api/billing/addons/${user?.tenantId}/${tutorId}`, {
+      const sku = TUTOR_KEY_TO_SKU[key];
+      const res = await fetch(`/api/billing/addons/${user?.tenantId}/${sku}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
-        setActiveTutorAddons(prev => prev.filter(t => t !== tutorId));
-        const tutor = TUTORS[tutorId as TutorKey];
-        setAddonMsg(t("tutor_removed_msg", { name: tutor?.name || tutorId }));
+        await refreshEntitlements();
+        const tutor = TUTORS[key];
+        setAddonMsg(t("tutor_removed_msg", { name: tutor?.name || key }));
       } else {
         const data = await res.json();
         setAddonMsg(data.error || t("failed_remove_tutor"));
@@ -135,24 +219,6 @@ export default function ParentBillingPage() {
       setAddonMsg(t("network_error"));
     }
     setAddonLoading(null);
-  };
-
-  const handleUpgrade = async (planId: string) => {
-    if (planId === "district") return;
-    setUpgradeLoading(planId);
-    setUpgradeMsg("");
-    try {
-      const res = await fetch("/api/billing/subscription", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ tenantId: user?.tenantId, planId }),
-      });
-      if (res.ok) {
-        setUpgradeMsg(t("switched_plan", { name: plans.find(p => p.id === planId)?.name || planId }));
-        setSubscription(prev => prev ? { ...prev, plan: planId } : prev);
-      }
-    } catch {}
-    setUpgradeLoading(null);
   };
 
   const handleCancel = async () => {
@@ -172,12 +238,27 @@ export default function ParentBillingPage() {
     setCancelLoading(false);
   };
 
+  const handleResume = async () => {
+    try {
+      const res = await fetch(`/api/billing/subscription/${user?.tenantId}/resume`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) {
+        setSubscription(prev => prev ? { ...prev, cancelAtPeriodEnd: false } : prev);
+      }
+    } catch {}
+  };
+
   if (loading || !user) return null;
 
   const currentPlan = plans.find(p => p.id === subscription?.plan);
   const parentPlans = plans.filter(p => p.id !== "district");
   const districtPlan = plans.find(p => p.id === "district");
-  const includedTutors: TutorKey[] = PLAN_INCLUDED_TUTORS[subscription?.plan || "free"] || ["sage"];
+  // Entitlements is the source of truth for included/purchased tutors.
+  const includedSkus = new Set<TutorSku>(entitlements?.includedTutorSkus ?? []);
+  const purchasedSkus = new Set<TutorSku>(entitlements?.purchasedTutorSkus ?? []);
+  const paymentFailed = subscription?.paymentStatus === "failed" || subscription?.status === "past_due";
 
   return (
     <div className="vi-bg">
@@ -194,6 +275,21 @@ export default function ParentBillingPage() {
       <main className="max-w-5xl mx-auto px-8 py-8 space-y-8">
         <h1 className="text-2xl font-heading font-bold vi-text">{t("billing_page_title")}</h1>
 
+        {paymentFailed && (
+          <div className="vi-card p-4 border-2 border-[hsl(var(--visual-math)/0.4)] bg-[hsl(var(--visual-math)/0.06)] flex items-center justify-between gap-4">
+            <p className="text-sm text-[hsl(var(--visual-math))] font-semibold">
+              {t("payment_failed_warning") /* falls through to key if missing */}
+            </p>
+            <button
+              onClick={openCustomerPortal}
+              disabled={portalLoading}
+              className="px-4 py-2 rounded-lg bg-[hsl(var(--visual-math))] text-white font-bold text-sm hover:opacity-90 transition disabled:opacity-50"
+            >
+              {portalLoading ? "..." : t("manage_payment_method")}
+            </button>
+          </div>
+        )}
+
         {upgradeMsg && <p className="text-sm text-[hsl(var(--visual-science))] bg-[hsl(var(--visual-science)/0.12)] p-3 rounded-lg">{upgradeMsg}</p>}
         {cancelMsg && <p className="text-sm text-[hsl(var(--visual-sel))] bg-[hsl(var(--visual-sel)/0.12)] p-3 rounded-lg">{cancelMsg}</p>}
 
@@ -209,16 +305,33 @@ export default function ParentBillingPage() {
             {subscription?.cancelAtPeriodEnd && (
               <p className="text-xs text-[hsl(var(--visual-sel))] mt-2 font-medium">{t("cancels_at_period_end")}</p>
             )}
+            {subscription?.cancelAtPeriodEnd && (
+              <button
+                onClick={handleResume}
+                className="mt-2 text-xs text-[hsl(var(--visual-primary))] font-semibold hover:underline"
+              >
+                {t("resume_subscription") || "Resume subscription"}
+              </button>
+            )}
           </div>
           <div className="vi-card p-6">
             <h3 className="text-xs vi-text-muted font-semibold uppercase mb-1">{t("billing_period")}</h3>
             <p className="text-sm vi-text-muted">
-              {subscription ? new Date(subscription.currentPeriodStart).toLocaleDateString() : "--"} -
-              {subscription ? " " + new Date(subscription.currentPeriodEnd).toLocaleDateString() : " --"}
+              {subscription?.currentPeriodStart ? new Date(subscription.currentPeriodStart).toLocaleDateString() : "--"} -
+              {subscription?.currentPeriodEnd ? " " + new Date(subscription.currentPeriodEnd).toLocaleDateString() : " --"}
             </p>
             <p className="text-xs vi-text-muted mt-1">
               {subscription?.status === "active" ? tc("active") : subscription?.status || t("na")}
             </p>
+            {subscription?.hasStripeCustomer && (
+              <button
+                onClick={openCustomerPortal}
+                disabled={portalLoading}
+                className="mt-3 text-xs text-[hsl(var(--visual-primary))] font-semibold hover:underline disabled:opacity-50"
+              >
+                {portalLoading ? "..." : (t("manage_billing") || "Manage billing")}
+              </button>
+            )}
           </div>
           <div className="vi-card p-6">
             <h3 className="text-xs vi-text-muted font-semibold uppercase mb-1">{t("this_period_usage")}</h3>
@@ -272,7 +385,7 @@ export default function ParentBillingPage() {
                     ))}
                   </ul>
                   <button
-                    onClick={() => !isCurrent && handleUpgrade(plan.id)}
+                    onClick={() => !isCurrent && goToCheckout(plan.id)}
                     disabled={isCurrent || upgradeLoading === plan.id}
                     className={`w-full mt-5 py-2.5 rounded-xl text-sm font-bold transition ${isCurrent ? "vi-surface-soft vi-text-muted cursor-default" : highlighted ? "bg-[hsl(var(--visual-primary))] text-white hover:bg-[hsl(var(--visual-primary)/0.9)] shadow-sm" : "bg-[hsl(var(--visual-text))] text-white hover:opacity-90"} disabled:opacity-50`}
                     style={{ minHeight: 44 }}
@@ -300,7 +413,7 @@ export default function ParentBillingPage() {
         <div className="vi-card p-6">
           <h2 className="text-lg font-heading font-bold vi-text mb-2">{t("addon_tutors_title")}</h2>
           <p className="text-sm vi-text-muted mb-4">
-            {t("addon_tutors_desc", { count: includedTutors.length })}
+            {t("addon_tutors_desc", { count: includedSkus.size })}
           </p>
           {addonMsg && (
             <p className={`text-sm p-3 rounded-lg mb-4 ${addonMsg.includes("added") || addonMsg.includes("agregado") ? "text-[hsl(var(--visual-science))] bg-[hsl(var(--visual-science)/0.12)]" : addonMsg.includes("removed") || addonMsg.includes("eliminado") ? "text-[hsl(var(--visual-sel))] bg-[hsl(var(--visual-sel)/0.12)]" : "text-[hsl(var(--visual-math))] bg-[hsl(var(--visual-math)/0.12)]"}`}>
@@ -309,8 +422,9 @@ export default function ParentBillingPage() {
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {(Object.entries(TUTORS) as [TutorKey, typeof TUTORS[TutorKey]][]).map(([key, tutor]) => {
-              const isIncluded = includedTutors.includes(key);
-              const isAddon = activeTutorAddons.includes(key);
+              const sku = TUTOR_KEY_TO_SKU[key];
+              const isIncluded = includedSkus.has(sku);
+              const isAddon = purchasedSkus.has(sku);
               const isProcessing = addonLoading === key;
 
               return (
@@ -333,7 +447,8 @@ export default function ParentBillingPage() {
                   ) : (
                     <button
                       onClick={() => handleAddTutor(key)}
-                      disabled={isProcessing}
+                      disabled={isProcessing || !subscription?.hasStripeCustomer}
+                      title={!subscription?.hasStripeCustomer ? (t("subscribe_to_add_tutors") || "Subscribe to a paid plan first") : undefined}
                       className="px-3 py-1.5 text-xs rounded-lg bg-[hsl(var(--visual-primary))] text-white font-semibold hover:bg-[hsl(var(--visual-primary)/0.9)] transition flex-shrink-0 disabled:opacity-50"
                     >
                       {isProcessing ? "..." : "+ $4.99/mo"}
@@ -343,10 +458,10 @@ export default function ParentBillingPage() {
               );
             })}
           </div>
-          {activeTutorAddons.length > 0 && (
+          {purchasedSkus.size > 0 && (
             <div className="mt-4 p-3 rounded-lg bg-[hsl(var(--visual-primary)/0.06)] border border-[hsl(var(--visual-primary)/0.3)]">
               <p className="text-sm vi-text-muted">
-                <span className="font-semibold">{t("addon_tutors_summary", { count: activeTutorAddons.length })}</span> &middot; <span className="text-[hsl(var(--visual-primary))] font-bold">${(activeTutorAddons.length * 4.99).toFixed(2)}/mo</span> {t("added_to_subscription")}
+                <span className="font-semibold">{t("addon_tutors_summary", { count: purchasedSkus.size })}</span> &middot; <span className="text-[hsl(var(--visual-primary))] font-bold">${(purchasedSkus.size * 4.99).toFixed(2)}/mo</span> {t("added_to_subscription")}
               </p>
             </div>
           )}
@@ -365,15 +480,17 @@ export default function ParentBillingPage() {
                 </tr>
               </thead>
               <tbody>
-                {invoices.map((inv, i) => (
-                  <tr key={i} className="border-b vi-border">
-                    <td className="py-2">{new Date(inv.date).toLocaleDateString()}</td>
-                    <td className="py-2">${inv.amount}</td>
+                {invoices.map((inv) => (
+                  <tr key={inv.id} className="border-b vi-border">
+                    <td className="py-2">{inv.date ? new Date(inv.date).toLocaleDateString() : "--"}</td>
+                    <td className="py-2">${inv.amount.toFixed(2)}</td>
                     <td className="py-2">
                       <span className="px-2 py-0.5 text-xs rounded-full bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))]">{inv.status}</span>
                     </td>
                     <td className="py-2">
-                      <a href={inv.url} className="text-[hsl(var(--visual-primary))] text-xs hover:underline">{tc("download")}</a>
+                      {inv.url && (
+                        <a href={inv.url} target="_blank" rel="noreferrer" className="text-[hsl(var(--visual-primary))] text-xs hover:underline">{tc("download")}</a>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -399,7 +516,7 @@ export default function ParentBillingPage() {
               </button>
             ) : (
               <div className="p-4 rounded-lg bg-[hsl(var(--visual-math)/0.06)] border border-[hsl(var(--visual-math)/0.3)] space-y-3">
-                <p className="text-sm text-[hsl(var(--visual-math))] font-medium">{t("cancel_confirm_message", { date: subscription ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : "" })}</p>
+                <p className="text-sm text-[hsl(var(--visual-math))] font-medium">{t("cancel_confirm_message", { date: subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : "" })}</p>
                 <div className="flex gap-2">
                   <button onClick={handleCancel} disabled={cancelLoading}
                     className="px-4 py-2 text-xs rounded-lg bg-[hsl(var(--visual-math))] text-white font-semibold hover:bg-[hsl(var(--visual-math)/0.9)] transition disabled:opacity-50" style={{ minHeight: 44 }}>
@@ -420,3 +537,6 @@ export default function ParentBillingPage() {
     </div>
   );
 }
+
+// Keep the named export so unrelated importers don't break.
+void TUTOR_SKU_TO_KEY;
