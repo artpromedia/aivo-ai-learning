@@ -55,6 +55,14 @@ export const subscriptions = pgTable(
     currentPeriodEnd: timestamp("current_period_end"),
     canceledAt: timestamp("canceled_at"),
     trialEndsAt: timestamp("trial_ends_at"),
+    /**
+     * Timestamp of the most recent Stripe event we've applied to this
+     * row, sourced from `event.created`. Webhook handlers compare
+     * incoming events against this value and skip writes that would
+     * regress the row from a newer event — Stripe can deliver events
+     * out of order under retries.
+     */
+    lastStripeEventAt: timestamp("last_stripe_event_at"),
     metadata: jsonb("metadata").default({}),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -115,6 +123,8 @@ export const invoices = pgTable(
     metadata: jsonb("metadata").default({}),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    /** Stripe `event.created` of the last event applied to this row. */
+    lastStripeEventAt: timestamp("last_stripe_event_at"),
   },
   (table) => [
     index("invoices_tenant_idx").on(table.tenantId),

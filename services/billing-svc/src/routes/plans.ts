@@ -31,6 +31,13 @@ import {
   StripeNotConfiguredError,
 } from "../lib/stripe.js";
 import {
+  checkoutSessionsCreated,
+  portalSessionsCreated,
+  tutorEntitlementChanges,
+} from "../lib/metrics.js";
+import { emitBillingAudit } from "../lib/audit.js";
+import { createLogger } from "@aivo/observability";
+import {
   listPlansSchema,
   getSubscriptionSchema,
   createSubscriptionSchema,
@@ -47,6 +54,7 @@ import {
 } from "./schemas.js";
 
 const PRIVILEGED_ROLES = new Set(["PLATFORM_ADMIN", "DISTRICT_ADMIN"]);
+const auditLog = createLogger("billing-svc.plans");
 
 async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   const auth = req.headers.authorization;
@@ -369,6 +377,14 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
         if (!session.url) {
           return reply.code(503).send({ error: "Stripe did not return a checkout URL" });
         }
+        checkoutSessionsCreated.increment(1, { plan: body.planId });
+        await emitBillingAudit(db, auditLog, {
+          eventType: "billing.checkout.created",
+          tenantId: body.tenantId,
+          userId: user.sub,
+          resourceId: session.id,
+          details: { plan: body.planId, learnerCount: body.learnerCount ?? 1 },
+        });
         return { checkoutUrl: session.url, sessionId: session.id };
       } catch (err) {
         return handleStripeError(err, reply);
@@ -391,6 +407,13 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
         const portal = await createBillingPortalSession({
           customerId: row.stripeCustomerId,
           returnUrl: body.returnUrl,
+        });
+        portalSessionsCreated.increment(1);
+        await emitBillingAudit(db, auditLog, {
+          eventType: "billing.portal.created",
+          tenantId: body.tenantId,
+          userId: user.sub,
+          resourceId: row.stripeCustomerId,
         });
         return { portalUrl: portal.url };
       } catch (err) {
@@ -418,6 +441,13 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
       await db.update(subscriptions)
         .set({ cancelAtPeriodEnd: true, canceledAt: new Date(), updatedAt: new Date() })
         .where(eq(subscriptions.id, row.id));
+      await emitBillingAudit(db, auditLog, {
+        eventType: "billing.subscription.cancel_scheduled",
+        tenantId,
+        userId: user.sub,
+        resourceId: row.stripeSubscriptionId ?? row.id,
+        details: { currentPeriodEnd: row.currentPeriodEnd?.toISOString?.() ?? null },
+      });
       return { status: "cancelled", tenantId, cancelAtPeriodEnd: true };
     },
   );
@@ -440,6 +470,12 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
       await db.update(subscriptions)
         .set({ cancelAtPeriodEnd: false, canceledAt: null, updatedAt: new Date() })
         .where(eq(subscriptions.id, row.id));
+      await emitBillingAudit(db, auditLog, {
+        eventType: "billing.subscription.resumed",
+        tenantId,
+        userId: user.sub,
+        resourceId: row.stripeSubscriptionId,
+      });
       return { status: "resumed", tenantId, cancelAtPeriodEnd: false };
     },
   );
@@ -554,6 +590,14 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
             stripeItemId: item.id,
           })
           .returning();
+        tutorEntitlementChanges.increment(1, { action: "grant" });
+        await emitBillingAudit(db, auditLog, {
+          eventType: "billing.addon.attached",
+          tenantId: body.tenantId,
+          userId: user.sub,
+          resourceId: item.id,
+          details: { tutorSku: sku, stripeSubscriptionId: subRow.stripeSubscriptionId },
+        });
         return { status: "active", addon: { ...row, stripeItemId: item.id } };
       } catch (err) {
         return handleStripeError(err, reply);
@@ -594,6 +638,14 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
         .update(tutorSubscriptions)
         .set({ status: "grace_period", deactivatedAt: new Date(), graceEndsAt })
         .where(eq(tutorSubscriptions.id, row.id));
+      tutorEntitlementChanges.increment(1, { action: "grace" });
+      await emitBillingAudit(db, auditLog, {
+        eventType: "billing.addon.detached",
+        tenantId,
+        userId: user.sub,
+        resourceId: row.stripeItemId ?? row.id,
+        details: { tutorSku: sku, graceEndsAt: graceEndsAt.toISOString() },
+      });
       return { status: "removed", tenantId, tutorId: sku };
     },
   );

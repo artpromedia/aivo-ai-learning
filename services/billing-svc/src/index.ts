@@ -20,6 +20,7 @@ import { registerDailyJobsRoutes } from "./routes/daily-jobs.js";
 import { registerCouponRoutes } from "./routes/coupons.js";
 import { registerInternalJobRoutes } from "./routes/internal-jobs.js";
 import { runExpiryBatchForScheduler } from "./lib/expiryReminderService.js";
+import { runReconciliationForScheduler } from "./lib/reconciliationService.js";
 
 const logger = createLogger("billing-svc");
 const PORT = parseInt(process.env.BILLING_SVC_PORT || "3009", 10);
@@ -87,6 +88,18 @@ async function start() {
     run: () => runExpiryBatchForScheduler(db),
   });
   handles["billing.daily-expiry-reminders"] = expiryHandle;
+
+  // Daily Stripe reconciliation. Walks active subscriptions and repairs
+  // local drift if a webhook was dropped or arrived out of order.
+  // No-ops cleanly when Stripe is not configured.
+  const reconciliationHandle = startSafeCron({
+    jobName: "billing.daily-stripe-reconciliation",
+    ledger,
+    lock,
+    log: logger,
+    run: () => runReconciliationForScheduler(db),
+  });
+  handles["billing.daily-stripe-reconciliation"] = reconciliationHandle;
 
   let sharedSql: ReturnType<typeof postgres> | null = null;
   const opsAlerts = await bootstrapOpsAlerts({

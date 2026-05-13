@@ -240,3 +240,45 @@ test("grace_period add-on stays unlocked until graceEndsAt", () => {
   assert.ok(skus.has("ADDON_TUTOR_CODING"));
   assert.ok(!skus.has("ADDON_TUTOR_ARTS"));
 });
+
+// ── Sprint 5: configurable past_due grace policy ───────────────────────────
+
+test("past_due with default (allow) policy keeps tutor access", () => {
+  const r = evaluateTutorEntitlement({
+    subscription: { plan: "family", status: "past_due" },
+    tutorSubscriptions: [],
+    tutorSku: "ADDON_TUTOR_ELA",
+  });
+  assert.equal(r.entitled, true);
+});
+
+test("past_due with deny policy blocks tutor access", () => {
+  const r = evaluateTutorEntitlement({
+    subscription: { plan: "family", status: "past_due" },
+    tutorSubscriptions: [],
+    tutorSku: "ADDON_TUTOR_ELA",
+    pastDueGracePolicy: "deny",
+  });
+  assert.equal(r.entitled, false);
+  assert.equal(r.reason, "subscription_inactive");
+});
+
+test("past_due with deny policy empties the effective tutor set", () => {
+  const skus = computeEffectiveTutorSkus({
+    subscription: { plan: "family", status: "past_due" },
+    tutorSubscriptions: [{ tutorSku: "ADDON_TUTOR_CODING", status: "active" }],
+    pastDueGracePolicy: "deny",
+  });
+  assert.equal(skus.length, 0);
+});
+
+test("past_due with allow policy still respects active subscription requirement", () => {
+  // canceled never gets a grace period, even under allow policy.
+  const r = evaluateTutorEntitlement({
+    subscription: { plan: "family", status: "canceled" },
+    tutorSubscriptions: [],
+    tutorSku: "ADDON_TUTOR_ELA",
+    pastDueGracePolicy: "allow",
+  });
+  assert.equal(r.entitled, false);
+});

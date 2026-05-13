@@ -30,8 +30,9 @@ interface RecordedCall {
   args: unknown[];
 }
 
-function makeRecordingDb() {
+function makeRecordingDb(seedSelects: unknown[][] = []) {
   const calls: RecordedCall[] = [];
+  let selectCallIdx = 0;
   const fluent = <T>(payload: T) => {
     const chain: any = {
       from: () => chain,
@@ -51,7 +52,8 @@ function makeRecordingDb() {
     db: {
       select(_args?: unknown) {
         calls.push({ op: "select", args: _args ? [_args] : [] });
-        return fluent([]);
+        const seeded = seedSelects[selectCallIdx++];
+        return fluent(seeded ?? []);
       },
       insert(_table: unknown) {
         calls.push({ op: "insert", args: [_table] });
@@ -59,7 +61,7 @@ function makeRecordingDb() {
       },
       update(_table: unknown) {
         calls.push({ op: "update", args: [_table] });
-        return fluent(undefined);
+        return fluent([{ id: "stub-id", tenantId: "tenant-x", userId: "user-x" }]);
       },
     },
   };
@@ -289,4 +291,66 @@ test("invoice.payment_succeeded routes through the paid handler", async () => {
   // Insert into invoices, update subscription payment_status.
   assert.equal(calls.filter((c) => c.op === "insert").length, 1);
   assert.equal(calls.filter((c) => c.op === "update").length, 1);
+});
+
+// ── Sprint 5: out-of-order event protection ────────────────────────────────
+
+test("customer.subscription.updated skips the write when older than last applied event", async () => {
+  // Seed: existing subscription row has a lastStripeEventAt 5 minutes
+  // *after* the event we're about to dispatch. The handler must
+  // recognize this is stale and skip the update.
+  const lastApplied = new Date("2026-05-13T12:05:00Z");
+  const { db, calls } = makeRecordingDb([
+    [{ id: "sub-row-1", lastStripeEventAt: lastApplied, stripeStatus: "active", tenantId: "t1" }],
+  ]);
+  const staleEventCreated = Math.floor(new Date("2026-05-13T12:00:00Z").getTime() / 1000);
+  const sub: Partial<Stripe.Subscription> = {
+    id: "sub_a",
+    metadata: { aivo_tenant_id: "t1", aivo_plan_id: "single", userId: "u1" },
+    status: "past_due",
+    customer: "cus_a",
+    items: { data: [{ id: "si_1", price: { id: "price_1" } }] } as any,
+    cancel_at_period_end: false,
+  };
+  await dispatchStripeEvent(
+    db as any,
+    {
+      id: "evt_stale_1",
+      type: "customer.subscription.updated",
+      created: staleEventCreated,
+      data: { object: sub },
+    } as unknown as Stripe.Event,
+    silentLog,
+  );
+  // Stale event = no update on subscriptions table.
+  assert.equal(calls.filter((c) => c.op === "update").length, 0);
+  assert.equal(calls.filter((c) => c.op === "insert").length, 0);
+});
+
+test("customer.subscription.updated applies when newer than last applied event", async () => {
+  const lastApplied = new Date("2026-05-13T12:00:00Z");
+  const { db, calls } = makeRecordingDb([
+    [{ id: "sub-row-1", lastStripeEventAt: lastApplied, stripeStatus: "active", tenantId: "t1", userId: "u1", cancelAtPeriodEnd: false }],
+  ]);
+  const newer = Math.floor(new Date("2026-05-13T12:10:00Z").getTime() / 1000);
+  const sub: Partial<Stripe.Subscription> = {
+    id: "sub_a",
+    metadata: { aivo_tenant_id: "t1", aivo_plan_id: "single", userId: "u1" },
+    status: "past_due",
+    customer: "cus_a",
+    items: { data: [{ id: "si_1", price: { id: "price_1" } }] } as any,
+    cancel_at_period_end: false,
+  };
+  await dispatchStripeEvent(
+    db as any,
+    {
+      id: "evt_newer_1",
+      type: "customer.subscription.updated",
+      created: newer,
+      data: { object: sub },
+    } as unknown as Stripe.Event,
+    silentLog,
+  );
+  // At least one update on the subscriptions table.
+  assert.ok(calls.filter((c) => c.op === "update").length >= 1);
 });

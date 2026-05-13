@@ -9,6 +9,15 @@ import {
 } from "@aivo/db";
 import { isPlanId, isTutorSku, type PlanId, type TutorSku } from "@aivo/billing-entitlements";
 import { getStripe, getWebhookSecret, StripeNotConfiguredError, STRIPE_METADATA_TENANT_KEY, STRIPE_METADATA_PLAN_KEY, STRIPE_METADATA_TUTOR_SKU_KEY } from "../lib/stripe.js";
+import {
+  webhookEventsReceived,
+  webhookEventsDuplicate,
+  webhookEventsStale,
+  webhookEventsProcessed,
+  tutorEntitlementChanges,
+  subscriptionStateTransitions,
+} from "../lib/metrics.js";
+import { emitBillingAudit } from "../lib/audit.js";
 import { stripeWebhookSchema } from "./schemas.js";
 
 /**
@@ -59,6 +68,8 @@ export function registerWebhookRoutes(app: FastifyInstance, db: any) {
         return reply.code(400).send({ error: "Invalid webhook signature" });
       }
 
+      webhookEventsReceived.increment(1, { type: event.type });
+
       try {
         const inserted = await db
           .insert(stripeWebhookEvents)
@@ -66,22 +77,29 @@ export function registerWebhookRoutes(app: FastifyInstance, db: any) {
           .onConflictDoNothing({ target: stripeWebhookEvents.id })
           .returning({ id: stripeWebhookEvents.id });
         if (inserted.length === 0) {
+          webhookEventsDuplicate.increment(1, { type: event.type });
           return { received: true, type: event.type, duplicate: true };
         }
       } catch (err) {
-        app.log.error({ err }, "Failed to record webhook idempotency row");
+        app.log.error("Failed to record webhook idempotency row", { err: String(err), eventId: event.id });
         // Fall through and try to process — better to double-process and
         // rely on per-handler idempotency than to drop the event.
       }
 
       try {
         await dispatchStripeEvent(db, event, app.log);
+        webhookEventsProcessed.increment(1, { type: event.type, outcome: "ok" });
         await db
           .update(stripeWebhookEvents)
           .set({ processedAt: new Date() })
           .where(eq(stripeWebhookEvents.id, event.id));
       } catch (err: any) {
-        app.log.error({ err: err?.message, eventType: event.type, eventId: event.id }, "Webhook handler failed");
+        webhookEventsProcessed.increment(1, { type: event.type, outcome: "error" });
+        app.log.error("Webhook handler failed", {
+          err: err?.message ?? String(err),
+          eventType: event.type,
+          eventId: event.id,
+        });
         await db
           .update(stripeWebhookEvents)
           .set({ error: err?.message ?? String(err) })
@@ -94,34 +112,46 @@ export function registerWebhookRoutes(app: FastifyInstance, db: any) {
   );
 }
 
+/**
+ * Stripe puts the event's wall-clock creation time on `event.created` in
+ * unix seconds. Subscription handlers compare this against
+ * `subscriptions.last_stripe_event_at` and skip writes that would
+ * regress the row from a newer event that already landed (retry storms,
+ * duplicate redelivery within the dedup window, etc).
+ */
+function eventCreatedDate(event: Stripe.Event): Date {
+  return new Date(event.created * 1000);
+}
+
 export async function dispatchStripeEvent(db: any, event: Stripe.Event, log: any) {
+  const eventCreated = eventCreatedDate(event);
   switch (event.type) {
     case "checkout.session.completed":
-      await handleCheckoutCompleted(db, event.data.object as Stripe.Checkout.Session, log);
+      await handleCheckoutCompleted(db, event.data.object as Stripe.Checkout.Session, log, eventCreated);
       return;
     case "customer.subscription.created":
     case "customer.subscription.updated":
-      await handleSubscriptionUpsert(db, event.data.object as Stripe.Subscription, log);
+      await handleSubscriptionUpsert(db, event.data.object as Stripe.Subscription, log, eventCreated, event.type);
       return;
     case "customer.subscription.deleted":
-      await handleSubscriptionDeleted(db, event.data.object as Stripe.Subscription, log);
+      await handleSubscriptionDeleted(db, event.data.object as Stripe.Subscription, log, eventCreated);
       return;
     case "invoice.paid":
     case "invoice.payment_succeeded":
     case "invoice.finalized":
-      await handleInvoiceUpsert(db, event.data.object as Stripe.Invoice, "paid");
+      await handleInvoiceUpsert(db, event.data.object as Stripe.Invoice, "paid", eventCreated, log);
       return;
     case "invoice.payment_failed":
-      await handleInvoiceUpsert(db, event.data.object as Stripe.Invoice, "payment_failed");
+      await handleInvoiceUpsert(db, event.data.object as Stripe.Invoice, "payment_failed", eventCreated, log);
       return;
     case "customer.subscription.trial_will_end":
-      await handleTrialWillEnd(db, event.data.object as Stripe.Subscription, log);
+      await handleTrialWillEnd(db, event.data.object as Stripe.Subscription, log, eventCreated);
       return;
     case "payment_method.attached":
       await handlePaymentMethodAttached(db, event.data.object as Stripe.PaymentMethod, log);
       return;
     default:
-      log.info({ type: event.type }, "Unhandled Stripe webhook type — acknowledged");
+      log.info("Unhandled Stripe webhook type — acknowledged", { type: event.type });
   }
 }
 
@@ -144,10 +174,15 @@ export function unixToDate(secs: number | null | undefined): Date | null {
   return new Date(secs * 1000);
 }
 
-async function handleCheckoutCompleted(db: any, session: Stripe.Checkout.Session, log: any) {
+async function handleCheckoutCompleted(
+  db: any,
+  session: Stripe.Checkout.Session,
+  log: any,
+  eventCreated: Date,
+) {
   const tenantId = session.client_reference_id ?? readTenantFromMetadata(session.metadata);
   if (!tenantId) {
-    log.warn({ sessionId: session.id }, "Checkout session missing tenant id");
+    log.warn("Checkout session missing tenant id", { sessionId: session.id });
     return;
   }
   // The real subscription state arrives via customer.subscription.created
@@ -169,7 +204,9 @@ async function handleCheckoutCompleted(db: any, session: Stripe.Checkout.Session
   const plan = readPlanFromMetadata(session.metadata) ?? "single";
   const userId = (session.metadata?.userId as string | undefined) ?? null;
   if (!userId) {
-    log.warn({ sessionId: session.id }, "Checkout session missing userId metadata; cannot create subscription row");
+    log.warn("Checkout session missing userId metadata; cannot create subscription row", {
+      sessionId: session.id,
+    });
     return;
   }
   await db.insert(subscriptions).values({
@@ -181,10 +218,31 @@ async function handleCheckoutCompleted(db: any, session: Stripe.Checkout.Session
     stripeStatus: "active",
     status: "ACTIVE",
     paymentStatus: "paid",
+    lastStripeEventAt: eventCreated,
+  });
+  log.info("checkout.completed: subscription row created", {
+    tenantId,
+    userId,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    plan,
+  });
+  await emitBillingAudit(db, log, {
+    eventType: "billing.checkout.completed",
+    tenantId,
+    userId,
+    resourceId: stripeSubscriptionId,
+    details: { plan, stripeCustomerId },
   });
 }
 
-async function handleSubscriptionUpsert(db: any, sub: Stripe.Subscription, log: any) {
+async function handleSubscriptionUpsert(
+  db: any,
+  sub: Stripe.Subscription,
+  log: any,
+  eventCreated: Date,
+  eventType: string,
+) {
   const tenantId = readTenantFromMetadata(sub.metadata);
   const plan = readPlanFromMetadata(sub.metadata) ?? "single";
   const stripeCustomerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
@@ -205,12 +263,12 @@ async function handleSubscriptionUpsert(db: any, sub: Stripe.Subscription, log: 
 
   if (existing.length === 0) {
     if (!tenantId) {
-      log.warn({ subId: sub.id }, "subscription.upsert: missing tenant metadata; cannot create row");
+      log.warn("subscription.upsert: missing tenant metadata; cannot create row", { subId: sub.id });
       return;
     }
     const userId = (sub.metadata?.userId as string | undefined) ?? null;
     if (!userId) {
-      log.warn({ subId: sub.id }, "subscription.upsert: missing userId metadata; cannot create row");
+      log.warn("subscription.upsert: missing userId metadata; cannot create row", { subId: sub.id });
       return;
     }
     await db.insert(subscriptions).values({
@@ -228,8 +286,46 @@ async function handleSubscriptionUpsert(db: any, sub: Stripe.Subscription, log: 
       canceledAt,
       trialEndsAt,
       paymentStatus: stripeStatus === "past_due" ? "failed" : "paid",
+      lastStripeEventAt: eventCreated,
+    });
+    subscriptionStateTransitions.increment(1, { from: "none", to: stripeStatus });
+    await emitBillingAudit(db, log, {
+      eventType: "billing.subscription.created",
+      tenantId,
+      userId,
+      resourceId: sub.id,
+      details: { plan, stripeStatus, currentPeriodEnd: currentPeriodEnd?.toISOString() },
     });
   } else {
+    // Out-of-order guard: skip if this event is older than the last one
+    // we already applied. Stripe re-delivers events; with retries an
+    // older `subscription.updated` carrying past_due can land after the
+    // newer `invoice.paid` already restored active.
+    const prevEventAt = existing[0].lastStripeEventAt as Date | null;
+    if (prevEventAt && eventCreated.getTime() < prevEventAt.getTime()) {
+      webhookEventsStale.increment(1, { type: eventType });
+      log.info("subscription.upsert: ignoring stale event", {
+        subId: sub.id,
+        eventCreated: eventCreated.toISOString(),
+        prevEventAt: prevEventAt.toISOString(),
+      });
+      return;
+    }
+    const prevStatus = (existing[0].stripeStatus as string | null) ?? "unknown";
+    if (prevStatus !== stripeStatus) {
+      subscriptionStateTransitions.increment(1, { from: prevStatus, to: stripeStatus });
+    }
+    if (Boolean(existing[0].cancelAtPeriodEnd) !== cancelAtPeriodEnd) {
+      await emitBillingAudit(db, log, {
+        eventType: cancelAtPeriodEnd
+          ? "billing.subscription.cancel_scheduled"
+          : "billing.subscription.resumed",
+        tenantId: existing[0].tenantId,
+        userId: existing[0].userId,
+        resourceId: sub.id,
+        details: { currentPeriodEnd: currentPeriodEnd?.toISOString() },
+      });
+    }
     await db
       .update(subscriptions)
       .set({
@@ -244,9 +340,18 @@ async function handleSubscriptionUpsert(db: any, sub: Stripe.Subscription, log: 
         canceledAt,
         trialEndsAt,
         paymentStatus: stripeStatus === "past_due" ? "failed" : "paid",
+        lastStripeEventAt: eventCreated,
         updatedAt: new Date(),
       })
       .where(eq(subscriptions.id, existing[0].id));
+    if (prevStatus !== stripeStatus) {
+      log.info("subscription.upsert: status transition", {
+        subId: sub.id,
+        tenantId: existing[0].tenantId,
+        from: prevStatus,
+        to: stripeStatus,
+      });
+    }
   }
 
   // Reconcile tutor add-on rows against the Stripe items list. Items
@@ -287,6 +392,7 @@ async function reconcileTutorItems(
           .update(tutorSubscriptions)
           .set({ status: "active", stripeItemId, deactivatedAt: null, graceEndsAt: null })
           .where(eq(tutorSubscriptions.id, row.id));
+        tutorEntitlementChanges.increment(1, { action: "grant" });
       }
     } else if (row.status === "active") {
       const graceEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -294,6 +400,7 @@ async function reconcileTutorItems(
         .update(tutorSubscriptions)
         .set({ status: "grace_period", deactivatedAt: new Date(), graceEndsAt })
         .where(eq(tutorSubscriptions.id, row.id));
+      tutorEntitlementChanges.increment(1, { action: "grace" });
     }
   }
 
@@ -311,6 +418,7 @@ async function reconcileTutorItems(
         stripeItemId: itemId,
       })
       .onConflictDoNothing();
+    tutorEntitlementChanges.increment(1, { action: "grant" });
   }
 }
 
@@ -329,7 +437,21 @@ export function mapStripeStatusToEnum(stripeStatus: string): "ACTIVE" | "PAST_DU
   }
 }
 
-async function handleSubscriptionDeleted(db: any, sub: Stripe.Subscription, _log: any) {
+async function handleSubscriptionDeleted(
+  db: any,
+  sub: Stripe.Subscription,
+  log: any,
+  eventCreated: Date,
+) {
+  const existing = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.stripeSubscriptionId, sub.id))
+    .limit(1);
+  if (existing[0]?.lastStripeEventAt && eventCreated.getTime() < existing[0].lastStripeEventAt.getTime()) {
+    webhookEventsStale.increment(1, { type: "customer.subscription.deleted" });
+    return;
+  }
   await db
     .update(subscriptions)
     .set({
@@ -337,16 +459,21 @@ async function handleSubscriptionDeleted(db: any, sub: Stripe.Subscription, _log
       status: "CANCELLED",
       cancelAtPeriodEnd: false,
       canceledAt: unixToDate(sub.canceled_at ?? undefined) ?? new Date(),
+      lastStripeEventAt: eventCreated,
       updatedAt: new Date(),
     })
     .where(eq(subscriptions.stripeSubscriptionId, sub.id));
+  subscriptionStateTransitions.increment(1, {
+    from: (existing[0]?.stripeStatus as string) ?? "unknown",
+    to: "canceled",
+  });
 
   // Tutor add-ons riding on this subscription enter grace and then
   // expire on the daily expiry job.
-  const tenantId = readTenantFromMetadata(sub.metadata);
+  const tenantId = readTenantFromMetadata(sub.metadata) ?? existing[0]?.tenantId ?? null;
   if (tenantId) {
     const graceEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await db
+    const moved = await db
       .update(tutorSubscriptions)
       .set({ status: "grace_period", deactivatedAt: new Date(), graceEndsAt })
       .where(
@@ -354,7 +481,19 @@ async function handleSubscriptionDeleted(db: any, sub: Stripe.Subscription, _log
           eq(tutorSubscriptions.tenantId, tenantId),
           eq(tutorSubscriptions.status, "active"),
         ),
-      );
+      )
+      .returning({ tutorSku: tutorSubscriptions.tutorSku });
+    for (const row of moved ?? []) {
+      tutorEntitlementChanges.increment(1, { action: "grace" });
+      log.info("subscription.deleted: addon moved to grace", { tenantId, tutorSku: row.tutorSku });
+    }
+    await emitBillingAudit(db, log, {
+      eventType: "billing.subscription.canceled",
+      tenantId,
+      userId: existing[0]?.userId,
+      resourceId: sub.id,
+      details: { graceEndsAt: graceEndsAt.toISOString(), gracedAddons: moved?.length ?? 0 },
+    });
   }
 }
 
@@ -362,6 +501,8 @@ async function handleInvoiceUpsert(
   db: any,
   invoice: Stripe.Invoice,
   paymentStatus: "paid" | "payment_failed",
+  eventCreated: Date,
+  log: any,
 ) {
   const stripeCustomerId =
     typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? null;
@@ -371,12 +512,14 @@ async function handleInvoiceUpsert(
       : invoice.subscription?.id ?? null;
 
   let tenantId = readTenantFromMetadata(invoice.metadata);
+  let subscriptionUserId: string | null = null;
   if (!tenantId && stripeSubscriptionId) {
     const [row] = await db
-      .select({ tenantId: subscriptions.tenantId })
+      .select({ tenantId: subscriptions.tenantId, userId: subscriptions.userId })
       .from(subscriptions)
       .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId));
     tenantId = row?.tenantId ?? null;
+    subscriptionUserId = row?.userId ?? null;
   }
   if (!tenantId) return;
 
@@ -407,8 +550,16 @@ async function handleInvoiceUpsert(
       periodStart,
       periodEnd,
       paidAt,
+      lastStripeEventAt: eventCreated,
     });
   } else {
+    const prevEventAt = existing[0].lastStripeEventAt as Date | null;
+    if (prevEventAt && eventCreated.getTime() < prevEventAt.getTime()) {
+      webhookEventsStale.increment(1, {
+        type: paymentStatus === "paid" ? "invoice.paid" : "invoice.payment_failed",
+      });
+      return;
+    }
     await db
       .update(invoicesTable)
       .set({
@@ -420,10 +571,22 @@ async function handleInvoiceUpsert(
         periodStart,
         periodEnd,
         paidAt,
+        lastStripeEventAt: eventCreated,
         updatedAt: new Date(),
       })
       .where(eq(invoicesTable.id, existing[0].id));
   }
+
+  await emitBillingAudit(db, log, {
+    eventType: paymentStatus === "paid" ? "billing.invoice.paid" : "billing.invoice.failed",
+    tenantId,
+    userId: subscriptionUserId,
+    resourceId: invoice.id,
+    details: {
+      amount: (invoice.amount_paid ?? invoice.amount_due ?? 0) / 100,
+      currency: invoice.currency ?? "usd",
+    },
+  });
 
   // Subscription `payment_status` mirrors the latest invoice outcome
   // and is the signal entitlements use during the past_due grace window.
@@ -447,7 +610,12 @@ async function handleInvoiceUpsert(
  * Sending the actual reminder is the responsibility of comms-svc; this
  * handler is the trigger.
  */
-async function handleTrialWillEnd(db: any, sub: Stripe.Subscription, log: any) {
+async function handleTrialWillEnd(
+  db: any,
+  sub: Stripe.Subscription,
+  log: any,
+  _eventCreated: Date,
+) {
   const trialEnd = unixToDate(sub.trial_end ?? undefined);
   const result = await db
     .update(subscriptions)
@@ -457,15 +625,23 @@ async function handleTrialWillEnd(db: any, sub: Stripe.Subscription, log: any) {
       updatedAt: new Date(),
     })
     .where(eq(subscriptions.stripeSubscriptionId, sub.id))
-    .returning({ id: subscriptions.id, tenantId: subscriptions.tenantId });
+    .returning({ id: subscriptions.id, tenantId: subscriptions.tenantId, userId: subscriptions.userId });
   if (!result || result.length === 0) {
-    log.warn({ subId: sub.id }, "trial_will_end: no local subscription row");
+    log.warn("trial_will_end: no local subscription row", { subId: sub.id });
     return;
   }
-  log.info(
-    { tenantId: result[0].tenantId, subId: sub.id, trialEnd: trialEnd?.toISOString() },
-    "trial_will_end: marked for comms",
-  );
+  log.info("trial_will_end: marked for comms", {
+    tenantId: result[0].tenantId,
+    subId: sub.id,
+    trialEnd: trialEnd?.toISOString(),
+  });
+  await emitBillingAudit(db, log, {
+    eventType: "billing.subscription.trial_will_end",
+    tenantId: result[0].tenantId,
+    userId: result[0].userId,
+    resourceId: sub.id,
+    details: { trialEnd: trialEnd?.toISOString() ?? null },
+  });
 }
 
 /**
@@ -503,7 +679,7 @@ async function handlePaymentMethodAttached(
       .where(eq(subscriptions.stripeCustomerId, customerId));
     return;
   }
-  await db
+  const updated = await db
     .update(subscriptions)
     .set({
       defaultPaymentMethodId: pm.id,
@@ -511,5 +687,15 @@ async function handlePaymentMethodAttached(
       defaultPaymentMethodBrand: card.brand ?? "card",
       updatedAt: new Date(),
     })
-    .where(eq(subscriptions.stripeCustomerId, customerId));
+    .where(eq(subscriptions.stripeCustomerId, customerId))
+    .returning({ tenantId: subscriptions.tenantId, userId: subscriptions.userId });
+  for (const row of updated ?? []) {
+    await emitBillingAudit(db, log, {
+      eventType: "billing.payment.method_attached",
+      tenantId: row.tenantId,
+      userId: row.userId,
+      resourceId: pm.id,
+      details: { brand: card.brand ?? "card", last4: card.last4 ?? null },
+    });
+  }
 }

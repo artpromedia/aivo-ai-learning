@@ -5,6 +5,7 @@ import {
   isPlanId,
   isTutorSku,
   type EntitlementResult,
+  type PastDueGracePolicy,
   type PlanId,
   type SubscriptionRecord,
   type SubscriptionStatus,
@@ -14,6 +15,9 @@ import {
 
 const ALLOW_UNGATED =
   String(process.env.AIVO_ALLOW_UNGATED_TUTORS ?? "").toLowerCase() === "true";
+
+const PAST_DUE_GRACE_POLICY: PastDueGracePolicy =
+  String(process.env.AIVO_PAST_DUE_GRACE_POLICY ?? "").toLowerCase() === "deny" ? "deny" : "allow";
 
 function normalizeStatus(
   stripeStatus: string | null | undefined,
@@ -111,5 +115,10 @@ export async function checkLearnerTutorAccess(
     loadSubscription(db, tenantId),
     loadTutorSubs(db, tenantId),
   ]);
-  return evaluateTutorEntitlement({ subscription, tutorSubscriptions: tutorSubs, tutorSku });
+  return evaluateTutorEntitlement({
+    subscription,
+    tutorSubscriptions: tutorSubs,
+    tutorSku,
+    pastDueGracePolicy: PAST_DUE_GRACE_POLICY,
+  });
 }

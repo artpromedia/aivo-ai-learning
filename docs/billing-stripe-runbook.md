@@ -140,15 +140,63 @@ temporarily unavailable.
 6. Cancel via `POST /api/billing/subscription/:tenantId/cancel`. The
    subscription stays accessible until `current_period_end`.
 
+## Reconciliation
+
+A daily cron (`billing.daily-stripe-reconciliation`) walks every local
+subscription that has a `stripe_subscription_id` and is not terminally
+canceled, pulls the canonical state from Stripe, and repairs drift in
+the local row. It exists so a dropped or out-of-order webhook can't
+leave the DB stuck on a stale state.
+
+What it repairs, in order:
+
+- `subscriptions.stripe_status` / `current_period_end` / `cancel_at_period_end`
+  if Stripe disagrees.
+- `tutor_subscriptions`: items Stripe reports but we don't have become
+  `active`; locally-`active` items Stripe no longer reports move to
+  `grace_period`.
+- Subscriptions Stripe returns `resource_missing` for are marked
+  `canceled` locally (the missing-cancel-webhook case).
+
+Each repair increments `billing_reconciliation_drift_total` with a
+`kind` label (`status`, `period_end`, `cancel_at_period_end`,
+`tutor_item`, `missing_in_stripe`). Watch this counter for
+post-deploy regressions or a webhook outage.
+
+## Observability
+
+- `/metrics` (no auth) exports Prometheus-format counters:
+  `billing_webhook_events_received_total`,
+  `billing_webhook_events_duplicate_total`,
+  `billing_webhook_events_stale_total`,
+  `billing_webhook_events_processed_total` (with `outcome` label),
+  `billing_checkout_sessions_created_total`,
+  `billing_portal_sessions_created_total`,
+  `billing_subscription_state_transitions_total`,
+  `billing_tutor_entitlement_changes_total`,
+  `billing_reconciliation_runs_total`,
+  `billing_reconciliation_drift_total`.
+- Audit events land in the hash-chained `audit_events` table with
+  `event_type` starting `billing.*`. They surface in the admin audit
+  view alongside other tenant activity.
+
+## past_due grace policy
+
+`AIVO_PAST_DUE_GRACE_POLICY` switches how tutor-svc and learning-svc
+treat Stripe `past_due` (the automatic dunning window after a card
+declines):
+
+| Value | Behavior |
+|---|---|
+| `allow` (default) | Learner stays unlocked through Stripe's retry attempts. Reflects standard SaaS practice — most transient declines recover within hours. |
+| `deny` | Learner locks out the moment the subscription enters `past_due`. Use only if the contract requires immediate revocation. |
+
 ## What's intentionally out of scope
 
 - Stripe-modeled bundle SKUs. The parent store page redirects to the
   billing page; individual tutor add-ons cover the same set of tutors.
 - Mobile Stripe PaymentSheet. The mobile billing page opens the
   Customer Portal in a system browser for card changes.
-- Daily reconciliation against Stripe. The webhook is the source of
-  truth; a reconciliation job is on the roadmap (Sprint 5 in the
-  original audit plan).
 
 ## Follow-ups
 

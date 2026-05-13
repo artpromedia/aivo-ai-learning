@@ -5,6 +5,7 @@ import {
   isPlanId,
   isTutorSku,
   type EntitlementResult,
+  type PastDueGracePolicy,
   type PlanId,
   type SubscriptionRecord,
   type SubscriptionStatus,
@@ -15,6 +16,12 @@ import {
 
 const ALLOW_UNGATED_TUTORS =
   String(process.env.AIVO_ALLOW_UNGATED_TUTORS ?? "").toLowerCase() === "true";
+
+// Operators can switch to `deny` to lock learners out the moment a card
+// declines. Default `allow` keeps the shelf usable through Stripe's
+// dunning retry window.
+const PAST_DUE_GRACE_POLICY: PastDueGracePolicy =
+  String(process.env.AIVO_PAST_DUE_GRACE_POLICY ?? "").toLowerCase() === "deny" ? "deny" : "allow";
 
 /**
  * Pick the freshest subscription row for a tenant. Stripe permits a
@@ -149,6 +156,7 @@ export async function checkTutorAccess({
     subscription: ctx.subscription,
     tutorSubscriptions: ctx.tutorSubscriptions,
     tutorSku,
+    pastDueGracePolicy: PAST_DUE_GRACE_POLICY,
   });
 }
 

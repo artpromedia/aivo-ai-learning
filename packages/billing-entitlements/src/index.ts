@@ -109,12 +109,32 @@ export const PLAN_INCLUDED_TUTOR_SKUS: Record<PlanId, readonly TutorSku[]> = {
  * `canceled` revokes it. `cancel_at_period_end` is encoded separately as
  * a boolean on the subscription record and does NOT change the status
  * itself until the period actually rolls over.
+ *
+ * `past_due` membership is governed by `pastDueGracePolicy` on the
+ * evaluate call. The default is `"allow"`: most SaaS billing flows
+ * want a soft grace window during Stripe's automatic invoice retries,
+ * because customer cards routinely transiently fail (expiring,
+ * occasional declines) and locking the learner out the instant the
+ * first retry fires is hostile UX. Operators who prefer a stricter
+ * policy can pass `pastDueGracePolicy: "deny"`.
  */
-const ACTIVE_SUBSCRIPTION_STATUSES: ReadonlySet<SubscriptionStatus> = new Set([
+const ALWAYS_ACTIVE_STATUSES: ReadonlySet<SubscriptionStatus> = new Set([
   "trialing",
   "active",
-  "past_due",
 ]);
+
+export type PastDueGracePolicy = "allow" | "deny";
+
+const DEFAULT_PAST_DUE_GRACE: PastDueGracePolicy = "allow";
+
+function isSubscriptionActive(
+  status: SubscriptionStatus,
+  policy: PastDueGracePolicy,
+): boolean {
+  if (ALWAYS_ACTIVE_STATUSES.has(status)) return true;
+  if (status === "past_due" && policy === "allow") return true;
+  return false;
+}
 
 const ACTIVE_TUTOR_SUB_STATUSES: ReadonlySet<TutorSubscriptionStatus> = new Set([
   "active",
@@ -187,10 +207,18 @@ export function evaluateTutorEntitlement(args: {
   subscription: SubscriptionRecord | null;
   tutorSubscriptions: readonly TutorSubscriptionRecord[];
   tutorSku: TutorSku;
+  /**
+   * How to treat Stripe `past_due`. Defaults to `"allow"`: keep the
+   * learner unlocked during Stripe's automatic retry window so a
+   * single transient decline doesn't lock the whole shelf. Switch to
+   * `"deny"` for stricter access policies.
+   */
+  pastDueGracePolicy?: PastDueGracePolicy;
 }): EntitlementResult {
   const { subscription, tutorSubscriptions, tutorSku } = args;
+  const policy = args.pastDueGracePolicy ?? DEFAULT_PAST_DUE_GRACE;
 
-  if (!subscription || !ACTIVE_SUBSCRIPTION_STATUSES.has(subscription.status)) {
+  if (!subscription || !isSubscriptionActive(subscription.status, policy)) {
     return {
       entitled: false,
       reason: "subscription_inactive",
@@ -236,9 +264,11 @@ export function evaluateTutorEntitlement(args: {
 export function computeEffectiveTutorSkus(args: {
   subscription: SubscriptionRecord | null;
   tutorSubscriptions: readonly TutorSubscriptionRecord[];
+  pastDueGracePolicy?: PastDueGracePolicy;
 }): TutorSku[] {
   const { subscription, tutorSubscriptions } = args;
-  if (!subscription || !ACTIVE_SUBSCRIPTION_STATUSES.has(subscription.status)) {
+  const policy = args.pastDueGracePolicy ?? DEFAULT_PAST_DUE_GRACE;
+  if (!subscription || !isSubscriptionActive(subscription.status, policy)) {
     return [];
   }
   const included = new Set<TutorSku>(getIncludedTutorSkusForPlan(subscription.plan));
