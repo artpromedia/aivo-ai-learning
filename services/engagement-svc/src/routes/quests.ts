@@ -85,12 +85,12 @@ export function registerQuestRoutes(
 
     const { learnerId, questId } = request.body as { learnerId: string; questId: string };
     if (!learnerId || !questId) {
-      return reply.status(400).send({ error: "learnerId and questId required" });
+      return (reply as any).status(400).send({ error: "learnerId and questId required" });
     }
 
     const [quest] = await db.select().from(quests).where(eq(quests.id, questId));
     if (!quest) {
-      return reply.status(404).send({ error: "quest_not_found", questId });
+      return (reply as any).status(404).send({ error: "quest_not_found", questId });
     }
 
     const [existing] = await db
@@ -124,15 +124,15 @@ export function registerQuestRoutes(
     };
 
     if (!learnerId || !questId) {
-      return reply.status(400).send({ error: "learnerId and questId required" });
+      return (reply as any).status(400).send({ error: "learnerId and questId required" });
     }
     if (typeof score !== "number" || score < 0 || score > 100) {
-      return reply.status(400).send({ error: "score must be 0-100" });
+      return (reply as any).status(400).send({ error: "score must be 0-100" });
     }
 
     const [quest] = await db.select().from(quests).where(eq(quests.id, questId));
     if (!quest) {
-      return reply.status(404).send({ error: "quest_not_found", questId });
+      return (reply as any).status(404).send({ error: "quest_not_found", questId });
     }
 
     const [existing] = await db
@@ -141,7 +141,7 @@ export function registerQuestRoutes(
       .where(and(eq(questProgress.learnerId, learnerId), eq(questProgress.questId, questId)));
 
     if (!existing) {
-      return reply.status(400).send({ error: "quest_not_started" });
+      return (reply as any).status(400).send({ error: "quest_not_started" });
     }
 
     // Idempotent: if already completed, return the existing record without

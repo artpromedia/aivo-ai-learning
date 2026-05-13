@@ -103,7 +103,7 @@ async function seed() {
   const counts = await db.execute(
     sql`SELECT world_key, COUNT(*)::int AS c FROM quests GROUP BY world_key ORDER BY world_key`,
   );
-  console.log("Quest chapter counts:", counts.rows ?? counts);
+  console.log("Quest chapter counts:", (counts as any).rows ?? counts);
 
   process.exit(0);
 }
