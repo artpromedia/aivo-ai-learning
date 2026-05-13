@@ -338,7 +338,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
       // For paid plans we no longer create subscriptions here; the
       // caller must use Checkout. Returning 303 + Location for HTTP
       // clients, JSON for API clients, but always pointing at Checkout.
-      return reply.code(303).header("Location", "/api/billing/checkout/session").send({
+      return (reply as any).code(303).header("Location", "/api/billing/checkout/session").send({
         status: "redirect",
         next: "/api/billing/checkout/session",
         message: "Use POST /api/billing/checkout/session with { tenantId, planId } to start a Stripe Checkout.",
@@ -430,7 +430,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
       const user = (request as any).user as JWTPayload;
       if (!ensureTenantAccess(user, tenantId, reply)) return;
       const row = await loadSubscriptionRow(db, tenantId);
-      if (!row) return reply.code(404).send({ error: "No active subscription" });
+      if (!row) return (reply as any).code(404).send({ error: "No active subscription" });
       if (row.stripeSubscriptionId) {
         try {
           await cancelStripeSubscriptionAtPeriodEnd(row.stripeSubscriptionId, true);
@@ -565,7 +565,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
           ),
         );
       if (existing.length > 0) {
-        return reply.code(409).send({ error: "Add-on already active", addon: existing[0] });
+        return (reply as any).code(409).send({ error: "Add-on already active", addon: existing[0] });
       }
 
       try {
@@ -613,7 +613,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
       const user = (request as any).user as JWTPayload;
       if (!ensureTenantAccess(user, tenantId, reply)) return;
       const sku = coerceTutorSku(tutorId);
-      if (!sku) return reply.code(400).send({ error: "Unknown tutor SKU" });
+      if (!sku) return (reply as any).code(400).send({ error: "Unknown tutor SKU" });
 
       const [row] = await db
         .select()

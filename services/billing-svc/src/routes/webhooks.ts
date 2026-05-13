@@ -81,7 +81,7 @@ export function registerWebhookRoutes(app: FastifyInstance, db: any) {
           return { received: true, type: event.type, duplicate: true };
         }
       } catch (err) {
-        app.log.error("Failed to record webhook idempotency row", { err: String(err), eventId: event.id });
+        app.log.error({ err: String(err), eventId: event.id }, "Failed to record webhook idempotency row");
         // Fall through and try to process — better to double-process and
         // rely on per-handler idempotency than to drop the event.
       }
@@ -95,11 +95,11 @@ export function registerWebhookRoutes(app: FastifyInstance, db: any) {
           .where(eq(stripeWebhookEvents.id, event.id));
       } catch (err: any) {
         webhookEventsProcessed.increment(1, { type: event.type, outcome: "error" });
-        app.log.error("Webhook handler failed", {
+        app.log.error({
           err: err?.message ?? String(err),
           eventType: event.type,
           eventId: event.id,
-        });
+        }, "Webhook handler failed");
         await db
           .update(stripeWebhookEvents)
           .set({ error: err?.message ?? String(err) })

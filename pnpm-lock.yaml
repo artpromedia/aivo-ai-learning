@@ -95,6 +95,9 @@ importers:
       '@aivo/aac-bridge':
         specifier: workspace:*
         version: link:../../packages/aac-bridge
+      '@aivo/billing-entitlements':
+        specifier: workspace:*
+        version: link:../../packages/billing-entitlements
       '@aivo/brand':
         specifier: workspace:*
         version: link:../../packages/brand
@@ -172,7 +175,7 @@ importers:
         version: 0.32.16(expo@54.0.34)(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.85.0(@babel/core@7.29.0))(@types/react@19.1.4)(react@19.1.0))(react@19.1.0)(typescript@5.8.3)
       expo-router:
         specifier: ~6.0.0
-        version: 6.0.23(7a2f0c60274b34b26f655b275fcd0a99)
+        version: 6.0.23(affvaregran6idyytgsvasc4qi)
       expo-secure-store:
         specifier: ~15.0.0
         version: 15.0.8(expo@54.0.34)
@@ -249,6 +252,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@aivo/billing-entitlements':
+        specifier: workspace:*
+        version: link:../../packages/billing-entitlements
       '@aivo/brand':
         specifier: workspace:*
         version: link:../../packages/brand
@@ -370,6 +376,15 @@ importers:
         version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)(terser@5.46.1)
 
   packages/api-client:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.3
+        version: 5.8.3
+
+  packages/billing-entitlements:
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -989,6 +1004,9 @@ importers:
 
   services/billing-svc:
     dependencies:
+      '@aivo/billing-entitlements':
+        specifier: workspace:*
+        version: link:../../packages/billing-entitlements
       '@aivo/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -1019,12 +1037,18 @@ importers:
       fastify:
         specifier: '>=5.8.5'
         version: 5.8.5
+      fastify-raw-body:
+        specifier: ^5.0.0
+        version: 5.0.0
       jose:
         specifier: ^6.0.11
         version: 6.2.2
       postgres:
         specifier: ^3.4.5
         version: 3.4.5
+      stripe:
+        specifier: ^17.5.0
+        version: 17.7.0
     devDependencies:
       tsx:
         specifier: ^4.19.4
@@ -1446,6 +1470,9 @@ importers:
 
   services/learning-svc:
     dependencies:
+      '@aivo/billing-entitlements':
+        specifier: workspace:*
+        version: link:../../packages/billing-entitlements
       '@aivo/brand':
         specifier: workspace:*
         version: link:../../packages/brand
@@ -1816,6 +1843,9 @@ importers:
 
   services/tutor-svc:
     dependencies:
+      '@aivo/billing-entitlements':
+        specifier: workspace:*
+        version: link:../../packages/billing-entitlements
       '@aivo/brand':
         specifier: workspace:*
         version: link:../../packages/brand
@@ -3538,7 +3568,7 @@ packages:
 
   '@expo/bunyan@4.0.1':
     resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
-    engines: {'0': node >=0.10.0}
+    engines: {node: '>=0.10.0'}
 
   '@expo/cli@54.0.24':
     resolution: {integrity: sha512-5xse1bEgnVUBhOrtttc6xTNJVvjyTRavpzuF0/0nuj+312vfSbk7EiRbG+xJ2pW/iZxnhLPJkFCrPYG0nmheAQ==}
@@ -7418,6 +7448,10 @@ packages:
   fastify-plugin@5.1.0:
     resolution: {integrity: sha512-FAIDA8eovSt5qcDgcBvDuX/v0Cjz0ohGhENZ/wpc3y+oZCY2afZ9Baqql3g/lC+OHRnciQol4ww7tuthOb9idw==}
 
+  fastify-raw-body@5.0.0:
+    resolution: {integrity: sha512-2qfoaQ3BQDhZ1gtbkKZd6n0kKxJISJGM6u/skD9ljdWItAscjXrtZ1lnjr7PavmXX9j4EyCPmBDiIsLn07d5vA==}
+    engines: {node: '>= 10'}
+
   fastify@5.8.5:
     resolution: {integrity: sha512-Yqptv59pQzPgQUSIm87hMqHJmdkb1+GPxdE6vW6FRyVE9G86mt7rOghitiU4JHRaTyDUk9pfeKmDeu70lAwM4Q==}
 
@@ -7814,6 +7848,10 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  iconv-lite@0.7.2:
+    resolution: {integrity: sha512-im9DjEDQ55s9fL4EYzOAv0yMqmMBSZp6G0VvFyTMPKWxiSBHUj9NW/qqLmXUwXrrM7AvqSlTCfvqRb0cM8yYqw==}
+    engines: {node: '>=0.10.0'}
 
   icu-minify@4.9.1:
     resolution: {integrity: sha512-6NkfF9GHHFouqnz+wuiLjCWQiyxoEyJ5liUv4Jxxo/8wyhV7MY0L0iTEGDAVEa4aAD58WqTxFMa20S5nyMjwNw==}
@@ -9357,6 +9395,10 @@ packages:
     engines: {node: '>=10.13.0'}
     hasBin: true
 
+  qs@6.15.1:
+    resolution: {integrity: sha512-6YHEFRL9mfgcAvql/XhwTvf5jKcOiiupt2FiJxHkiX1z4j7WL8J/jRHYLluORvc1XxB5rV20KoeK00gVJamspg==}
+    engines: {node: '>=0.6'}
+
   query-string@7.1.3:
     resolution: {integrity: sha512-hh2WYhq4fi8+b+/2Kg9CEge4fDPvHS534aOOvOZeQ3+Vf2mCFsaFBYj0i+iXcAq6I9Vzp5fjMFBlONvayDC1qg==}
     engines: {node: '>=6'}
@@ -9377,6 +9419,10 @@ packages:
   range-parser@1.2.1:
     resolution: {integrity: sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==}
     engines: {node: '>= 0.6'}
+
+  raw-body@3.0.2:
+    resolution: {integrity: sha512-K5zQjDllxWkf7Z5xJdV0/B0WTNqx6vxG70zJE4N0kBs4LovmEYWJzQGxC9bS9RAKu3bgM40lrd5zoLJ12MQ5BA==}
+    engines: {node: '>= 0.10'}
 
   rc@1.2.8:
     resolution: {integrity: sha512-y3bGgqKj3QBdxLbLkomlohkvsA8gdAiUQlSBJnBhfn+BPxg4bc62d8TcBW15wavDfgexCgccckhcZvywyQYPOw==}
@@ -9750,6 +9796,9 @@ packages:
   scheduler@0.27.0:
     resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
 
+  secure-json-parse@2.7.0:
+    resolution: {integrity: sha512-6aU+Rwsezw7VR8/nyvKTx8QpWH9FrcYiXXlqC4z5d5XQBDRqtbfsRjnwGyqbi3gddNtWHuEk9OANUotL26qKUw==}
+
   secure-json-parse@4.1.0:
     resolution: {integrity: sha512-l4KnYfEyqYJxDwlNVyRfO2E4NTHfMKAWdUuA8J0yve2Dz/E/PdBepY03RvyJpssIpRFwJoCD55wA+mEDs6ByWA==}
 
@@ -10038,6 +10087,10 @@ packages:
   strip-json-comments@3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
+
+  stripe@17.7.0:
+    resolution: {integrity: sha512-aT2BU9KkizY9SATf14WhhYVv2uOapBWX0OFWF4xvcj1mPaNotlSc2CsxpS4DS46ZueSppmCF5BX1sNYBtwBvfw==}
+    engines: {node: '>=12.*'}
 
   strnum@2.2.3:
     resolution: {integrity: sha512-oKx6RUCuHfT3oyVjtnrmn19H1SiCqgJSg+54XqURKp5aCMbrXrhLjRN9TjuwMjiYstZ0MzDrHqkGZ5dFTKd+zg==}
@@ -10406,7 +10459,7 @@ packages:
 
   uuid@3.4.0:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
-    deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@7.0.3:
@@ -12646,7 +12699,7 @@ snapshots:
       wrap-ansi: 7.0.0
       ws: 8.20.0
     optionalDependencies:
-      expo-router: 6.0.23(e110c9cfbea01dd2d2e7256e49c79934)
+      expo-router: 6.0.23(bzv4sep6enqsqq3opsuoc7txi4)
       react-native: 0.76.6(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@19.1.4)(react@19.1.0)
     transitivePeerDependencies:
       - bufferutil
@@ -12722,7 +12775,7 @@ snapshots:
       wrap-ansi: 7.0.0
       ws: 8.20.0
     optionalDependencies:
-      expo-router: 6.0.23(7a2f0c60274b34b26f655b275fcd0a99)
+      expo-router: 6.0.23(affvaregran6idyytgsvasc4qi)
       react-native: 0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.85.0(@babel/core@7.29.0))(@types/react@19.1.4)(react@19.1.0)
     transitivePeerDependencies:
       - bufferutil
@@ -17851,7 +17904,7 @@ snapshots:
       - supports-color
       - typescript
 
-  expo-router@6.0.23(7a2f0c60274b34b26f655b275fcd0a99):
+  expo-router@6.0.23(affvaregran6idyytgsvasc4qi):
     dependencies:
       '@expo/metro-runtime': 6.1.2(expo@54.0.34)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native/metro-config@0.85.0(@babel/core@7.29.0))(@types/react@19.1.4)(react@19.1.0))(react@19.1.0)
       '@expo/schema-utils': 0.1.8
@@ -17894,7 +17947,7 @@ snapshots:
       - '@types/react-dom'
       - supports-color
 
-  expo-router@6.0.23(e110c9cfbea01dd2d2e7256e49c79934):
+  expo-router@6.0.23(bzv4sep6enqsqq3opsuoc7txi4):
     dependencies:
       '@expo/metro-runtime': 55.0.9(@expo/dom-webview@55.0.5)(expo@54.0.34)(react-dom@19.2.5(react@19.1.0))(react-native@0.76.6(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@19.1.4)(react@19.1.0))(react@19.1.0)
       '@expo/schema-utils': 0.1.8
@@ -18110,6 +18163,12 @@ snapshots:
       strnum: 2.2.3
 
   fastify-plugin@5.1.0: {}
+
+  fastify-raw-body@5.0.0:
+    dependencies:
+      fastify-plugin: 5.1.0
+      raw-body: 3.0.2
+      secure-json-parse: 2.7.0
 
   fastify@5.8.5:
     dependencies:
@@ -18570,6 +18629,10 @@ snapshots:
       '@babel/runtime': 7.29.2
     optionalDependencies:
       typescript: 5.8.3
+
+  iconv-lite@0.7.2:
+    dependencies:
+      safer-buffer: 2.1.2
 
   icu-minify@4.9.1:
     dependencies:
@@ -20559,6 +20622,10 @@ snapshots:
       pngjs: 5.0.0
       yargs: 15.4.1
 
+  qs@6.15.1:
+    dependencies:
+      side-channel: 1.1.0
+
   query-string@7.1.3:
     dependencies:
       decode-uri-component: 0.2.2
@@ -20577,6 +20644,13 @@ snapshots:
   quick-lru@5.1.1: {}
 
   range-parser@1.2.1: {}
+
+  raw-body@3.0.2:
+    dependencies:
+      bytes: 3.1.2
+      http-errors: 2.0.1
+      iconv-lite: 0.7.2
+      unpipe: 1.0.0
 
   rc@1.2.8:
     dependencies:
@@ -21149,6 +21223,8 @@ snapshots:
   scheduler@0.27.0:
     optional: true
 
+  secure-json-parse@2.7.0: {}
+
   secure-json-parse@4.1.0: {}
 
   selfsigned@2.4.1:
@@ -21484,6 +21560,11 @@ snapshots:
   strip-json-comments@2.0.1: {}
 
   strip-json-comments@3.1.1: {}
+
+  stripe@17.7.0:
+    dependencies:
+      '@types/node': 22.19.17
+      qs: 6.15.1
 
   strnum@2.2.3: {}
 

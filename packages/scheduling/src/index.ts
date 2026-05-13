@@ -96,6 +96,9 @@ export interface JobOutcome {
   status: "ok" | "partial" | "failed";
   sent?: number;
   failed?: number;
+  walked?: number;
+  drift?: number;
+  errors?: number;
 }
 
 export interface SafeCronHandle {
