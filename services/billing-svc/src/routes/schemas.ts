@@ -96,6 +96,15 @@ export const getSubscriptionSchema = {
         currentPeriodEnd: { type: ["string", "null"], format: "date-time" },
         cancelAtPeriodEnd: { type: "boolean" },
         hasStripeCustomer: { type: "boolean" },
+        trialEndsAt: { type: ["string", "null"], format: "date-time" },
+        paymentMethod: {
+          type: ["object", "null"],
+          additionalProperties: true,
+          properties: {
+            brand: { type: ["string", "null"] },
+            last4: { type: ["string", "null"] },
+          },
+        },
       },
     },
     401: errorResponse,

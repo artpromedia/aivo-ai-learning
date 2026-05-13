@@ -258,6 +258,8 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
           currentPeriodEnd: null,
           cancelAtPeriodEnd: false,
           hasStripeCustomer: false,
+          trialEndsAt: null,
+          paymentMethod: null,
         };
       }
       return {
@@ -269,6 +271,13 @@ export function registerPlanRoutes(app: FastifyInstance, db: any) {
         currentPeriodEnd: row.currentPeriodEnd?.toISOString?.() ?? null,
         cancelAtPeriodEnd: Boolean(row.cancelAtPeriodEnd),
         hasStripeCustomer: Boolean(row.stripeCustomerId),
+        trialEndsAt: row.trialEndsAt?.toISOString?.() ?? null,
+        paymentMethod: row.defaultPaymentMethodId
+          ? {
+              brand: row.defaultPaymentMethodBrand ?? null,
+              last4: row.defaultPaymentMethodLast4 ?? null,
+            }
+          : null,
       };
     },
   );
