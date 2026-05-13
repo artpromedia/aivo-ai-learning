@@ -19,6 +19,7 @@ import { registerWebhookRoutes } from "./routes/webhooks.js";
 import { registerDailyJobsRoutes } from "./routes/daily-jobs.js";
 import { registerCouponRoutes } from "./routes/coupons.js";
 import { registerInternalJobRoutes } from "./routes/internal-jobs.js";
+import { registerBillingTestHelperRoutes } from "./routes/test-helpers.js";
 import { runExpiryBatchForScheduler } from "./lib/expiryReminderService.js";
 import { runReconciliationForScheduler } from "./lib/reconciliationService.js";
 
@@ -66,6 +67,7 @@ export async function buildApp(handles: CronHandles = {}, db = createDb(process.
   registerDailyJobsRoutes(app, db);
   registerCouponRoutes(app, db);
   registerInternalJobRoutes(app, handles);
+  registerBillingTestHelperRoutes(app, db);
 
   return app;
 }
