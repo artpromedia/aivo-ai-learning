@@ -181,3 +181,112 @@ test("dispatchStripeEvent on invoice.paid is a no-op when tenant cannot be resol
   assert.equal(calls.filter((c) => c.op === "insert").length, 0);
   assert.equal(calls.filter((c) => c.op === "update").length, 0);
 });
+
+test("dispatchStripeEvent on customer.subscription.trial_will_end stamps notification timestamp", async () => {
+  const { db, calls } = makeRecordingDb();
+  const sub: Partial<Stripe.Subscription> = {
+    id: "sub_trial",
+    metadata: { aivo_tenant_id: "tenant-trial" },
+    trial_end: Math.floor(Date.now() / 1000) + 3 * 24 * 60 * 60,
+  };
+  await dispatchStripeEvent(
+    db as any,
+    {
+      id: "evt_trial_1",
+      type: "customer.subscription.trial_will_end",
+      data: { object: sub },
+    } as unknown as Stripe.Event,
+    silentLog,
+  );
+  // Exactly one update on subscriptions; no add-on writes.
+  assert.equal(calls.filter((c) => c.op === "update").length, 1);
+  assert.equal(calls.filter((c) => c.op === "insert").length, 0);
+});
+
+test("dispatchStripeEvent on payment_method.attached writes card brand/last4 when card", async () => {
+  const { db, calls } = makeRecordingDb();
+  const pm: Partial<Stripe.PaymentMethod> = {
+    id: "pm_card_visa",
+    customer: "cus_1",
+    type: "card",
+    card: { brand: "visa", last4: "4242" } as Stripe.PaymentMethod.Card,
+  };
+  await dispatchStripeEvent(
+    db as any,
+    {
+      id: "evt_pm_1",
+      type: "payment_method.attached",
+      data: { object: pm },
+    } as unknown as Stripe.Event,
+    silentLog,
+  );
+  assert.equal(calls.filter((c) => c.op === "update").length, 1);
+});
+
+test("dispatchStripeEvent on payment_method.attached without a customer is a no-op", async () => {
+  const { db, calls } = makeRecordingDb();
+  const pm: Partial<Stripe.PaymentMethod> = {
+    id: "pm_orphan",
+    customer: null,
+    type: "card",
+    card: { brand: "visa", last4: "4242" } as Stripe.PaymentMethod.Card,
+  };
+  await dispatchStripeEvent(
+    db as any,
+    {
+      id: "evt_pm_2",
+      type: "payment_method.attached",
+      data: { object: pm },
+    } as unknown as Stripe.Event,
+    silentLog,
+  );
+  assert.equal(calls.filter((c) => c.op === "update").length, 0);
+});
+
+test("dispatchStripeEvent on payment_method.attached for a non-card type still records id", async () => {
+  const { db, calls } = makeRecordingDb();
+  const pm: Partial<Stripe.PaymentMethod> = {
+    id: "pm_bank",
+    customer: "cus_bank",
+    type: "us_bank_account",
+    card: null,
+  } as Partial<Stripe.PaymentMethod>;
+  await dispatchStripeEvent(
+    db as any,
+    {
+      id: "evt_pm_3",
+      type: "payment_method.attached",
+      data: { object: pm },
+    } as unknown as Stripe.Event,
+    silentLog,
+  );
+  // One update — last4 will be null, brand will be the method type.
+  assert.equal(calls.filter((c) => c.op === "update").length, 1);
+});
+
+test("invoice.payment_succeeded routes through the paid handler", async () => {
+  const { db, calls } = makeRecordingDb();
+  const invoice: Partial<Stripe.Invoice> = {
+    id: "in_succ",
+    metadata: { aivo_tenant_id: "tenant-paid" },
+    subscription: "sub_paid",
+    amount_due: 2499,
+    amount_paid: 2499,
+    currency: "usd",
+    status: "paid",
+    period_start: Math.floor(Date.now() / 1000),
+    period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+  };
+  await dispatchStripeEvent(
+    db as any,
+    {
+      id: "evt_in_succ",
+      type: "invoice.payment_succeeded",
+      data: { object: invoice },
+    } as unknown as Stripe.Event,
+    silentLog,
+  );
+  // Insert into invoices, update subscription payment_status.
+  assert.equal(calls.filter((c) => c.op === "insert").length, 1);
+  assert.equal(calls.filter((c) => c.op === "update").length, 1);
+});

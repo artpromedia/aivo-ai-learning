@@ -123,14 +123,27 @@ export async function createPlanCheckoutSession(args: CheckoutForPlanArgs): Prom
 export interface PortalSessionArgs {
   customerId: string;
   returnUrl?: string;
+  /**
+   * Distinguishes successive portal sessions for the same customer in
+   * the same minute. The default uses a minute-grained timestamp so
+   * accidental double-clicks within the minute reuse the same session,
+   * but a deliberate retry on a new minute creates a fresh one.
+   */
+  idempotencyDiscriminator?: string;
 }
 
 export async function createBillingPortalSession(args: PortalSessionArgs): Promise<Stripe.BillingPortal.Session> {
   const stripe = getStripe();
-  return stripe.billingPortal.sessions.create({
-    customer: args.customerId,
-    return_url: args.returnUrl ?? getReturnUrl("portal_return"),
-  });
+  const minuteBucket = args.idempotencyDiscriminator ?? String(Math.floor(Date.now() / 60_000));
+  return stripe.billingPortal.sessions.create(
+    {
+      customer: args.customerId,
+      return_url: args.returnUrl ?? getReturnUrl("portal_return"),
+    },
+    {
+      idempotencyKey: `portal:${args.customerId}:${minuteBucket}`,
+    },
+  );
 }
 
 export interface AddonAttachArgs {
@@ -178,7 +191,12 @@ export async function cancelStripeSubscriptionAtPeriodEnd(
   cancel: boolean,
 ): Promise<Stripe.Subscription> {
   const stripe = getStripe();
-  return stripe.subscriptions.update(stripeSubscriptionId, {
-    cancel_at_period_end: cancel,
-  });
+  // Cancel and resume are toggles on the same field, so the key
+  // includes the intended state. Replaying the same desired state is
+  // a no-op; replaying the opposite state creates a new operation.
+  return stripe.subscriptions.update(
+    stripeSubscriptionId,
+    { cancel_at_period_end: cancel },
+    { idempotencyKey: `sub:cancelAtPeriodEnd:${stripeSubscriptionId}:${cancel ? "1" : "0"}` },
+  );
 }

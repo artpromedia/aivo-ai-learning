@@ -148,6 +148,13 @@
       "when": 1777800000000,
       "tag": "0030_billing_stripe_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1777803600000,
+      "tag": "0031_billing_payment_method_columns",
+      "breakpoints": true
     }
   ]
 }

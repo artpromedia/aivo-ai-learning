@@ -114,6 +114,12 @@ export async function dispatchStripeEvent(db: any, event: Stripe.Event, log: any
     case "invoice.payment_failed":
       await handleInvoiceUpsert(db, event.data.object as Stripe.Invoice, "payment_failed");
       return;
+    case "customer.subscription.trial_will_end":
+      await handleTrialWillEnd(db, event.data.object as Stripe.Subscription, log);
+      return;
+    case "payment_method.attached":
+      await handlePaymentMethodAttached(db, event.data.object as Stripe.PaymentMethod, log);
+      return;
     default:
       log.info({ type: event.type }, "Unhandled Stripe webhook type — acknowledged");
   }
@@ -430,4 +436,80 @@ async function handleInvoiceUpsert(
       })
       .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId));
   }
+}
+
+/**
+ * Stripe fires this 3 days before a trial ends (configurable). We
+ * record the notification timestamp so the daily comms job won't
+ * re-send if the same event replays, and bump `trialEndsAt` so the
+ * customer-facing countdown stays accurate.
+ *
+ * Sending the actual reminder is the responsibility of comms-svc; this
+ * handler is the trigger.
+ */
+async function handleTrialWillEnd(db: any, sub: Stripe.Subscription, log: any) {
+  const trialEnd = unixToDate(sub.trial_end ?? undefined);
+  const result = await db
+    .update(subscriptions)
+    .set({
+      trialWillEndNotifiedAt: new Date(),
+      trialEndsAt: trialEnd,
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptions.stripeSubscriptionId, sub.id))
+    .returning({ id: subscriptions.id, tenantId: subscriptions.tenantId });
+  if (!result || result.length === 0) {
+    log.warn({ subId: sub.id }, "trial_will_end: no local subscription row");
+    return;
+  }
+  log.info(
+    { tenantId: result[0].tenantId, subId: sub.id, trialEnd: trialEnd?.toISOString() },
+    "trial_will_end: marked for comms",
+  );
+}
+
+/**
+ * The customer attached a payment method (added/updated card). If
+ * Stripe also marked it as the customer's `invoice_settings.default_
+ * payment_method`, we mirror it onto the local subscription so the
+ * billing UI can render "Visa ending 4242" without round-tripping
+ * through Stripe.
+ *
+ * We don't override an existing default with a non-default attach,
+ * because parents who add a backup card shouldn't see the UI flip.
+ */
+async function handlePaymentMethodAttached(
+  db: any,
+  pm: Stripe.PaymentMethod,
+  log: any,
+) {
+  const customerId = typeof pm.customer === "string" ? pm.customer : pm.customer?.id ?? null;
+  if (!customerId) {
+    log.warn({ pmId: pm.id }, "payment_method.attached: no customer id");
+    return;
+  }
+  const card = pm.card;
+  if (!card) {
+    // Non-card methods (us_bank_account, sepa_debit, …) still attach;
+    // we record the id but no brand/last4 columns apply.
+    await db
+      .update(subscriptions)
+      .set({
+        defaultPaymentMethodId: pm.id,
+        defaultPaymentMethodLast4: null,
+        defaultPaymentMethodBrand: pm.type,
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptions.stripeCustomerId, customerId));
+    return;
+  }
+  await db
+    .update(subscriptions)
+    .set({
+      defaultPaymentMethodId: pm.id,
+      defaultPaymentMethodLast4: card.last4 ?? null,
+      defaultPaymentMethodBrand: card.brand ?? "card",
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptions.stripeCustomerId, customerId));
 }

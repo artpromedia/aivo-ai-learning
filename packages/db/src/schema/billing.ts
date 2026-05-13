@@ -33,6 +33,23 @@ export const subscriptions = pgTable(
      */
     stripeStatus: varchar("stripe_status", { length: 32 }),
     paymentStatus: varchar("payment_status", { length: 32 }),
+    /**
+     * Stripe `payment_method.id` for the customer's default card. Set
+     * from the `payment_method.attached` webhook; surfaces in the
+     * customer-facing payment-method strip and drives "card on file"
+     * banners.
+     */
+    defaultPaymentMethodId: varchar("default_payment_method_id", { length: 255 }),
+    /** Last 4 digits of the default card, captured at attach time. */
+    defaultPaymentMethodLast4: varchar("default_payment_method_last4", { length: 8 }),
+    /** Card brand (e.g., "visa"), captured at attach time. */
+    defaultPaymentMethodBrand: varchar("default_payment_method_brand", { length: 32 }),
+    /**
+     * When the most recent `customer.subscription.trial_will_end` event
+     * fired. Used by comms-svc to avoid sending duplicate trial-ending
+     * reminders.
+     */
+    trialWillEndNotifiedAt: timestamp("trial_will_end_notified_at"),
     cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
     currentPeriodStart: timestamp("current_period_start"),
     currentPeriodEnd: timestamp("current_period_end"),
