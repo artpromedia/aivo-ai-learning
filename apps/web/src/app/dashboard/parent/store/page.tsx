@@ -137,41 +137,37 @@ function TutorStoreContent() {
 
   const isActive = (sku: string) => activeSubs.some(s => s.tutorSku === sku && s.status === "active");
 
+  // All tutor purchases route through billing-svc → Stripe. The legacy
+  // /api/tutors/subscribe path is service-only now.
   const subscribe = async (sku: string) => {
-    if (!user) return;
+    if (!user || !accessToken) return;
     setSubscribing(sku);
     try {
-      const res = await fetch("/api/tutors/subscribe", {
+      const res = await fetch("/api/billing/addons", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, tutorSku: sku }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ tenantId: user.tenantId, tutorSku: sku }),
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setActiveSubs([...activeSubs, { tutorSku: sku, status: "active" }]);
+      } else if (res.status === 404 || res.status === 503) {
+        // No paid subscription yet, or Stripe not configured — push the
+        // parent into the billing flow where Checkout lives.
+        router.push("/dashboard/parent/billing");
+      } else {
+        console.error("Subscribe failed:", data.error);
       }
     } catch (err: unknown) { console.error("Subscribe failed:", err); }
     setSubscribing(null);
   };
 
-  const subscribeBundle = async (bundleKey: string) => {
-    if (!user) return;
-    setSubscribing(bundleKey);
-    try {
-      const res = await fetch("/api/tutors/subscribe-bundle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, bundleKey }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const newSubs = (data.results as { status: string; sku: string }[])
-          .filter((r) => r.status === "activated")
-          .map((r) => ({ tutorSku: r.sku, status: "active" }));
-        setActiveSubs([...activeSubs, ...newSubs]);
-      }
-    } catch (err: unknown) { console.error("Bundle subscribe failed:", err); }
-    setSubscribing(null);
-    setSelectedBundle(null);
+  const subscribeBundle = async (_bundleKey: string) => {
+    // Bundle SKUs aren't represented as a single Stripe price; the
+    // current Stripe wiring uses one ADDON price per tutor. Until we
+    // model bundles in Stripe, redirect parents to billing to pick
+    // tutors one by one.
+    router.push("/dashboard/parent/billing");
   };
 
   if (loading || !user) return null;

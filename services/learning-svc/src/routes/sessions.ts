@@ -12,11 +12,13 @@ import {
   type LessonSignals,
 } from "../services/scoring.js";
 import { resolveTenantId, requireLearnerAccess } from "../lib/tenant.js";
+import { checkLearnerTutorAccess } from "../lib/entitlements.js";
 import {
   createSessionSchema,
   completeSessionSchema,
   updateGradebookSchema,
   listSessionsSchema,
+  getSessionByIdSchema,
   getGradebookSchema,
   getLearningPathSchema,
   initLearningPathSchema,
@@ -165,6 +167,22 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     const access = await requireLearnerAccess(request, reply, db, learnerId);
     if (!access) return;
     const tenantId = access.tenantId;
+
+    // Service-to-service callers (homework generation, prefetch jobs)
+    // bypass the entitlement gate; user-initiated session starts must
+    // pass through it. Therapy session logs are not tutor-gated.
+    const callerRole = (request as any).auth?.role;
+    if (callerRole !== "service" && contentType !== "THERAPY_SESSION") {
+      const decision = await checkLearnerTutorAccess(db, tenantId, tutorSku);
+      if (!decision.entitled) {
+        return reply.code(403).send({
+          error: "Tutor not included in current subscription",
+          requiredSku: decision.requiredSku,
+          upgradePath: decision.upgradePath,
+          reason: decision.reason,
+        });
+      }
+    }
 
     // ---- Optional manual-entry fields (Phase 4 backend gap) -------------
     // The web therapist sessions page and mobile (therapist) sessions tab
@@ -522,6 +540,50 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
       .limit(20);
     return sessions;
   });
+
+  /**
+   * Single-session fetch used by the mobile stage runtime and any
+   * resume-session UX. The response wraps `sessionData.beats` (or the
+   * stagePlan stored at create time) under `stagePlan.beats` so clients
+   * can rely on a stable shape regardless of which generator filled
+   * the row.
+   */
+  app.get(
+    "/api/learning/sessions/:sessionId",
+    { schema: getSessionByIdSchema },
+    async (request, reply) => {
+      const { sessionId } = request.params as { sessionId: string };
+      const [row] = await db
+        .select()
+        .from(lessonSessions)
+        .where(eq(lessonSessions.id, sessionId));
+      if (!row) return reply.code(404).send({ error: "Session not found" });
+      const access = await requireLearnerAccess(request, reply, db, row.learnerId);
+      if (!access) return;
+
+      const sessionData = (row.sessionData as Record<string, unknown> | null) ?? {};
+      const stagePlanFromData =
+        (sessionData.stagePlan as { beats?: unknown[] } | undefined) ?? null;
+      const beats: unknown[] = Array.isArray(stagePlanFromData?.beats)
+        ? (stagePlanFromData!.beats as unknown[])
+        : Array.isArray((sessionData as any).beats)
+          ? ((sessionData as any).beats as unknown[])
+          : [];
+
+      return {
+        sessionId: row.id,
+        learnerId: row.learnerId,
+        tutorSku: row.tutorSku,
+        subject: row.subject,
+        functioningLevel: row.functioningLevel,
+        status: row.status,
+        startedAt: row.startedAt?.toISOString?.() ?? null,
+        completedAt: row.completedAt?.toISOString?.() ?? null,
+        xpEarned: row.xpEarned ?? 0,
+        stagePlan: { beats },
+      };
+    },
+  );
 
   app.get(
     "/api/learning/gradebook/:learnerId",

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useEngagement } from '@/hooks/useEngagement';
+import { useLearnerEntitlements } from '@/hooks/useLearnerEntitlements';
 import { TUTORS } from '@aivo/brand';
 import { StatCard } from '@aivo/mobile-ui';
 import { colors, spacing, radius } from '@/constants/colors';
@@ -19,6 +20,7 @@ export default function LearnerWorldMap() {
   const { data: engagement, refetch } = useEngagement(user?.id || '');
   const { t } = useTranslation();
   const { sizeClass, width: winWidth, isTablet } = useWindowSizeClass();
+  const { isTutorEntitled } = useLearnerEntitlements(user?.tenantId);
 
   const coreTutors = Object.entries(TUTORS).filter(([, t]) => t.tier === 'core');
 
@@ -151,17 +153,36 @@ export default function LearnerWorldMap() {
 
       <Text style={styles.sectionTitle}>{t('learner.questWorlds')}</Text>
       <View style={styles.worldGrid}>
-        {coreTutors.map(([key, tutor]) => (
-          <Pressable
-            key={key}
-            style={[styles.worldCard, { width: cardWidthPct, borderColor: tutor.color }]}
-            onPress={() => router.push(`/(learner)/tutor/${key}` as any)}
-          >
-            <Text style={styles.worldIcon}>{tutor.icon}</Text>
-            <Text style={styles.worldName}>{tutor.name}</Text>
-            <Text style={styles.worldDomain} numberOfLines={1}>{tutor.domain}</Text>
-          </Pressable>
-        ))}
+        {coreTutors.map(([key, tutor]) => {
+          const entitled = isTutorEntitled(key);
+          return (
+            <Pressable
+              key={key}
+              style={[
+                styles.worldCard,
+                { width: cardWidthPct, borderColor: tutor.color },
+                !entitled && styles.worldCardLocked,
+              ]}
+              onPress={() => router.push(`/(learner)/tutor/${key}` as any)}
+              accessibilityRole="button"
+              accessibilityLabel={
+                entitled
+                  ? `${tutor.name}, ${tutor.domain}`
+                  : `${tutor.name}, locked. Ask a parent to unlock.`
+              }
+              accessibilityState={{ disabled: !entitled }}
+            >
+              {!entitled && (
+                <View style={styles.lockBadge} accessibilityElementsHidden>
+                  <Ionicons name="lock-closed" size={12} color="#FFF" />
+                </View>
+              )}
+              <Text style={[styles.worldIcon, !entitled && styles.worldIconLocked]}>{tutor.icon}</Text>
+              <Text style={styles.worldName}>{tutor.name}</Text>
+              <Text style={styles.worldDomain} numberOfLines={1}>{tutor.domain}</Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       <View style={styles.quickActions}>
@@ -228,6 +249,20 @@ const styles = StyleSheet.create({
     ...({ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }),
   },
   worldIcon: { fontSize: 28, marginBottom: 4 },
+  worldIconLocked: { opacity: 0.4 },
+  worldCardLocked: { opacity: 0.55 },
+  lockBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
   worldName: { fontSize: 13, fontFamily: 'Nunito-Bold', color: colors.text },
   worldDomain: { fontSize: 10, fontFamily: 'Nunito-Regular', color: colors.textSecondary, textAlign: 'center' },
   quickActions: { flexDirection: 'row', gap: 8 },

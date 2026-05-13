@@ -15,14 +15,7 @@ import { useLocale } from "@/providers/i18n-provider";
 import { TUTOR_THEMES } from "@/components/stage/types";
 import type { Beat, TutorState, FunctioningLevel } from "@/components/stage/types";
 import { fetchTutorSurfaceBeats } from "@/components/stage/TutorSurfaceRuntime";
-
-const SKU_MAP: Record<string, string> = {
-  nova: "ADDON_TUTOR_MATH", sage: "ADDON_TUTOR_ELA", spark: "ADDON_TUTOR_SCIENCE",
-  chrono: "ADDON_TUTOR_HISTORY", pixel: "ADDON_TUTOR_CODING", echo: "ADDON_TUTOR_SPEECH",
-  harmony: "ADDON_TUTOR_SEL", atlas: "ADDON_TUTOR_SOCIAL_STUDIES", cadence: "ADDON_TUTOR_ARTS",
-  vigor: "ADDON_TUTOR_PE_HEALTH", lingua: "ADDON_TUTOR_LANGUAGES", forge: "ADDON_TUTOR_STEM_DESIGN",
-  compass: "ADDON_TUTOR_LIFE_SKILLS", muse: "ADDON_TUTOR_CREATIVE_WRITING",
-};
+import { TUTOR_KEY_TO_SKU, isTutorKey } from "@aivo/billing-entitlements";
 
 
 export default function LessonPage() {
@@ -180,21 +173,43 @@ export default function LessonPage() {
 
   const startStage = async () => {
     if (!user || !tutor) return;
+    if (!isTutorKey(tutorKey)) {
+      setLessonError("Unknown tutor.");
+      return;
+    }
     setLessonError(null);
     setStarted(true);
 
-    const sku = SKU_MAP[tutorKey] || `ADDON_TUTOR_${tutorKey.toUpperCase()}`;
+    const sku = TUTOR_KEY_TO_SKU[tutorKey];
+    // Server-side entitlement gate. If the tenant isn't on a plan that
+    // includes this tutor and has no active add-on, tutor-svc returns
+    // 403 with `requiredSku` and `upgradePath`. Surface a parent-friendly
+    // upgrade CTA instead of running the stage.
     try {
       const res = await fetch("/api/tutor/session/start", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ learnerId: user.id, tutorSku: sku }),
       });
+      if (res.status === 403) {
+        const data = await res.json().catch(() => ({}));
+        setLessonError(data.error || "This tutor isn't included in your plan.");
+        setStarted(false);
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         setSessionApiId(data.sessionId);
+      } else {
+        setLessonError("Unable to start lesson. Please try again.");
+        setStarted(false);
+        return;
       }
-    } catch {}
+    } catch {
+      setLessonError("Network error. Please try again.");
+      setStarted(false);
+      return;
+    }
 
     const name = learnerName || user.name || "Explorer";
     try {

@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
+import rawBody from "fastify-raw-body";
 import postgres from "postgres";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
@@ -18,7 +19,9 @@ import { registerWebhookRoutes } from "./routes/webhooks.js";
 import { registerDailyJobsRoutes } from "./routes/daily-jobs.js";
 import { registerCouponRoutes } from "./routes/coupons.js";
 import { registerInternalJobRoutes } from "./routes/internal-jobs.js";
+import { registerBillingTestHelperRoutes } from "./routes/test-helpers.js";
 import { runExpiryBatchForScheduler } from "./lib/expiryReminderService.js";
+import { runReconciliationForScheduler } from "./lib/reconciliationService.js";
 
 const logger = createLogger("billing-svc");
 const PORT = parseInt(process.env.BILLING_SVC_PORT || "3009", 10);
@@ -36,6 +39,15 @@ export async function buildApp(handles: CronHandles = {}, db = createDb(process.
   const app = Fastify({ logger: false });
 
   await app.register(cors, { origin: true, credentials: true });
+  // Stripe signature verification requires the byte-for-byte body the
+  // signer hashed. fastify-raw-body opts in per-route via
+  // `config: { rawBody: true }`.
+  await app.register(rawBody, {
+    field: "rawBody",
+    global: false,
+    encoding: "utf8",
+    runFirst: true,
+  });
   await app.register(swagger, {
     openapi: {
       info: { title: "AIVO Billing Service", version: "1.0.0" },
@@ -51,10 +63,11 @@ export async function buildApp(handles: CronHandles = {}, db = createDb(process.
 
   registerHealthRoutes(app);
   registerPlanRoutes(app, db);
-  registerWebhookRoutes(app);
+  registerWebhookRoutes(app, db);
   registerDailyJobsRoutes(app, db);
   registerCouponRoutes(app, db);
   registerInternalJobRoutes(app, handles);
+  registerBillingTestHelperRoutes(app, db);
 
   return app;
 }
@@ -77,6 +90,18 @@ async function start() {
     run: () => runExpiryBatchForScheduler(db),
   });
   handles["billing.daily-expiry-reminders"] = expiryHandle;
+
+  // Daily Stripe reconciliation. Walks active subscriptions and repairs
+  // local drift if a webhook was dropped or arrived out of order.
+  // No-ops cleanly when Stripe is not configured.
+  const reconciliationHandle = startSafeCron({
+    jobName: "billing.daily-stripe-reconciliation",
+    ledger,
+    lock,
+    log: logger,
+    run: () => runReconciliationForScheduler(db),
+  });
+  handles["billing.daily-stripe-reconciliation"] = reconciliationHandle;
 
   let sharedSql: ReturnType<typeof postgres> | null = null;
   const opsAlerts = await bootstrapOpsAlerts({

@@ -22,6 +22,7 @@ export const SERVICE_PORTS: Record<string, number> = {
   "learning-svc": 14005,
   "admin-svc": 14006,
   "comms-svc": 14008,
+  "billing-svc": 14009,
 };
 
 export function serviceUrl(name: string, path_ = ""): string {

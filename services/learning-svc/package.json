@@ -10,6 +10,7 @@
     "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
+    "@aivo/billing-entitlements": "workspace:*",
     "@aivo/db": "workspace:*",
     "@aivo/brand": "workspace:*",
     "@aivo/events": "workspace:*",

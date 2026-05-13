@@ -84,7 +84,74 @@ function extractStagePlan(raw: RawSessionResponse): StagePlan | null {
   return null;
 }
 
+export interface StartSessionResult {
+  sessionId: string;
+  status?: string;
+}
+
+export class TutorNotEntitledError extends Error {
+  readonly status = 403 as const;
+  constructor(
+    public readonly requiredSku: string,
+    public readonly upgradePath: string,
+    public readonly reason: string,
+  ) {
+    super("Tutor not included in current subscription");
+    this.name = "TutorNotEntitledError";
+  }
+}
+
 export const sessionClient = {
+  /**
+   * Create a real backend session before navigating the learner into
+   * the stage. Returns the server-issued session id which the stage
+   * route uses for the `getSession` fetch and the `completeSession`
+   * call. Surfaces a 403 as `TutorNotEntitledError` so callers can
+   * route into billing instead of running the stage.
+   */
+  async startSession(params: {
+    learnerId: string;
+    tutorSku: string;
+    topic?: string;
+  }): Promise<StartSessionResult> {
+    if (!params.learnerId || !params.tutorSku) {
+      throw new SessionUnavailableError("learnerId and tutorSku are required");
+    }
+    const res = await apiFetch(API.LEARNING, "/api/learning/sessions", {
+      method: "POST",
+      body: JSON.stringify({
+        learnerId: params.learnerId,
+        tutorSku: params.tutorSku,
+        topic: params.topic,
+        contentType: "LESSON",
+      }),
+    });
+    if (res.status === 403) {
+      const data = (await res.json().catch(() => ({}))) as {
+        requiredSku?: string;
+        upgradePath?: string;
+        reason?: string;
+      };
+      throw new TutorNotEntitledError(
+        data.requiredSku ?? params.tutorSku,
+        data.upgradePath ?? "purchase_addon",
+        data.reason ?? "not_entitled",
+      );
+    }
+    if (!res.ok) {
+      throw new SessionUnavailableError(
+        `Server returned ${res.status} when starting session`,
+        res.status,
+      );
+    }
+    const data = (await res.json()) as { sessionId?: string; id?: string; status?: string };
+    const sessionId = data.sessionId ?? data.id;
+    if (!sessionId) {
+      throw new SessionUnavailableError("Server did not return a sessionId");
+    }
+    return { sessionId, status: data.status };
+  },
+
   async getSession(sessionId: string): Promise<Session> {
     if (!sessionId) {
       throw new SessionUnavailableError("Missing session id");

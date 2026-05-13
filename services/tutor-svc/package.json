@@ -9,6 +9,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@aivo/billing-entitlements": "workspace:*",
     "@aivo/brand": "workspace:*",
     "@aivo/content-pack": "workspace:*",
     "@aivo/db": "workspace:*",

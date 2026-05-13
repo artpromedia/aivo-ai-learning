@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@aivo/aac-bridge": "workspace:*",
+    "@aivo/billing-entitlements": "workspace:*",
     "@aivo/brand": "workspace:*",
     "@aivo/mobile-ui": "workspace:*",
     "@expo/metro-runtime": "~6.1.0",

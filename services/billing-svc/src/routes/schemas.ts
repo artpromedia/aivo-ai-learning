@@ -91,9 +91,20 @@ export const getSubscriptionSchema = {
         tenantId: { type: "string" },
         plan: { type: "string" },
         status: { type: "string" },
-        currentPeriodStart: { type: "string", format: "date-time" },
-        currentPeriodEnd: { type: "string", format: "date-time" },
+        paymentStatus: { type: ["string", "null"] },
+        currentPeriodStart: { type: ["string", "null"], format: "date-time" },
+        currentPeriodEnd: { type: ["string", "null"], format: "date-time" },
         cancelAtPeriodEnd: { type: "boolean" },
+        hasStripeCustomer: { type: "boolean" },
+        trialEndsAt: { type: ["string", "null"], format: "date-time" },
+        paymentMethod: {
+          type: ["object", "null"],
+          additionalProperties: true,
+          properties: {
+            brand: { type: ["string", "null"] },
+            last4: { type: ["string", "null"] },
+          },
+        },
       },
     },
     401: errorResponse,
@@ -203,20 +214,22 @@ export const listAddonsSchema = {
 export const addAddonSchema = {
   tags: ["Billing"],
   operationId: "addAddon",
-  summary: "Attach an add-on (extra tutor) to a tenant",
+  summary: "Attach a tutor add-on to the tenant subscription via Stripe",
   body: {
     type: "object",
-    required: ["tenantId", "tutorId"],
+    required: ["tenantId"],
     additionalProperties: true,
     properties: {
       tenantId: { type: "string" },
+      // Either `tutorSku` (canonical) or legacy `tutorId` accepted.
+      tutorSku: { type: "string" },
       tutorId: { type: "string" },
     },
   },
   response: {
     200: {
       type: "object",
-      required: ["status", "addon"],
+      required: ["status"],
       additionalProperties: true,
       properties: {
         status: { type: "string" },
@@ -226,19 +239,22 @@ export const addAddonSchema = {
     400: errorResponse,
     401: errorResponse,
     403: errorResponse,
+    404: errorResponse,
+    503: errorResponse,
   },
 } as const;
 
 export const removeAddonSchema = {
   tags: ["Billing"],
   operationId: "removeAddon",
-  summary: "Detach an add-on from a tenant",
+  summary: "Detach a tutor add-on from the tenant subscription via Stripe",
   params: {
     type: "object",
     required: ["tenantId", "tutorId"],
     additionalProperties: true,
     properties: {
       tenantId: { type: "string" },
+      // Param keeps the legacy `tutorId` slot but accepts a tutor SKU.
       tutorId: { type: "string" },
     },
   },
@@ -255,6 +271,8 @@ export const removeAddonSchema = {
     },
     401: errorResponse,
     403: errorResponse,
+    404: errorResponse,
+    503: errorResponse,
   },
 } as const;
 
@@ -558,6 +576,119 @@ export const runInternalJobSchema = {
         jobName: { type: "string" },
       },
     },
+  },
+} as const;
+
+// ── checkout / portal / entitlements / resume ───────────────────────────────
+
+export const createCheckoutSessionSchema = {
+  tags: ["Billing"],
+  operationId: "createCheckoutSession",
+  summary: "Create a Stripe Checkout Session for a plan subscription",
+  body: {
+    type: "object",
+    required: ["tenantId", "planId"],
+    additionalProperties: true,
+    properties: {
+      tenantId: { type: "string" },
+      planId: { type: "string", enum: ["single", "family"] },
+      successUrl: { type: "string" },
+      cancelUrl: { type: "string" },
+      learnerCount: { type: "integer", minimum: 1 },
+    },
+  },
+  response: {
+    200: {
+      type: "object",
+      required: ["checkoutUrl"],
+      additionalProperties: true,
+      properties: {
+        checkoutUrl: { type: "string" },
+        sessionId: { type: "string" },
+      },
+    },
+    400: errorResponse,
+    401: errorResponse,
+    403: errorResponse,
+    503: errorResponse,
+  },
+} as const;
+
+export const createPortalSessionSchema = {
+  tags: ["Billing"],
+  operationId: "createPortalSession",
+  summary: "Create a Stripe Customer Portal Session",
+  body: {
+    type: "object",
+    required: ["tenantId"],
+    additionalProperties: true,
+    properties: {
+      tenantId: { type: "string" },
+      returnUrl: { type: "string" },
+    },
+  },
+  response: {
+    200: {
+      type: "object",
+      required: ["portalUrl"],
+      additionalProperties: true,
+      properties: { portalUrl: { type: "string" } },
+    },
+    400: errorResponse,
+    401: errorResponse,
+    403: errorResponse,
+    404: errorResponse,
+    503: errorResponse,
+  },
+} as const;
+
+export const resumeSubscriptionSchema = {
+  tags: ["Billing"],
+  operationId: "resumeSubscription",
+  summary: "Undo cancel-at-period-end on the current subscription",
+  params: tenantParam,
+  response: {
+    200: {
+      type: "object",
+      required: ["status", "tenantId"],
+      additionalProperties: true,
+      properties: {
+        status: { type: "string" },
+        tenantId: { type: "string" },
+        cancelAtPeriodEnd: { type: "boolean" },
+      },
+    },
+    401: errorResponse,
+    403: errorResponse,
+    404: errorResponse,
+    503: errorResponse,
+  },
+} as const;
+
+export const getEntitlementsSchema = {
+  tags: ["Billing"],
+  operationId: "getEntitlements",
+  summary: "Effective tutor entitlements for a tenant",
+  params: tenantParam,
+  response: {
+    200: {
+      type: "object",
+      required: ["tenantId", "plan", "status", "effectiveTutorSkus"],
+      additionalProperties: true,
+      properties: {
+        tenantId: { type: "string" },
+        plan: { type: "string" },
+        status: { type: "string" },
+        cancelAtPeriodEnd: { type: "boolean" },
+        currentPeriodEnd: { type: ["string", "null"], format: "date-time" },
+        paymentStatus: { type: ["string", "null"] },
+        includedTutorSkus: { type: "array", items: { type: "string" } },
+        purchasedTutorSkus: { type: "array", items: { type: "string" } },
+        effectiveTutorSkus: { type: "array", items: { type: "string" } },
+      },
+    },
+    401: errorResponse,
+    403: errorResponse,
   },
 } as const;
 

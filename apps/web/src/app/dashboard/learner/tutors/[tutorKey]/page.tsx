@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { TUTORS, type TutorKey } from "@aivo/brand";
 import { useTranslations } from "next-intl";
+import { useLearnerEntitlements } from "@/hooks/useLearnerEntitlements";
 
 export default function TutorDetailPage() {
   const { user, accessToken, loading } = useAuth();
@@ -17,25 +18,15 @@ export default function TutorDetailPage() {
   const tLearner = useTranslations("learner");
   const tCommon = useTranslations("common");
 
-  const [isActive, setIsActive] = useState(false);
-  const [loadingStatus, setLoadingStatus] = useState(true);
-  const [sessionCount, setSessionCount] = useState(0);
+  const { status: entitlementStatus, isTutorEntitled } = useLearnerEntitlements({
+    tenantId: user?.tenantId,
+    accessToken,
+  });
+  const isActive = isTutorEntitled(tutorKey);
+  const loadingStatus = entitlementStatus === "loading";
+  const [sessionCount] = useState(0);
 
   useEffect(() => { if (!loading && !user) router.push("/login"); }, [user, loading, router]);
-
-  useEffect(() => {
-    if (!accessToken || !user || !tutorKey) return;
-    fetch(`/api/tutors/active/${user.id}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then(r => r.ok ? r.json() : [])
-      .then(data => {
-        const subs = Array.isArray(data) ? data : [];
-        setIsActive(subs.some((s: any) => s.tutorSku?.toLowerCase().includes(tutorKey.toLowerCase())));
-      })
-      .catch(() => {})
-      .finally(() => setLoadingStatus(false));
-  }, [accessToken, user, tutorKey]);
 
   if (loading || !user) return null;
   if (!tutor) {
