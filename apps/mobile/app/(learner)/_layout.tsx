@@ -121,7 +121,9 @@ function ThemedLearnerTabs() {
       <Tabs.Screen name="tutor/[tutorSlug]" options={{ href: null }} />
       <Tabs.Screen name="homework/index" options={{ href: null }} />
       <Tabs.Screen name="homework/[sessionId]" options={{ href: null }} />
-      <Tabs.Screen name="quests" options={{ href: null }} />
+      <Tabs.Screen name="quests/index" options={{ href: null }} />
+      <Tabs.Screen name="quests/[worldSlug]/index" options={{ href: null }} />
+      <Tabs.Screen name="quests/[worldSlug]/play/[questId]" options={{ href: null }} />
       <Tabs.Screen name="challenges" options={{ href: null }} />
       <Tabs.Screen name="badges" options={{ href: null }} />
       <Tabs.Screen name="gradebook" options={{ href: null }} />

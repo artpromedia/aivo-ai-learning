@@ -3,7 +3,18 @@ import { eq, and } from "drizzle-orm";
 import { TUTORS } from "@aivo/brand";
 import { tutorSubscriptions } from "@aivo/db";
 import { resolveTenantIdForUser } from "../lib/tenant.js";
-import { getTutorsCatalogSchema, getTutorsActiveByUserIdSchema, tutorsSubscribeSchema, tutorsSubscribeBundleSchema, tutorsUnsubscribeSchema } from "./schemas.js";
+import {
+  buildLearnerEntitlementPayload,
+  resolveLearnerForEntitlements,
+} from "../lib/learner-entitlements.js";
+import {
+  getTutorsCatalogSchema,
+  getTutorsActiveByUserIdSchema,
+  getTutorsEntitlementsByLearnerIdSchema,
+  tutorsSubscribeSchema,
+  tutorsSubscribeBundleSchema,
+  tutorsUnsubscribeSchema,
+} from "./schemas.js";
 
 const TUTOR_SKU_MAP: Record<string, string> = {
   nova: "ADDON_TUTOR_MATH",
@@ -53,6 +64,38 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
       .where(and(eq(tutorSubscriptions.userId, userId), eq(tutorSubscriptions.status, "active")));
     return subs;
   });
+
+  app.get(
+    "/api/tutors/entitlements/:learnerId",
+    { schema: getTutorsEntitlementsByLearnerIdSchema },
+    async (request, reply) => {
+      const { learnerId } = request.params as { learnerId: string };
+      const auth = request.auth as
+        | { sub?: string; tenantId?: string; role?: string }
+        | undefined;
+      const callerTenant = auth?.tenantId || null;
+      const callerSub = auth?.sub || null;
+
+      const resolved = await resolveLearnerForEntitlements(
+        db,
+        learnerId,
+        callerTenant,
+        callerSub,
+      );
+      if ("error" in resolved) {
+        if (resolved.error === "not_found") {
+          return reply.code(404).send({ error: "learner_not_found", learnerId });
+        }
+        return reply.code(403).send({ error: "tenant_mismatch", learnerId });
+      }
+
+      const payload = await buildLearnerEntitlementPayload(db, {
+        learnerId,
+        tenantId: resolved.tenantId,
+      });
+      return payload;
+    },
+  );
 
   app.post("/api/tutors/subscribe", { schema: tutorsSubscribeSchema }, async (request, reply) => {
     // User-facing tutor purchases must go through billing-svc so they

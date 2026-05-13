@@ -8,6 +8,17 @@ import { TUTORS, type TutorKey, getTutorsForTier } from "@aivo/brand";
 import { gradeToTier } from "@aivo/learner-ui";
 import { useTranslations } from "next-intl";
 
+interface LearnerEntitlementResponse {
+  learnerId: string;
+  plan: string;
+  subscriptionStatus: string;
+  effectiveTutors: string[];
+  graceTutors: string[];
+  includedTutors: string[];
+  addonTutors: string[];
+  lockedTutors: string[];
+}
+
 export default function ParentLearnerTutorsPage() {
   const { user, accessToken, loading } = useAuth();
   const params = useParams();
@@ -15,7 +26,7 @@ export default function ParentLearnerTutorsPage() {
   const t = useTranslations("parent");
   const tc = useTranslations("common");
 
-  const [activeTutors, setActiveTutors] = useState<string[]>([]);
+  const [entitlements, setEntitlements] = useState<LearnerEntitlementResponse | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [learnerGrade, setLearnerGrade] = useState<string | null>(null);
   const [learnerLookupFailed, setLearnerLookupFailed] = useState(false);
@@ -23,14 +34,17 @@ export default function ParentLearnerTutorsPage() {
   useEffect(() => {
     if (!accessToken || !learnerId || !user) return;
     Promise.all([
-      fetch(`/api/tutors/active/${user.id}`, { headers: { Authorization: `Bearer ${accessToken}` } })
-        .then(r => r.ok ? r.json() : []),
+      // Authoritative per-learner entitlements: resolves plan-included,
+      // active add-ons, and grace-period tutors against the learner's
+      // tenant. Keyed by tutor key so we can match directly.
+      fetch(`/api/tutors/entitlements/${learnerId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }).then((r) => (r.ok ? r.json() : null)),
       fetch(`/api/users/learners`, { headers: { Authorization: `Bearer ${accessToken}` } })
-        .then(r => r.ok ? r.json() : []),
+        .then((r) => (r.ok ? r.json() : [])),
     ])
-      .then(([subsData, learnersData]) => {
-        const subs = Array.isArray(subsData) ? subsData : [];
-        setActiveTutors(subs.map((s: any) => s.tutorSku || ""));
+      .then(([entResp, learnersData]) => {
+        setEntitlements(entResp as LearnerEntitlementResponse | null);
         const learners = Array.isArray(learnersData) ? learnersData : [];
         const me = learners.find((l: any) => l.id === learnerId);
         if (me?.gradeLevel) {
@@ -49,7 +63,10 @@ export default function ParentLearnerTutorsPage() {
   // Chrono / Lingua / Forge / Compass).
   const tier = learnerGrade != null ? gradeToTier(learnerGrade) : null;
   const tutorEntries = getTutorsForTier(tier) as [TutorKey, typeof TUTORS[TutorKey]][];
-  const isActive = (key: string) => activeTutors.some(sku => sku.toLowerCase().includes(key.toLowerCase()));
+  const effective = new Set(entitlements?.effectiveTutors ?? []);
+  const grace = new Set(entitlements?.graceTutors ?? []);
+  const isActive = (key: string) => effective.has(key);
+  const isGrace = (key: string) => grace.has(key);
 
   return (
     <div className="space-y-6">
@@ -83,7 +100,11 @@ export default function ParentLearnerTutorsPage() {
                       {tutor.tier}
                     </span>
                     {active ? (
-                      <span className="px-3 py-1 text-xs rounded-full bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] font-semibold">{tc("active")}</span>
+                      isGrace(key) ? (
+                        <span className="px-3 py-1 text-xs rounded-full bg-amber-100 text-amber-700 font-semibold">Grace period</span>
+                      ) : (
+                        <span className="px-3 py-1 text-xs rounded-full bg-[hsl(var(--visual-science)/0.12)] text-[hsl(var(--visual-science))] font-semibold">{tc("active")}</span>
+                      )
                     ) : (
                       <span className="px-3 py-1 text-xs rounded-full vi-surface-soft vi-text-muted font-semibold">{t("not_subscribed")}</span>
                     )}
