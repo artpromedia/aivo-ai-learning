@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
+import rawBody from "fastify-raw-body";
 import postgres from "postgres";
 import { createLogger } from "@aivo/observability";
 import { createDb } from "@aivo/db";
@@ -36,6 +37,15 @@ export async function buildApp(handles: CronHandles = {}, db = createDb(process.
   const app = Fastify({ logger: false });
 
   await app.register(cors, { origin: true, credentials: true });
+  // Stripe signature verification requires the byte-for-byte body the
+  // signer hashed. fastify-raw-body opts in per-route via
+  // `config: { rawBody: true }`.
+  await app.register(rawBody, {
+    field: "rawBody",
+    global: false,
+    encoding: "utf8",
+    runFirst: true,
+  });
   await app.register(swagger, {
     openapi: {
       info: { title: "AIVO Billing Service", version: "1.0.0" },
@@ -51,7 +61,7 @@ export async function buildApp(handles: CronHandles = {}, db = createDb(process.
 
   registerHealthRoutes(app);
   registerPlanRoutes(app, db);
-  registerWebhookRoutes(app);
+  registerWebhookRoutes(app, db);
   registerDailyJobsRoutes(app, db);
   registerCouponRoutes(app, db);
   registerInternalJobRoutes(app, handles);

@@ -55,6 +55,15 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
   });
 
   app.post("/api/tutors/subscribe", { schema: tutorsSubscribeSchema }, async (request, reply) => {
+    // User-facing tutor purchases must go through billing-svc so they
+    // hit Stripe Checkout. This route is now the internal endpoint used
+    // by billing-svc webhook handlers after `customer.subscription.*`
+    // events confirm payment; service-token callers only.
+    if ((request as any).auth?.role !== "service") {
+      return reply.code(403).send({
+        error: "Direct tutor subscription is no longer supported; use /api/billing/addons to purchase via Stripe",
+      });
+    }
     const { userId, tutorSku, tenantId } = request.body as { userId: string; tutorSku: string; tenantId?: string };
     if (!userId || !tutorSku) {
       return reply.code(400).send({ error: "userId and tutorSku required" });
@@ -93,6 +102,11 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
   });
 
   app.post("/api/tutors/subscribe-bundle", { schema: tutorsSubscribeBundleSchema }, async (request, reply) => {
+    if ((request as any).auth?.role !== "service") {
+      return reply.code(403).send({
+        error: "Direct bundle subscription is no longer supported; use /api/billing/addons to purchase via Stripe",
+      });
+    }
     const { userId, bundleKey, tenantId } = request.body as { userId: string; bundleKey: string; tenantId?: string };
     if (!userId || !bundleKey) {
       return reply.code(400).send({ error: "userId and bundleKey required" });
@@ -134,6 +148,11 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
   });
 
   app.post("/api/tutors/unsubscribe", { schema: tutorsUnsubscribeSchema }, async (request, reply) => {
+    if ((request as any).auth?.role !== "service") {
+      return reply.code(403).send({
+        error: "Direct tutor unsubscribe is no longer supported; use DELETE /api/billing/addons/:tenantId/:tutorSku",
+      });
+    }
     const { userId, tutorSku } = request.body as { userId: string; tutorSku: string };
     if (!userId || !tutorSku) {
       return reply.code(400).send({ error: "userId and tutorSku required" });

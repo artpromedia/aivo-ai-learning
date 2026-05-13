@@ -4,6 +4,7 @@ import { TUTORS } from "@aivo/brand";
 import { tutorSessions } from "@aivo/db";
 import { createLogger } from "@aivo/observability";
 import { resolveTenantIdForLearner } from "../lib/tenant.js";
+import { checkTutorAccess } from "../lib/entitlements.js";
 import { computeTutorXp, computeTutorQuality, type TutorSignals } from "../services/scoring.js";
 import { getActiveCurriculumFocus } from "./curriculum.js";
 import { loadDapeProfile } from "../lib/dape.js";
@@ -192,6 +193,22 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
     const tenantId = await resolveTenantIdForLearner(request, db, learnerId);
     if (!tenantId) {
       return reply.code(400).send({ error: "Unable to resolve tenantId for learner" });
+    }
+
+    // Service-to-service callers (homework, co-learn, etc.) bypass the
+    // entitlement gate; only learner/parent-initiated session starts are
+    // checked. Service callers carry x-service-token and surface as
+    // `role: "service"` from the auth hook.
+    if ((request as any).auth?.role !== "service") {
+      const access = await checkTutorAccess({ db, tenantId, tutorSku });
+      if (!access.entitled) {
+        return reply.code(403).send({
+          error: "Tutor not included in current subscription",
+          requiredSku: access.requiredSku,
+          upgradePath: access.upgradePath,
+          reason: access.reason,
+        });
+      }
     }
 
     const [session] = await db.insert(tutorSessions).values({

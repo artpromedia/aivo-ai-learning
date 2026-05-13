@@ -223,6 +223,46 @@ export const listSessionsSchema = {
   },
 } as const;
 
+export const getSessionByIdSchema = {
+  tags: ["Learning"],
+  operationId: "getLearningSessionById",
+  summary: "Get a single learning session including its stage plan",
+  params: {
+    type: "object",
+    required: ["sessionId"],
+    properties: { sessionId: { type: "string" } },
+  },
+  response: {
+    200: {
+      type: "object",
+      additionalProperties: true,
+      required: ["sessionId", "learnerId", "tutorSku", "stagePlan"],
+      properties: {
+        sessionId: { type: "string" },
+        learnerId: { type: "string" },
+        tutorSku: { type: "string" },
+        subject: { type: "string" },
+        functioningLevel: { type: ["string", "null"] },
+        status: { type: ["string", "null"] },
+        startedAt: { type: ["string", "null"], format: "date-time" },
+        completedAt: { type: ["string", "null"], format: "date-time" },
+        xpEarned: { type: ["integer", "null"] },
+        stagePlan: {
+          type: "object",
+          additionalProperties: true,
+          required: ["beats"],
+          properties: {
+            beats: { type: "array", items: { type: "object", additionalProperties: true } },
+          },
+        },
+      },
+    },
+    401: errorResponse,
+    403: errorResponse,
+    404: errorResponse,
+  },
+} as const;
+
 export const getGradebookSchema = {
   tags: ["Learning"],
   operationId: "getGradebook",
