@@ -275,6 +275,14 @@ export const getTutorsActiveByUserIdSchema = {
   response: { 200: passthroughArray },
 } as const;
 
+export const getTutorsEntitlementsByLearnerIdSchema = {
+  tags: ["Tutor"],
+  operationId: "getTutorsEntitlementsByLearnerId",
+  summary: "GET /api/tutors/entitlements/:learnerId",
+  params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
+  response: { 200: passthroughObject, 403: errorResponse, 404: errorResponse },
+} as const;
+
 export const tutorsSubscribeSchema = {
   tags: ["Tutor"],
   operationId: "tutorsSubscribe",
