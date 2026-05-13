@@ -175,7 +175,7 @@ export function registerSessionRoutes(app: FastifyInstance, db: any) {
     if (callerRole !== "service" && contentType !== "THERAPY_SESSION") {
       const decision = await checkLearnerTutorAccess(db, tenantId, tutorSku);
       if (!decision.entitled) {
-        return reply.code(403).send({
+        return (reply as any).code(403).send({
           error: "Tutor not included in current subscription",
           requiredSku: decision.requiredSku,
           upgradePath: decision.upgradePath,
