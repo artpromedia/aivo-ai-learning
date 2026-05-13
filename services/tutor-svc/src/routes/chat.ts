@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { eq, and, desc } from "drizzle-orm";
 import { TUTORS } from "@aivo/brand";
-import { tutorSessions } from "@aivo/db";
+import { tutorSessions, learners } from "@aivo/db";
 import { createLogger } from "@aivo/observability";
 import { resolveTenantIdForLearner } from "../lib/tenant.js";
 import { checkTutorAccess } from "../lib/entitlements.js";
@@ -159,11 +159,38 @@ function computeMasteryDelta(
 }
 
 export function registerChatRoutes(app: FastifyInstance, db: any) {
+  // Resolve a possibly-ambiguous id (could be a learners.id OR a users.id
+  // belonging to a LEARNER-role user, especially during admin
+  // impersonation) into the canonical learners.id. Falls back to the
+  // original value if no match found so existing 4xx error paths still
+  // surface a sensible response.
+  async function resolveLearnerId(rawId: string): Promise<string> {
+    if (!rawId) return rawId;
+    try {
+      const byId = await db
+        .select({ id: learners.id })
+        .from(learners)
+        .where(eq(learners.id, rawId))
+        .limit(1);
+      if (byId[0]?.id) return byId[0].id;
+      const byUserId = await db
+        .select({ id: learners.id })
+        .from(learners)
+        .where(eq(learners.userId, rawId))
+        .limit(1);
+      if (byUserId[0]?.id) return byUserId[0].id;
+    } catch (err) {
+      logger.error("resolveLearnerId failed (non-blocking)", { err: String(err) });
+    }
+    return rawId;
+  }
+
   app.post("/api/tutor/session/start", { schema: sessionStartSchema }, async (request, reply) => {
-    const { learnerId, tutorSku, sessionType } = request.body as any;
-    if (!learnerId || !tutorSku) {
+    const { learnerId: rawLearnerId, tutorSku, sessionType } = request.body as any;
+    if (!rawLearnerId || !tutorSku) {
       return reply.code(400).send({ error: "learnerId and tutorSku required" });
     }
+    const learnerId = await resolveLearnerId(rawLearnerId);
 
     const tutorName = TUTOR_NAME_MAP[tutorSku] || "Tutor";
     const brainContext = await fetchBrainContext(learnerId);
