@@ -60,7 +60,7 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
     // by billing-svc webhook handlers after `customer.subscription.*`
     // events confirm payment; service-token callers only.
     if ((request as any).auth?.role !== "service") {
-      return reply.code(403).send({
+      return (reply as any).code(403).send({
         error: "Direct tutor subscription is no longer supported; use /api/billing/addons to purchase via Stripe",
       });
     }
@@ -103,7 +103,7 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
 
   app.post("/api/tutors/subscribe-bundle", { schema: tutorsSubscribeBundleSchema }, async (request, reply) => {
     if ((request as any).auth?.role !== "service") {
-      return reply.code(403).send({
+      return (reply as any).code(403).send({
         error: "Direct bundle subscription is no longer supported; use /api/billing/addons to purchase via Stripe",
       });
     }
@@ -149,7 +149,7 @@ export function registerStoreRoutes(app: FastifyInstance, db: ReturnType<typeof 
 
   app.post("/api/tutors/unsubscribe", { schema: tutorsUnsubscribeSchema }, async (request, reply) => {
     if ((request as any).auth?.role !== "service") {
-      return reply.code(403).send({
+      return (reply as any).code(403).send({
         error: "Direct tutor unsubscribe is no longer supported; use DELETE /api/billing/addons/:tenantId/:tutorSku",
       });
     }

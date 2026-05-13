@@ -202,7 +202,7 @@ export function registerChatRoutes(app: FastifyInstance, db: any) {
     if ((request as any).auth?.role !== "service") {
       const access = await checkTutorAccess({ db, tenantId, tutorSku });
       if (!access.entitled) {
-        return reply.code(403).send({
+        return (reply as any).code(403).send({
           error: "Tutor not included in current subscription",
           requiredSku: access.requiredSku,
           upgradePath: access.upgradePath,
