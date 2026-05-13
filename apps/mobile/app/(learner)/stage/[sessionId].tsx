@@ -358,17 +358,44 @@ export default function StageScreen() {
   const styles = useMemo(() => createStyles(theme.colors.bg), [theme.colors.bg]);
 
   if (loadError) {
+    const retry = () => {
+      if (!sessionId) return;
+      setLoadError(null);
+      setSession(null);
+      sessionClient
+        .getSession(sessionId)
+        .then((s) => setSession(s))
+        .catch((err: unknown) => {
+          const msg =
+            err instanceof SessionUnavailableError
+              ? err.message
+              : 'Could not load this session.';
+          setLoadError(msg);
+        });
+    };
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.errorState}>
+        <View style={styles.errorState} accessibilityLiveRegion="polite">
           <Ionicons name="alert-circle" size={48} color={theme.colors.text} />
           <Text style={[styles.errorText, { color: theme.colors.text }]}>{loadError}</Text>
-          <Pressable
-            style={[styles.errorBtn, { backgroundColor: theme.colors.primary }]}
-            onPress={() => router.back()}
-          >
-            <Text style={{ color: theme.colors.surface, fontWeight: '700' }}>Go back</Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Pressable
+              style={[styles.errorBtn, { backgroundColor: theme.colors.primary }]}
+              onPress={retry}
+              accessibilityRole="button"
+              accessibilityLabel="Try again"
+            >
+              <Text style={{ color: theme.colors.surface, fontWeight: '700' }}>Try again</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.errorBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.colors.primary }]}
+              onPress={() => router.replace('/(learner)' as any)}
+              accessibilityRole="button"
+              accessibilityLabel="Back to home"
+            >
+              <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>Back to home</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     );
