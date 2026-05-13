@@ -75,7 +75,7 @@ export function registerWebhookRoutes(app: FastifyInstance, db: any) {
       }
 
       try {
-        await dispatchEvent(db, event, app.log);
+        await dispatchStripeEvent(db, event, app.log);
         await db
           .update(stripeWebhookEvents)
           .set({ processedAt: new Date() })
@@ -94,7 +94,7 @@ export function registerWebhookRoutes(app: FastifyInstance, db: any) {
   );
 }
 
-async function dispatchEvent(db: any, event: Stripe.Event, log: any) {
+export async function dispatchStripeEvent(db: any, event: Stripe.Event, log: any) {
   switch (event.type) {
     case "checkout.session.completed":
       await handleCheckoutCompleted(db, event.data.object as Stripe.Checkout.Session, log);
@@ -119,21 +119,21 @@ async function dispatchEvent(db: any, event: Stripe.Event, log: any) {
   }
 }
 
-function readTenantFromMetadata(metadata: Stripe.Metadata | null | undefined): string | null {
+export function readTenantFromMetadata(metadata: Stripe.Metadata | null | undefined): string | null {
   return (metadata?.[STRIPE_METADATA_TENANT_KEY] as string | undefined) ?? null;
 }
 
-function readPlanFromMetadata(metadata: Stripe.Metadata | null | undefined): PlanId | null {
+export function readPlanFromMetadata(metadata: Stripe.Metadata | null | undefined): PlanId | null {
   const v = metadata?.[STRIPE_METADATA_PLAN_KEY];
   return typeof v === "string" && isPlanId(v) ? v : null;
 }
 
-function readTutorSkuFromMetadata(metadata: Stripe.Metadata | null | undefined): TutorSku | null {
+export function readTutorSkuFromMetadata(metadata: Stripe.Metadata | null | undefined): TutorSku | null {
   const v = metadata?.[STRIPE_METADATA_TUTOR_SKU_KEY];
   return typeof v === "string" && isTutorSku(v) ? v : null;
 }
 
-function unixToDate(secs: number | null | undefined): Date | null {
+export function unixToDate(secs: number | null | undefined): Date | null {
   if (!secs) return null;
   return new Date(secs * 1000);
 }
@@ -308,7 +308,7 @@ async function reconcileTutorItems(
   }
 }
 
-function mapStripeStatusToEnum(stripeStatus: string): "ACTIVE" | "PAST_DUE" | "CANCELLED" | "TRIALING" {
+export function mapStripeStatusToEnum(stripeStatus: string): "ACTIVE" | "PAST_DUE" | "CANCELLED" | "TRIALING" {
   switch (stripeStatus) {
     case "trialing":
       return "TRIALING";

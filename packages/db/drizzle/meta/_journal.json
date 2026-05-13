@@ -141,6 +141,13 @@
       "when": 1776762939943,
       "tag": "0017_freshness_watchdog_discoveries",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1777800000000,
+      "tag": "0030_billing_stripe_columns",
+      "breakpoints": true
     }
   ]
 }

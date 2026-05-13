@@ -10,6 +10,7 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { subscriptionStatusEnum } from "./enums.js";
 import { users } from "./users.js";
 import { tenants } from "./tenants.js";
@@ -62,7 +63,12 @@ export const tutorSubscriptions = pgTable(
   },
   (table) => [
     index("tutor_subs_user_idx").on(table.userId),
-    uniqueIndex("tutor_subs_user_sku_unique").on(table.userId, table.tutorSku),
+    // Partial unique: at most one active/grace_period entitlement per
+    // (user, tutor). Canceled rows are kept for audit and don't
+    // participate in the uniqueness constraint.
+    uniqueIndex("tutor_subs_user_sku_unique")
+      .on(table.userId, table.tutorSku)
+      .where(sql`${table.status} in ('active', 'grace_period')`),
   ],
 );
 

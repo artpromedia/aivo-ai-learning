@@ -35,8 +35,33 @@ CREATE UNIQUE INDEX IF NOT EXISTS "subscriptions_stripe_sub_unique"
 CREATE INDEX IF NOT EXISTS "tutor_subs_user_idx"
   ON "tutor_subscriptions" ("user_id");
 
+-- Dedup before creating the partial unique index. Pre-migration there
+-- was no DB-level guarantee against duplicate active rows for the same
+-- (user, tutor); the route code guarded against it but a race or a
+-- service-token caller could still slip one through. We keep the
+-- freshest row active (by activated_at desc) and soft-cancel older
+-- duplicates so historical evidence survives.
+WITH ranked AS (
+  SELECT
+    id,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id, tutor_sku
+      ORDER BY activated_at DESC, id DESC
+    ) AS rn
+  FROM tutor_subscriptions
+  WHERE status IN ('active', 'grace_period')
+)
+UPDATE tutor_subscriptions
+   SET status = 'canceled',
+       deactivated_at = COALESCE(deactivated_at, now())
+ WHERE id IN (SELECT id FROM ranked WHERE rn > 1);
+
+-- Partial unique: at most one active/grace_period entitlement per
+-- (user, tutor). Canceled rows can repeat freely so audit history is
+-- preserved.
 CREATE UNIQUE INDEX IF NOT EXISTS "tutor_subs_user_sku_unique"
-  ON "tutor_subscriptions" ("user_id", "tutor_sku");
+  ON "tutor_subscriptions" ("user_id", "tutor_sku")
+  WHERE status IN ('active', 'grace_period');
 
 CREATE TABLE IF NOT EXISTS "invoices" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),

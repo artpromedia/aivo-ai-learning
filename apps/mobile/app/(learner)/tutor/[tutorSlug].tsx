@@ -51,11 +51,7 @@ export default function TutorSessionScreen() {
       if (err instanceof TutorNotEntitledError) {
         Alert.alert(
           'Tutor locked',
-          "This tutor isn't included in your current plan. Open billing to add it as an add-on or upgrade your plan.",
-          [
-            { text: t('common.cancel'), style: 'cancel' },
-            { text: 'Open billing', onPress: () => router.push('/(parent)/billing') },
-          ],
+          "This tutor isn't included in your current plan. Ask a parent or guardian to add it as an add-on or upgrade your plan.",
         );
       } else {
         Alert.alert(
