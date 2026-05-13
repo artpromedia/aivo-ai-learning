@@ -1,96 +1,216 @@
 "use client";
 import { useAuth } from "@/providers/auth-provider";
 import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, type ComponentType } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Lock, Check, Calculator, BookOpen, FlaskConical, Globe2, type LucideIcon } from "lucide-react";
+import {
+  Lock,
+  Check,
+  Sparkles,
+  BookOpen,
+  FlaskConical,
+  Castle,
+  Code2,
+  Globe2,
+} from "lucide-react";
 
 interface QuestWorld {
-  slug: string;
+  key: string;
   name: string;
+  tutorKey: string;
+  subject: string;
   description: string;
-  theme: string;
-  icon: LucideIcon;
-  quests: Quest[];
+  chapters: number;
 }
 
-interface Quest {
+interface QuestRow {
   id: string;
+  worldKey: string;
+  chapterNumber: number;
   title: string;
-  description: string;
-  xpReward: number;
-  status: "locked" | "available" | "in_progress" | "completed";
-  progressPct: number;
-  steps: { title: string; completed: boolean }[];
+  description: string | null;
+  narrativeIntro: string | null;
+  narrativeOutro: string | null;
+  subject: string;
+  xpReward: number | null;
+  coinReward: number | null;
 }
 
-const SAMPLE_WORLDS: Record<string, QuestWorld> = {
-  "mathlands": {
-    slug: "mathlands",
-    name: "Mathlands",
-    description: "Conquer the realm of numbers and equations",
-    theme: "from-blue-500 to-indigo-600",
-    icon: Calculator,
-    quests: [
-      { id: "q1", title: "Number Basics", description: "Master addition and subtraction", xpReward: 100, status: "completed", progressPct: 100, steps: [{ title: "Addition", completed: true }, { title: "Subtraction", completed: true }, { title: "Mixed Practice", completed: true }] },
-      { id: "q2", title: "Multiplication Mission", description: "Learn your times tables", xpReward: 150, status: "in_progress", progressPct: 60, steps: [{ title: "Tables 1-5", completed: true }, { title: "Tables 6-10", completed: true }, { title: "Tables 11-12", completed: false }, { title: "Speed Challenge", completed: false }] },
-      { id: "q3", title: "Division Discovery", description: "Divide and conquer", xpReward: 150, status: "available", progressPct: 0, steps: [{ title: "Basic Division", completed: false }, { title: "Remainders", completed: false }, { title: "Long Division", completed: false }] },
-      { id: "q4", title: "Fraction Kingdom", description: "Rule the land of fractions", xpReward: 200, status: "locked", progressPct: 0, steps: [{ title: "Parts of a Whole", completed: false }, { title: "Adding Fractions", completed: false }, { title: "Mixed Numbers", completed: false }] },
-    ],
-  },
-  "word-world": {
-    slug: "word-world",
-    name: "Word World",
-    description: "Explore the magic of language and reading",
-    theme: "from-green-500 to-emerald-600",
-    icon: BookOpen,
-    quests: [
-      { id: "q5", title: "Phonics Path", description: "Sound out the basics", xpReward: 100, status: "completed", progressPct: 100, steps: [{ title: "Vowel Sounds", completed: true }, { title: "Consonant Blends", completed: true }] },
-      { id: "q6", title: "Reading Rally", description: "Build fluency and comprehension", xpReward: 150, status: "in_progress", progressPct: 40, steps: [{ title: "Sight Words", completed: true }, { title: "Short Stories", completed: false }, { title: "Comprehension Quiz", completed: false }] },
-      { id: "q7", title: "Creative Writing Cave", description: "Tell your own stories", xpReward: 200, status: "locked", progressPct: 0, steps: [{ title: "Sentence Building", completed: false }, { title: "Paragraphs", completed: false }, { title: "Story Time", completed: false }] },
-    ],
-  },
-  "science-station": {
-    slug: "science-station",
-    name: "Science Station",
-    description: "Experiment and discover the natural world",
-    theme: "from-orange-500 to-red-600",
-    icon: FlaskConical,
-    quests: [
-      { id: "q8", title: "Lab Basics", description: "Learn the scientific method", xpReward: 100, status: "available", progressPct: 0, steps: [{ title: "Observation", completed: false }, { title: "Hypothesis", completed: false }, { title: "Experiment", completed: false }] },
-    ],
-  },
+interface QuestProgress {
+  id: string;
+  learnerId: string;
+  questId: string;
+  status: "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED" | string;
+  score: number | null;
+  completedAt: string | null;
+}
+
+type IconCmp = ComponentType<{ className?: string; strokeWidth?: number; "aria-hidden"?: boolean }>;
+
+// Per-world theme keyed by worldKey. Falls back to a neutral gradient.
+/* eslint-disable no-restricted-syntax -- per-world brand identity, not surface tokens */
+const WORLD_THEMES: Record<string, { icon: IconCmp; gradient: string }> = {
+  nova_number_galaxy: { icon: Sparkles, gradient: "from-indigo-500 to-purple-600" },
+  sage_story_kingdom: { icon: BookOpen, gradient: "from-emerald-500 to-teal-600" },
+  spark_science_lab: { icon: FlaskConical, gradient: "from-amber-500 to-orange-600" },
+  chrono_time_tower: { icon: Castle, gradient: "from-violet-500 to-fuchsia-600" },
+  pixel_code_forge: { icon: Code2, gradient: "from-blue-500 to-cyan-600" },
 };
+const DEFAULT_THEME = { icon: Globe2 as IconCmp, gradient: "from-slate-500 to-slate-700" };
+/* eslint-enable no-restricted-syntax */
+
+function resolveWorld(worlds: QuestWorld[], slug: string): QuestWorld | undefined {
+  return worlds.find((w) => w.key === slug) ?? worlds.find((w) => w.tutorKey === slug);
+}
+
+type UiStatus = "completed" | "in_progress" | "available" | "locked";
+
+function deriveStatus(
+  quest: QuestRow,
+  progressByQuest: Map<string, QuestProgress>,
+  prevCompleted: boolean,
+): UiStatus {
+  const p = progressByQuest.get(quest.id);
+  if (p) {
+    if (p.status === "COMPLETED") return "completed";
+    if (p.status === "IN_PROGRESS") return "in_progress";
+    if (p.status === "AVAILABLE") return "available";
+    if (p.status === "LOCKED") return "locked";
+  }
+  // No progress row: chapter 1 is available; later chapters unlock when the previous one is completed.
+  if (quest.chapterNumber <= 1 || prevCompleted) return "available";
+  return "locked";
+}
 
 export default function QuestWorldPage() {
-  const { user, loading } = useAuth();
+  const { user, accessToken, loading } = useAuth();
   const router = useRouter();
   const t = useTranslations("learner");
   const tCommon = useTranslations("common");
   const tGamification = useTranslations("gamification");
   const params = useParams();
   const worldSlug = params.worldSlug as string;
-  const world = SAMPLE_WORLDS[worldSlug];
 
-  useEffect(() => { if (!loading && !user) router.push("/login"); }, [user, loading, router]);
+  const [worlds, setWorlds] = useState<QuestWorld[] | null>(null);
+  const [quests, setQuests] = useState<QuestRow[]>([]);
+  const [progress, setProgress] = useState<QuestProgress[]>([]);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [starting, setStarting] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loading && !user) router.push("/login");
+  }, [user, loading, router]);
+
+  const refreshProgress = useCallback(async () => {
+    if (!accessToken || !user) return;
+    try {
+      const r = await fetch(`/api/engagement/quests/progress/${user.id}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (r.ok) setProgress(await r.json());
+    } catch {
+      // swallow: progress is optional
+    }
+  }, [accessToken, user]);
+
+  useEffect(() => {
+    if (!accessToken || !user) return;
+    let cancelled = false;
+    const auth = { Authorization: `Bearer ${accessToken}` };
+    (async () => {
+      try {
+        const wr = await fetch("/api/engagement/quests/worlds", { headers: auth });
+        if (!wr.ok) throw new Error(`worlds ${wr.status}`);
+        const allWorlds: QuestWorld[] = await wr.json();
+        if (cancelled) return;
+        setWorlds(allWorlds);
+        const world = resolveWorld(allWorlds, worldSlug);
+        if (!world) return; // 404 rendered below
+        const [qr, pr] = await Promise.all([
+          fetch(`/api/engagement/quests/${world.key}`, { headers: auth }),
+          fetch(`/api/engagement/quests/progress/${user.id}`, { headers: auth }),
+        ]);
+        if (cancelled) return;
+        if (qr.ok) {
+          const body = await qr.json();
+          setQuests((body.quests ?? []) as QuestRow[]);
+        }
+        if (pr.ok) setProgress(await pr.json());
+      } catch (e) {
+        if (!cancelled) setFetchError(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, user, worldSlug]);
+
+  const startQuest = useCallback(
+    async (questId: string) => {
+      if (!accessToken || !user) return;
+      setStarting(questId);
+      try {
+        await fetch("/api/engagement/quests/start", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ learnerId: user.id, questId }),
+        });
+        await refreshProgress();
+      } finally {
+        setStarting(null);
+      }
+    },
+    [accessToken, user, refreshProgress],
+  );
+
   if (loading || !user) return null;
+
+  // Worlds list still loading
+  if (worlds === null && !fetchError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-500 font-semibold">{tCommon("loading")}</p>
+      </div>
+    );
+  }
+
+  const world = worlds ? resolveWorld(worlds, worldSlug) : undefined;
 
   if (!world) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-slate-500 font-semibold">{t("quest_not_found")}</p>
-          <Link href="/dashboard/learner/quests" className="text-primary hover:underline text-sm mt-2 inline-block">← {tCommon("back")}</Link>
+          <Link href="/dashboard/learner/quests" className="text-primary hover:underline text-sm mt-2 inline-block">
+            ← {tCommon("back")}
+          </Link>
         </div>
       </div>
     );
   }
 
-  const completed = world.quests.filter(q => q.status === "completed").length;
-  const totalXP = world.quests.reduce((sum, q) => sum + (q.status === "completed" ? q.xpReward : 0), 0);
+  const theme = WORLD_THEMES[world.key] ?? DEFAULT_THEME;
+  const WorldIcon = theme.icon;
 
-  const STATUS_STYLES = {
+  const progressByQuest = new Map<string, QuestProgress>(progress.map((p) => [p.questId, p]));
+  const sortedQuests = [...quests].sort((a, b) => a.chapterNumber - b.chapterNumber);
+
+  // Pre-compute statuses so we can read prev-completed for unlock logic.
+  const decorated = sortedQuests.reduce<Array<QuestRow & { uiStatus: UiStatus }>>((acc, q) => {
+    const prev = acc[acc.length - 1];
+    const prevCompleted = prev ? prev.uiStatus === "completed" : true;
+    acc.push({ ...q, uiStatus: deriveStatus(q, progressByQuest, prevCompleted) });
+    return acc;
+  }, []);
+
+  const completedCount = decorated.filter((q) => q.uiStatus === "completed").length;
+  const totalXP = decorated.reduce(
+    (sum, q) => sum + (q.uiStatus === "completed" ? q.xpReward ?? 0 : 0),
+    0,
+  );
+
+  const STATUS_STYLES: Record<UiStatus, string> = {
     completed: "border-green-300 bg-green-50",
     in_progress: "border-blue-300 bg-blue-50",
     available: "border-slate-200 bg-white",
@@ -98,19 +218,29 @@ export default function QuestWorldPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-purple-50">
       <div className="max-w-4xl mx-auto px-6 py-8">
-        <Link href="/dashboard/learner/quests" className="text-sm text-primary hover:underline font-semibold mb-6 inline-block">← {tCommon("back")}</Link>
+        <Link
+          href="/dashboard/learner/quests"
+          className="text-sm text-primary hover:underline font-semibold mb-6 inline-block"
+        >
+          ← {tCommon("back")}
+        </Link>
 
-        <div className={`bg-gradient-to-r ${world.theme} rounded-3xl p-8 text-white mb-8 relative overflow-hidden`}>
+        <div className={`bg-linear-to-r ${theme.gradient} rounded-3xl p-8 text-white mb-8 relative overflow-hidden`}>
           <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="relative">
-            <span className="w-16 h-16 mb-3 rounded-2xl bg-white/20 text-white flex items-center justify-center"><world.icon className="w-9 h-9" strokeWidth={2} aria-hidden /></span>
+            <span className="w-16 h-16 mb-3 rounded-2xl bg-white/20 text-white flex items-center justify-center">
+              <WorldIcon className="w-9 h-9" strokeWidth={2} aria-hidden />
+            </span>
             <h1 className="text-3xl font-heading font-bold">{world.name}</h1>
             <p className="text-white/80 mt-1">{world.description}</p>
+            <p className="text-white/60 text-xs font-semibold mt-1">{world.subject}</p>
             <div className="flex gap-6 mt-4">
               <div>
-                <p className="text-2xl font-bold">{completed}/{world.quests.length}</p>
+                <p className="text-2xl font-bold">
+                  {completedCount}/{world.chapters}
+                </p>
                 <p className="text-white/60 text-xs">{t("quests_done")}</p>
               </div>
               <div>
@@ -121,62 +251,69 @@ export default function QuestWorldPage() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          {world.quests.map((quest, index) => (
-            <div key={quest.id} className={`rounded-2xl border-2 p-6 transition ${STATUS_STYLES[quest.status]}`}>
-              <div className="flex items-start gap-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
-                  quest.status === "completed" ? "bg-green-500 text-white" :
-                  quest.status === "in_progress" ? "bg-blue-500 text-white" :
-                  quest.status === "available" ? "bg-slate-200 text-slate-600" : "bg-slate-100 text-slate-400"
-                }`}>
-                  {quest.status === "completed" ? <Check className="w-5 h-5" strokeWidth={3} aria-hidden /> : quest.status === "locked" ? <Lock className="w-4 h-4" strokeWidth={2.5} aria-hidden /> : index + 1}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-heading font-bold text-slate-900">{quest.title}</h3>
-                    <span className="text-sm font-bold text-amber-600">+{quest.xpReward} XP</span>
+        {decorated.length === 0 ? (
+          <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
+            <p className="text-slate-600 font-semibold">{t("quest_not_found")}</p>
+            <p className="text-slate-400 text-sm mt-1">0/{world.chapters} {t("quests_done").toLowerCase()}</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {decorated.map((quest, index) => (
+              <div key={quest.id} className={`rounded-2xl border-2 p-6 transition ${STATUS_STYLES[quest.uiStatus]}`}>
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                      quest.uiStatus === "completed"
+                        ? "bg-green-500 text-white"
+                        : quest.uiStatus === "in_progress"
+                          ? "bg-blue-500 text-white"
+                          : quest.uiStatus === "available"
+                            ? "bg-slate-200 text-slate-600"
+                            : "bg-slate-100 text-slate-400"
+                    }`}
+                  >
+                    {quest.uiStatus === "completed" ? (
+                      <Check className="w-5 h-5" strokeWidth={3} aria-hidden />
+                    ) : quest.uiStatus === "locked" ? (
+                      <Lock className="w-4 h-4" strokeWidth={2.5} aria-hidden />
+                    ) : (
+                      index + 1
+                    )}
                   </div>
-                  <p className="text-sm text-slate-500 mb-3">{quest.description}</p>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-heading font-bold text-slate-900">{quest.title}</h3>
+                      <span className="text-sm font-bold text-amber-600">+{quest.xpReward ?? 0} XP</span>
+                    </div>
+                    {quest.description && (
+                      <p className="text-sm text-slate-500 mb-3">{quest.description}</p>
+                    )}
 
-                  {quest.status !== "locked" && (
-                    <>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex-1 bg-slate-200 rounded-full h-2">
-                          <div className={`h-2 rounded-full transition-all ${quest.status === "completed" ? "bg-green-500" : "bg-blue-500"}`}
-                            style={{ width: `${quest.progressPct}%` }} />
-                        </div>
-                        <span className="text-xs font-semibold text-slate-500">{quest.progressPct}%</span>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        {quest.steps.map((step, si) => (
-                          <div key={si} className="flex items-center gap-2 text-sm">
-                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${step.completed ? "bg-green-500 text-white" : "bg-slate-200 text-slate-400"}`}>
-                              {step.completed ? <Check className="w-3 h-3" strokeWidth={3} aria-hidden /> : si + 1}
-                            </span>
-                            <span className={step.completed ? "text-slate-400 line-through" : "text-slate-700"}>{step.title}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                  {quest.status === "available" && (
-                    <button className="mt-3 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition">
-                      {t("start_quest")}
-                    </button>
-                  )}
-                  {quest.status === "in_progress" && (
-                    <button className="mt-3 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition">
-                      {t("continue_quest")}
-                    </button>
-                  )}
+                    {quest.uiStatus === "available" && (
+                      <button
+                        onClick={() => startQuest(quest.id)}
+                        disabled={starting === quest.id}
+                        className="mt-1 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition disabled:opacity-60"
+                      >
+                        {starting === quest.id ? tCommon("loading") : t("start_quest")}
+                      </button>
+                    )}
+                    {quest.uiStatus === "in_progress" && (
+                      <button
+                        onClick={() => router.push(`/dashboard/learner/quests/${world.key}/play/${quest.id}`)}
+                        className="mt-1 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition"
+                      >
+                        {t("continue_quest")}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {fetchError && <p className="text-xs text-slate-400 mt-6">debug: {fetchError}</p>}
       </div>
     </div>
   );
