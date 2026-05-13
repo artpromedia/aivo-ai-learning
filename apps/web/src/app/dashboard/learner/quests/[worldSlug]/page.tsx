@@ -99,18 +99,6 @@ export default function QuestWorldPage() {
     if (!loading && !user) router.push("/login");
   }, [user, loading, router]);
 
-  const refreshProgress = useCallback(async () => {
-    if (!accessToken || !user) return;
-    try {
-      const r = await fetch(`/api/engagement/quests/progress/${user.id}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (r.ok) setProgress(await r.json());
-    } catch {
-      // swallow: progress is optional
-    }
-  }, [accessToken, user]);
-
   useEffect(() => {
     if (!accessToken || !user) return;
     let cancelled = false;
@@ -155,20 +143,22 @@ export default function QuestWorldPage() {
 
   const startQuest = useCallback(
     async (questId: string) => {
-      if (!accessToken || !user) return;
+      if (!accessToken || !user || !world) return;
       setStarting(questId);
       try {
-        await fetch("/api/engagement/quests/start", {
+        const res = await fetch("/api/engagement/quests/start", {
           method: "POST",
           headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
           body: JSON.stringify({ learnerId: user.id, questId }),
         });
-        await refreshProgress();
+        if (res.ok) {
+          router.push(`/dashboard/learner/quests/${world.key}/play/${questId}`);
+        }
       } finally {
         setStarting(null);
       }
     },
-    [accessToken, user, refreshProgress],
+    [accessToken, user, world, router],
   );
 
   if (loading || !user) return null;

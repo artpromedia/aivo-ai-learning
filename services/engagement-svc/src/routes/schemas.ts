@@ -152,7 +152,15 @@ export const getQuestsByWorldKeySchema = {
   operationId: "getQuestsByWorldKey",
   summary: "GET /api/engagement/quests/:worldKey",
   params: { type: "object", required: ["worldKey"], additionalProperties: true, properties: { worldKey: { type: "string" } } },
-  response: { 200: passthroughObject },
+  response: { 200: passthroughObject, 404: errorResponse },
+} as const;
+
+export const getQuestsChapterByQuestIdSchema = {
+  tags: ["Engagement"],
+  operationId: "getQuestsChapterByQuestId",
+  summary: "GET /api/engagement/quests/chapter/:questId",
+  params: { type: "object", required: ["questId"], additionalProperties: true, properties: { questId: { type: "string" } } },
+  response: { 200: passthroughObject, 404: errorResponse },
 } as const;
 
 export const getQuestsProgressByLearnerIdSchema = {
