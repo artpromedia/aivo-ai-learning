@@ -875,7 +875,7 @@ async def get_next_action(learner_id: str, db: Session = Depends(get_db), auth: 
     _verify_parent_access(db, auth, learner_id, allow_self_learner=True)
 
     brain = db.execute(
-        text("SELECT * FROM brain_states WHERE learner_id = :lid AND status = 'active' ORDER BY version DESC LIMIT 1"),
+        text("SELECT * FROM brain_states WHERE learner_id = :lid ORDER BY version DESC LIMIT 1"),
         {"lid": learner_id}
     ).mappings().first()
 
@@ -1014,7 +1014,7 @@ async def get_sensory_css_vars(learner_id: str, db: Session = Depends(get_db), a
     _verify_parent_access(db, auth, learner_id)
 
     brain = db.execute(
-        text("SELECT functioning_level, functioning_level_profile, sensory_profile FROM brain_states WHERE learner_id = :lid AND status = 'active' ORDER BY version DESC LIMIT 1"),
+        text("SELECT functioning_level_profile, sensory_profile FROM brain_states WHERE learner_id = :lid ORDER BY version DESC LIMIT 1"),
         {"lid": learner_id}
     ).mappings().first()
 

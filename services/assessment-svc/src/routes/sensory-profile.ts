@@ -69,7 +69,7 @@ export async function registerSensoryProfileRoutes(app: FastifyInstance) {
     const { learnerId } = req.params as any;
     const [profile] = await db.select().from(sensoryProfiles).where(eq(sensoryProfiles.learnerId, learnerId)).limit(1);
 
-    if (!profile) return reply.status(404).send({ error: "Sensory profile not found" });
+    if (!profile) return reply.status(200).send({ profile: null });
     return profile;
   });
 }
