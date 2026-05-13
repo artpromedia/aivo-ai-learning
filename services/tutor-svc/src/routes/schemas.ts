@@ -21,6 +21,11 @@ const passthroughObject = {
   additionalProperties: true,
 } as const;
 
+const passthroughArray = {
+  type: "array",
+  items: passthroughObject,
+} as const;
+
 const healthResponseSchema = {
   type: "object",
   required: ["status", "service", "timestamp"],
@@ -70,7 +75,7 @@ export const getSessionsByLearnerIdSchema = {
   operationId: "getSessionsByLearnerId",
   summary: "GET /api/tutor/sessions/:learnerId",
   params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
-  response: { 200: passthroughObject },
+  response: { 200: passthroughArray },
 } as const;
 
 export const getSessionBySessionIdSchema = {
@@ -267,7 +272,7 @@ export const getTutorsActiveByUserIdSchema = {
   operationId: "getTutorsActiveByUserId",
   summary: "GET /api/tutors/active/:userId",
   params: { type: "object", required: ["userId"], additionalProperties: true, properties: { userId: { type: "string" } } },
-  response: { 200: passthroughObject },
+  response: { 200: passthroughArray },
 } as const;
 
 export const tutorsSubscribeSchema = {

@@ -21,6 +21,11 @@ const passthroughObject = {
   additionalProperties: true,
 } as const;
 
+const passthroughArray = {
+  type: "array",
+  items: passthroughObject,
+} as const;
+
 const healthResponseSchema = {
   type: "object",
   required: ["status", "service", "timestamp"],
@@ -120,7 +125,7 @@ export const getCollaborationConnectedLearnersSchema = {
   tags: ["Family"],
   operationId: "getCollaborationConnectedLearners",
   summary: "GET /api/family/collaboration/connected-learners",
-  response: { 200: passthroughObject },
+  response: { 200: passthroughArray },
 } as const;
 
 export const collaborationAcceptInviteSchema = {
@@ -178,7 +183,7 @@ export const getIepByLearnerIdGoalsSchema = {
   operationId: "getIepByLearnerIdGoals",
   summary: "GET /api/family/iep/:learnerId/goals",
   params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse },
 } as const;
 
 export const getIepByLearnerIdGoalsByGoalIdSchema = {
@@ -202,7 +207,7 @@ export const getIepByLearnerIdDocumentsSchema = {
   operationId: "getIepByLearnerIdDocuments",
   summary: "GET /api/family/iep/:learnerId/documents",
   params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse },
 } as const;
 
 export const getIepByLearnerIdProgressSchema = {
@@ -401,7 +406,7 @@ export const getRecommendationsByLearnerIdSchema = {
   summary: "GET /api/family/recommendations/:learnerId",
   params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
   querystring: { type: "object", additionalProperties: true, properties: {} },
-  response: { 200: passthroughObject, 403: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse },
 } as const;
 
 export const recommendationsByLearnerIdByRecIdRespondSchema = {

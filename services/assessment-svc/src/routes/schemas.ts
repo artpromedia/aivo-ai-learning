@@ -21,6 +21,11 @@ const passthroughObject = {
   additionalProperties: true,
 } as const;
 
+const passthroughArray = {
+  type: "array",
+  items: passthroughObject,
+} as const;
+
 const healthResponseSchema = {
   type: "object",
   required: ["status", "service", "timestamp"],
@@ -44,7 +49,7 @@ export const getIepDraftsByIdTeamSchema = {
   operationId: "getIepDraftsByIdTeam",
   summary: "GET /api/iep/drafts/:id/team",
   params: { type: "object", required: ["id"], additionalProperties: true, properties: { id: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse, 404: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse, 404: errorResponse },
 } as const;
 
 export const deleteIepDraftsByIdTeamByMemberIdSchema = {
@@ -60,7 +65,7 @@ export const getIepDraftsByIdCommentsSchema = {
   operationId: "getIepDraftsByIdComments",
   summary: "GET /api/iep/drafts/:id/comments",
   params: { type: "object", required: ["id"], additionalProperties: true, properties: { id: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse, 404: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse, 404: errorResponse },
 } as const;
 
 export const getIepDraftsByIdRevisionsSchema = {
@@ -68,7 +73,7 @@ export const getIepDraftsByIdRevisionsSchema = {
   operationId: "getIepDraftsByIdRevisions",
   summary: "GET /api/iep/drafts/:id/revisions",
   params: { type: "object", required: ["id"], additionalProperties: true, properties: { id: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse, 404: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse, 404: errorResponse },
 } as const;
 
 export const getIepDraftsByIdSignaturesSchema = {
@@ -92,7 +97,7 @@ export const getIepEvaluationsLearnerByLearnerIdSchema = {
   operationId: "getIepEvaluationsLearnerByLearnerId",
   summary: "GET /api/iep/evaluations/learner/:learnerId",
   params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse },
 } as const;
 
 export const getIepEvaluationsByIdSchema = {
@@ -133,7 +138,7 @@ export const getIepDraftsByIdNotesSchema = {
   operationId: "getIepDraftsByIdNotes",
   summary: "GET /api/iep/drafts/:id/notes",
   params: { type: "object", required: ["id"], additionalProperties: true, properties: { id: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse, 404: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse, 404: errorResponse },
 } as const;
 
 export const getIepDraftsByIdReportsSchema = {
@@ -141,7 +146,7 @@ export const getIepDraftsByIdReportsSchema = {
   operationId: "getIepDraftsByIdReports",
   summary: "GET /api/iep/drafts/:id/reports",
   params: { type: "object", required: ["id"], additionalProperties: true, properties: { id: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse, 404: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse, 404: errorResponse },
 } as const;
 
 export const iepDraftsByIdReportsByRidSendSchema = {
@@ -157,7 +162,7 @@ export const getIepDraftsByIdAmendmentsSchema = {
   operationId: "getIepDraftsByIdAmendments",
   summary: "GET /api/iep/drafts/:id/amendments",
   params: { type: "object", required: ["id"], additionalProperties: true, properties: { id: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse, 404: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse, 404: errorResponse },
 } as const;
 
 export const getIepLearnersByLearnerIdTimelineSchema = {

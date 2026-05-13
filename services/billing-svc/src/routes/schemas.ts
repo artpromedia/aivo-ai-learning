@@ -15,6 +15,11 @@ const passthroughObject = {
   additionalProperties: true,
 } as const;
 
+const passthroughArray = {
+  type: "array",
+  items: passthroughObject,
+} as const;
+
 // ── plans / subscriptions / addons / invoices ────────────────────────────────
 
 export const listPlansSchema = {

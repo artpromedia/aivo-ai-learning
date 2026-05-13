@@ -15,6 +15,11 @@ const passthroughObject = {
   additionalProperties: true,
 } as const;
 
+const passthroughArray = {
+  type: "array",
+  items: passthroughObject,
+} as const;
+
 // Generic "queued / sent / dev_mode / logged_only / failed" envelope used by
 // most send-mail endpoints. Most fields are optional because each handler
 // returns a subtly different subset — keeping the response permissive avoids

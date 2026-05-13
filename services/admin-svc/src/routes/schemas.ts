@@ -21,6 +21,11 @@ const passthroughObject = {
   additionalProperties: true,
 } as const;
 
+const passthroughArray = {
+  type: "array",
+  items: passthroughObject,
+} as const;
+
 const healthResponseSchema = {
   type: "object",
   required: ["status", "service", "timestamp"],
@@ -89,7 +94,7 @@ export const getAdminSvcActivitySchema = {
   tags: ["Admin"],
   operationId: "getAdminSvcActivity",
   summary: "GET /api/admin-svc/activity",
-  response: { 200: passthroughObject },
+  response: { 200: passthroughArray },
 } as const;
 
 export const getAdminSvcComplianceControlsSchema = {

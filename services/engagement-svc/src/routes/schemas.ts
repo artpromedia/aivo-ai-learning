@@ -20,6 +20,11 @@ const passthroughObject = {
   additionalProperties: true,
 } as const;
 
+const passthroughArray = {
+  type: "array",
+  items: passthroughObject,
+} as const;
+
 const healthResponseSchema = {
   type: "object",
   required: ["status", "service", "timestamp"],
@@ -76,7 +81,7 @@ export const getChallengesLearnerByLearnerIdSchema = {
   operationId: "getChallengesLearnerByLearnerId",
   summary: "GET /api/engagement/challenges/learner/:learnerId",
   params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
-  response: { 200: passthroughObject },
+  response: { 200: passthroughArray },
 } as const;
 
 export const lessonPlansCreateSchema = {
@@ -99,7 +104,7 @@ export const getLessonPlansTeacherSchema = {
   tags: ["Engagement"],
   operationId: "getLessonPlansTeacher",
   summary: "GET /api/engagement/lesson-plans/teacher",
-  response: { 200: passthroughObject },
+  response: { 200: passthroughArray },
 } as const;
 
 export const getLessonPlansLearnerByLearnerIdSchema = {
@@ -107,7 +112,7 @@ export const getLessonPlansLearnerByLearnerIdSchema = {
   operationId: "getLessonPlansLearnerByLearnerId",
   summary: "GET /api/engagement/lesson-plans/learner/:learnerId",
   params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
-  response: { 200: passthroughObject },
+  response: { 200: passthroughArray },
 } as const;
 
 export const getLessonPlansByPlanIdSchema = {
@@ -131,7 +136,7 @@ export const getQuestsWorldsSchema = {
   tags: ["Engagement"],
   operationId: "getQuestsWorlds",
   summary: "GET /api/engagement/quests/worlds",
-  response: { 200: passthroughObject },
+  response: { 200: passthroughArray },
 } as const;
 
 export const getQuestsByWorldKeySchema = {
@@ -147,7 +152,7 @@ export const getQuestsProgressByLearnerIdSchema = {
   operationId: "getQuestsProgressByLearnerId",
   summary: "GET /api/engagement/quests/progress/:learnerId",
   params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
-  response: { 200: passthroughObject },
+  response: { 200: passthroughArray },
 } as const;
 
 export const questsStartSchema = {
@@ -179,7 +184,7 @@ export const getSelCheckinsByLearnerIdSchema = {
   operationId: "getSelCheckinsByLearnerId",
   summary: "GET /api/engagement/sel/checkins/:learnerId",
   params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse },
 } as const;
 
 export const getSelExercisesByEmotionSchema = {
@@ -187,7 +192,7 @@ export const getSelExercisesByEmotionSchema = {
   operationId: "getSelExercisesByEmotion",
   summary: "GET /api/engagement/sel/exercises/:emotion",
   params: { type: "object", required: ["emotion"], additionalProperties: true, properties: { emotion: { type: "string" } } },
-  response: { 200: passthroughObject },
+  response: { 200: passthroughArray },
 } as const;
 
 export const getBreaksCatalogSchema = {
@@ -195,7 +200,7 @@ export const getBreaksCatalogSchema = {
   operationId: "getBreaksCatalog",
   summary: "GET /api/engagement/breaks/catalog",
   querystring: { type: "object", additionalProperties: true, properties: {} },
-  response: { 200: passthroughObject },
+  response: { 200: passthroughArray },
 } as const;
 
 export const breakLogSchema = {
@@ -211,14 +216,14 @@ export const getBreaksByLearnerIdSchema = {
   operationId: "getBreaksByLearnerId",
   summary: "GET /api/engagement/breaks/:learnerId",
   params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse },
 } as const;
 
 export const getShopItemsSchema = {
   tags: ["Engagement"],
   operationId: "getShopItems",
   summary: "GET /api/engagement/shop/items",
-  response: { 200: passthroughObject },
+  response: { 200: passthroughArray },
 } as const;
 
 export const getShopInventoryByLearnerIdSchema = {
@@ -226,7 +231,7 @@ export const getShopInventoryByLearnerIdSchema = {
   operationId: "getShopInventoryByLearnerId",
   summary: "GET /api/engagement/shop/inventory/:learnerId",
   params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse },
 } as const;
 
 export const shopPurchaseSchema = {
@@ -266,7 +271,7 @@ export const getSiblingsByLearnerIdLeaderboardSchema = {
   operationId: "getSiblingsByLearnerIdLeaderboard",
   summary: "GET /api/engagement/siblings/:learnerId/leaderboard",
   params: { type: "object", required: ["learnerId"], additionalProperties: true, properties: { learnerId: { type: "string" } } },
-  response: { 200: passthroughObject, 403: errorResponse },
+  response: { 200: passthroughArray, 403: errorResponse },
 } as const;
 
 export const deleteSiblingsUnlinkSchema = {
@@ -323,7 +328,7 @@ export const getLeaderboardByScopeSchema = {
   summary: "GET /api/engagement/leaderboard/:scope",
   params: { type: "object", required: ["scope"], additionalProperties: true, properties: { scope: { type: "string" } } },
   querystring: { type: "object", additionalProperties: true, properties: {} },
-  response: { 200: passthroughObject, 400: errorResponse, 403: errorResponse },
+  response: { 200: passthroughArray, 400: errorResponse, 403: errorResponse },
 } as const;
 
 export const getCurrencyByLearnerIdSchema = {
