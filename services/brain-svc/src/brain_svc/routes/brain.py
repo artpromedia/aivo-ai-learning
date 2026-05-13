@@ -182,7 +182,7 @@ async def get_brain_state(learner_id: str, db: Session = Depends(get_db), auth: 
 
     return _to_camel_case(dict(result))
 
-def _verify_parent_access(db: Session, auth: AuthClaims, learner_id: str):
+def _verify_parent_access(db: Session, auth: AuthClaims, learner_id: str, allow_self_learner: bool = False):
     if auth.role in ("admin", "service", "PLATFORM_ADMIN"):
         return
     if auth.role == "PARENT":
@@ -192,6 +192,8 @@ def _verify_parent_access(db: Session, auth: AuthClaims, learner_id: str):
         ).first()
         if not learner or str(learner[0]) != auth.sub:
             raise HTTPException(status_code=403, detail="Not authorized for this learner")
+        return
+    if allow_self_learner and auth.role == "LEARNER" and auth.sub == learner_id:
         return
     raise HTTPException(status_code=403, detail="Only parents can review brain clones")
 
@@ -870,7 +872,7 @@ async def update_engagement_profile(learner_id: str, request: dict = None, db: S
 
 @router.get("/{learner_id}/next-action")
 async def get_next_action(learner_id: str, db: Session = Depends(get_db), auth: AuthClaims = Depends(require_auth)):
-    _verify_parent_access(db, auth, learner_id)
+    _verify_parent_access(db, auth, learner_id, allow_self_learner=True)
 
     brain = db.execute(
         text("SELECT * FROM brain_states WHERE learner_id = :lid AND status = 'active' ORDER BY version DESC LIMIT 1"),
