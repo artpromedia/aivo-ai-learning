@@ -1,13 +1,38 @@
 import { FastifyInstance } from "fastify";
-import { eq, and, asc, sql } from "drizzle-orm";
+import { eq, and, or, asc, sql } from "drizzle-orm";
 import {
   quests,
   questProgress,
   xpEvents,
   virtualCurrency,
   currencyTransactions,
+  learners,
 } from "@aivo/db";
 import { authenticateRequest } from "../auth.js";
+
+/**
+ * Resolve the canonical `learners.id` for a request.
+ *
+ * Frontend historically passes `user.id` (users.id) as the "learnerId" because
+ * the auth provider only exposes the user object. `learners.id` is different
+ * from `users.id`, so we accept either form and resolve to the canonical
+ * `learners.id`. Falls back to `claims.sub -> learners.userId` when no input
+ * is supplied. Returns `null` if no matching learner row exists.
+ */
+async function resolveLearnerId(
+  db: ReturnType<typeof import("@aivo/db").createDb>,
+  candidate: string | undefined | null,
+  authUserId: string | undefined | null,
+): Promise<string | null> {
+  const id = candidate || authUserId;
+  if (!id) return null;
+  const [row] = await db
+    .select({ id: learners.id })
+    .from(learners)
+    .where(or(eq(learners.id, id), eq(learners.userId, id)))
+    .limit(1);
+  return row?.id ?? null;
+}
 import { QUEST_WORLDS, resolveQuestWorld } from "../quest-worlds.js";
 import {
   getQuestsWorldsSchema,
@@ -90,11 +115,16 @@ export function registerQuestRoutes(
       const claims = await authenticateRequest(request, reply);
       if (!claims) return;
 
-      const { learnerId } = request.params as { learnerId: string };
+      const { learnerId: rawLearnerId } = request.params as { learnerId: string };
+      const resolvedLearnerId = await resolveLearnerId(db, rawLearnerId, claims.sub);
+      if (!resolvedLearnerId) {
+        // No learner record yet (e.g., parent viewing before learner is created)
+        return [];
+      }
       const progress = await db
         .select()
         .from(questProgress)
-        .where(eq(questProgress.learnerId, learnerId));
+        .where(eq(questProgress.learnerId, resolvedLearnerId));
 
       return progress;
     },
@@ -104,9 +134,14 @@ export function registerQuestRoutes(
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
-    const { learnerId, questId } = request.body as { learnerId: string; questId: string };
-    if (!learnerId || !questId) {
+    const { learnerId: rawLearnerId, questId } = request.body as { learnerId: string; questId: string };
+    if (!rawLearnerId || !questId) {
       return (reply as any).status(400).send({ error: "learnerId and questId required" });
+    }
+
+    const learnerId = await resolveLearnerId(db, rawLearnerId, claims.sub);
+    if (!learnerId) {
+      return (reply as any).status(404).send({ error: "learner_not_found" });
     }
 
     const [quest] = await db.select().from(quests).where(eq(quests.id, questId));
@@ -138,17 +173,22 @@ export function registerQuestRoutes(
     const claims = await authenticateRequest(request, reply);
     if (!claims) return;
 
-    const { learnerId, questId, score } = request.body as {
+    const { learnerId: rawLearnerId, questId, score } = request.body as {
       learnerId: string;
       questId: string;
       score: number;
     };
 
-    if (!learnerId || !questId) {
+    if (!rawLearnerId || !questId) {
       return (reply as any).status(400).send({ error: "learnerId and questId required" });
     }
     if (typeof score !== "number" || score < 0 || score > 100) {
       return (reply as any).status(400).send({ error: "score must be 0-100" });
+    }
+
+    const learnerId = await resolveLearnerId(db, rawLearnerId, claims.sub);
+    if (!learnerId) {
+      return (reply as any).status(404).send({ error: "learner_not_found" });
     }
 
     const [quest] = await db.select().from(quests).where(eq(quests.id, questId));
