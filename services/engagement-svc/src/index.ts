@@ -24,7 +24,7 @@ const logger = createLogger("engagement-svc");
 const PORT = parseInt(process.env.ENGAGEMENT_PORT || "3008", 10);
 
 export async function buildApp(db = createDb(process.env.DATABASE_URL ?? "")) {
-  const app = Fastify({ logger: false });
+  const app = Fastify({ logger: true });
 
   await app.register(cors, { origin: true, credentials: true });
   await app.register(swagger, {

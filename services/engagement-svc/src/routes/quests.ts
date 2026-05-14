@@ -140,12 +140,14 @@ export function registerQuestRoutes(
     }
 
     const learnerId = await resolveLearnerId(db, rawLearnerId, claims.sub);
+    console.error("[quests/start] rawLearnerId=", rawLearnerId, "claims.sub=", claims.sub, "resolved=", learnerId, "questId=", questId);
     if (!learnerId) {
       return (reply as any).status(404).send({ error: "learner_not_found" });
     }
 
     const [quest] = await db.select().from(quests).where(eq(quests.id, questId));
     if (!quest) {
+      console.error("[quests/start] quest not found in DB, questId=", questId);
       return (reply as any).status(404).send({ error: "quest_not_found", questId });
     }
 
