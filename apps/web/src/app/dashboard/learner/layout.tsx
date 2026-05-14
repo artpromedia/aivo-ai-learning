@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { TierThemeProvider } from "@aivo/learner-ui";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -10,6 +10,24 @@ interface LearnerRecord {
   userId?: string;
   gradeLevel?: string;
 }
+
+/**
+ * Roles allowed to land on `/dashboard/learner/...` directly.
+ *
+ * - `LEARNER` plays their own quests.
+ * - `PARENT` / `CAREGIVER` may run an adventure on behalf of a child but
+ *   only when an explicit `?learnerId=…` query parameter is supplied so
+ *   the layout can resolve which child the session is for.
+ *
+ * Any other role lands on `/` which routes them to their role dashboard
+ * (`ROLE_DASHBOARDS` in `apps/web/src/app/page.tsx`).
+ */
+const LEARNER_ALLOWED_ROLES = new Set([
+  "LEARNER",
+  "PARENT",
+  "CAREGIVER",
+  "PLATFORM_ADMIN",
+]);
 
 /**
  * Wraps every page under `/dashboard/learner/...` with the active learner's
@@ -37,10 +55,34 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
 }
 
 function LearnerLayoutInner({ children }: { children: React.ReactNode }) {
-  const { user, accessToken } = useAuth();
+  const { user, accessToken, loading } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const queriedLearnerId = searchParams.get("learnerId");
   const [gradeLevel, setGradeLevel] = useState<string | null>(null);
+
+  // Role/learner guard. Mirrors the pattern in
+  // `apps/web/src/app/dashboard/parent/layout.tsx` and `admin/layout.tsx`:
+  // wait for the auth check to resolve, then bounce non-learners to `/`
+  // (which redirects them to their role-specific dashboard).
+  //
+  // PARENT/CAREGIVER are permitted only with an explicit `?learnerId`
+  // query parameter; visiting the bare `/dashboard/learner/...` URL as a
+  // parent yielded the "learner_not_found 404" from engagement-svc
+  // because no `learners` row matched `claims.sub` directly.
+  useEffect(() => {
+    if (loading || !user) return;
+    if (!LEARNER_ALLOWED_ROLES.has(user.role)) {
+      router.replace("/");
+      return;
+    }
+    if (
+      (user.role === "PARENT" || user.role === "CAREGIVER") &&
+      !queriedLearnerId
+    ) {
+      router.replace("/dashboard/parent");
+    }
+  }, [loading, user, queriedLearnerId, router]);
 
   useEffect(() => {
     let cancelled = false;
