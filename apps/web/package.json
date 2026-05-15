@@ -14,6 +14,7 @@
     "@aivo/brand": "workspace:*",
     "@aivo/learner-surfaces": "workspace:*",
     "@aivo/learner-ui": "workspace:*",
+    "@aivo/security": "workspace:*",
     "@aivo/stage-runtime": "workspace:*",
     "@aivo/stage-ui": "workspace:*",
     "@aivo/tutor-surface-protocol": "workspace:*",

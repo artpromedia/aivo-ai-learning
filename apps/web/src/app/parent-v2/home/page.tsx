@@ -2,6 +2,7 @@ import * as React from "react";
 import Link from "next/link";
 import { ParentShell } from "@/components/v2/layout/parent-shell";
 import { PrimaryActionCard } from "@/components/v2/shared/primary-action-card";
+import { MeBanner } from "@/components/v2/data/me-banner";
 
 export default function ParentHomePage() {
   return (
@@ -9,6 +10,7 @@ export default function ParentHomePage() {
       title="Welcome to AIVO"
       description="Set up a learner, complete the parent assessment, and AIVO will prepare the first personalized lesson."
     >
+      <MeBanner surface="parent" />
       <PrimaryActionCard
         surface="parent"
         title="Your learners"
