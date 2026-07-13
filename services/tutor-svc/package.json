@@ -24,16 +24,16 @@
     "@aivo/special-interest-engine": "workspace:*",
     "@aivo/tutor-runtime": "workspace:*",
     "@aivo/tutor-sdk": "workspace:*",
-    "@fastify/cors": "^11.0.0",
+    "@fastify/cors": "^11.3.0",
     "@fastify/rate-limit": "^10.3.0",
-    "@fastify/swagger": "^9.6.0",
+    "@fastify/swagger": "^9.8.0",
     "@fastify/swagger-ui": "^5.2.2",
-    "@fastify/websocket": "^11.2.0",
+    "@fastify/websocket": "^11.3.0",
     "drizzle-orm": "^0.44.2",
     "fastify": "^5.3.3"
   },
   "devDependencies": {
-    "tsx": "^4.19.4",
+    "tsx": "^4.23.1",
     "typescript": "^5.7.3"
   }
 }
